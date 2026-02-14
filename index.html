@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" defer src="/src/main.ts"></script>
+  <title>ngb-js</title>
+</head>
+
+<body class="container-fluid mt-2" ng-app="ngb.test" ng-controller="ngb.app as $">
+
+  <div ngb-accordion>
+    <div ngb-accordion-item collapsed="true">
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          <template>
+            1
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div ngb-accordion-item collapsed="false">
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          <template>
+            <ul>test</ul>
+            otro
+            <h2 ng-if="false"></h2>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div ngb-accordion-item collapsed="false">
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          <template>
+            1
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
