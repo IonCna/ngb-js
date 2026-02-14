@@ -21,8 +21,9 @@ export class NgbAccordionItem implements IController {
     ) {}
 
     $onInit(): void {
-        this.id = this.ngbAccordionItem ?? `ngb-accordion-item-${++this.$ngbAccordionItemCounter.accordionItemCounter}`
+        this.id = this.ngbAccordionItem ?? `ngb-accordion-item-${this.$ngbAccordionItemCounter.accordionItemCounter++}`
         this.destroyOnHide = this.destroyOnHide ?? this.$ngbAccordionConfig.destroyOnHide
+        this.collapsed = this.collapsed ?? true
     }
 
     public toggle() { }

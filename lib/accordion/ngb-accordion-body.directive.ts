@@ -25,6 +25,8 @@ export class NgbAccordionBody implements IController {
         this.template = template
         this.$element.empty()
 
+        return
+
         this.$scope.$watch(() => this.ngbAccordionItem["collapsed"], (collapsed) => {
             const destroyOnHide = this.ngbAccordionItem["destroyOnHide"]
             if (!destroyOnHide) return
@@ -73,6 +75,7 @@ export class NgbAccordionBody implements IController {
         return () => ({
             controller: NgbAccordionBody,
             bindToController: true,
+            terminal: true,
             require: {
                 ngbAccordionItem: "^^ngbAccordionItem"
             },
