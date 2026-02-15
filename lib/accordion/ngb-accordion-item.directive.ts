@@ -1,8 +1,12 @@
-import type { IAugmentedJQuery, IController, IDirective } from "angular"
+import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular"
 import { NgbAccordionCounterService } from "@/accordion/ngb-accordion-counters.service"
 import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
+import { NgbAccordionRegisterEvent } from "@/accordion/ngb-accordion.events"
+import { NgbAccordion } from "@/accordion/ngb-accordion.directive"
 
 export class NgbAccordionItem implements IController {
+    private ngbAccordion!: NgbAccordion
+
     protected collapsed?: boolean;
     protected destroyOnHide?: boolean
     protected disabled?: boolean
@@ -17,18 +21,29 @@ export class NgbAccordionItem implements IController {
     constructor(
         private $element: IAugmentedJQuery,
         private $ngbAccordionItemCounter: NgbAccordionCounterService,
-        private $ngbAccordionConfig: NgbAccordionConfig
+        private $ngbAccordionConfig: NgbAccordionConfig,
+        protected $scope: IScope
     ) {}
 
     $onInit(): void {
         this.id = this.ngbAccordionItem ?? `ngb-accordion-item-${this.$ngbAccordionItemCounter.accordionItemCounter++}`
         this.destroyOnHide = this.destroyOnHide ?? this.$ngbAccordionConfig.destroyOnHide
         this.collapsed = this.collapsed ?? true
+
+        this.ngbAccordion["$scope"].$emit(NgbAccordionRegisterEvent, this)
     }
 
     public toggle() { }
-    public expand() { }
-    public collapse() { }
+
+    public expand() {
+        if(this.collapsed) return
+        this.collapsed = true
+    }
+
+    public collapse() {
+        if(!this.collapsed) return;
+        this.collapsed = false
+    }
 
     $postLink(): void {
         this.$element.addClass("accordion-item")
@@ -40,7 +55,12 @@ export class NgbAccordionItem implements IController {
     }
 
     static get $inject() {
-        return ["$element", NgbAccordionCounterService.$name, NgbAccordionConfig.$name]
+        return [
+            "$element",
+            NgbAccordionCounterService.$name,
+            NgbAccordionConfig.$name,
+            "$scope"
+        ]
     }
 
     static get $name() {
@@ -51,9 +71,12 @@ export class NgbAccordionItem implements IController {
         return () => ({
             bindToController: true,
             controller: NgbAccordionItem,
+            require: {
+                ngbAccordion: "^ngbAccordion"
+            },
             restrict: "A",
             scope: {
-                collapsed: "<?",
+                collapsed: "=?",
                 destroyOnHide: "<?",
                 disabled: "<?",
                 ngbAccordionItem: "<?",

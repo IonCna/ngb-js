@@ -5,7 +5,7 @@ export class NgbAccordionHeader implements IController {
 
     $postLink(): void {
         this.$element.attr("role", "heading")
-        this.$element.addClass("accordion-header") // collapsed
+        this.$element.addClass("accordion-header")
     }
 
     static get $name() {

@@ -37,6 +37,7 @@ export class NgbAccordionButton implements IController {
         return () => ({
             controller: NgbAccordionButton,
             bindToController: true,
+            scope: true,
             restrict: "A",
             controllerAs: "$",
             require: {

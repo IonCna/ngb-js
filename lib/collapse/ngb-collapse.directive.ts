@@ -70,6 +70,10 @@ export class NgbCollapse implements IController {
         this.handler()
     }
 
+    public toggle(open: boolean = !this.ngbCollapse) {
+        this.ngbCollapse = open
+    }
+
     private get direction() {
         return this.horizontal ? "width" : "height";
     }
