@@ -36,8 +36,12 @@ export class NgbAccordion implements IController {
 
             this.ngbAccordionItems.set(id, {
                 item: ngbAccordionItem,
-                watcher: ngbAccordionItem["$scope"].$watch(() => ngbAccordionItem["collapsed"], (collapsed) => {
-                    console.log(collapsed)
+                watcher: ngbAccordionItem["$scope"].$watch(() => ngbAccordionItem["collapsed"], (current, prev) => {
+                    if(current == prev) return
+                    if (!this.closeOthers) return
+                    if (current) return
+
+                    this.collapseAllExcept(id)
                 })
             })
         })
@@ -73,6 +77,13 @@ export class NgbAccordion implements IController {
 
     public collapseAll() {
         this.ngbAccordionItems.forEach(({ item }) => {
+            item.collapse()
+        })
+    }
+
+    private collapseAllExcept(itemId: string) {
+        this.ngbAccordionItems.forEach(({ item }) => {
+            if (item["id"] === itemId) return
             item.collapse()
         })
     }

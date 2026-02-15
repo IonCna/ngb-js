@@ -9,7 +9,7 @@ export class NgbAccordionButton implements IController {
         this.$element.addClass("accordion-button") // collapsed
         this.$element.attr("type", "button")
 
-        const handler = () => this.$scope.$evalAsync(() =>  this.collapsed = !this.collapsed)
+        const handler = () => this.$scope.$evalAsync(() => this.ngbAccordionItem.toggle())
         this.$element.on("click", handler)
 
         this.$scope.$watch(() => this.collapsed, (collapsed) => {
@@ -19,10 +19,6 @@ export class NgbAccordionButton implements IController {
 
     private get collapsed() {
         return this.ngbAccordionItem["collapsed"] ?? false
-    }
-
-    private set collapsed(collapsed: boolean) {
-        this.ngbAccordionItem["collapsed"] = collapsed
     }
 
     static get $name() {

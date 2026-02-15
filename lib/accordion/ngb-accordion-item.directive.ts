@@ -33,16 +33,19 @@ export class NgbAccordionItem implements IController {
         this.ngbAccordion["$scope"].$emit(NgbAccordionRegisterEvent, this)
     }
 
-    public toggle() { }
+    public toggle() {
+        if (this.disabled) return
+        this.collapsed = !this.collapsed
+    }
 
     public expand() {
-        if(this.collapsed) return
-        this.collapsed = true
+        if(!this.collapsed) return
+        this.collapsed = false
     }
 
     public collapse() {
-        if(!this.collapsed) return;
-        this.collapsed = false
+        if(this.collapsed) return;
+        this.collapsed = true
     }
 
     $postLink(): void {
