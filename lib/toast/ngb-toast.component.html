@@ -1,0 +1,8 @@
+<div ng-if="$.header" class="toast-header">
+    <strong class="me-auto">{{ $.header }}</strong>
+
+    <button ng-click="$.close()" type="button" aria-label="Close" class="btn-close"></button>
+</div>
+
+<div class="toast-body" ng-transclude>
+</div>
