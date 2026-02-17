@@ -14,19 +14,11 @@ export async function ngbRunTransition($element: IAugmentedJQuery, startFn: () =
     const total = delay + duration + 5
 
     const defer = $q.defer<void>()
-
-    el.getBoundingClientRect()
-    startFn()
-
-    if(total == 0) {
-        defer.resolve()
-        return
-    }
-
     let finished = false
+    let timer: ReturnType<typeof $timeout> | undefined
 
     const done = () => {
-        if(finished) return
+        if (finished) return
         finished = true
 
         clean()
@@ -34,25 +26,46 @@ export async function ngbRunTransition($element: IAugmentedJQuery, startFn: () =
     }
 
     const handler = (event: JQueryEventObject) => {
-        if(event.target != el) return
+        if (event.target !== el) return
         done()
     }
 
     const clean = () => {
-        $element.off("transitionend", handler)
-        $timeout.cancel(timer)
+        $element.off("transitionend transitioncancel", handler)
+        if (timer) {
+            $timeout.cancel(timer)
+        }
     }
 
-    $element.on("transitionend", handler)
-    const timer = $timeout(done, total)
+    try {
+        el.getBoundingClientRect()
+        startFn()
+    } catch (error) {
+        clean()
+        defer.reject(error)
+        return defer.promise
+    }
+
+    if (total === 0) {
+        done()
+        return defer.promise
+    }
+
+    $element.on("transitionend transitioncancel", handler)
+    timer = $timeout(done, total)
 
     return defer.promise
 }
 
 function parseCssTime(time: string) {
-    return time
+    const values = time
         .split(",")
-        .map(time => time.trim())
-        .map(time => time.endsWith("ms") ? parseFloat(time) : parseFloat(time) * 1000)
-        .reduce((prev, current) => Math.max(prev, current), 0)
+        .map(value => value.trim())
+        .map(value => {
+            const numericValue = parseFloat(value)
+            if (!Number.isFinite(numericValue)) return 0
+            return value.endsWith("ms") ? numericValue : numericValue * 1000
+        })
+
+    return values.reduce((prev, current) => Math.max(prev, current), 0)
 }

@@ -1,7 +1,7 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular"
 import { NgbAccordionCounterService } from "@/accordion/ngb-accordion-counters.service"
 import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
-import { NgbAccordionRegisterEvent } from "@/accordion/ngb-accordion.events"
+import { NgbAccordionItemChange, NgbAccordionRegisterEvent, NgbAccordionUnregisterEvent, type NgbAccordionItemPhase } from "@/accordion/ngb-accordion.events"
 import { NgbAccordion } from "@/accordion/ngb-accordion.directive"
 
 export class NgbAccordionItem implements IController {
@@ -35,17 +35,34 @@ export class NgbAccordionItem implements IController {
 
     public toggle() {
         if (this.disabled) return
-        this.collapsed = !this.collapsed
+
+        const collapsed = !(this.collapsed ?? true)
+        this.emitChange(collapsed ? "hide" : "show")
+        this.collapsed = collapsed
     }
 
     public expand() {
         if(!this.collapsed) return
+        this.emitChange("show")
         this.collapsed = false
     }
 
     public collapse() {
         if(this.collapsed) return;
+        this.emitChange("hide")
         this.collapsed = true
+    }
+
+    public getId() {
+        return this.id
+    }
+
+    public getCollapseId() {
+        return `${this.id}-collapse`
+    }
+
+    public getToggleId() {
+        return `${this.id}-toggle`
     }
 
     $postLink(): void {
@@ -54,7 +71,19 @@ export class NgbAccordionItem implements IController {
     }
 
     $onDestroy(): void {
+        this.emitUnregister()
         this.$ngbAccordionItemCounter.accordionItemCounter--
+    }
+
+    private emitChange(phase: NgbAccordionItemPhase) {
+        this.ngbAccordion["$scope"].$emit(NgbAccordionItemChange, {
+            itemId: this.id,
+            phase
+        })
+    }
+
+    private emitUnregister() {
+        this.ngbAccordion["$scope"].$emit(NgbAccordionUnregisterEvent, this.id)
     }
 
     static get $inject() {

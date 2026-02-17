@@ -1,6 +1,6 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
-import { NgbAccordionRegisterEvent, NgbAccordionItemChange } from "@/accordion/ngb-accordion.events"
+import { NgbAccordionRegisterEvent, NgbAccordionItemChange, NgbAccordionUnregisterEvent, type NgbAccordionItemChangePayload } from "@/accordion/ngb-accordion.events"
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
 import type { NgbAccordionItemRegistry } from "@/accordion/ngb-accordion.model"
 
@@ -15,6 +15,8 @@ export class NgbAccordion implements IController {
 
     private ngbAccordionItems = new Map<string, NgbAccordionItemRegistry>()
     private itemsRegisterHandler?: () => void
+    private itemChangeHandler?: () => void
+    private itemUnregisterHandler?: () => void
 
     constructor(
         private $element: IAugmentedJQuery,
@@ -29,7 +31,7 @@ export class NgbAccordion implements IController {
 
         this.itemsRegisterHandler = this.$scope.$on(NgbAccordionRegisterEvent, (event, ngbAccordionItem: NgbAccordionItem) => {
             event.stopPropagation?.()
-            const id = ngbAccordionItem["id"]
+            const id = ngbAccordionItem.getId()
 
             const alreadyExist = this.ngbAccordionItems.has(id)
             if (alreadyExist) throw new Error(`[ngbAccordion]: Duplicate id ${id}`);
@@ -44,10 +46,43 @@ export class NgbAccordion implements IController {
                     this.collapseAllExcept(id)
                 })
             })
+
+            if (this.closeOthers && !ngbAccordionItem["collapsed"]) {
+                this.collapseAllExcept(id)
+            }
         })
 
-        this.$scope.$on(NgbAccordionItemChange, () => {
-            
+        this.itemUnregisterHandler = this.$scope.$on(NgbAccordionUnregisterEvent, (event, id: string) => {
+            event.stopPropagation?.()
+            const item = this.ngbAccordionItems.get(id)
+            item?.watcher()
+            this.ngbAccordionItems.delete(id)
+        })
+
+        this.itemChangeHandler = this.$scope.$on(NgbAccordionItemChange, (event, payload: NgbAccordionItemChangePayload) => {
+            event.stopPropagation?.()
+
+            const item = this.ngbAccordionItems.get(payload.itemId)?.item
+            if (!item) return
+
+            switch (payload.phase) {
+                case "show":
+                    item["show"]?.()
+                    this.show?.()
+                    break
+                case "hide":
+                    item["hide"]?.()
+                    this.hide?.()
+                    break
+                case "shown":
+                    item["shown"]?.()
+                    this.shown?.()
+                    break
+                case "hidden":
+                    item["hidden"]?.()
+                    this.hidden?.()
+                    break
+            }
         })
     }
 
@@ -57,6 +92,8 @@ export class NgbAccordion implements IController {
 
     $onDestroy(): void {
         this.itemsRegisterHandler?.()
+        this.itemChangeHandler?.()
+        this.itemUnregisterHandler?.()
 
         this.ngbAccordionItems.forEach((accordionItem) => {
             accordionItem.watcher?.()
@@ -64,19 +101,20 @@ export class NgbAccordion implements IController {
     }
 
     public toggle(itemId: string) {
-        const exist = this.ngbAccordionItems.has(itemId)
-        if (!exist) throw new Error(`[NgbAccordion]: ${itemId} not found`);
+        const item = this.ngbAccordionItems.get(itemId)?.item
+        if (!item) return
 
-        const { item } = this.ngbAccordionItems.get(itemId)!
-        item.toggle()
+        if (item["collapsed"]) {
+            item.expand()
+            return
+        }
+
+        item.collapse()
     }
 
     public isExpanded(itemId: string) {
-        const exist = this.ngbAccordionItems.has(itemId)
-        if (!exist) throw new Error(`[NgbAccordion]: ${itemId} not found`);
-
-        const { item } = this.ngbAccordionItems.get(itemId)!
-        return item["collapsed"]!
+        const item = this.ngbAccordionItems.get(itemId)?.item
+        return item ? !item["collapsed"]! : false
     }
 
     public collapseAll() {
@@ -85,9 +123,32 @@ export class NgbAccordion implements IController {
         })
     }
 
+    public expand(itemId: string) {
+        this.ngbAccordionItems.get(itemId)?.item.expand()
+    }
+
+    public collapse(itemId: string) {
+        this.ngbAccordionItems.get(itemId)?.item.collapse()
+    }
+
+    public expandAll() {
+        if (this.closeOthers) {
+            const opened = Array.from(this.ngbAccordionItems.values()).some(({ item }) => !item["collapsed"])
+            if (opened) return
+
+            const first = this.ngbAccordionItems.values().next().value as NgbAccordionItemRegistry | undefined
+            first?.item.expand()
+            return
+        }
+
+        this.ngbAccordionItems.forEach(({ item }) => {
+            item.expand()
+        })
+    }
+
     private collapseAllExcept(itemId: string) {
         this.ngbAccordionItems.forEach(({ item }) => {
-            if (item["id"] === itemId) return
+            if (item.getId() === itemId) return
             item.collapse()
         })
     }

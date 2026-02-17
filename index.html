@@ -10,42 +10,65 @@
 </head>
 
 <body class="container-fluid mt-2" ng-app="ngb.test" ng-controller="ngb.app as $">
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Alert</h2>
+      <ngb-alert type="success">Basic success alert</ngb-alert>
+      <ngb-alert type="warning" dismissible="true" animation="true" closed="$.onAlertClosed()">
+        Dismissible alert with close callback
+      </ngb-alert>
+      <p class="small text-muted mb-0">Alert closed: {{ $.alertClosed }}</p>
+    </div>
 
-  <div ngb-accordion close-others="true">
-    <div ngb-accordion-item>
-      <h2 ngb-accordion-header>
-        <button ngb-accordion-button>Simple</button>
-      </h2>
-      <div ngb-accordion-collapse>
-        <div ngb-accordion-body>
-          1
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Progressbar</h2>
+      <ngb-progressbar value="$.progressValue" show-value="true"></ngb-progressbar>
+      <div class="my-3"></div>
+      <ngb-progressbar value="$.stripedProgress" striped="true" animated="true" type="info" text-type="dark" show-value="true"></ngb-progressbar>
+      <div class="my-3"></div>
+      <ngb-progressbar-stacked>
+        <ngb-progressbar value="20" type="success" text-type="light"></ngb-progressbar>
+        <ngb-progressbar value="30" type="warning" text-type="dark"></ngb-progressbar>
+        <ngb-progressbar value="50" type="danger" text-type="light"></ngb-progressbar>
+      </ngb-progressbar-stacked>
+      <p class="small text-muted mt-2 mb-0">ngbPercent example: {{ 0.375 | ngbPercent }}</p>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Collapse</h2>
+      <button class="btn btn-outline-primary btn-sm" type="button" ng-click="$.isCollapsed = !$.isCollapsed">
+        Toggle collapse
+      </button>
+      <div class="mt-2" ngb-collapse="$.isCollapsed">
+        <div class="card card-body">
+          Collapsible content
         </div>
       </div>
     </div>
 
-    <div ngb-accordion-item>
-      <h2 ngb-accordion-header>
-        <button ngb-accordion-button>Simple</button>
-      </h2>
-      <div ngb-accordion-collapse>
-        <div ngb-accordion-body>
-          2
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Accordion</h2>
+      <div ngb-accordion close-others="true">
+        <div ngb-accordion-item="'first'">
+          <h2 ngb-accordion-header>
+            <button ngb-accordion-button>Item 1</button>
+          </h2>
+          <div ngb-accordion-collapse>
+            <div ngb-accordion-body>Accordion body 1</div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div ngb-accordion-item>
-      <h2 ngb-accordion-header>
-        <button ngb-accordion-button>Simple</button>
-      </h2>
-      <div ngb-accordion-collapse>
-        <div ngb-accordion-body>
-          3
+        <div ngb-accordion-item="'second'">
+          <h2 ngb-accordion-header>
+            <button ngb-accordion-button>Item 2</button>
+          </h2>
+          <div ngb-accordion-collapse>
+            <div ngb-accordion-body>Accordion body 2</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
 </body>
 
 </html>

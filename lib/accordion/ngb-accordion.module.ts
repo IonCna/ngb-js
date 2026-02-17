@@ -10,14 +10,13 @@ import { NgbAccordion } from "@/accordion/ngb-accordion.directive"
 import { NgbAccordionCounterService } from "@/accordion/ngb-accordion-counters.service"
 
 import { NgbCollapseModule } from "@/collapse"
-import { NgbAlertModule } from "@/alert";
 
 export const NgbAccordionModule = angular.module("ngb.accordion", [
     NgbCollapseModule.name
 ])
 
 NgbAccordionModule.service(NgbAccordionConfig.$name, NgbAccordionConfig)
-NgbAlertModule.service(NgbAccordionCounterService.$name, NgbAccordionCounterService)
+NgbAccordionModule.service(NgbAccordionCounterService.$name, NgbAccordionCounterService)
 
 NgbAccordionModule.directive(NgbAccordionBody.$name, NgbAccordionBody.$factory)
 NgbAccordionModule.directive(NgbAccordionButton.$name, NgbAccordionButton.$factory)

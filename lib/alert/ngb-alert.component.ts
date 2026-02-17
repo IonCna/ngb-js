@@ -9,6 +9,9 @@ export class NgbAlert implements IComponentController {
     protected type?: string
     protected closed?: () => void
 
+    private closingInProgress = false
+    protected isClosed = false
+
     constructor(private $element: IAugmentedJQuery, private ngbAlertConfig: NgbAlertConfig) { }
 
     $onInit(): void {
@@ -27,11 +30,23 @@ export class NgbAlert implements IComponentController {
         this.$element.addClass(`alert-${this.type}`)
     }
 
-    protected async closing() {
+    protected async close() {
+        if (this.closingInProgress || this.isClosed) return
+        this.closingInProgress = true
+
+        if (!this.animation) {
+            this.isClosed = true
+            this.$element.addClass("d-none")
+            this.closed?.()
+            return
+        }
+
         await ngbRunTransition(this.$element, () => {
             this.$element.removeClass("show")
         })
 
+        this.isClosed = true
+        this.$element.addClass("d-none")
         this.closed?.()
     }
 
@@ -48,7 +63,7 @@ export class NgbAlert implements IComponentController {
             bindings: {
                 animation: "<?",
                 dismissible: "<?",
-                type: "<?",
+                type: "@?",
                 closed: "&?"
             },
             transclude: true,
