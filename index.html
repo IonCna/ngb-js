@@ -11,16 +11,14 @@
 
 <body class="container-fluid mt-2" ng-app="ngb.test" ng-controller="ngb.app as $">
 
-  <div ngb-accordion>
+  <div ngb-accordion close-others="true">
     <div ngb-accordion-item>
       <h2 ngb-accordion-header>
         <button ngb-accordion-button>Simple</button>
       </h2>
       <div ngb-accordion-collapse>
         <div ngb-accordion-body>
-          <template>
-            1
-          </template>
+          1
         </div>
       </div>
     </div>
@@ -31,11 +29,7 @@
       </h2>
       <div ngb-accordion-collapse>
         <div ngb-accordion-body>
-          <template>
-            <ul>test</ul>
-            otro
-            <h2 ng-if="false"></h2>
-          </template>
+          2
         </div>
       </div>
     </div>
@@ -46,9 +40,7 @@
       </h2>
       <div ngb-accordion-collapse>
         <div ngb-accordion-body>
-          <div>
-            1
-          </div>
+          3
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
-import { NgbAccordionRegisterEvent } from "@/accordion/ngb-accordion.events"
+import { NgbAccordionRegisterEvent, NgbAccordionItemChange } from "@/accordion/ngb-accordion.events"
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
 import type { NgbAccordionItemRegistry } from "@/accordion/ngb-accordion.model"
 
@@ -44,6 +44,10 @@ export class NgbAccordion implements IController {
                     this.collapseAllExcept(id)
                 })
             })
+        })
+
+        this.$scope.$on(NgbAccordionItemChange, () => {
+            
         })
     }
 

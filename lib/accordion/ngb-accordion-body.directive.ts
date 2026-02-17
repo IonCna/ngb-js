@@ -10,72 +10,26 @@ export class NgbAccordionBody implements IController {
     private viewNodes?: JQLite
 
     constructor(
-        private $element: IAugmentedJQuery,
-        private $scope: IScope,
-        private $compile: ICompileService
+        private $element: IAugmentedJQuery
     ) { }
 
     $postLink(): void {
         this.$element.addClass("accordion-body")
-        const [native] = Array.from(this.$element)
-
-        const template = native.querySelector("template")
-        if (!template) return
-
-        this.template = template
-        this.$element.empty()
-
-        return
-
-        this.$scope.$watch(() => this.ngbAccordionItem["collapsed"], (collapsed) => {
-            const destroyOnHide = this.ngbAccordionItem["destroyOnHide"]
-            if (!destroyOnHide) return
-
-            if (!collapsed) {
-                this.build()
-                return
-            }
-
-            this.destroy()
-        })
     }
 
-    private build() {
-        if (!this.template || this.built) return;
-
-        this.viewScope = this.$scope.$new()
-        const fragment = this.template.content.cloneNode(true)
-        const linkFn = this.$compile(fragment as Element)
-
-        this.viewNodes = linkFn(this.viewScope)
-        this.$element.append(this.viewNodes)
-        this.built = true
-    }
-
-    private destroy() {
-        if (!this.built) return;
-
-        this.viewNodes?.remove()
-        this.viewScope?.$destroy()
-
-        this.viewNodes = undefined
-        this.viewScope = undefined
-        this.built = false
-    }
 
     static get $name() {
         return "ngbAccordionBody"
     }
 
     static get $inject() {
-        return ["$element", "$scope", "$compile"]
+        return ["$element", "$scope"]
     }
 
     static get $factory(): () => IDirective {
         return () => ({
             controller: NgbAccordionBody,
             bindToController: true,
-            terminal: true,
             require: {
                 ngbAccordionItem: "^^ngbAccordionItem"
             },

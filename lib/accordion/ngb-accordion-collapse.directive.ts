@@ -10,6 +10,15 @@ export class NgbAccordionCollapse implements IController {
         this.$element.addClass("accordion-collapse")
     }
 
+    protected onHide() {
+        console.log("hide")
+        // this.ngbAccordionItem["$scope"].$emit("")
+    }
+
+    protected onShown() {
+        console.log("shown")
+    }
+
     static get $name() {
         return "ngbAccordionCollapse"
     }
