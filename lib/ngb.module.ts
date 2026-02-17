@@ -7,6 +7,7 @@ import { NgbToastModule } from "@/toast/ngb-toast.module"
 
 import { NgbConfig } from "@/ngb-config.service"
 import { percentFilter } from "@/filters/percent.filter"
+import { NgbAnimationFactory } from "@/ngb-animation.factory"
 
 export const NgbModule = angular.module("ngb", [
     NgbAlertModule.name,
@@ -18,3 +19,4 @@ export const NgbModule = angular.module("ngb", [
 
 NgbModule.filter(percentFilter.$name, percentFilter)
 NgbModule.service(NgbConfig.$name, NgbConfig)
+NgbModule.factory(NgbAnimationFactory.$name, NgbAnimationFactory)

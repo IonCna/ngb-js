@@ -1,7 +1,7 @@
 import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import { NgbAlertConfig } from "@/alert/ngb-alert-config.service"
 import template from "@/alert/ngb-alert.component.html?raw"
-import { ngbRunTransition } from "@/utils/animations"
+import { NgbAnimationFactory } from "@/ngb-animation.factory"
 
 export class NgbAlert implements IComponentController {
     protected animation?: boolean
@@ -12,7 +12,11 @@ export class NgbAlert implements IComponentController {
     private closingInProgress = false
     protected isClosed = false
 
-    constructor(private $element: IAugmentedJQuery, private ngbAlertConfig: NgbAlertConfig) { }
+    constructor(
+        private $element: IAugmentedJQuery,
+        private ngbAlertConfig: NgbAlertConfig,
+        private ngbAnimationFactory: NgbAnimationFactory
+    ) { }
 
     $onInit(): void {
         this.animation = this.animation ?? this.ngbAlertConfig.animation
@@ -41,6 +45,8 @@ export class NgbAlert implements IComponentController {
             return
         }
 
+        const ngbRunTransition = this.ngbAnimationFactory.$create()
+
         await ngbRunTransition(this.$element, () => {
             this.$element.removeClass("show")
         })
@@ -55,7 +61,7 @@ export class NgbAlert implements IComponentController {
     }
 
     static get $inject() {
-        return ["$element", NgbAlertConfig.$name]
+        return ["$element", NgbAlertConfig.$name, NgbAnimationFactory.$name]
     }
 
     static get $factory(): IComponentOptions {

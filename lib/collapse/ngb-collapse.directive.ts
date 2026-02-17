@@ -1,6 +1,6 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import { NgbCollapseConfig } from "@/collapse/ngb-collapse-config.service"
-import { ngbRunTransition } from "@/utils/animations"
+import { NgbAnimationFactory } from "@/ngb-animation.factory"
 
 export class NgbCollapse implements IController {
     protected animation?: boolean
@@ -17,12 +17,14 @@ export class NgbCollapse implements IController {
     constructor(
         private $element: IAugmentedJQuery,
         private ngbCollapseConfig: NgbCollapseConfig,
-        private $scope: IScope
+        private $scope: IScope,
+        private ngbAnimationFactory: NgbAnimationFactory
     ) { }
 
     $onInit(): void {
         this.animation = this.animation ?? this.ngbCollapseConfig.animation
         this.horizontal = this.horizontal ?? this.ngbCollapseConfig.horizontal
+        const ngbRunTransition = this.ngbAnimationFactory.$create()
 
         this.handler = this.$scope.$watch(() => this.ngbCollapse, async (collapsed, prev) => {
             if (prev == collapsed) return;
@@ -98,7 +100,7 @@ export class NgbCollapse implements IController {
     }
 
     static get $inject() {
-        return ["$element", NgbCollapseConfig.$name, "$scope"]
+        return ["$element", NgbCollapseConfig.$name, "$scope", NgbAnimationFactory.$name]
     }
 
     static get $factory(): () => IDirective {
