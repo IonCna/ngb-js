@@ -33,7 +33,7 @@ describe("ngbAlert", () => {
         expect(element.hasClass("alert-dismissible")).toBe(true)
         expect(element.attr("role")).toBe("alert")
 
-        const button = angular.element(element[0].querySelector(".btn-close"))
+        const button = angular.element(element[0].querySelector(".btn-close") as Element)
         expect(button.length).toBe(1)
         button.triggerHandler("click")
         scope.$digest()

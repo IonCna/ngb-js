@@ -1,4 +1,5 @@
-import type { IAugmentedJQuery, IComponentController } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import {} from "@/toast/ngb-toast-config.service"
 
 export class NgbToast implements IComponentController {
     constructor(private $element: IAugmentedJQuery) {}
@@ -17,5 +18,12 @@ export class NgbToast implements IComponentController {
 
     static get $inject() {
         return ["$element"]
+    }
+
+    static get $factory(): IComponentOptions {
+        return {
+            controllerAs: "$",
+            controller: NgbToast,
+        }
     }
 }
