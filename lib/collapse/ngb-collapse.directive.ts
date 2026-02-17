@@ -28,7 +28,6 @@ export class NgbCollapse implements IController {
             if (prev == collapsed) return;
 
             const id = ++this.animationId
-            this.$element.removeClass("show")
 
             if (this.animation) {
                 const { start } = this.size
@@ -54,6 +53,7 @@ export class NgbCollapse implements IController {
                 this.$element.addClass("show")
                 this.shown?.()
             } else {
+                this.$element.removeClass("show")
                 this.$element.css(this.direction, "")
                 this.hidden?.()
             }

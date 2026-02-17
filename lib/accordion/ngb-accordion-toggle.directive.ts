@@ -3,6 +3,7 @@ import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
 
 export class NgbAccordionToggle implements IController {
     protected ngbAccordionItem!: NgbAccordionItem
+    private clickHandler?: () => void
 
     constructor(
         private $element: IAugmentedJQuery,
@@ -13,16 +14,16 @@ export class NgbAccordionToggle implements IController {
         this.$element.attr("id", this.ngbAccordionItem.getToggleId())
         this.$element.attr("aria-controls", this.ngbAccordionItem.getCollapseId())
 
-        const handler = () => this.$scope.$evalAsync(() => this.ngbAccordionItem.toggle())
-        this.$element.on("click", handler)
-
-        this.$scope.$on("$destroy", () => {
-            this.$element.off("click", handler)
-        })
+        this.clickHandler = () => this.$scope.$evalAsync(() => this.ngbAccordionItem.toggle())
+        this.$element.on("click", this.clickHandler.bind(this))
 
         this.$scope.$watch(() => this.ngbAccordionItem["collapsed"], (collapsed) => {
             this.$element.attr("aria-expanded", `${!collapsed}`)
         })
+    }
+
+    $onDestroy(): void {
+        this.$element.off("click", this.clickHandler!.bind(this))
     }
 
     static get $name() {

@@ -39,7 +39,7 @@ export class NgbAccordion implements IController {
             this.ngbAccordionItems.set(id, {
                 item: ngbAccordionItem,
                 watcher: ngbAccordionItem["$scope"].$watch(() => ngbAccordionItem["collapsed"], (current, prev) => {
-                    if(current == prev) return
+                    if (current == prev) return
                     if (!this.closeOthers) return
                     if (current) return
 
@@ -65,24 +65,27 @@ export class NgbAccordion implements IController {
             const item = this.ngbAccordionItems.get(payload.itemId)?.item
             if (!item) return
 
-            switch (payload.phase) {
-                case "show":
+            const phases = {
+                show: () => {
                     item["show"]?.()
                     this.show?.()
-                    break
-                case "hide":
+                },
+                hide: () => {
                     item["hide"]?.()
                     this.hide?.()
-                    break
-                case "shown":
+                },
+                shown: () => {
                     item["shown"]?.()
                     this.shown?.()
-                    break
-                case "hidden":
+                },
+                hidden: () => {
                     item["hidden"]?.()
                     this.hidden?.()
-                    break
+                }
             }
+
+            const callback = phases[payload.phase]
+            callback()
         })
     }
 
