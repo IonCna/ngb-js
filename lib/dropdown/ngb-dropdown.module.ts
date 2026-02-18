@@ -22,7 +22,8 @@ export type PopperDataBinding = {
     defaultOpen: boolean
     placement: Placement
     popperOptions?: (opts?: Partial<ComputePositionConfig>) => Partial<ComputePositionConfig>
-    autoClose: boolean
+    autoClose: boolean | "inside" | "outside"
+    animation: boolean
 }
 
 export type DropdownConfigSave = WeakMap<NgbDropdown, PopperDataBinding>

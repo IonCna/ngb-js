@@ -19,7 +19,7 @@ export class NgbDropdownButtonItem implements IController {
         this.$element.addClass("dropdown-item")
         this.ngbDisabled && this.$element.addClass("disabled")
         this.$element.attr("tabindex", this.tabIndex)
-        this.ngbDisabled && this.$element.attr("disabled")
+        this.ngbDisabled && this.$element.attr("disabled", "true")
 
         if(this.ngbDisabled) {
             const [nativeElement] = Array.from(this.$element);

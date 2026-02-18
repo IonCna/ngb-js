@@ -1,9 +1,18 @@
-import type { IController, IDirective, IDocumentService, IScope, ITranscludeFunction } from "angular"
+import type {
+    IAugmentedJQuery,
+    IController,
+    IDirective,
+    IDocumentService,
+    IPromise,
+    IScope,
+    ITranscludeFunction
+} from "angular"
 import { NgbDropdownConfig } from "./ngb-dropdown-config.service"
 import { autoUpdate, computePosition, type ComputePositionConfig } from "@floating-ui/dom"
 import type { DropdownConfigSave, PopperDataBinding } from "./ngb-dropdown.module"
 import angular from "angular"
 import type { NgbDropdown } from "./ngb-dropdown.directive"
+import { NgbAnimationFactory } from "@/ngb-animation.factory"
 import {
     NgbDropdownClosedEvent,
     NgbDropdownToggleEvent
@@ -35,7 +44,7 @@ export class NgbDropdownMenu implements IController {
     private $parent!: JQLite
     private updatePosition?: () => void
     private items: DropdownMenuRegistry[] = []
-    private focusIndex = 0
+    private focusIndex = -1
     private registry!: PopperDataBinding
     private relative?: JQLite
     private anchor?: JQLite
@@ -43,6 +52,9 @@ export class NgbDropdownMenu implements IController {
     private handleOutside?: (event: JQueryEventObject) => void
     private handleInside?: (event: JQueryEventObject) => void
     private handleKeys?: (event: JQueryEventObject) => void
+    private animationId = 0
+    private opened = false
+    private ngbRunTransition?: ($element: IAugmentedJQuery, startFn: () => void) => IPromise<void>
 
     private toggleListener?: () => void
 
@@ -52,11 +64,14 @@ export class NgbDropdownMenu implements IController {
         private ngbDropdownConfig: NgbDropdownConfig,
         private $document: IDocumentService,
         private $config: DropdownConfigSave,
-        private $transclude: ITranscludeFunction
+        private $transclude: ITranscludeFunction,
+        private ngbAnimationFactory: NgbAnimationFactory
     ) { }
 
     $postLink(): void {
         this.$element.addClass("dropdown-menu")
+        this.$element.attr("tabindex", "-1")
+        this.ngbRunTransition = this.ngbAnimationFactory.$create()
 
         this.toggleListener = this.$scope.$on(NgbDropdownToggleEvent, (event, state: boolean) => {
             event.stopPropagation?.()
@@ -90,7 +105,7 @@ export class NgbDropdownMenu implements IController {
     }
 
     $onDestroy(): void {
-        this.toggleListener?.();
+        this.toggleListener?.()
         this.close(CloseReason.DESTROY)
     }
 
@@ -105,33 +120,89 @@ export class NgbDropdownMenu implements IController {
         return container
     }
 
+    private clearHandlers() {
+        if (this.handleEsc) this.$document.off("keydown", this.handleEsc)
+        if (this.handleOutside) this.$document.off("click", this.handleOutside)
+        if (this.handleInside) this.$element.off("click", this.handleInside)
+        if (this.handleKeys) this.$element.off("keydown", this.handleKeys)
+
+        this.handleEsc = undefined
+        this.handleOutside = undefined
+        this.handleInside = undefined
+        this.handleKeys = undefined
+    }
+
+    private focusToggle() {
+        const [toggle] = Array.from(this.$parent.find(".dropdown-toggle"))
+        if (toggle instanceof HTMLElement) {
+            toggle.focus()
+        }
+    }
+
     private close(reason: CloseReason) {
         this.$scope.$evalAsync(() => {
-            this.$element.removeClass("show")
-            this.$element.attr("style", "")
-            this.handleEsc && this.$document.off("keydown", this.handleEsc)
-            this.handleOutside && this.$document.off("click", this.handleOutside)
-            this.handleInside && this.$element.off("click", this.handleInside)
-            this.handleKeys && this.$element.off("keydown", this.handleKeys)
-            this.updatePosition?.()
-            this.focusIndex = 0
-
-            const { container } = this.registry
-            if (container == 'body') {
-                this.anchor?.append(this.$element)
-                this.relative?.remove()
-            }
-
-            this.handleEsc = undefined
-            this.handleOutside = undefined
-            this.handleInside = undefined
-            this.handleKeys = undefined
-
-            this.$scope.$emit(NgbDropdownClosedEvent, reason)
+            void this.performClose(reason)
         })
     }
 
+    private async performClose(reason: CloseReason) {
+        if (!this.opened && reason !== CloseReason.DESTROY) return
+        this.opened = false
+
+        const id = ++this.animationId
+        this.clearHandlers()
+
+        this.updatePosition?.()
+        this.updatePosition = undefined
+        this.focusIndex = -1
+
+        if (reason === CloseReason.ESC) {
+            this.focusToggle()
+        }
+
+        if (this.registry.animation) {
+            this.$element.css("display", "block")
+            await this.ngbRunTransition?.(this.$element as IAugmentedJQuery, () => {
+                this.$element.removeClass("show")
+            })
+        } else {
+            this.$element.removeClass("show")
+        }
+
+        if (id !== this.animationId) return
+
+        this.$element.attr("style", "")
+
+        const { container } = this.registry
+        if (container == 'body') {
+            this.anchor?.append(this.$element)
+            this.relative?.remove()
+        }
+
+        this.$scope.$emit(NgbDropdownClosedEvent, reason)
+    }
+
     private open() {
+        this.$scope.$evalAsync(() => {
+            void this.performOpen()
+        })
+    }
+
+    private enabledItems() {
+        return this.items
+            .filter(item => !item.$disabled)
+            .map(item => {
+                const [el] = Array.from(item.$element)
+                return el
+            })
+            .filter((item): item is HTMLElement => item instanceof HTMLElement)
+    }
+
+    private async performOpen() {
+        if (this.opened) return
+        this.opened = true
+
+        const id = ++this.animationId
         const { container } = this.registry
 
         if (container == 'body' && this.relative) {
@@ -139,7 +210,18 @@ export class NgbDropdownMenu implements IController {
             this.relative.append(this.$element)
         }
 
-        this.$element.addClass("show")
+        if (this.registry.animation) {
+            this.$element.css("display", "block")
+            await this.ngbRunTransition?.(this.$element as IAugmentedJQuery, () => {
+                this.$element.addClass("show")
+            })
+        } else {
+            this.$element.addClass("show")
+        }
+
+        if (id !== this.animationId) return
+
+        this.$element.css("display", "")
 
         const el = this.relative ? this.relative : this.$element
         const [nativeElement] = Array.from(el)
@@ -172,6 +254,7 @@ export class NgbDropdownMenu implements IController {
 
         this.handleEsc = (event: JQueryEventObject) => {
             if (event.key != ActionsKeys.ESCAPE) return
+            event.preventDefault()
             this.close(CloseReason.ESC)
         }
 
@@ -187,6 +270,7 @@ export class NgbDropdownMenu implements IController {
         this.handleInside = (event: JQueryEventObject) => {
             let founded = false
             for (const item of this.items) {
+                if (item.$disabled) continue
                 const [nativeEl] = Array.from(item.$element)
                 const isInside = nativeEl.contains(event.target)
 
@@ -203,9 +287,13 @@ export class NgbDropdownMenu implements IController {
 
         const detectOutside = angular.isString(this.registry.autoClose) && this.registry.autoClose == "outside"
         const detectInside = angular.isString(this.registry.autoClose) && this.registry.autoClose == "inside"
+        const closeOnEscape = this.registry.autoClose !== false
+
+        if (closeOnEscape) {
+            this.$document.on("keydown", this.handleEsc)
+        }
 
         if (detectOutside || this.registry.autoClose === true) {
-            this.$document.on("keydown", this.handleEsc)
             this.$document.on("click", this.handleOutside)
         }
 
@@ -215,21 +303,19 @@ export class NgbDropdownMenu implements IController {
 
         nativeElement.focus()
 
-        const notDisabled = this.items.filter(item => !item.$disabled).map(item => {
-            const [el] = Array.from(item.$element)
-            return el
-        })
-
         this.handleKeys = (event: JQueryEventObject) => {
-            if (event.key != ActionsKeys.DOWN && event.key != ActionsKeys.UP && event.key != ActionsKeys.HOME && event.key != ActionsKeys.END) return;
+            if (event.key != ActionsKeys.DOWN && event.key != ActionsKeys.UP && event.key != ActionsKeys.HOME && event.key != ActionsKeys.END) return
+            event.preventDefault()
+
+            const enabled = this.enabledItems()
 
             if (event.key == ActionsKeys.DOWN) {
-                const isOverflowed = this.focusIndex >= notDisabled.length - 1
-                this.focusIndex = isOverflowed ? this.focusIndex = notDisabled.length - 1 : this.focusIndex + 1
-                const target = notDisabled[this.focusIndex];
+                if (enabled.length === 0) return
+                this.focusIndex = Math.min(this.focusIndex + 1, enabled.length - 1)
+                const target = enabled[this.focusIndex]
 
                 if (!target) {
-                    this.focusIndex = 0
+                    this.focusIndex = -1
                     return
                 }
 
@@ -238,12 +324,12 @@ export class NgbDropdownMenu implements IController {
             }
 
             if (event.key == ActionsKeys.UP) {
-                const isOverflowed = this.focusIndex <= 0
-                this.focusIndex = isOverflowed ? this.focusIndex = 0 : this.focusIndex - 1
-                const target = notDisabled[this.focusIndex];
+                if (enabled.length === 0) return
+                this.focusIndex = this.focusIndex <= 0 ? 0 : this.focusIndex - 1
+                const target = enabled[this.focusIndex]
 
                 if (!target) {
-                    this.focusIndex = 0
+                    this.focusIndex = -1
                     return
                 }
 
@@ -252,10 +338,11 @@ export class NgbDropdownMenu implements IController {
             }
 
             if (event.key == ActionsKeys.HOME) {
-                const target = notDisabled[0]
+                this.focusIndex = 0
+                const target = enabled[0]
 
                 if (!target) {
-                    this.focusIndex = 0
+                    this.focusIndex = -1
                     return
                 }
 
@@ -264,10 +351,11 @@ export class NgbDropdownMenu implements IController {
             }
 
             if (event.key == ActionsKeys.END) {
-                const target = notDisabled[notDisabled.length - 1]
+                this.focusIndex = enabled.length - 1
+                const target = enabled[this.focusIndex]
 
                 if (!target) {
-                    this.focusIndex = 0
+                    this.focusIndex = -1
                     return
                 }
 
@@ -298,7 +386,7 @@ export class NgbDropdownMenu implements IController {
     }
 
     static get $inject() {
-        return ['$element', '$scope', NgbDropdownConfig.$name, "$document", '$dropdownConfigSave', '$transclude']
+        return ['$element', '$scope', NgbDropdownConfig.$name, "$document", '$dropdownConfigSave', '$transclude', NgbAnimationFactory.$name]
     }
     //#endregion
 }

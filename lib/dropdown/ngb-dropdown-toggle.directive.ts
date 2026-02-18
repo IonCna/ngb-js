@@ -8,6 +8,7 @@ export class NgbDropdownToggle implements IController {
 
     private toggleListener?: () => void
     private closeListener?: () => void
+    private clickListener?: (event: JQueryEventObject) => void
 
     constructor(
         private $element: JQLite,
@@ -34,13 +35,15 @@ export class NgbDropdownToggle implements IController {
 
         this.$element.addClass("dropdown-toggle")
 
-        this.$element.on("click", () => this.$scope.$evalAsync(() => {
+        this.clickListener = () => this.$scope.$evalAsync(() => {
             this.ngbDropdown.toggle()
-        }))
+        })
+
+        this.$element.on("click", this.clickListener)
     }
 
     $onDestroy(): void {
-        this.$element.off("click")
+        if (this.clickListener) this.$element.off("click", this.clickListener)
         this.toggleListener?.()
         this.closeListener?.()
     }

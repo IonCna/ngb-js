@@ -1,6 +1,7 @@
 import { type Placement, type ComputePositionConfig, flip, shift } from "@floating-ui/dom"
 
 export class NgbDropdownConfig {
+    public animation = true
     public autoClose: boolean | "inside" | "outside" = true
     public container: null | 'body' = null
     public placement: Placement[] = ['bottom-start', 'bottom-end', 'top-start', 'top-end']

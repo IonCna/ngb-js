@@ -10,7 +10,8 @@ import {
 } from "./ngb-dropdown.events"
 
 export class NgbDropdown implements IController {
-    private autoClose!: boolean
+    private animation?: boolean
+    private autoClose!: boolean | "inside" | "outside"
     private container!: "body" | null
     private display?: 'dynamic' | 'static'
     private dropdownClass?: string
@@ -30,6 +31,7 @@ export class NgbDropdown implements IController {
 
     $onInit(): void {
         this.autoClose = this.autoClose ?? this.$ngbDropdownConfig.autoClose
+        this.animation = this.animation ?? this.$ngbDropdownConfig.animation
         this.container = this.container ?? this.$ngbDropdownConfig.container
 
         if (angular.isString(this.container) && this.container != "body") {
@@ -48,7 +50,8 @@ export class NgbDropdown implements IController {
             defaultOpen: this.isOpened,
             placement: this.placement ?? "bottom",
             popperOptions: this.popperOptions,
-            autoClose: this.autoClose
+            autoClose: this.autoClose,
+            animation: this.animation
         })
     }
 
@@ -102,6 +105,7 @@ export class NgbDropdown implements IController {
             scope: true,
             bindToController: {
                 autoClose: "<?",
+                animation: "<?",
                 container: "<?",
                 display: "<?",
                 dropdownClass: "<?",
