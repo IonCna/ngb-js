@@ -13,16 +13,11 @@ import angular from "angular"
 import { NgbActiveModalFactory, type NgbActiveModal } from "@/modal/ngb-active-modal.factory"
 import { NgbModalCloseEvent } from "@/modal/ngb-modal.events"
 import { ModalRef, NgbModalRefFactory } from "@/modal/ngb-modal-ref.factory"
-import { NgbModalStackFactory } from "@/modal/ngb-modal-stack.factory"
+import { NgbModalStackService } from "@/modal/ngb-modal-stack.service"
 
 type ModalScope = IScope & {
     activeModal: NgbActiveModal,
     [key: string]: any
-}
-
-export enum NgbModalDismissReasons {
-    BACKDROP_CLICK = "backdrop-click",
-    ESC = "esc",
 }
 
 export class NgbModal {
@@ -35,7 +30,7 @@ export class NgbModal {
         private $config: NgbModalConfig,
         private activeModalFactory: NgbActiveModalFactory,
         private modalRefFactory: NgbModalRefFactory,
-        private modalStackFactory: NgbModalStackFactory
+        private modalStackService: NgbModalStackService
     ) { }
 
     get activeInstances() {
@@ -79,7 +74,7 @@ export class NgbModal {
     private async openComponent(name: string, config?: NgbModalOptions) {
         const deferred = this.$q.defer<ModalRef>()
         const parentScope = this.$rootScope.$new(true)
-        const stack = this.modalStackFactory.open(document.activeElement)
+        const stack = this.modalStackService.open(document.activeElement)
         const localConfig: NgbModalOptions = {
             ...(config || {}),
             __stackId: stack.id,
@@ -96,10 +91,7 @@ export class NgbModal {
         modalScope.activeModal = activeModal
         angular.extend(modalScope, localConfig.bindings)
 
-        const attrs = Object.keys(localConfig.bindings || {})
-            .map(key => `${kebabCase(key)}="${key}"`)
-            .join(' ');
-
+        const attrs = this.buildBindingsAttrs(localConfig)
         const linkFn = this.$compile(`<${kebabCase(name)} ${attrs} ngb-active-modal="activeModal"></${kebabCase(name)}>`)
         const compiled = linkFn(modalScope)
 
@@ -121,12 +113,7 @@ export class NgbModal {
             backdrop = this.appendBackdrop(backdropScope, localConfig)
         }
 
-        const window = this.createWindow(
-            compiled,
-            activeModal,
-            windowScope,
-            localConfig
-        )
+        const window = this.createWindow(compiled, activeModal, windowScope, localConfig)
 
         const listener = parentScope.$on(NgbModalCloseEvent, async (event, instance) => {
             listener()
@@ -137,12 +124,18 @@ export class NgbModal {
 
             await this.$q.all([windowCtrl?.remove(), backdropCtrl?.remove()])
             parentScope.$destroy()
-            this.modalStackFactory.close(stack.id)
+            this.modalStackService.close(stack.id)
 
             this.currentActiveInstances = this.currentActiveInstances.filter(ctrl => ctrl !== instance)
         })
 
         return deferred.promise
+    }
+
+    private buildBindingsAttrs(config: NgbModalOptions) {
+        return Object.keys(config.bindings || {})
+            .map(key => `${kebabCase(key)}="${key}"`)
+            .join(" ")
     }
 
     //#region $angular
@@ -152,7 +145,7 @@ export class NgbModal {
     }
 
     static get $inject() {
-        return ['$rootScope', '$compile', '$q', NgbModalConfig.$name, NgbActiveModalFactory.$name, NgbModalRefFactory.$name, NgbModalStackFactory.$name]
+        return ['$rootScope', '$compile', '$q', NgbModalConfig.$name, NgbActiveModalFactory.$name, NgbModalRefFactory.$name, NgbModalStackService.$name]
     }
 
     //#endregion

@@ -1,7 +1,7 @@
 import angular from "angular";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDocumentService, IPromise, IQService } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDocumentService, IPromise } from "angular";
 import { NgbModalConfig } from "./ngb-modal-config.service";
-import { NgbModalDismissReasons, type NgbModalOptions } from "./ngb-modal.module"
+import type { NgbModalOptions } from "./ngb-modal.module"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
 
 export class NgbModalBackdropComponent implements IComponentController {
@@ -16,7 +16,6 @@ export class NgbModalBackdropComponent implements IComponentController {
         private $element: JQLite,
         private $document: IDocumentService,
         private $ngbConfig: NgbModalConfig,
-        private $q: IQService,
         private ngbAnimationFactory: NgbAnimationFactory
     ) { }
 
@@ -33,52 +32,34 @@ export class NgbModalBackdropComponent implements IComponentController {
         this.animation && this.$element.addClass("fade")
         this.$element.css("z-index", `${1050 + (((this.config.__stackLevel ?? 1) - 1) * 20)}`)
 
-        const isStr = angular.isString(this.config?.container)
-
-        if (isStr) {
-            const target = this.config.container as string
-            const searched = this.body[0].querySelector(target)
-
-            !searched && console.warn("custom container not found - ", target)
-
-            this.container = angular.element(
-                searched ?? this.body
-            )
-
-            this.container.append(this.$element)
-            this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
-            return
-        }
-
-        this.container = angular.element(this.config.container ?? this.body)
-
+        this.container = angular.isString(this.config?.container)
+            ? this.resolveContainer(this.config.container as string)
+            : angular.element(this.config.container ?? this.body)
         this.container.append(this.$element)
+        this.enter()
+    }
 
+    public async remove() {
+        if (this.animation) {
+            await this.ngbRunTransition?.(this.$element, () => this.$element.removeClass("show"))
+        }
+        this.$element.remove()
+    }
+
+    private resolveContainer(target: string) {
+        const searched = this.body[0].querySelector(target)
+        if (!searched) {
+            console.warn("custom container not found - ", target)
+        }
+        return angular.element(searched ?? this.body)
+    }
+
+    private enter() {
         if (!this.animation) {
             this.$element.addClass("show")
             return
         }
-
         this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
-    }
-
-    public async remove(reason: any = NgbModalDismissReasons.BACKDROP_CLICK) {
-        const deferred = this.$q.defer<void>()
-        
-        if (!this.animation) {
-            this.$element.remove()
-
-            deferred.resolve(reason)
-            return
-        }
-
-        await this.ngbRunTransition?.(this.$element, () => {
-            this.$element.removeClass("show")
-        })
-        this.$element.remove()
-        deferred.resolve(reason)
-
-        return deferred.promise
     }
 
     //#region $angular
@@ -97,7 +78,7 @@ export class NgbModalBackdropComponent implements IComponentController {
     }
 
     static get $inject() {
-        return ['$element', '$document', NgbModalConfig.$name, '$q', NgbAnimationFactory.$name]
+        return ['$element', '$document', NgbModalConfig.$name, NgbAnimationFactory.$name]
     }
 
     //#endregion

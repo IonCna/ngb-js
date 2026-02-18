@@ -4,7 +4,7 @@ type StackEntry = {
     modalEl?: HTMLElement
 }
 
-export class NgbModalStackFactory {
+export class NgbModalStackService {
     private entries: StackEntry[] = []
     private seq = 0
     private originalBodyOverflow = ""
@@ -86,7 +86,7 @@ export class NgbModalStackFactory {
     }
 
     static get $name() {
-        return "ngbModalStackFactory"
+        return "ngb.modal.stack.service"
     }
 }
 

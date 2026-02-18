@@ -1,11 +1,11 @@
 import angular from "angular"
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDocumentService, IPromise, IQService } from "angular"
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDocumentService, IPromise } from "angular"
 import { NgbModalDismissReasons } from "@/modal/ngb-modal.model"
 import type { NgbModalOptions } from "./ngb-modal.module"
 import { NgbModalConfig } from "./ngb-modal-config.service"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
 import type { NgbActiveModal } from "@/modal/ngb-active-modal.factory"
-import { NgbModalStackFactory } from "@/modal/ngb-modal-stack.factory"
+import { NgbModalStackService } from "@/modal/ngb-modal-stack.service"
 import template from "@/modal/ngb-modal-window.component.html?raw"
 
 const ESC_KEY = "Escape"
@@ -31,9 +31,8 @@ export class NgbModalWindowComponent implements IComponentController {
         private $element: JQLite,
         private $document: IDocumentService,
         private $ngbConfig: NgbModalConfig,
-        private $q: IQService,
         private ngbAnimationFactory: NgbAnimationFactory,
-        private modalStackFactory: NgbModalStackFactory
+        private modalStackService: NgbModalStackService
     ) { }
 
     $onInit(): void {
@@ -78,7 +77,7 @@ export class NgbModalWindowComponent implements IComponentController {
         this.$element.css("z-index", `${1055 + (((this.config.__stackLevel ?? 1) - 1) * 20)}`)
 
         if (this.config.__stackId) {
-            this.modalStackFactory.registerModalElement(this.config.__stackId, this.$element[0] as HTMLElement)
+            this.modalStackService.registerModalElement(this.config.__stackId, this.$element[0] as HTMLElement)
         }
 
         this.$element.on("click", this.boundDocumentClick)
@@ -86,67 +85,22 @@ export class NgbModalWindowComponent implements IComponentController {
         this.keyboard && this.body.on("keydown", this.boundKeyDown)
 
         const isStr = angular.isString(this.config?.container)
-
-        if (isStr) {
-            const target = this.config.container as string
-            const searched = this.body[0].querySelector(target)
-
-            !searched && console.warn("custom container not found - ", target)
-
-            this.container = angular.element(
-                searched ?? this.body
-            )
-
-            if (!this.animation) {
-                this.$element.addClass("show")
-                this.container.append(this.$element)
-                this.focusInitialElement()
-                return
-            }
-
-            this.container.append(this.$element)
-            this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
-            this.focusInitialElement()
-
-            return
-        }
-
-        this.container = angular.element(this.config.container ?? this.body)
-
-        if (!this.animation) {
-            this.$element.addClass("show")
-            this.container.append(this.$element)
-            this.focusInitialElement()
-            return
-        }
-
+        this.container = isStr ? this.resolveContainer(this.config.container as string) : angular.element(this.config.container ?? this.body)
         this.container.append(this.$element)
-        this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
+        this.enter()
         this.focusInitialElement()
     }
 
     public async remove() {
-        const deferred = this.$q.defer<boolean>()
-
-        if (!this.animation) {
-            this.$element.remove()
-            this.modal.remove()
-
-            deferred.resolve(true)
-            return
+        if (this.animation) {
+            await this.ngbRunTransition?.(this.$element, () => this.$element.removeClass("show"))
         }
-
-        await this.ngbRunTransition?.(this.$element, () => {
-            this.$element.removeClass("show")
-        })
         this.$element.remove()
         this.modal.remove()
-        deferred.resolve(true)
-        return deferred.promise
     }
 
     private onKeyDown(event: JQueryEventObject) {
-        if (!this.modalStackFactory.isTop(this.config.__stackId)) return
+        if (!this.modalStackService.isTop(this.config.__stackId)) return
 
         if (event.key === TAB_KEY) {
             this.trapFocus(event)
@@ -154,7 +108,7 @@ export class NgbModalWindowComponent implements IComponentController {
         }
 
         if (event.key !== ESC_KEY) return
-        this.close(NgbModalDismissReasons.ESC)
+        void this.close(NgbModalDismissReasons.ESC)
     }
 
     private async close(reason = NgbModalDismissReasons.BACKDROP_CLICK) {
@@ -162,19 +116,20 @@ export class NgbModalWindowComponent implements IComponentController {
 
         if (!beforeDismissExist) {
             this.ngbActiveModal.dismiss(reason)
-            return
+            return true
         }
 
         const { beforeDismiss } = this.config!
         const result = await beforeDismiss!()
 
-        if (!result) return
+        if (!result) return false
 
         this.ngbActiveModal.dismiss(reason)
+        return true
     }
 
     private onDocumentClick(event: JQueryEventObject) {
-        if (!this.modalStackFactory.isTop(this.config.__stackId)) return
+        if (!this.modalStackService.isTop(this.config.__stackId)) return
         if (this.isPlayingStaticAnimation) return
         this.isPlayingStaticAnimation = true
 
@@ -214,7 +169,11 @@ export class NgbModalWindowComponent implements IComponentController {
         }
 
         event.preventDefault()
-        this.close()
+        void this.close().then(dismissed => {
+            if (!dismissed) {
+                this.isPlayingStaticAnimation = false
+            }
+        })
     }
 
     private focusInitialElement() {
@@ -273,10 +232,28 @@ export class NgbModalWindowComponent implements IComponentController {
         }
     }
 
+    private resolveContainer(target: string) {
+        const searched = this.body[0].querySelector(target)
+        if (!searched) {
+            console.warn("custom container not found - ", target)
+        }
+
+        return angular.element(searched ?? this.body)
+    }
+
+    private enter() {
+        if (!this.animation) {
+            this.$element.addClass("show")
+            return
+        }
+
+        this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
+    }
+
     //#region $angular
 
     static get $inject() {
-        return ['$element', '$document', NgbModalConfig.$name, '$q', NgbAnimationFactory.$name, NgbModalStackFactory.$name]
+        return ['$element', '$document', NgbModalConfig.$name, NgbAnimationFactory.$name, NgbModalStackService.$name]
     }
 
     static get $name() {

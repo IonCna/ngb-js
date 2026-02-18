@@ -22,7 +22,6 @@ export class ModalRef {
         private $q: IQService,
     ) {
         this.currentResult = this.$q.defer()
-        // Keep dismiss rejections handled by default (ng-bootstrap-like behavior).
         this.currentResult.promise.then(undefined, () => undefined)
     }
 
