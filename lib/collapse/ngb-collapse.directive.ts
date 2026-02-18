@@ -8,6 +8,7 @@ export class NgbCollapse implements IController {
     protected ngbCollapse?: boolean
 
     protected hidden?: () => void
+    protected ngbHidden?: () => void
     protected ngbCollapseChange?: () => void
     protected shown?: () => void
     protected handler!: () => void
@@ -37,10 +38,15 @@ export class NgbCollapse implements IController {
 
             this.$element.css(this.direction, `${start}px`)
 
-            await ngbRunTransition(this.$element, () => {
+            if (this.animation) {
+                await ngbRunTransition(this.$element, () => {
+                    const { end } = this.size
+                    this.$element.css(this.direction, `${end}px`)
+                })
+            } else {
                 const { end } = this.size
                 this.$element.css(this.direction, `${end}px`)
-            })
+            }
 
             if (id !== this.animationId) return;
 
@@ -54,6 +60,7 @@ export class NgbCollapse implements IController {
             } else {
                 this.$element.css(this.direction, "")
                 this.hidden?.()
+                this.ngbHidden?.()
             }
 
             this.ngbCollapseChange?.()
@@ -65,7 +72,7 @@ export class NgbCollapse implements IController {
 
         if (!this.ngbCollapse) this.$element.addClass("show")
         if (!this.horizontal) return
-        this.$element.addClass("horizontal")
+        this.$element.addClass("collapse-horizontal")
     }
 
     $onDestroy(): void {
@@ -112,6 +119,7 @@ export class NgbCollapse implements IController {
                 horizontal: "<?",
                 ngbCollapse: "=",
                 hidden: "&?",
+                ngbHidden: "&?ngbHidden",
                 ngbCollapseChange: "&?",
                 shown: "&?"
             },
