@@ -81,6 +81,74 @@
         toast body
       </ngb-toast>
     </div>
+
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Dropdown</h2>
+      <div ngb-dropdown open="$.dropdownOpen">
+        <button class="btn btn-outline-secondary" type="button" ngb-dropdown-toggle>
+          Toggle dropdown
+        </button>
+        <div ngb-dropdown-menu>
+          <button type="button" ngb-dropdown-button-item>Action</button>
+          <button type="button" ngb-dropdown-button-item>Another action</button>
+          <button type="button" ngb-dropdown-button-item ngb-disabled="true">Disabled</button>
+        </div>
+      </div>
+      <p class="small text-muted mt-2 mb-0">Open: {{ $.dropdownOpen }}</p>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Nav</h2>
+      <ul ngb-nav active-id="$.activeNavId">
+        <li ngb-nav-item="0">
+          <button ngb-nav-link>Home</button>
+          <div ngb-nav-content>
+            Home content
+          </div>
+        </li>
+        <li ngb-nav-item="1">
+          <button ngb-nav-link>Profile</button>
+          <div ngb-nav-content>
+            Profile content
+          </div>
+        </li>
+      </ul>
+      <div ngb-nav-outlet="$.activeNavId"></div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Tooltip</h2>
+      <button
+        type="button"
+        class="btn btn-outline-info"
+        ngb-tooltip="'Tooltip de prueba'"
+        placement="top">
+        Hover me
+      </button>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <h2 class="h5 mb-3">Modal</h2>
+      <button class="btn btn-primary" type="button" ng-click="$.openDemoModal()">
+        Abrir modal
+      </button>
+      <p class="small text-muted mt-2 mb-0">Resultado: {{ $.lastModalResult }}</p>
+    </div>
+
+    <div class="col-12">
+      <h2 class="h5 mb-3">Carousel</h2>
+      <ngb-carousel interval="3000" show-navigation-arrows="true" show-navigation-indicators="true">
+        <div ngb-slide class="p-4 bg-primary text-white rounded">
+          Slide 1
+        </div>
+        <div ngb-slide class="p-4 bg-success text-white rounded">
+          Slide 2
+        </div>
+        <div ngb-slide class="p-4 bg-dark text-white rounded">
+          Slide 3
+        </div>
+      </ngb-carousel>
+    </div>
   </div>
 </body>
 
