@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope, ITranscludeFunction } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IPromise, IScope, ITranscludeFunction } from "angular";
 import { NgbToastConfig } from "@/toast/ngb-toast-config.service"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
 import template from "@/toast/ngb-toast.component.html?raw"
@@ -17,18 +17,21 @@ export class NgbToast implements IComponentController {
     private isClosed = false
     private headerTransclude?: ITranscludeFunction
     protected elementTranscluded = false
+    private ngbRunTransition?: ($element: IAugmentedJQuery, startFn: () => void) => IPromise<void>
 
     constructor(
         private $element: IAugmentedJQuery,
         private ngbToastConfig: NgbToastConfig,
         private ngbAnimationFactory: NgbAnimationFactory,
-        private $scope: IScope
+        protected $scope: IScope
     ) { }
 
     $onInit(): void {
         this.animation = this.animation ?? this.ngbToastConfig.animation
         this.autohide = this.autohide ?? this.ngbToastConfig.autohide
         this.delay = this.delay ?? this.ngbToastConfig.delay
+
+        this.ngbRunTransition = this.ngbAnimationFactory.$create()
     }
 
     $postLink(): void {
@@ -46,15 +49,15 @@ export class NgbToast implements IComponentController {
     public registerHeaderTransclude($transclude: ITranscludeFunction): void {
         this.headerTransclude = $transclude
         this.elementTranscluded = true
-        const scopeWithPostDigest = this.$scope as IScope & { $$postDigest: (fn: () => void) => void }
-        scopeWithPostDigest.$$postDigest(() => this.renderHeader())
+
+        this.renderHeader()
     }
 
     private renderHeader(): void {
         if (!this.headerTransclude) return
 
-        const host = this.$element[0] as HTMLElement | undefined
-        const wrapper = host?.querySelector("[ngbtoastheaderwrapper]")
+        const [host] = Array.from(this.$element)
+        const wrapper = host.querySelector("[wrapper]")
         if (!wrapper) return
 
         const ngWrapper = angular.element(wrapper)
@@ -76,9 +79,7 @@ export class NgbToast implements IComponentController {
             return
         }
 
-        const ngbRunTransition = this.ngbAnimationFactory.$create()
-
-        await ngbRunTransition(this.$element, () => {
+        await this.ngbRunTransition?.(this.$element, () => {
             this.$element.addClass("showing")
         })
 

@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IPromise } from "angular";
 import { NgbAlertConfig } from "@/alert/ngb-alert-config.service"
 import template from "@/alert/ngb-alert.component.html?raw"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
@@ -12,6 +12,8 @@ export class NgbAlert implements IComponentController {
     private closingInProgress = false
     protected isClosed = false
 
+    private ngbRunTransition?: ($element: IAugmentedJQuery, startFn: () => void) => IPromise<void>
+
     constructor(
         private $element: IAugmentedJQuery,
         private ngbAlertConfig: NgbAlertConfig,
@@ -22,6 +24,8 @@ export class NgbAlert implements IComponentController {
         this.animation = this.animation ?? this.ngbAlertConfig.animation
         this.dismissible = this.dismissible ?? this.ngbAlertConfig.dismissible
         this.type = this.type ?? this.ngbAlertConfig.type
+
+        this.ngbRunTransition = this.ngbAnimationFactory.$create()
     }
 
     $postLink(): void {
@@ -45,9 +49,7 @@ export class NgbAlert implements IComponentController {
             return
         }
 
-        const ngbRunTransition = this.ngbAnimationFactory.$create()
-
-        await ngbRunTransition(this.$element, () => {
+        await this.ngbRunTransition?.(this.$element, () => {
             this.$element.removeClass("show")
         })
 
