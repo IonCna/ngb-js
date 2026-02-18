@@ -31,6 +31,7 @@ export class NgbModalBackdropComponent implements IComponentController {
 
         this.$element.addClass("modal-backdrop")
         this.animation && this.$element.addClass("fade")
+        this.$element.css("z-index", `${1050 + (((this.config.__stackLevel ?? 1) - 1) * 20)}`)
 
         const isStr = angular.isString(this.config?.container)
 

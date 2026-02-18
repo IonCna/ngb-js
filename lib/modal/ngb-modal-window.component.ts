@@ -1,13 +1,15 @@
 import angular from "angular"
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDocumentService, IPromise, IQService } from "angular"
-import { NgbModalDismissReasons } from "./ngb-modal.service"
+import { NgbModalDismissReasons } from "@/modal/ngb-modal.model"
 import type { NgbModalOptions } from "./ngb-modal.module"
 import { NgbModalConfig } from "./ngb-modal-config.service"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
 import type { NgbActiveModal } from "@/modal/ngb-active-modal.factory"
+import { NgbModalStackFactory } from "@/modal/ngb-modal-stack.factory"
 import template from "@/modal/ngb-modal-window.component.html?raw"
 
 const ESC_KEY = "Escape"
+const TAB_KEY = "Tab"
 
 export class NgbModalWindowComponent implements IComponentController {
     public modal!: JQLite
@@ -18,8 +20,6 @@ export class NgbModalWindowComponent implements IComponentController {
     private keyboard!: boolean
     private isPlayingStaticAnimation!: boolean
     private dialog!: JQLite
-    private originalBodyOverflow = ""
-    private originalBodyPaddingRight = ""
 
     private animation!: boolean
     public fullscreenClass: string | null = null
@@ -32,7 +32,8 @@ export class NgbModalWindowComponent implements IComponentController {
         private $document: IDocumentService,
         private $ngbConfig: NgbModalConfig,
         private $q: IQService,
-        private ngbAnimationFactory: NgbAnimationFactory
+        private ngbAnimationFactory: NgbAnimationFactory,
+        private modalStackFactory: NgbModalStackFactory
     ) { }
 
     $onInit(): void {
@@ -49,7 +50,6 @@ export class NgbModalWindowComponent implements IComponentController {
     $onDestroy() {
         this.$element.off("click", this.boundDocumentClick);
         this.body?.off("keydown", this.boundKeyDown)
-        this.restoreBodyStyles()
     }
 
     $postLink() {
@@ -75,8 +75,11 @@ export class NgbModalWindowComponent implements IComponentController {
         this.$element.attr("tabindex", "-1")
         this.$element.attr("aria-modal", "true")
         this.$element.attr("role", this.config?.role ?? "dialog")
+        this.$element.css("z-index", `${1055 + (((this.config.__stackLevel ?? 1) - 1) * 20)}`)
 
-        this.lockBodyScroll()
+        if (this.config.__stackId) {
+            this.modalStackFactory.registerModalElement(this.config.__stackId, this.$element[0] as HTMLElement)
+        }
 
         this.$element.on("click", this.boundDocumentClick)
 
@@ -97,11 +100,13 @@ export class NgbModalWindowComponent implements IComponentController {
             if (!this.animation) {
                 this.$element.addClass("show")
                 this.container.append(this.$element)
+                this.focusInitialElement()
                 return
             }
 
             this.container.append(this.$element)
             this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
+            this.focusInitialElement()
 
             return
         }
@@ -111,18 +116,19 @@ export class NgbModalWindowComponent implements IComponentController {
         if (!this.animation) {
             this.$element.addClass("show")
             this.container.append(this.$element)
+            this.focusInitialElement()
             return
         }
 
         this.container.append(this.$element)
         this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
+        this.focusInitialElement()
     }
 
     public async remove() {
         const deferred = this.$q.defer<boolean>()
 
         if (!this.animation) {
-            this.restoreBodyStyles()
             this.$element.remove()
             this.modal.remove()
 
@@ -133,7 +139,6 @@ export class NgbModalWindowComponent implements IComponentController {
         await this.ngbRunTransition?.(this.$element, () => {
             this.$element.removeClass("show")
         })
-        this.restoreBodyStyles()
         this.$element.remove()
         this.modal.remove()
         deferred.resolve(true)
@@ -141,6 +146,13 @@ export class NgbModalWindowComponent implements IComponentController {
     }
 
     private onKeyDown(event: JQueryEventObject) {
+        if (!this.modalStackFactory.isTop(this.config.__stackId)) return
+
+        if (event.key === TAB_KEY) {
+            this.trapFocus(event)
+            return
+        }
+
         if (event.key !== ESC_KEY) return
         this.close(NgbModalDismissReasons.ESC)
     }
@@ -162,6 +174,7 @@ export class NgbModalWindowComponent implements IComponentController {
     }
 
     private onDocumentClick(event: JQueryEventObject) {
+        if (!this.modalStackFactory.isTop(this.config.__stackId)) return
         if (this.isPlayingStaticAnimation) return
         this.isPlayingStaticAnimation = true
 
@@ -204,39 +217,66 @@ export class NgbModalWindowComponent implements IComponentController {
         this.close()
     }
 
-    private getScrollbarWidth() {
-        return Math.max(0, window.innerWidth - document.documentElement.clientWidth)
-    }
-
-    private lockBodyScroll() {
-        const [bodyEl] = Array.from(this.body) as HTMLElement[]
-        if (!bodyEl) return
-
-        this.originalBodyOverflow = bodyEl.style.overflow
-        this.originalBodyPaddingRight = bodyEl.style.paddingRight
-
-        this.body.addClass("modal-open")
-        this.body.css("overflow", "hidden")
-
-        const width = this.getScrollbarWidth()
-        if (width > 0) {
-            this.body.css("padding-right", `${width}px`)
+    private focusInitialElement() {
+        const focusables = this.getFocusableElements()
+        if (focusables.length > 0) {
+            const [focusable] = focusables
+            focusable.focus()
+            
+            return
         }
+
+        const [native] = Array.from(this.$element)
+        native.focus()
     }
 
-    private restoreBodyStyles() {
-        const [bodyEl] = Array.from(this.body) as HTMLElement[]
-        if (!bodyEl) return
+    private getFocusableElements() {
+        const [dialogEl] = Array.from(this.dialog) as HTMLElement[]
+        if (!dialogEl) return [] as HTMLElement[]
 
-        this.body.removeClass("modal-open")
-        this.body.css("overflow", this.originalBodyOverflow)
-        this.body.css("padding-right", this.originalBodyPaddingRight)
+        const selector = [
+            "a[href]",
+            "button:not([disabled])",
+            "textarea:not([disabled])",
+            "input:not([disabled])",
+            "select:not([disabled])",
+            "[tabindex]:not([tabindex='-1'])"
+        ].join(",")
+
+        return Array.from(dialogEl.querySelectorAll(selector))
+            .filter(el => el instanceof HTMLElement && !el.hasAttribute("disabled")) as HTMLElement[]
+    }
+
+    private trapFocus(event: JQueryEventObject) {
+        const nativeEvent = event as unknown as KeyboardEvent
+        const focusables = this.getFocusableElements()
+        if (focusables.length === 0) {
+            nativeEvent.preventDefault()
+            ;(this.$element[0] as HTMLElement).focus()
+            return
+        }
+
+        const active = document.activeElement as HTMLElement | null
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        const isShift = nativeEvent.shiftKey
+
+        if (!isShift && active === last) {
+            nativeEvent.preventDefault()
+            first.focus()
+            return
+        }
+
+        if (isShift && active === first) {
+            nativeEvent.preventDefault()
+            last.focus()
+        }
     }
 
     //#region $angular
 
     static get $inject() {
-        return ['$element', '$document', NgbModalConfig.$name, '$q', NgbAnimationFactory.$name]
+        return ['$element', '$document', NgbModalConfig.$name, '$q', NgbAnimationFactory.$name, NgbModalStackFactory.$name]
     }
 
     static get $name() {

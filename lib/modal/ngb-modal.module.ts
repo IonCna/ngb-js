@@ -5,10 +5,12 @@ import { NgbModalBackdropComponent } from "./ngb-modal-backdrop.component";
 import { NgbModalConfig } from "./ngb-modal-config.service";
 import { NgbActiveModalFactory } from "./ngb-active-modal.factory";
 import { NgbModalRefFactory } from "./ngb-modal-ref.factory";
+import { NgbModalStackFactory } from "./ngb-modal-stack.factory";
 
 export { NgbModal, NgbModalDismissReasons } from "./ngb-modal.service"
 export { NgbActiveModal, NgbActiveModalFactory } from "./ngb-active-modal.factory"
 export { ModalRef, NgbModalRefFactory } from "./ngb-modal-ref.factory"
+export { NgbModalStackFactory } from "./ngb-modal-stack.factory"
 export { NgbModalWindowComponent } from "./ngb-modal-window.component"
 export { NgbModalBackdropComponent } from "./ngb-modal-backdrop.component"
 export { NgbModalConfig } from "./ngb-modal-config.service"
@@ -32,11 +34,14 @@ export interface NgbModalOptions {
     size?: 'sm' | 'lg' | 'xl' | string
     windowClass?: string,
     bindings?: Object
+    __stackId?: number
+    __stackLevel?: number
 }
 
 NgbModalModule.service(NgbModal.$name, NgbModal)
 NgbModalModule.service(NgbModalConfig.$name, NgbModalConfig)
 NgbModalModule.factory(NgbActiveModalFactory.$name, NgbActiveModalFactory)
 NgbModalModule.factory(NgbModalRefFactory.$name, NgbModalRefFactory)
+NgbModalModule.factory(NgbModalStackFactory.$name, NgbModalStackFactory)
 NgbModalModule.component(NgbModalWindowComponent.$name, NgbModalWindowComponent.$factory)
 NgbModalModule.component(NgbModalBackdropComponent.$name, NgbModalBackdropComponent.$factory)
