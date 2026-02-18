@@ -1,7 +1,8 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope, ITranscludeFunction } from "angular";
 import { NgbToastConfig } from "@/toast/ngb-toast-config.service"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
 import template from "@/toast/ngb-toast.component.html?raw"
+import angular from "angular";
 
 export class NgbToast implements IComponentController {
     protected animation?: boolean
@@ -14,11 +15,14 @@ export class NgbToast implements IComponentController {
 
     private closingInProgress = false
     private isClosed = false
+    private headerTransclude?: ITranscludeFunction
+    protected elementTranscluded = false
 
     constructor(
         private $element: IAugmentedJQuery,
         private ngbToastConfig: NgbToastConfig,
-        private ngbAnimationFactory: NgbAnimationFactory
+        private ngbAnimationFactory: NgbAnimationFactory,
+        private $scope: IScope
     ) { }
 
     $onInit(): void {
@@ -30,11 +34,36 @@ export class NgbToast implements IComponentController {
     $postLink(): void {
         this.$element.attr("role", "alert")
         this.$element.attr("aria-atomic", "true")
-        this.$element.addClass("toast show")
+        this.$element.addClass("toast show d-block")
 
         if (this.animation) {
             this.$element.addClass("fade")
         }
+
+        this.renderHeader()
+    }
+
+    public registerHeaderTransclude($transclude: ITranscludeFunction): void {
+        this.headerTransclude = $transclude
+        this.elementTranscluded = true
+        const scopeWithPostDigest = this.$scope as IScope & { $$postDigest: (fn: () => void) => void }
+        scopeWithPostDigest.$$postDigest(() => this.renderHeader())
+    }
+
+    private renderHeader(): void {
+        if (!this.headerTransclude) return
+
+        const host = this.$element[0] as HTMLElement | undefined
+        const wrapper = host?.querySelector("[ngbtoastheaderwrapper]")
+        if (!wrapper) return
+
+        const ngWrapper = angular.element(wrapper)
+        ngWrapper.empty()
+
+        this.headerTransclude(clone => {
+            if (!clone?.length) return
+            ngWrapper.append(clone)
+        }, this.$element)
     }
 
     protected async close() {
@@ -62,7 +91,12 @@ export class NgbToast implements IComponentController {
     }
 
     static get $inject() {
-        return ["$element", NgbToastConfig.$name, NgbAnimationFactory.$name]
+        return [
+            "$element",
+            NgbToastConfig.$name,
+            NgbAnimationFactory.$name,
+            "$scope"
+        ]
     }
 
     static get $factory(): IComponentOptions {

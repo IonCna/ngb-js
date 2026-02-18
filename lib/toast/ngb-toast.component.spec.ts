@@ -25,4 +25,22 @@ describe("ngbToast", () => {
         expect(element.hasClass("toast")).toBe(true)
         expect(element.hasClass("show")).toBe(true)
     })
+
+    it("renders transcluded toast header content", () => {
+        const scope = $rootScope.$new()
+        const element = $compile(`
+            <ngb-toast>
+                <div ngb-toast-header><strong>Custom header</strong></div>
+                Toast body
+            </ngb-toast>
+        `)(scope)
+        scope.$digest()
+
+        const nativeElement = element[0]
+        const header = nativeElement.querySelector(".toast-header")
+        const body = nativeElement.querySelector(".toast-body")
+
+        expect(header?.textContent).toContain("Custom header")
+        expect(body?.textContent).toContain("Toast body")
+    })
 })
