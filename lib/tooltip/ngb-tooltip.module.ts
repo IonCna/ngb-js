@@ -12,7 +12,7 @@ NgbToolTipModule.service(NgbTooltipConfig.$name, NgbTooltipConfig)
 
 export interface NgbTooltipWindowOptions {
     animation: boolean
-    container?: JQLite
+    container?: string | HTMLElement | JQLite
     placement?: Placement
     positionTarget?: JQLite
     tooltipClass?: string

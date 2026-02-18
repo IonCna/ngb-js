@@ -10,7 +10,8 @@ export class NgbTooltipWindowComponent implements IComponentController {
     private options!: NgbTooltipWindowOptions
     private referenceEl!: JQLite
 
-    private cleanUpHandler!: () => void
+    private cleanUpHandler?: () => void
+    private positionOff?: () => void
 
     constructor(
         private $element: JQLite,
@@ -43,7 +44,7 @@ export class NgbTooltipWindowComponent implements IComponentController {
                 shift({ padding: 8 }),
                 arrow({ element: arrowEl[0], padding: 5 })
             ]
-        }).then(({ x, y, middlewareData }) => {
+        }).then(({ x, y, placement, middlewareData }) => {
             Object.assign(floating.style, {
                 left: `${x}px`,
                 top: `${y}px`,
@@ -53,7 +54,7 @@ export class NgbTooltipWindowComponent implements IComponentController {
             const arrowData = middlewareData.arrow
             if (!arrowData) return
 
-            const side = (this.options?.placement ?? "top").split("-")[0]
+            const side = placement.split("-")[0]
             const oppositeSide = {
                 top: "bottom",
                 right: "left",
@@ -70,13 +71,14 @@ export class NgbTooltipWindowComponent implements IComponentController {
             })
         })
 
-        this.$scope.$on(NgbTooltipPositionEvent, update)
+        this.positionOff = this.$scope.$on(NgbTooltipPositionEvent, update)
         this.$scope.$broadcast(NgbTooltipPositionEvent)
         this.cleanUpHandler = autoUpdate(reference, floating, update, { animationFrame: true })
     }
 
     $onDestroy(): void {
-        this.cleanUpHandler && this.cleanUpHandler()
+        this.positionOff?.()
+        this.cleanUpHandler?.()
         const isText = angular.isString(this.innerHtml)
         if (isText) return
 

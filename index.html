@@ -137,15 +137,47 @@
 
     <div class="col-12">
       <h2 class="h5 mb-3">Carousel</h2>
-      <ngb-carousel interval="3000" show-navigation-arrows="true" show-navigation-indicators="true">
-        <div ngb-slide class="p-4 bg-primary text-white rounded">
-          Slide 1
+      <ngb-carousel
+        interval="5000"
+        active-id="'nature-2'"
+        pause-on-hover="true"
+        show-navigation-arrows="true"
+        show-navigation-indicators="true">
+        <div ngb-slide id="nature-1">
+          <div class="ratio ratio-21x9 bg-light rounded overflow-hidden">
+            <img
+              src="https://picsum.photos/id/1018/1200/520"
+              alt="Mountain lake"
+              class="w-100 h-100 object-fit-cover" />
+          </div>
+          <div class="carousel-caption d-none d-md-block">
+            <h5>Slide 1</h5>
+            <p>Imagen de ejemplo estilo ng-bootstrap.</p>
+          </div>
         </div>
-        <div ngb-slide class="p-4 bg-success text-white rounded">
-          Slide 2
+        <div ngb-slide id="nature-2">
+          <div class="ratio ratio-21x9 bg-light rounded overflow-hidden">
+            <img
+              src="https://picsum.photos/id/1015/1200/520"
+              alt="Forest waterfall"
+              class="w-100 h-100 object-fit-cover" />
+          </div>
+          <div class="carousel-caption d-none d-md-block">
+            <h5>Slide 2</h5>
+            <p>Con `activeId` apuntando a este slide por defecto.</p>
+          </div>
         </div>
-        <div ngb-slide class="p-4 bg-dark text-white rounded">
-          Slide 3
+        <div ngb-slide id="nature-3">
+          <div class="ratio ratio-21x9 bg-light rounded overflow-hidden">
+            <img
+              src="https://picsum.photos/id/1019/1200/520"
+              alt="Coastal cliffs"
+              class="w-100 h-100 object-fit-cover" />
+          </div>
+          <div class="carousel-caption d-none d-md-block">
+            <h5>Slide 3</h5>
+            <p>Navegación por flechas, indicadores y teclado.</p>
+          </div>
         </div>
       </ngb-carousel>
     </div>
