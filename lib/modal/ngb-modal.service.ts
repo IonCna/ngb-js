@@ -14,16 +14,6 @@ import { NgbActiveModalFactory, type NgbActiveModal } from "@/modal/ngb-active-m
 import { NgbModalCloseEvent } from "@/modal/ngb-modal.events"
 import { ModalRef, NgbModalRefFactory } from "@/modal/ngb-modal-ref.factory"
 
-type EmbeddedViewRef<C = any> = {
-    context: C
-    rootNodes: JQLite
-    destroy: () => void
-}
-
-type TemplateRef<C = any> = {
-    createEmbeddedView: (context?: C) => EmbeddedViewRef<C>
-}
-
 type ModalScope = IScope & {
     activeModal: NgbActiveModal,
     [key: string]: any
@@ -80,14 +70,8 @@ export class NgbModal {
         return linkFn(scope)
     }
 
-    open(target: string, config?: NgbModalOptions): Promise<ModalRef>
-    open(target: TemplateRef, config?: NgbModalOptions): Promise<ModalRef>
-
-    public open(target: string | TemplateRef, config?: NgbModalOptions) {
-        const isComponent = angular.isString(target)
-
-        if (isComponent) return this.openComponent(target, config);
-        return this.openTemplate(target, config)
+    public open(target: string, config?: NgbModalOptions) {
+        return this.openComponent(target, config)
     }
 
     private async openComponent(name: string, config?: NgbModalOptions) {
@@ -149,59 +133,6 @@ export class NgbModal {
             this.currentActiveInstances = this.currentActiveInstances.filter(ctrl => ctrl !== instance)
         })
 
-        return deferred.promise
-    }
-
-    private async openTemplate(target: TemplateRef, config?: NgbModalOptions) {
-        const deferred = this.$q.defer<ModalRef>()
-        const root = this.$rootScope.$new(true)
-
-        const windowScope = root.$new()
-        const backdropScope = root.$new()
-
-        const modalRef = this.modalRefFactory.create(root)
-        const activeModal = this.activeModalFactory.create(modalRef)
-
-        const view = target.createEmbeddedView({ $implicit: modalRef, ...config?.bindings })
-        const container = angular.element("<div></div>")
-
-        modalRef.componentInstance = view.context
-        container.append(view.rootNodes)
-
-        const hasBackdrop = config?.backdrop ?? this.$config.backdrop
-
-        let backdrop: JQLite | undefined
-        if (hasBackdrop) {
-            backdrop = this.appendBackdrop(backdropScope, config)
-        }
-
-        const window = this.createWindow(
-            container,
-            activeModal,
-            windowScope,
-            config
-        )
-
-        const listener = root.$on(NgbModalCloseEvent, (event, instance) => {
-            listener()
-            event.stopPropagation?.()
-
-            const windowCtrl = angular.element(window).controller(NgbModalWindowComponent.$name) as NgbModalWindowComponent | undefined
-            const backdropCtrl = angular.element(backdrop ?? "").controller(NgbModalBackdropComponent.$name) as NgbModalBackdropComponent | undefined
-
-            const finish = this.$q.all([windowCtrl?.remove(), backdropCtrl?.remove()])
-
-            const onFinish = () => {
-                root.$destroy()
-                view.destroy()
-
-                this.currentActiveInstances = this.currentActiveInstances.filter(ctrl => ctrl !== instance)
-            }
-
-            finish.then(onFinish)
-        })
-
-        deferred.resolve(modalRef)
         return deferred.promise
     }
 

@@ -5,11 +5,12 @@ import type { NgbModalOptions } from "./ngb-modal.module"
 import { NgbModalConfig } from "./ngb-modal-config.service"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
 import type { NgbActiveModal } from "@/modal/ngb-active-modal.factory"
+import template from "@/modal/ngb-modal-window.component.html?raw"
 
 const ESC_KEY = "Escape"
 
 export class NgbModalWindowComponent implements IComponentController {
-    private modal!: JQLite
+    public modal!: JQLite
     private ngbActiveModal!: NgbActiveModal
     private body!: JQLite
     private config!: NgbModalOptions
@@ -17,8 +18,11 @@ export class NgbModalWindowComponent implements IComponentController {
     private keyboard!: boolean
     private isPlayingStaticAnimation!: boolean
     private dialog!: JQLite
+    private originalBodyOverflow = ""
+    private originalBodyPaddingRight = ""
 
     private animation!: boolean
+    public fullscreenClass: string | null = null
     private readonly boundDocumentClick = (event: JQueryEventObject) => this.onDocumentClick(event)
     private readonly boundKeyDown = (event: JQueryEventObject) => this.onKeyDown(event)
     private ngbRunTransition?: ($element: IAugmentedJQuery, startFn: () => void) => IPromise<void>
@@ -33,40 +37,37 @@ export class NgbModalWindowComponent implements IComponentController {
 
     $onInit(): void {
         this.animation = this.config?.animation ?? this.$ngbConfig.animation
+        if (this.config?.fullscreen) {
+            const isStr = angular.isString(this.config.fullscreen)
+            this.fullscreenClass = isStr
+                ? `modal-fullscreen-${this.config.fullscreen}-down`
+                : "modal-fullscreen"
+        }
         this.ngbRunTransition = this.ngbAnimationFactory.$create()
     }
 
     $onDestroy() {
         this.$element.off("click", this.boundDocumentClick);
-        this.body.off("keydown", this.boundKeyDown)
+        this.body?.off("keydown", this.boundKeyDown)
+        this.restoreBodyStyles()
     }
 
     $postLink() {
         this.body = this.$document.find("body")
         this.keyboard = this.config?.keyboard ?? true
 
-        this.modal.addClass("modal-content")
+        const [host] = Array.from(this.$element)
+        const dialogHost = host.querySelector("[dialog-host]")
+        const modalHost = host.querySelector("[modal-host]")
+        if (!dialogHost || !modalHost) return
 
-        this.dialog = angular.element("<div></div>")
-        this.dialog.addClass("modal-dialog")
+        this.dialog = angular.element(dialogHost)
+        angular.element(modalHost).append(this.modal)
 
-        this.dialog.append(this.modal)
-        this.$element.append(this.dialog)
-
-        this.config?.centered && angular.element(this.dialog).addClass('modal-dialog-centered')
         this.config?.windowClass && this.$element.addClass(this.config?.windowClass)
-        this.config?.size && angular.element(this.dialog).addClass(`modal-${this.config.size}`)
-        this.config?.modalDialogClass && angular.element(this.dialog).addClass(this.config.modalDialogClass)
-        this.config?.scrollable && angular.element(this.dialog).addClass("modal-dialog-scrollable")
 
         this.config?.ariaDescribedBy && this.$element.attr("aria-describedby", this.config.ariaDescribedBy);
         this.config?.ariaLabelledBy && this.$element.attr("aria-labelledby", this.config.ariaLabelledBy!)
-
-        if (this.config?.fullscreen) {
-            const isStr = angular.isString(this.config.fullscreen)
-            isStr && angular.element(this.dialog).addClass(`modal-fullscreen-${this.config.fullscreen}-down`)
-            !isStr && angular.element(this.dialog).addClass("modal-fullscreen")
-        }
 
         this.$element.addClass("modal")
         this.animation && this.$element.addClass("fade")
@@ -75,11 +76,7 @@ export class NgbModalWindowComponent implements IComponentController {
         this.$element.attr("aria-modal", "true")
         this.$element.attr("role", this.config?.role ?? "dialog")
 
-        this.body.addClass("modal-open")
-        const hasScroll = document.documentElement.scrollHeight > window.innerHeight;
-
-        this.body.css("overflow", "hidden")
-        hasScroll && this.body.css("padding-right", "15px")
+        this.lockBodyScroll()
 
         this.$element.on("click", this.boundDocumentClick)
 
@@ -125,6 +122,7 @@ export class NgbModalWindowComponent implements IComponentController {
         const deferred = this.$q.defer<boolean>()
 
         if (!this.animation) {
+            this.restoreBodyStyles()
             this.$element.remove()
             this.modal.remove()
 
@@ -135,6 +133,7 @@ export class NgbModalWindowComponent implements IComponentController {
         await this.ngbRunTransition?.(this.$element, () => {
             this.$element.removeClass("show")
         })
+        this.restoreBodyStyles()
         this.$element.remove()
         this.modal.remove()
         deferred.resolve(true)
@@ -178,6 +177,11 @@ export class NgbModalWindowComponent implements IComponentController {
         }
 
         const isStatic = angular.isString(this.config?.backdrop)
+        const hasBackdrop = this.config?.backdrop ?? this.$ngbConfig.backdrop
+        if (hasBackdrop === false) {
+            this.isPlayingStaticAnimation = false
+            return
+        }
 
         if (isStatic) {
             const modalStaticClass = "modal-static"
@@ -200,6 +204,35 @@ export class NgbModalWindowComponent implements IComponentController {
         this.close()
     }
 
+    private getScrollbarWidth() {
+        return Math.max(0, window.innerWidth - document.documentElement.clientWidth)
+    }
+
+    private lockBodyScroll() {
+        const [bodyEl] = Array.from(this.body) as HTMLElement[]
+        if (!bodyEl) return
+
+        this.originalBodyOverflow = bodyEl.style.overflow
+        this.originalBodyPaddingRight = bodyEl.style.paddingRight
+
+        this.body.addClass("modal-open")
+        this.body.css("overflow", "hidden")
+
+        const width = this.getScrollbarWidth()
+        if (width > 0) {
+            this.body.css("padding-right", `${width}px`)
+        }
+    }
+
+    private restoreBodyStyles() {
+        const [bodyEl] = Array.from(this.body) as HTMLElement[]
+        if (!bodyEl) return
+
+        this.body.removeClass("modal-open")
+        this.body.css("overflow", this.originalBodyOverflow)
+        this.body.css("padding-right", this.originalBodyPaddingRight)
+    }
+
     //#region $angular
 
     static get $inject() {
@@ -217,7 +250,9 @@ export class NgbModalWindowComponent implements IComponentController {
                 ngbActiveModal: "<",
                 config: "<"
             },
-            controller: this,
+            controller: NgbModalWindowComponent,
+            controllerAs: "$",
+            template
         };
     }
 

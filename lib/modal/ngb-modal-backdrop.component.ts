@@ -65,8 +65,6 @@ export class NgbModalBackdropComponent implements IComponentController {
         const deferred = this.$q.defer<void>()
         
         if (!this.animation) {
-            this.body.removeAttr("style")
-            this.body.removeClass("modal-open")
             this.$element.remove()
 
             deferred.resolve(reason)
@@ -76,8 +74,6 @@ export class NgbModalBackdropComponent implements IComponentController {
         await this.ngbRunTransition?.(this.$element, () => {
             this.$element.removeClass("show")
         })
-        this.body.removeAttr("style")
-        this.body.removeClass("modal-open")
         this.$element.remove()
         deferred.resolve(reason)
 

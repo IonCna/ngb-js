@@ -3,9 +3,10 @@ import angular from "angular";
 import type { NgbTooltipWindowOptions } from "./ngb-tooltip.module";
 import { autoUpdate, computePosition, flip, offset, shift, arrow } from "@floating-ui/dom";
 import { NgbTooltipPositionEvent } from "./ngb-tooltip.events";
+import template from "@/tooltip/ngb-tooltip-window.component.html?raw"
 
 export class NgbTooltipWindowComponent implements IComponentController {
-    private innerHtml!: JQLite
+    public innerHtml!: JQLite
     private options!: NgbTooltipWindowOptions
     private referenceEl!: JQLite
 
@@ -21,16 +22,14 @@ export class NgbTooltipWindowComponent implements IComponentController {
         this.$element.addClass("tooltip")
         this.options?.animation && this.$element.addClass("fade")
 
-        const arrowEl = angular.element("<div></div>")
+        const [host] = Array.from(this.$element)
+        const arrowHost = host.querySelector("[tooltip-arrow]")
+        const innerHost = host.querySelector("[tooltip-inner]")
+        if (!arrowHost || !innerHost) return
 
-        arrowEl.addClass("tooltip-arrow")
-        this.$element.append(arrowEl)
-
-        const innerContainer = angular.element("<div></div>")
-        innerContainer.addClass("tooltip-inner")
-
+        const arrowEl = angular.element(arrowHost)
+        const innerContainer = angular.element(innerHost)
         innerContainer.append(this.innerHtml)
-        this.$element.append(innerContainer)
 
         const floating = this.$element[0]
         const reference = this.referenceEl[0]
@@ -91,11 +90,13 @@ export class NgbTooltipWindowComponent implements IComponentController {
     static get $factory(): IComponentOptions {
         return {
             controller: this,
+            controllerAs: "$",
             bindings: {
                 options: "<",
                 innerHtml: "<",
                 referenceEl: "<"
-            }
+            },
+            template
         }
     }
 

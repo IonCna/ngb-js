@@ -73,9 +73,6 @@ class AppController implements IController {
                     .then(result => {
                         this.lastModalResult = `close: ${result ?? ""}`
                     })
-                    .catch(reason => {
-                        this.lastModalResult = `dismiss: ${reason ?? ""}`
-                    })
             })
     }
 
