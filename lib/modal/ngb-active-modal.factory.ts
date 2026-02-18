@@ -1,4 +1,4 @@
-import type { ModalRef } from "@/modal/ngb-modal.service"
+import type { ModalRef } from "@/modal/ngb-modal-ref.factory"
 
 export class NgbActiveModal {
     constructor(private currentModalRef: ModalRef) { }
@@ -18,6 +18,6 @@ export class NgbActiveModalFactory {
     }
 
     static get $name() {
-        return "ngbActiveModalFactory"
+        return "ngb.active.modal.factory"
     }
 }

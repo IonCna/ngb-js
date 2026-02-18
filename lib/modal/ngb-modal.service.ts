@@ -1,6 +1,5 @@
 import type {
     ICompileService,
-    IDeferred,
     IQService,
     IRootScopeService,
     IScope
@@ -13,6 +12,7 @@ import { NgbModalConfig } from "./ngb-modal-config.service"
 import angular from "angular"
 import { NgbActiveModalFactory, type NgbActiveModal } from "@/modal/ngb-active-modal.factory"
 import { NgbModalCloseEvent } from "@/modal/ngb-modal.events"
+import { ModalRef, NgbModalRefFactory } from "@/modal/ngb-modal-ref.factory"
 
 type EmbeddedViewRef<C = any> = {
     context: C
@@ -42,7 +42,8 @@ export class NgbModal {
         private $compile: ICompileService,
         private $q: IQService,
         private $config: NgbModalConfig,
-        private activeModalFactory: NgbActiveModalFactory
+        private activeModalFactory: NgbActiveModalFactory,
+        private modalRefFactory: NgbModalRefFactory
     ) { }
 
     get activeInstances() {
@@ -97,7 +98,7 @@ export class NgbModal {
         const backdropScope = parentScope.$new()
         const windowScope = parentScope.$new()
 
-        const modalRef = new ModalRef(parentScope, this.$q)
+        const modalRef = this.modalRefFactory.create(parentScope)
         const activeModal = this.activeModalFactory.create(modalRef)
 
         modalScope.activeModal = activeModal
@@ -158,7 +159,7 @@ export class NgbModal {
         const windowScope = root.$new()
         const backdropScope = root.$new()
 
-        const modalRef = new ModalRef(root, this.$q)
+        const modalRef = this.modalRefFactory.create(root)
         const activeModal = this.activeModalFactory.create(modalRef)
 
         const view = target.createEmbeddedView({ $implicit: modalRef, ...config?.bindings })
@@ -211,46 +212,8 @@ export class NgbModal {
     }
 
     static get $inject() {
-        return ['$rootScope', '$compile', '$q', NgbModalConfig.$name, NgbActiveModalFactory.$name]
+        return ['$rootScope', '$compile', '$q', NgbModalConfig.$name, NgbActiveModalFactory.$name, NgbModalRefFactory.$name]
     }
 
     //#endregion
-}
-
-export class ModalRef {
-    private currentResult!: IDeferred<any>
-    private currentComponentInstance!: any
-
-    get componentInstance() {
-        return this.currentComponentInstance
-    }
-
-    set componentInstance(instance) {
-        this.currentComponentInstance = instance
-    }
-
-    get result() {
-        return this.currentResult.promise
-    }
-
-    constructor(
-        private scope: IScope,
-        private $q: IQService,
-    ) {
-        this.currentResult = this.$q.defer()
-    }
-
-    public close(result: any) {
-        this.currentResult.resolve(result)
-        this.clear()
-    }
-
-    public dismiss(reason?: any) {
-        this.currentResult.reject(reason)
-        this.clear()
-    }
-
-    private clear() {
-        this.scope.$emit(NgbModalCloseEvent, this.componentInstance)
-    }
 }
