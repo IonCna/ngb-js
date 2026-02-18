@@ -260,11 +260,12 @@ export class NgbCarousel implements IComponentController {
             this.isAnimating = false
         }, 500)
 
-        requestAnimationFrame(async () => this.$scope.$evalAsync(async () => {
+        this.$scope.$evalAsync(async () => {
             $slidePrev.setActive(true, { direction: "end", isShown: true, source })
-            $prev.removeClass("carousel-item-prev")
 
-            await this.ngbRunTransition?.($current as IAugmentedJQuery, () => { })
+            await this.ngbRunTransition?.($current, () => {
+                $prev.removeClass("carousel-item-prev")
+            })
             this.$timeout.cancel(preventAnimationCancel)
 
             $slideCurrent.setActive(false, { direction: "start", source, isShown: false })
@@ -285,7 +286,7 @@ export class NgbCarousel implements IComponentController {
                     current: currentId
                 }
             })
-        }))
+        })
     }
 
     public next(source: NgbSlideEventSource) {
@@ -315,11 +316,12 @@ export class NgbCarousel implements IComponentController {
         $current.addClass("carousel-item-start")
         $next.addClass("carousel-item-next")
 
-        requestAnimationFrame(async () => this.$scope.$evalAsync(async () => {
+        this.$scope.$evalAsync(async () => {
             $slideNext.setActive(true, { direction: "start", isShown: true, source })
-            $next.removeClass("carousel-item-next")
 
-            await this.ngbRunTransition?.($current as IAugmentedJQuery, () => { })
+            await this.ngbRunTransition?.($current, () => {
+                $next.removeClass("carousel-item-next")
+            })
 
             $slideCurrent.setActive(false, { direction: "start", source, isShown: false })
             $current.removeClass("carousel-item-start")
@@ -339,7 +341,7 @@ export class NgbCarousel implements IComponentController {
                     current: currentId
                 }
             })
-        }))
+        })
     }
 
     public pause() {
