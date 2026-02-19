@@ -6,7 +6,7 @@ export class NgbNavPane implements IController {
     ) {}
 
     $postLink(): void {
-        this.$element.addClass("tab-pane fade show active")
+        this.$element.addClass("tab-pane")
         this.$element.attr("role", "tabpanel")
     }
 

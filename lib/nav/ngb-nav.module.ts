@@ -31,7 +31,7 @@ interface NavState {
     contents: Map<any, TabMap>
     scope: IScope,
     config: {
-        activeId: number
+        activeId: any
         animation: boolean
         destroyOnHide: boolean
         keyboard: boolean

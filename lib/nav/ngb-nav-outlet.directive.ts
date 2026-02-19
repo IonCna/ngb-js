@@ -1,73 +1,158 @@
-import type { ICompileService, IController, IDirective, IOnChangesObject } from "angular";
+import type { IAugmentedJQuery, ICompileService, IController, IDirective, IPromise, IScope } from "angular";
 import { NgbNav } from "./ngb-nav.directive"
 import { navMap } from "./ngb-nav.module"
 import angular from "angular";
 import { NgbNavChangeOutletEvent } from "./ngb-nav.events";
+import { NgbAnimationFactory } from "@/ngb-animation.factory";
 
 export class NgbNavOutlet implements IController {
-    private ngbNavOutlet!: NgbNav
+    private nav?: NgbNav
     private isChanging: boolean = false
     private outletWatcher?: () => void
+    private activeScope?: IScope
+    private activePane?: JQLite
+    private activeId?: any
+    private ngbTransition?: ($element: IAugmentedJQuery, startFn: () => void) => IPromise<void>
+    private queuedId?: any
 
     constructor(
         private $element: JQLite,
-        private $compile: ICompileService
+        private $compile: ICompileService,
+        private ngbAnimationFactory: NgbAnimationFactory
     ) { }
 
     $postLink(): void {
         this.$element.addClass("tab-content mt-2");
+        this.ngbTransition = this.ngbAnimationFactory.$create()
+
+        const navHost = this.resolveNavHost()
+        if (navHost) {
+            this.nav = angular.element(navHost).controller(NgbNav.$name) as NgbNav
+        }
+        if (!this.nav) return
+
+        const nav = navMap.get(this.nav)
+        if (!nav) return
+
+        this.outletWatcher = nav.scope.$on(NgbNavChangeOutletEvent, (event, nextId) => {
+            event.stopPropagation?.()
+            event.preventDefault()
+            void this.render(nextId)
+        })
+
+        void this.render(nav.config.activeId)
     }
 
     $onDestroy(): void {
         this.outletWatcher?.()
+        this.activeScope?.$destroy()
     }
 
-    $onChanges(onChangesObj: IOnChangesObject): void {
-        const isFirst = onChangesObj.ngbNavOutlet.isFirstChange()
-        if (isFirst) return
-
-        this.render()
-    }
-
-    private render(id?: any) {
-        if(this.isChanging) return
-        this.isChanging = true
-
-        const nav = navMap.get(this.ngbNavOutlet)!
-        const container = angular.element("<div ngb-nav-pane></div>")
-        container.addClass("tab-pane")
-
-        const targetId = id ?? nav.config.activeId
-        const target = nav.contents.get(targetId)
-        if (!target) {
-            this.isChanging = false
+    private async render(id?: any) {
+        if (this.isChanging) {
+            this.queuedId = id
             return
         }
+        if (!this.nav) return
 
-        const { toggleFn, transcludeFn } = target
+        const nav = navMap.get(this.nav)
+        if (!nav) return
+
+        const targetId = id ?? nav.config.activeId
+        if (targetId == this.activeId) return
+
+        const target = nav.contents.get(targetId)
+        if (!target) return
+
+        this.isChanging = true
+
+        const previousPane = this.activePane
+        const previousScope = this.activeScope
+
+        if (previousPane) {
+            await this.hide(previousPane, !!nav.config.animation)
+            previousPane.remove()
+            nav.events.hidden?.()
+        }
+
+        previousScope?.$destroy()
+        this.activeScope = undefined
+        this.activePane = undefined
+
         this.$element.empty()
 
+        const pane = angular.element("<div ngb-nav-pane></div>")
+        pane.addClass("tab-pane")
+
+        const { transcludeFn } = target
         transcludeFn((clone, scope) => {
             if (!clone || !scope) return
 
-            const linkFn = this.$compile(container)
+            const linkFn = this.$compile(pane)
             const compiled = linkFn(scope)
-
             compiled.append(clone)
 
             this.$element.append(compiled)
-            toggleFn(true)
-        }, container)
+            this.activePane = compiled
+            this.activeScope = scope
+            this.activeId = targetId
+        }, pane)
 
-        if (!this.outletWatcher) {
-            this.outletWatcher = nav.scope.$on(NgbNavChangeOutletEvent, (event, nextId) => {
-                event.stopPropagation?.()
-                event.preventDefault()
-                this.render(nextId)
-            })
+        if (this.activePane) {
+            await this.show(this.activePane, !!nav.config.animation)
+            nav.events.shown?.()
         }
 
         this.isChanging = false
+        if (this.queuedId !== undefined) {
+            const queuedId = this.queuedId
+            this.queuedId = undefined
+            void this.render(queuedId)
+        }
+    }
+
+    private async show(pane: JQLite, animation: boolean) {
+        pane.addClass("fade")
+        pane.removeClass("show active")
+
+        if (!animation) {
+            pane.addClass("show active")
+            return
+        }
+
+        await this.ngbTransition?.(pane, () => {
+            pane.addClass("show active")
+        })
+    }
+
+    private async hide(pane: JQLite, animation: boolean) {
+        pane.addClass("fade")
+
+        if (!animation) {
+            pane.removeClass("show active")
+            return
+        }
+
+        await this.ngbTransition?.(pane, () => {
+            pane.removeClass("show active")
+        })
+    }
+
+    private resolveNavHost(): Element | null {
+        const parent = this.$element.parent()?.[0] as HTMLElement | undefined
+        if (!parent) return null
+
+        const children = Array.from(parent.children)
+        const self = this.$element[0]
+        const selfIndex = children.indexOf(self)
+        if (selfIndex < 0) return parent.querySelector("[ngb-nav]")
+
+        for (let i = selfIndex - 1; i >= 0; i--) {
+            const candidate = children[i]
+            if (candidate.hasAttribute("ngb-nav")) return candidate
+        }
+
+        return parent.querySelector("[ngb-nav]")
     }
 
     //#region $angular
@@ -77,7 +162,7 @@ export class NgbNavOutlet implements IController {
     }
 
     static get $inject() {
-        return ['$element', '$compile']
+        return ['$element', '$compile', NgbAnimationFactory.$name]
     }
 
     static get $factory(): () => IDirective {
@@ -85,9 +170,7 @@ export class NgbNavOutlet implements IController {
             controller: this,
             bindToController: true,
             restrict: "A",
-            scope: {
-                ngbNavOutlet: "<"
-            }
+            scope: true
         })
     }
 

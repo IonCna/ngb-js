@@ -60,6 +60,9 @@ export class NgbNavItem implements IController {
 
         const btnCtrl = button.controller(NgbNavLink.$name) as NgbNavLink
         const contentCtrl = content.controller(NgbNavContent.$name) as NgbNavContent
+        if (!btnCtrl || !contentCtrl) {
+            throw new Error(`[${NgbNavItem.$name}] requires both [${NgbNavLink.$name}] and [${NgbNavContent.$name}]`)
+        }
 
         const { toggle } = btnCtrl.register()
         const { content: $transclude } = contentCtrl.register()

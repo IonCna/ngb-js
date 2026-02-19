@@ -15,12 +15,13 @@ export class NgbNavLink implements IComponentController {
     $postLink(): void {
         this.$element.addClass("nav-link")
         this.$element.attr("type", "button")
+        this.$element.attr("role", "tab")
 
         this.id = `ngb-nav-${counter++}`
+        this.$element.attr("id", this.id)
 
         this.$element.on("click", () => this.$scope.$evalAsync(() => {
             this.ngbNavItem.emit()
-            this.toggleActive(true)
         }))
     }
 

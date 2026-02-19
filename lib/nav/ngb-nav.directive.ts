@@ -39,6 +39,8 @@ export class NgbNav implements IController {
         this.$element.attr("role", "tablist")
 
         this.scan()
+        this.ensureActiveTab()
+        this.syncToggles()
 
         // register
 
@@ -62,23 +64,13 @@ export class NgbNav implements IController {
         })
 
         this.changeWatcher = this.$scope.$on(NgbNavTabChangeEvent, (event, id) => {
-            if(id == this.activeId) return
-            
+            if (id == this.activeId) return
+            if (!this.tabs.has(id)) return
+
             event.preventDefault()
             event.stopPropagation?.()
 
-            this.tabs.forEach(tab => {
-                tab.toggleFn(false)
-            })
-
-            this.activeId = id
-            const navState = navMap.get(this)
-            if (navState) {
-                navState.config.activeId = id
-            }
-
-            this.activeIdChange?.({ $event: id })
-            this.$scope.$emit(NgbNavChangeOutletEvent, id)
+            this.setActiveId(id, true)
         })
     }
 
@@ -87,19 +79,19 @@ export class NgbNav implements IController {
     }
 
     public select(id: any) {
-        this.activeId = id
+        if (!this.tabs.has(id)) return
+        this.setActiveId(id, true)
     }
 
     private scan() {
         const itemsDOM = this.$element[0].querySelectorAll("[ngb-nav-item]")
+        let firstId: any = undefined
 
-        itemsDOM.forEach((item, index) => {
+        itemsDOM.forEach((item) => {
             const ctrl = angular.element(item).controller(NgbNavItem.$name) as NgbNavItem
             const { toggle, $transclude, el, id } = ctrl.register(this.$scope)
 
-            if (!this.activeId && index == 0) {
-                this.activeId = index
-            }
+            if (firstId === undefined) firstId = id
 
             this.tabs.set(id, {
                 toggleFn: toggle,
@@ -108,6 +100,37 @@ export class NgbNav implements IController {
                 tabId: id
             })
         })
+
+        if (this.activeId === undefined) {
+            this.activeId = firstId
+        }
+    }
+
+    private ensureActiveTab() {
+        if (this.activeId !== undefined && this.tabs.has(this.activeId)) return
+        this.activeId = this.tabs.keys().next().value
+    }
+
+    private syncToggles() {
+        this.tabs.forEach(tab => {
+            tab.toggleFn(tab.tabId == this.activeId)
+        })
+    }
+
+    private setActiveId(id: any, emitOutlet: boolean) {
+        this.activeId = id
+
+        const navState = navMap.get(this)
+        if (navState) {
+            navState.config.activeId = id
+        }
+
+        this.syncToggles()
+        this.navChange?.()
+        this.activeIdChange?.({ $event: id })
+        if (emitOutlet) {
+            this.$scope.$emit(NgbNavChangeOutletEvent, id)
+        }
     }
 
     //#region $angular
