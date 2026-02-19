@@ -2,6 +2,7 @@ import type { IAugmentedJQuery, IComponentController, IComponentOptions, IPromis
 import { NgbAlertConfig } from "@/alert/ngb-alert-config.service"
 import template from "@/alert/ngb-alert.component.html?raw"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
+import angular from "angular";
 
 export class NgbAlert implements IComponentController {
     protected animation?: boolean
@@ -28,16 +29,6 @@ export class NgbAlert implements IComponentController {
         this.ngbRunTransition = this.ngbAnimationFactory.$create()
     }
 
-    $postLink(): void {
-        this.$element.addClass("d-block")
-        this.$element.attr("role", "alert")
-        this.$element.addClass("alert show")
-
-        this.$element.toggleClass("fade", !!this.animation)
-        this.$element.toggleClass("alert-dismissible", !!this.dismissible)
-        this.$element.addClass(`alert-${this.type}`)
-    }
-
     protected async close() {
         if (this.closingInProgress || this.isClosed) return
         this.closingInProgress = true
@@ -49,12 +40,21 @@ export class NgbAlert implements IComponentController {
             return
         }
 
-        await this.ngbRunTransition?.(this.$element, () => {
-            this.$element.removeClass("show")
+        const [native] = Array.from(this.$element)
+        const nativeWrapper = native.querySelector(".alert")
+
+        if(!nativeWrapper) {
+            throw new Error("wrapper not found")
+        }
+
+        const wrapper = angular.element(nativeWrapper)
+
+        await this.ngbRunTransition?.(wrapper, () => {
+            wrapper.removeClass("show")
         })
 
         this.isClosed = true
-        this.$element.addClass("d-none")
+        wrapper.addClass("d-none")
         this.closed?.()
     }
 
