@@ -2,10 +2,16 @@ import { NgbConfig } from "../ngb-config.service"
 
 export class NgbModalConfig {
     public backdrop = true
-    public animation!: boolean
+    private _animation?: boolean
 
-    constructor(ngbConfig: NgbConfig) {
-        this.animation = this.animation ?? ngbConfig.animation
+    constructor(private ngbConfig: NgbConfig) {}
+
+    get animation() {
+        return this._animation ?? this.ngbConfig.animation
+    }
+
+    set animation(value: boolean) {
+        this._animation = value
     }
 
     static get $inject() {

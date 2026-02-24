@@ -27,11 +27,13 @@ describe("ngbAlert", () => {
         `)(scope)
         scope.$digest()
 
-        expect(element.hasClass("alert")).toBe(true)
-        expect(element.hasClass("show")).toBe(true)
-        expect(element.hasClass("alert-success")).toBe(true)
-        expect(element.hasClass("alert-dismissible")).toBe(true)
-        expect(element.attr("role")).toBe("alert")
+        const alert = angular.element(element[0].querySelector(".alert") as Element)
+        expect(alert.length).toBe(1)
+
+        expect(alert.hasClass("show")).toBe(true)
+        expect(alert.hasClass("alert-success")).toBe(true)
+        expect(alert.hasClass("alert-dismissible")).toBe(true)
+        expect(alert.attr("role")).toBe("alert")
 
         const button = angular.element(element[0].querySelector(".btn-close") as Element)
         expect(button.length).toBe(1)
