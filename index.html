@@ -10,10 +10,12 @@
 </head>
 
 <body class="container-fluid mt-2" ng-app="ngb.test" ng-controller="ngb.app as $">
+  <ngb-progressbar show-value="true" text-type="success" type="danger" value="20"></ngb-progressbar>
+
   <ngb-progressbar-stacked>
-    <ngb-progressbar type="danger" value="20"></ngb-progressbar>
-    <ngb-progressbar type="warning" value="50"></ngb-progressbar>
-    <ngb-progressbar type="success" value="30"></ngb-progressbar>
+    <ngb-progressbar show-value="true" type="danger" value="20"></ngb-progressbar>
+    <ngb-progressbar show-value="true" type="warning" value="50"></ngb-progressbar>
+    <ngb-progressbar striped="true" animated="true" type="success" value="30"></ngb-progressbar>
   </ngb-progressbar-stacked>
 </body>
 

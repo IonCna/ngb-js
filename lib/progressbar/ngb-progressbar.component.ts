@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import template from "@/progressbar/ngb-progressbar.component.html?raw"
 import { NgbProgressbarConfig } from "@/progressbar/ngb-progressbar-config.service"
 import type { NgbProgressbarStacked } from "@/progressbar/ngb-progressbar-stacked.component"
@@ -17,8 +17,7 @@ export class NgbProgressbar implements IComponentController {
 
     constructor(
         private ngbProgressbarConfig: NgbProgressbarConfig,
-        private $element: IAugmentedJQuery,
-        private $scope: IScope
+        private $element: IAugmentedJQuery
     ) { }
 
     $onInit(): void {
@@ -34,7 +33,6 @@ export class NgbProgressbar implements IComponentController {
 
     $onChanges(): void {
         if (!this.ngbProgressbarStacked) return
-        debugger
 
         this.$element.attr("role", "progressbar")
         this.$element.addClass("progress")
@@ -50,17 +48,23 @@ export class NgbProgressbar implements IComponentController {
     }
 
     protected get percent() {
-        if (!this.value || !this.max) {
-            this.value = 0
-            this.max = this.ngbProgressbarConfig.max
-        }
+        const value = Number(this.value ?? 0)
+        const max = Number(this.max ?? this.ngbProgressbarConfig.max ?? 100)
 
-        const percent = (this.value * 100) / this.max
-        return `${percent}%`
+        if (!Number.isFinite(max) || max <= 0) return "0%"
+
+        const percent = (value * 100) / max
+        const clamped = Math.min(100, Math.max(0, percent))
+
+        return `${clamped}%`
     }
 
     protected get background() {
-        return `text-bg-${this.type}`
+        return this.type ? `text-bg-${this.type}` : ""
+    }
+
+    protected get text() {
+        return this.textType ? `text-${this.textType}` : ""
     }
 
     static get $name() {
@@ -68,7 +72,7 @@ export class NgbProgressbar implements IComponentController {
     }
 
     static get $inject() {
-        return [NgbProgressbarConfig.$name, "$element", "$scope"]
+        return [NgbProgressbarConfig.$name, "$element"]
     }
 
     static get $factory(): IComponentOptions {
@@ -85,7 +89,7 @@ export class NgbProgressbar implements IComponentController {
                 value: "<?"
             },
             require: {
-                ngbProgressbarStacked: "^?"
+                ngbProgressbarStacked: "^?ngbProgressbarStacked"
             },
             transclude: true,
             controller: NgbProgressbar,
