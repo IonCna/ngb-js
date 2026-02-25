@@ -44,40 +44,12 @@ class ModalDemoContentController implements IController {
 const app = angular.module("ngb.test", [NgbModule.name])
 
 class AppController implements IController {
-    private collapse = true
-    public alertClosed = false
-    public progressValue = 68
-    public stripedProgress = 42
-    public dropdownOpen = false
-    public activeNavId: number = 0
-    public lastModalResult = "sin abrir"
-
-    constructor(private ngbModal: NgbModal) { }
-
-    get isCollapsed() {
-        return this.collapse
-    }
-
-    set isCollapsed(value: boolean) {
-        this.collapse = value
-    }
-
-    public onAlertClosed() {
-        this.alertClosed = true
-    }
-
-    public openDemoModal() {
-        this.ngbModal.open("modalDemoContent", { backdrop: true, animation: true })
-            .then(modalRef => {
-                modalRef.result
-                    .then(result => {
-                        this.lastModalResult = `close: ${result ?? ""}`
-                    })
-            })
+    onCloseAlert() {
+        console.log("closed")
     }
 
     static get $inject() {
-        return [NgbModal.$name]
+        return []
     }
 
     static get $name() {

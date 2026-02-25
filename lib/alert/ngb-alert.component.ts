@@ -33,21 +33,21 @@ export class NgbAlert implements IComponentController {
         if (this.closingInProgress || this.isClosed) return
         this.closingInProgress = true
 
-        if (!this.animation) {
-            this.isClosed = true
-            this.$element.addClass("d-none")
-            this.closed?.()
-            return
-        }
-
         const [native] = Array.from(this.$element)
         const nativeWrapper = native.querySelector(".alert")
 
-        if(!nativeWrapper) {
+        if (!nativeWrapper) {
             throw new Error("wrapper not found")
         }
 
         const wrapper = angular.element(nativeWrapper)
+
+        if (!this.animation) {
+            this.isClosed = true
+            wrapper.addClass("d-none")
+            this.closed?.()
+            return
+        }
 
         await this.ngbRunTransition?.(wrapper, () => {
             wrapper.removeClass("show")

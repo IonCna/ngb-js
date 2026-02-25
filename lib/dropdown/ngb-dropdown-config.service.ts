@@ -21,6 +21,6 @@ export class NgbDropdownConfig {
     }
 
     static get $name() {
-        return "ngbDropdownConfig"
+        return "ngb.dropdown.config.service"
     }
 }

@@ -4,7 +4,6 @@ import type {
     IComponentOptions,
     IIntervalService,
     IPromise,
-    IScope,
     ITimeoutService
 } from "angular";
 import type { NgbSlideEvent, NgbSlideEventSource } from "./ngb-carousel.module";
@@ -62,7 +61,6 @@ export class NgbCarousel implements IComponentController {
     constructor(
         private $element: JQLite,
         private carouselConfig: NgbCarouselConfig,
-        private $scope: IScope,
         private $interval: IIntervalService,
         private $timeout: ITimeoutService,
         private ngbAnimationFactory: NgbAnimationFactory
@@ -196,135 +194,63 @@ export class NgbCarousel implements IComponentController {
 
         const nextIndex = this.orderedSlides.findIndex(slide => slide.id === slideId)
         if (nextIndex < 0 || nextIndex === this.index) return
-
-        const nextSlide = this.orderedSlides[nextIndex]
-        const previousId = this.currentSlide.id
-        const currentId = nextSlide.id
-
-        this.slide?.({
-            $event: {
-                current: currentId,
-                direction: "start",
-                paused: this.isPaused,
-                source,
-                prev: previousId
-            }
-        })
-
-        this.currentSlide.slide.setActive(false, { direction: "start", isShown: false, source })
-        nextSlide.slide.setActive(true, { direction: "start", isShown: true, source })
-
-        this.index = nextIndex
-        this.currentSlide = nextSlide
-        this.activeId = slideId
-
-        this.slid?.({
-            $event: {
-                current: currentId,
-                direction: "start",
-                paused: this.isPaused,
-                source,
-                prev: previousId
-            }
-        })
+        const direction = nextIndex > this.index ? "start" : "end"
+        this.transitionTo(nextIndex, direction, source)
     }
 
     public prev(source: NgbSlideEventSource) {
         if (this.isAnimating || !this.currentSlide || this.orderedSlides.length < 2) return
         if (!this.wrap && this.index === 0) return
-        this.isAnimating = true
-
-        if (source !== "timer") this.silentPause()
-
-        const previousId = this.currentSlide.id
         const nextIndex = (this.index - 1 + this.orderedSlides.length) % this.orderedSlides.length
-        const nextSlide = this.orderedSlides[nextIndex]
-        const { container: $prev, slide: $slidePrev } = nextSlide
-        const { container: $current, slide: $slideCurrent } = this.currentSlide
-        const currentId = nextSlide.id
-
-        this.slide?.({
-            $event: {
-                current: currentId,
-                direction: "end",
-                paused: this.isPaused,
-                source,
-                prev: previousId
-            }
-        })
-
-        $current.addClass("carousel-item-end")
-        $prev.addClass("carousel-item-prev")
-
-        const preventAnimationCancel = this.$timeout(() => {
-            this.isAnimating = false
-        }, 500)
-
-        this.$scope.$evalAsync(async () => {
-            $slidePrev.setActive(true, { direction: "end", isShown: true, source })
-
-            await this.ngbRunTransition?.($current, () => {
-                $prev.removeClass("carousel-item-prev")
-            })
-            this.$timeout.cancel(preventAnimationCancel)
-
-            $slideCurrent.setActive(false, { direction: "start", source, isShown: false })
-            $current.removeClass("carousel-item-end")
-
-            this.index = nextIndex
-            this.currentSlide = nextSlide
-            this.activeId = nextSlide.id
-            this.isAnimating = false
-            if (source !== "timer") this.silentCycle()
-
-            this.slid?.({
-                $event: {
-                    paused: this.isPaused,
-                    source,
-                    direction: "end",
-                    prev: previousId,
-                    current: currentId
-                }
-            })
-        })
+        this.transitionTo(nextIndex, "end", source)
     }
 
     public next(source: NgbSlideEventSource) {
         if (this.isAnimating || !this.currentSlide || this.orderedSlides.length < 2) return
         if (!this.wrap && this.index === this.orderedSlides.length - 1) return
+        const nextIndex = (this.index + 1) % this.orderedSlides.length
+        this.transitionTo(nextIndex, "start", source)
+    }
+
+    private transitionTo(nextIndex: number, direction: "start" | "end", source: NgbSlideEventSource): void {
+        if (this.isAnimating || !this.currentSlide || this.orderedSlides.length < 2) return
+        if (nextIndex < 0 || nextIndex >= this.orderedSlides.length || nextIndex === this.index) return
+
         this.isAnimating = true
 
         if (source !== "timer") this.silentPause()
 
         const previousId = this.currentSlide.id
-        const nextIndex = (this.index + 1) % this.orderedSlides.length
         const nextSlide = this.orderedSlides[nextIndex]
-        const { container: $next, slide: $slideNext } = nextSlide
+        const movementClass = direction === "start" ? "carousel-item-next" : "carousel-item-prev"
+        const transitionClass = direction === "start" ? "carousel-item-start" : "carousel-item-end"
         const { container: $current, slide: $slideCurrent } = this.currentSlide
+        const { container: $next, slide: $slideNext } = nextSlide
         const currentId = nextSlide.id
 
         this.slide?.({
             $event: {
                 current: currentId,
-                direction: "start",
+                direction,
                 paused: this.isPaused,
                 source,
                 prev: previousId
             }
         })
 
-        $current.addClass("carousel-item-start")
-        $next.addClass("carousel-item-next")
+        $current.addClass(transitionClass)
+        $next.addClass(movementClass)
 
-        this.$scope.$evalAsync(async () => {
-            $slideNext.setActive(true, { direction: "start", isShown: true, source })
+        const preventAnimationCancel = this.$timeout(() => {
+            this.isAnimating = false
+        }, 500)
 
-            await this.ngbRunTransition?.($current, () => {
-                $next.removeClass("carousel-item-next")
-            })
+        $slideNext.setActive(true, { direction, isShown: true, source })
 
-            $slideCurrent.setActive(false, { direction: "start", source, isShown: false })
-            $current.removeClass("carousel-item-start")
+        const finalizeTransition = () => {
+            this.$timeout.cancel(preventAnimationCancel)
+            $slideCurrent.setActive(false, { direction, source, isShown: false })
+            $current.removeClass(transitionClass)
 
             this.index = nextIndex
             this.currentSlide = nextSlide
@@ -336,11 +262,26 @@ export class NgbCarousel implements IComponentController {
                 $event: {
                     paused: this.isPaused,
                     source,
-                    direction: "start",
+                    direction,
                     prev: previousId,
                     current: currentId
                 }
             })
+        }
+
+        const transition = this.ngbRunTransition?.($current, () => {
+            $next.removeClass(movementClass)
+        })
+
+        if (!transition) {
+            finalizeTransition()
+            return
+        }
+
+        transition.then(() => finalizeTransition()).catch(_err => {
+            this.$timeout.cancel(preventAnimationCancel)
+            this.isAnimating = false
+            if (source !== "timer") this.silentCycle()
         })
     }
 
@@ -379,7 +320,7 @@ export class NgbCarousel implements IComponentController {
     static get $factory(): IComponentOptions {
         return {
             controllerAs: "$",
-            controller: this,
+            controller: NgbCarousel,
             transclude: true,
             bindings: {
                 activeId: "<?",
@@ -399,6 +340,6 @@ export class NgbCarousel implements IComponentController {
     }
 
     static get $inject() {
-        return ['$element', NgbCarouselConfig.$name, '$scope', '$interval', '$timeout', NgbAnimationFactory.$name]
+        return ['$element', NgbCarouselConfig.$name, '$interval', '$timeout', NgbAnimationFactory.$name]
     }
 }

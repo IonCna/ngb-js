@@ -13,6 +13,6 @@ export class NgbTooltipConfig {
     public triggers = "hover focus"
 
     static get $name() {
-        return "ngbTooltipConfig"
+        return "ngb.tooltip.config.service"
     }
 }
