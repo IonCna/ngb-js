@@ -10,13 +10,43 @@
 </head>
 
 <body class="container-fluid mt-2" ng-app="ngb.test" ng-controller="ngb.app as $">
-  <ngb-progressbar show-value="true" text-type="success" type="danger" value="20"></ngb-progressbar>
 
-  <ngb-progressbar-stacked>
-    <ngb-progressbar show-value="true" type="danger" value="20"></ngb-progressbar>
-    <ngb-progressbar show-value="true" type="warning" value="50"></ngb-progressbar>
-    <ngb-progressbar striped="true" animated="true" type="success" value="30"></ngb-progressbar>
-  </ngb-progressbar-stacked>
+  <div ngb-accordion>
+    <div ngb-accordion-item collapsed="false">
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          test 1
+        </div>
+      </div>
+    </div>
+
+    <div ngb-accordion-item>
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          test 2
+        </div>
+      </div>
+    </div>
+
+    <div ngb-accordion-item>
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          test 3
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </body>
 
 </html>

@@ -1,8 +1,9 @@
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular"
+import type { IController, IDirective, IScope } from "angular"
 import { NgbAccordionCounterService } from "@/accordion/ngb-accordion-counters.service"
 import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
 import { NgbAccordionItemChange, NgbAccordionRegisterEvent, NgbAccordionUnregisterEvent, type NgbAccordionItemPhase } from "@/accordion/ngb-accordion.events"
 import { NgbAccordion } from "@/accordion/ngb-accordion.directive"
+import template from "@/accordion/ngb-accordion-item.directive.html?raw"
 
 export class NgbAccordionItem implements IController {
     private ngbAccordion!: NgbAccordion
@@ -19,7 +20,6 @@ export class NgbAccordionItem implements IController {
     private id!: string
 
     constructor(
-        private $element: IAugmentedJQuery,
         private $ngbAccordionItemCounter: NgbAccordionCounterService,
         private $ngbAccordionConfig: NgbAccordionConfig,
         protected $scope: IScope
@@ -65,11 +65,6 @@ export class NgbAccordionItem implements IController {
         return `${this.id}-toggle`
     }
 
-    $postLink(): void {
-        this.$element.addClass("accordion-item")
-        this.$element.attr("id", this.id)
-    }
-
     $onDestroy(): void {
         this.emitUnregister()
         this.$ngbAccordionItemCounter.accordionItemCounter--
@@ -88,7 +83,6 @@ export class NgbAccordionItem implements IController {
 
     static get $inject() {
         return [
-            "$element",
             NgbAccordionCounterService.$name,
             NgbAccordionConfig.$name,
             "$scope"
@@ -103,6 +97,9 @@ export class NgbAccordionItem implements IController {
         return () => ({
             bindToController: true,
             controller: NgbAccordionItem,
+            replace: true,
+            transclude: true,
+            template,
             require: {
                 ngbAccordion: "^ngbAccordion"
             },

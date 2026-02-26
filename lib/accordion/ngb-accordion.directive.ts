@@ -3,6 +3,7 @@ import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
 import { NgbAccordionRegisterEvent, NgbAccordionItemChange, NgbAccordionUnregisterEvent, type NgbAccordionItemChangePayload } from "@/accordion/ngb-accordion.events"
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
 import type { NgbAccordionItemRegistry } from "@/accordion/ngb-accordion.model"
+import template from "@/accordion/ngb-accordion.directive.html?raw"
 
 export class NgbAccordion implements IController {
     protected animation?: boolean
@@ -89,10 +90,6 @@ export class NgbAccordion implements IController {
         })
     }
 
-    $postLink(): void {
-        this.$element.addClass("accordion")
-    }
-
     $onDestroy(): void {
         this.itemsRegisterHandler?.()
         this.itemChangeHandler?.()
@@ -163,6 +160,9 @@ export class NgbAccordion implements IController {
     static get $factory(): () => IDirective {
         return () => ({
             bindToController: true,
+            replace: true,
+            transclude: true,
+            template,
             controller: NgbAccordion,
             restrict: "A",
             scope: {
