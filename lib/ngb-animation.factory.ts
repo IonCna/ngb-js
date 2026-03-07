@@ -1,5 +1,7 @@
 import type { IAugmentedJQuery, IQService, ITimeoutService } from "angular";
 
+export type AnimationFunction = ($element: IAugmentedJQuery, startFn: () => void) => angular.IPromise<void>
+
 export class NgbAnimationFactory {
     constructor(private $q: IQService, private $timeout: ITimeoutService) { }
 

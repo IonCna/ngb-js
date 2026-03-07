@@ -13,6 +13,7 @@ import { NgbCarouselModule } from "@/carousel/ngb-carousel.module"
 import { NgbConfig } from "@/ngb-config.service"
 import { percentFilter } from "@/filters/percent.filter"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
+import { NgbSyncHostFactory } from "@/ngb-sync-host.factory"
 
 export const NgbModule = angular.module("ngb", [
     NgbAlertModule.name,
@@ -30,3 +31,4 @@ export const NgbModule = angular.module("ngb", [
 NgbModule.filter(percentFilter.$name, percentFilter)
 NgbModule.service(NgbConfig.$name, NgbConfig)
 NgbModule.factory(NgbAnimationFactory.$name, NgbAnimationFactory)
+NgbModalModule.factory(NgbSyncHostFactory.$name, NgbSyncHostFactory)

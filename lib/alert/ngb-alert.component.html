@@ -1,13 +1,4 @@
+<ng-transclude></ng-transclude>
 
-<div role="alert" class="alert show d-block"
-    ng-class="['alert-' + $.type, { 'fade': $.animation, 'alert-dismissible': $.dismissible } ]">
-    <ng-transclude></ng-transclude>
-    
-    <button
-        ng-if="$.dismissible"
-        ng-click="$.close()"
-        type="button"
-        class="btn-close"
-        aria-label="Close">
-    </button>
-</div>
+<button ng-if="$.dismissible" ng-click="$.close()" type="button" class="btn-close" aria-label="Close">
+</button>
