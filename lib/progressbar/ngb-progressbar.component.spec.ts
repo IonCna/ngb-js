@@ -37,13 +37,16 @@ describe("ngbProgressbar", () => {
         `)(scope)
         scope.$digest()
 
-        const progressBar = element[0].querySelector(".progress-bar") as HTMLElement
+        const host = element[0] as HTMLElement
+        const progress = host.querySelector(".progress") as HTMLElement
+        const progressBar = host.querySelector(".progress-bar") as HTMLElement
 
-        expect(element.hasClass("progress")).toBe(true)
-        expect(element.attr("role")).toBe("progressbar")
-        expect(element.attr("aria-valuenow")).toBe("25")
-        expect(element.attr("aria-valuemax")).toBe("100")
-        expect(element.attr("aria-label")).toBe("Download")
+        expect(progress).toBeTruthy()
+        expect(progress.classList.contains("progress")).toBe(true)
+        expect(progress.getAttribute("role")).toBe("progressbar")
+        expect(progress.getAttribute("aria-valuenow")).toBe("25")
+        expect(progress.getAttribute("aria-valuemax")).toBe("100")
+        expect(progress.getAttribute("aria-label")).toBe("Download")
         expect(progressBar.style.width).toBe("25%")
         expect(progressBar.classList.contains("progress-bar-striped")).toBe(true)
         expect(progressBar.classList.contains("progress-bar-animated")).toBe(true)
@@ -61,12 +64,17 @@ describe("ngbProgressbar", () => {
         `)(scope)
         scope.$digest()
 
-        const stacked = element[0] as HTMLElement
-        const progress = stacked.querySelector("ngb-progressbar") as HTMLElement
-        const progressBar = stacked.querySelector(".progress-bar") as HTMLElement
+        const host = element[0] as HTMLElement
+        const stacked = host.querySelector(".progress-stacked") as HTMLElement
+        const progress = host.querySelector("ngb-progressbar") as HTMLElement
+        const progressBar = host.querySelector(".progress-bar") as HTMLElement
 
+        expect(stacked).toBeTruthy()
         expect(stacked.classList.contains("progress-stacked")).toBe(true)
         expect(progress.style.width).toBe("20%")
-        expect(progressBar.style.width).toBe("100%")
+        expect(progress.classList.contains("progress")).toBe(true)
+        expect(progress.getAttribute("role")).toBe("progressbar")
+        expect(progress.getAttribute("aria-valuenow")).toBe("20")
+        expect(progressBar.classList.contains("w-100")).toBe(true)
     })
 })

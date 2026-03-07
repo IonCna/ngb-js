@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import template from "@/progressbar/ngb-progressbar.component.html?raw"
 import { NgbProgressbarConfig } from "@/progressbar/ngb-progressbar-config.service"
 import type { NgbProgressbarStacked } from "@/progressbar/ngb-progressbar-stacked.component"
@@ -13,15 +13,12 @@ export class NgbProgressbar implements IComponentController {
     protected textType?: string
     protected type?: string
     protected value?: number
-
-    private ngbProgressbarStacked?: NgbProgressbarStacked
-    private cleanWatch?: () => void
+    protected ngbProgressbarStacked?: NgbProgressbarStacked
 
     constructor(
         private ngbProgressbarConfig: NgbProgressbarConfig,
-        private $element: IAugmentedJQuery,
-        private $scope: IScope
-    ) {}
+        private $element: IAugmentedJQuery
+    ) { }
 
     $onInit(): void {
         this.animated = this.animated ?? this.ngbProgressbarConfig.animated
@@ -34,72 +31,40 @@ export class NgbProgressbar implements IComponentController {
         this.type = this.type ?? this.ngbProgressbarConfig.type
     }
 
-    $postLink(): void {
+    $onChanges(): void {
+        if (!this.ngbProgressbarStacked) return
+
+        this.$element.attr("role", "progressbar")
         this.$element.addClass("progress")
+        this.$element.attr("aria-valuemin", 0)
+        this.$element.attr("aria-label", this.ariaLabel ?? this.ngbProgressbarConfig.ariaLabel)
+        this.$element.attr("aria-valuemax", this.max ?? this.ngbProgressbarConfig.max)
+        this.$element.attr("aria-valuenow", this.value ?? "0")
 
-        this.cleanWatch = this.$scope.$watchGroup(
-            [() => this.value, () => this.max, () => this.ariaLabel, () => this.height],
-            () => this.syncHostAttributes()
-        )
-    }
-
-    $onDestroy(): void {
-        this.cleanWatch?.()
+        this.$element.css({
+            height: this.height ?? this.ngbProgressbarConfig.height ?? "100%",
+            width: this.percent
+        })
     }
 
     protected get percent() {
-        const max = this.maxValue
-        if (max === 0) return "0%"
+        const value = Number(this.value ?? 0)
+        const max = Number(this.max ?? this.ngbProgressbarConfig.max ?? 100)
 
-        const ratio = (this.currentValue / max) * 100
-        return `${ratio}%`
+        if (!Number.isFinite(max) || max <= 0) return "0%"
+
+        const percent = (value * 100) / max
+        const clamped = Math.min(100, Math.max(0, percent))
+
+        return `${clamped}%`
+    }
+
+    protected get background() {
+        return this.type ? `text-bg-${this.type}` : ""
     }
 
     protected get text() {
         return this.textType ? `text-${this.textType}` : ""
-    }
-
-    protected get displayValue() {
-        return this.currentValue
-    }
-
-    protected get displayMax() {
-        return this.maxValue
-    }
-
-    private get maxValue() {
-        const value = Number(this.max ?? this.ngbProgressbarConfig.max)
-        return Number.isFinite(value) && value > 0 ? value : 100
-    }
-
-    private get currentValue() {
-        const value = Number(this.value ?? 0)
-
-        if (!Number.isFinite(value)) return 0
-        if (value < 0) return 0
-        if (value > this.maxValue) return this.maxValue
-
-        return value
-    }
-
-    private syncHostAttributes() {
-        this.$element.attr("role", "progressbar")
-        this.$element.attr("aria-valuemin", "0")
-        this.$element.attr("aria-valuenow", `${this.currentValue}`)
-        this.$element.attr("aria-valuemax", `${this.maxValue}`)
-        this.$element.attr("aria-label", this.ariaLabel ?? "")
-
-        if (this.height) {
-            this.$element.css("height", this.height)
-        } else {
-            this.$element.css("height", "")
-        }
-
-        if (this.ngbProgressbarStacked) {
-            this.$element.css("width", this.percent)
-        } else {
-            this.$element.css("width", "")
-        }
     }
 
     static get $name() {
@@ -107,7 +72,7 @@ export class NgbProgressbar implements IComponentController {
     }
 
     static get $inject() {
-        return [NgbProgressbarConfig.$name, "$element", "$scope"]
+        return [NgbProgressbarConfig.$name, "$element"]
     }
 
     static get $factory(): IComponentOptions {
@@ -124,7 +89,7 @@ export class NgbProgressbar implements IComponentController {
                 value: "<?"
             },
             require: {
-                ngbProgressbarStacked: "^?"
+                ngbProgressbarStacked: "^?ngbProgressbarStacked"
             },
             transclude: true,
             controller: NgbProgressbar,

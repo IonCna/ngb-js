@@ -10,178 +10,43 @@
 </head>
 
 <body class="container-fluid mt-2" ng-app="ngb.test" ng-controller="ngb.app as $">
-  <div class="row g-4">
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Alert</h2>
-      <ngb-alert type="success">Basic success alert</ngb-alert>
-      <ngb-alert type="warning" dismissible="true" animation="true" closed="$.onAlertClosed()">
-        Dismissible alert with close callback
-      </ngb-alert>
-      <p class="small text-muted mb-0">Alert closed: {{ $.alertClosed }}</p>
-    </div>
 
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Progressbar</h2>
-      <ngb-progressbar value="$.progressValue" show-value="true"></ngb-progressbar>
-      <div class="my-3"></div>
-      <ngb-progressbar value="$.stripedProgress" striped="true" animated="true" type="info" text-type="dark"
-        show-value="true"></ngb-progressbar>
-      <div class="my-3"></div>
-      <ngb-progressbar-stacked>
-        <ngb-progressbar value="20" type="success" text-type="light"></ngb-progressbar>
-        <ngb-progressbar value="30" type="warning" text-type="dark"></ngb-progressbar>
-        <ngb-progressbar value="50" type="danger" text-type="light"></ngb-progressbar>
-      </ngb-progressbar-stacked>
-      <p class="small text-muted mt-2 mb-0">ngbPercent example: {{ 0.375 | ngbPercent }}</p>
-    </div>
-
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Collapse</h2>
-      <button class="btn btn-outline-primary btn-sm" type="button" ng-click="$.isCollapsed = !$.isCollapsed">
-        Toggle collapse
-      </button>
-      <div class="mt-2" ngb-collapse="$.isCollapsed">
-        <div class="card card-body">
-          Collapsible content
+  <div ngb-accordion>
+    <div ngb-accordion-item collapsed="false">
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          test 1
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Accordion</h2>
-      <div ngb-accordion close-others="true">
-        <div ngb-accordion-item="'first'">
-          <h2 ngb-accordion-header>
-            <button ngb-accordion-button>Item 1</button>
-          </h2>
-          <div ngb-accordion-collapse>
-            <div ngb-accordion-body>Accordion body 1</div>
-          </div>
-        </div>
-
-        <div ngb-accordion-item="'second'">
-          <h2 ngb-accordion-header>
-            <button ngb-accordion-button>Item 2</button>
-          </h2>
-          <div ngb-accordion-collapse>
-            <div ngb-accordion-body>Accordion body 2</div>
-          </div>
+    <div ngb-accordion-item>
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          test 2
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Toast</h2>
-
-      <ngb-toast header="un toast">
-        <div ngb-toast-header>
-          <strong>Custom header</strong>
-        </div>
-
-        toast body
-      </ngb-toast>
-    </div>
-
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Dropdown</h2>
-      <div ngb-dropdown class="d-inline" open="$.dropdownOpen">
-        <button class="btn btn-outline-secondary" type="button" ngb-dropdown-toggle>
-          Toggle dropdown
-        </button>
-        <div ngb-dropdown-menu>
-          <button type="button" ngb-dropdown-button-item>Action</button>
-          <button type="button" ngb-dropdown-button-item>Another action</button>
-          <button type="button" ngb-dropdown-button-item ngb-disabled="true">Disabled</button>
+    <div ngb-accordion-item>
+      <h2 ngb-accordion-header>
+        <button ngb-accordion-button>Simple</button>
+      </h2>
+      <div ngb-accordion-collapse>
+        <div ngb-accordion-body>
+          test 3
         </div>
       </div>
-      <p class="small text-muted mt-2 mb-0">Open: {{ $.dropdownOpen }}</p>
     </div>
 
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Nav</h2>
-      <ul ngb-nav active-id="$.activeNavId">
-        <li ngb-nav-item="0">
-          <button ngb-nav-link>Home</button>
-          <div ngb-nav-content>
-            Home content
-          </div>
-        </li>
-        <li ngb-nav-item="1">
-          <button ngb-nav-link>Profile</button>
-          <div ngb-nav-content>
-            Profile content
-          </div>
-        </li>
-      </ul>
-      <div ngb-nav-outlet="$.activeNavId"></div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Tooltip</h2>
-      <button
-        type="button"
-        class="btn btn-outline-info"
-        ngb-tooltip="'Tooltip de prueba'"
-        placement="top">
-        Hover me
-      </button>
-    </div>
-
-    <div class="col-12 col-lg-6">
-      <h2 class="h5 mb-3">Modal</h2>
-      <button class="btn btn-primary" type="button" ng-click="$.openDemoModal()">
-        Abrir modal
-      </button>
-      <p class="small text-muted mt-2 mb-0">Resultado: {{ $.lastModalResult }}</p>
-    </div>
-
-    <div class="col-12">
-      <h2 class="h5 mb-3">Carousel</h2>
-      <ngb-carousel
-        interval="5000"
-        active-id="'nature-2'"
-        pause-on-hover="true"
-        show-navigation-arrows="true"
-        show-navigation-indicators="true">
-        <div ngb-slide id="nature-1">
-          <div class="ratio ratio-21x9 bg-light rounded overflow-hidden">
-            <img
-              src="https://picsum.photos/id/1018/1200/520"
-              alt="Mountain lake"
-              class="w-100 h-100 object-fit-cover" />
-          </div>
-          <div class="carousel-caption d-none d-md-block">
-            <h5>Slide 1</h5>
-            <p>Imagen de ejemplo estilo ng-bootstrap.</p>
-          </div>
-        </div>
-        <div ngb-slide id="nature-2">
-          <div class="ratio ratio-21x9 bg-light rounded overflow-hidden">
-            <img
-              src="https://picsum.photos/id/1015/1200/520"
-              alt="Forest waterfall"
-              class="w-100 h-100 object-fit-cover" />
-          </div>
-          <div class="carousel-caption d-none d-md-block">
-            <h5>Slide 2</h5>
-            <p>Con `activeId` apuntando a este slide por defecto.</p>
-          </div>
-        </div>
-        <div ngb-slide id="nature-3">
-          <div class="ratio ratio-21x9 bg-light rounded overflow-hidden">
-            <img
-              src="https://picsum.photos/id/1019/1200/520"
-              alt="Coastal cliffs"
-              class="w-100 h-100 object-fit-cover" />
-          </div>
-          <div class="carousel-caption d-none d-md-block">
-            <h5>Slide 3</h5>
-            <p>Navegación por flechas, indicadores y teclado.</p>
-          </div>
-        </div>
-      </ngb-carousel>
-    </div>
   </div>
+
 </body>
 
 </html>

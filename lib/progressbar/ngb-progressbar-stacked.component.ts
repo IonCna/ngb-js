@@ -1,30 +1,21 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, ITranscludeFunction } from "angular"
+import type { IComponentController, IComponentOptions } from "angular"
+import template from "@/progressbar/ngb-progressbar-stacked.component.html?raw"
 
 export class NgbProgressbarStacked implements IComponentController {
-    constructor(private $element: IAugmentedJQuery, private $transclude: ITranscludeFunction) {}
-
-    $postLink(): void {
-        this.$element.addClass("progress-stacked")
-
-        this.$transclude(clone => {
-            if(!clone) return
-            this.$element.append(clone)
-        }, this.$element)
-    }
-
     static get $name() {
         return "ngbProgressbarStacked"
     }
 
     static get $inject() {
-        return ["$element", "$transclude"]
+        return []
     }
 
     static get $factory(): IComponentOptions {
         return {
             controller: NgbProgressbarStacked,
             controllerAs: "$",
-            transclude: true
+            transclude: true,
+            template
         }
     }
 }

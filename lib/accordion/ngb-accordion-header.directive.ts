@@ -1,26 +1,23 @@
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
+import type { IController, IDirective } from "angular";
+import template from "@/accordion/ngb-accordion-header.directive.html?raw"
 
 export class NgbAccordionHeader implements IController {
-    constructor(private $element: IAugmentedJQuery) {}
-
-    $postLink(): void {
-        this.$element.attr("role", "heading")
-        this.$element.addClass("accordion-header")
-    }
-
     static get $name() {
         return "ngbAccordionHeader"
     }
 
     static get $inject() {
-        return ["$element"]
+        return []
     }
 
     static get $factory(): () => IDirective {
         return () => ({
             bindToController: true,
             controller: NgbAccordionHeader,
-            restrict: "A"
+            restrict: "A",
+            replace: true,
+            transclude: true,
+            template
         })
     }
 }

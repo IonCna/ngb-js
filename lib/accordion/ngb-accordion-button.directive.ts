@@ -1,35 +1,16 @@
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
+import type { IController, IDirective } from "angular";
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
+import template from "@/accordion/ngb-accordion-button.directive.html?raw"
 
 export class NgbAccordionButton implements IController {
     protected ngbAccordionItem!: NgbAccordionItem
-    constructor(private $element: IAugmentedJQuery, private $scope: IScope) { }
 
-    $postLink(): void {
-        this.$element.addClass("accordion-button")
-        this.$element.attr("type", "button")
-        this.$element.attr("id", this.ngbAccordionItem.getToggleId())
-        this.$element.attr("aria-controls", this.ngbAccordionItem.getCollapseId())
-
-        const handler = () => this.$scope.$evalAsync(() => this.ngbAccordionItem.toggle())
-        this.$element.on("click", handler)
-
-        this.$scope.$on("$destroy", () => {
-            this.$element.off("click", handler)
-        })
-
-        this.$scope.$watch(() => this.collapsed, (collapsed) => {
-            this.$element.toggleClass("collapsed", collapsed)
-            this.$element.attr("aria-expanded", `${!collapsed}`)
-        })
-
-        this.$scope.$watch(() => this.ngbAccordionItem["disabled"], (disabled) => {
-            this.$element.attr("disabled", disabled ? "disabled" : null)
-        })
+    protected get collapsed() {
+        return this.ngbAccordionItem["collapsed"] ?? false
     }
 
-    private get collapsed() {
-        return this.ngbAccordionItem["collapsed"] ?? false
+    protected get disabled() {
+        return this.ngbAccordionItem["disabled"] ?? false
     }
 
     static get $name() {
@@ -37,7 +18,7 @@ export class NgbAccordionButton implements IController {
     }
 
     static get $inject() {
-        return ["$element", "$scope"]
+        return []
     }
 
     static get $factory(): () => IDirective {
@@ -45,8 +26,11 @@ export class NgbAccordionButton implements IController {
             controller: NgbAccordionButton,
             bindToController: true,
             scope: true,
+            replace: true,
+            transclude: true,
             restrict: "A",
             controllerAs: "$",
+            template,
             require: {
                 ngbAccordionItem: "^^ngbAccordionItem"
             },
