@@ -1,16 +1,5 @@
-<div ng-if="$.ngbProgressbarStacked"
-    ng-class="[ $.background, $.text, { 'progress-bar-striped': $.striped, 'progress-bar-animated': $.animated } ]"
-    class="progress-bar w-100">
+<div ng-class="[ $.background, $.text, { 'progress-bar-striped': $.striped, 'progress-bar-animated': $.animated } ]"
+    ng-style="{ 'width': $.percent }" class="progress-bar">
     <ng-transclude ng-if="!$.showValue"></ng-transclude>
     <span ng-if="$.showValue">{{ $.percent }}</span>
-</div>
-
-<div ng-if="!$.ngbProgressbarStacked" role="progressbar" ng-attr-aria-valuemin="0" ng-attr-aria-valuenow="{{ $.value }}"
-    ng-attr-aria-valuemax="{{ $.max }}" ng-style="{ 'height': $.height }" ng-attr-aria-label="{{ $.ariaLabel }}"
-    class="progress mb-3">
-    <div ng-class="[ $.background, $.text, { 'progress-bar-striped': $.striped, 'progress-bar-animated': $.animated } ]"
-        ng-style="{ 'width': $.percent }" class="progress-bar">
-        <ng-transclude ng-if="!$.showValue"></ng-transclude>
-        <span ng-if="$.showValue">{{ $.percent }}</span>
-    </div>
 </div>

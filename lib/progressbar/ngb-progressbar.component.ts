@@ -1,7 +1,8 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
 import template from "@/progressbar/ngb-progressbar.component.html?raw"
 import { NgbProgressbarConfig } from "@/progressbar/ngb-progressbar-config.service"
 import type { NgbProgressbarStacked } from "@/progressbar/ngb-progressbar-stacked.component"
+import { NgbHostSynchronizerFactory, type IHostSynchronizer } from "@/ngb-sync-host.factory"
 
 export class NgbProgressbar implements IComponentController {
     protected animated?: boolean
@@ -15,9 +16,13 @@ export class NgbProgressbar implements IComponentController {
     protected value?: number
     protected ngbProgressbarStacked?: NgbProgressbarStacked
 
+    private hostSynchronizer?: IHostSynchronizer
+
     constructor(
         private ngbProgressbarConfig: NgbProgressbarConfig,
-        private $element: IAugmentedJQuery
+        private $element: IAugmentedJQuery,
+        private ngbSyncHostFactory: NgbHostSynchronizerFactory,
+        private $scope: IScope
     ) { }
 
     $onInit(): void {
@@ -29,21 +34,28 @@ export class NgbProgressbar implements IComponentController {
         this.striped = this.striped ?? this.ngbProgressbarConfig.striped
         this.textType = this.textType ?? this.ngbProgressbarConfig.textType
         this.type = this.type ?? this.ngbProgressbarConfig.type
+
+        this.hostSynchronizer = this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
+            attributes: {
+                "role": () => "progressbar",
+                "aria-valuemin": () => 0
+            },
+            classNames: {
+                "progress mb-3": () => true
+            }
+        })
     }
 
     $onChanges(): void {
-        if (!this.ngbProgressbarStacked) return
-
-        this.$element.attr("role", "progressbar")
-        this.$element.addClass("progress")
-        this.$element.attr("aria-valuemin", 0)
-        this.$element.attr("aria-label", this.ariaLabel ?? this.ngbProgressbarConfig.ariaLabel)
-        this.$element.attr("aria-valuemax", this.max ?? this.ngbProgressbarConfig.max)
-        this.$element.attr("aria-valuenow", this.value ?? "0")
-
-        this.$element.css({
-            height: this.height ?? this.ngbProgressbarConfig.height ?? "100%",
-            width: this.percent
+        this.hostSynchronizer?.apply({
+            attributes: {
+                "aria-valuenow": () => this.value,
+                "aria-valuemax": () => this.max,
+                "aria-label": () => this.ariaLabel
+            },
+            css: {
+                "height": () => this.height ?? ""
+            }
         })
     }
 
@@ -72,7 +84,7 @@ export class NgbProgressbar implements IComponentController {
     }
 
     static get $inject() {
-        return [NgbProgressbarConfig.$name, "$element"]
+        return [NgbProgressbarConfig.$name, "$element", NgbHostSynchronizerFactory.$name, "$scope"]
     }
 
     static get $factory(): IComponentOptions {
@@ -87,9 +99,6 @@ export class NgbProgressbar implements IComponentController {
                 textType: "@?",
                 type: "@?",
                 value: "<?"
-            },
-            require: {
-                ngbProgressbarStacked: "^?ngbProgressbarStacked"
             },
             transclude: true,
             controller: NgbProgressbar,

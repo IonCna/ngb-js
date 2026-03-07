@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery } from "angular"
+import type { IAugmentedJQuery, IScope } from "angular"
 
 // type SyncHostManager = Record<string, () => boolean>
 
@@ -11,35 +11,40 @@ import type { IAugmentedJQuery } from "angular"
 //     }
 // })
 
-export type HostSynchronizer = SyncHost
+type Statics = AttrObj
 
-type Statics = {
-    classNames?: string[]
-    attributes?: Record<string, string>
+type AttrObj = {
+    classNames?: Record<string, () => boolean>
+    attributes?: Record<string, () => any>,
+    css?: Record<string, () => string>
 }
 
-class SyncHost {
-    constructor(private $element: IAugmentedJQuery, statics?: Statics) {
-        if(!statics) return
+export interface IHostSynchronizer {
+    apply(obj: AttrObj): void
+}
 
-        statics.classNames?.forEach(className => this.$element.addClass(className))
-        const attributes = statics.attributes ?? {}
-
-        for (const [name, value] of Object.entries(attributes)) {
-            this.$element.attr(name, value)
-        }
+class HostSynchronizer implements IHostSynchronizer {
+    constructor(private $element: IAugmentedJQuery, $scope: IScope, statics: Statics) {
+        this.apply(statics)
     }
 
-    syncClasses(dynamics: Record<string, () => boolean>) {
-        for (const [name, value] of Object.entries(dynamics)) {
+    apply(obj: AttrObj) {
+        const classNames = obj?.classNames ?? {}
+        const attributes = obj?.attributes ?? {}
+
+        for (const [name, value] of Object.entries(classNames)) {
             this.$element.toggleClass(name, value())
         }
+
+        for (const [name, value] of Object.entries(attributes)) {
+            this.$element.attr(name, value())
+        }
     }
 }
 
-export class NgbSyncHostFactory {
-    public $create($element: IAugmentedJQuery, statics?: Statics) {
-        return new SyncHost($element, statics)
+export class NgbHostSynchronizerFactory {
+    public $create($element: IAugmentedJQuery, $scope: IScope, statics: Statics) {
+        return new HostSynchronizer($element, $scope, statics)
     }
 
     static get $name() {

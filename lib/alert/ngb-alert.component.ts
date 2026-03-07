@@ -1,11 +1,14 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
 import { NgbAlertConfig } from "@/alert/ngb-alert-config.service"
 import template from "@/alert/ngb-alert.component.html?raw"
 import { NgbAnimationFactory, type AnimationFunction } from "@/ngb-animation.factory"
-import { NgbSyncHostFactory, type HostSynchronizer } from "@/ngb-sync-host.factory"
-import angular from "angular";
+import { NgbHostSynchronizerFactory, type IHostSynchronizer } from "@/ngb-sync-host.factory"
 
-export class NgbAlert implements IComponentController {
+export interface INgbAlert {
+    close(): void
+}
+
+export class NgbAlert implements IComponentController, INgbAlert {
     protected animation?: boolean
     protected dismissible?: boolean
     protected type?: string
@@ -15,13 +18,14 @@ export class NgbAlert implements IComponentController {
     protected isClosed = false
 
     private ngbRunTransition?: AnimationFunction
-    private ngbHostSynchronizer?: HostSynchronizer
+    private ngbHostSynchronizer?: IHostSynchronizer
 
     constructor(
         private $element: IAugmentedJQuery,
         private ngbAlertConfig: NgbAlertConfig,
         private ngbAnimationFactory: NgbAnimationFactory,
-        private ngbSyncHostFactory: NgbSyncHostFactory
+        private ngbSyncHostFactory: NgbHostSynchronizerFactory,
+        private $scope: IScope
     ) { }
 
     $onInit(): void {
@@ -30,28 +34,30 @@ export class NgbAlert implements IComponentController {
         this.type = this.type ?? this.ngbAlertConfig.type
 
         this.ngbRunTransition = this.ngbAnimationFactory.$create()
-        this.ngbHostSynchronizer = this.ngbSyncHostFactory.$create(this.$element, {
-            classNames: ["alert", "show", "d-block", this.type ? "alert-" + this.type : ""],
-            attributes: { "role": "alert" }
-        })
 
-        this.ngbHostSynchronizer.syncClasses({
-            "fade": () => this.animation!,
-            "alert-dismissible": () => this.dismissible!
-        })
-    }
-
-    $onChanges(onChangesObj: angular.IOnChangesObject): void {
-        const animation = onChangesObj["animation"]
-        const dismissible = onChangesObj["dismissible"]
-
-        this.ngbHostSynchronizer?.syncClasses({
-            "fade": () => animation?.currentValue,
-            "alert-dismissible": () => dismissible?.currentValue
+        this.ngbHostSynchronizer = this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
+            classNames: {
+                "alert show d-block": () => true,
+                [`alert-${this.type}`]: () => Boolean(this.type),
+                "fade": () => Boolean(this.animation),
+                "alert-dismissible": () => Boolean(this.dismissible)
+            },
+            attributes: {
+                "role": () => "alert"
+            }
         })
     }
 
-    protected async close() {
+    $onChanges(): void {
+        this.ngbHostSynchronizer?.apply({
+            classNames: {
+                "fade": () => Boolean(this.animation),
+                "alert-dismissible": () => Boolean(this.dismissible)
+            }
+        })
+    }
+
+    close() {
         if (this.closingInProgress || this.isClosed) return
         this.closingInProgress = true
 
@@ -74,7 +80,13 @@ export class NgbAlert implements IComponentController {
     }
 
     static get $inject() {
-        return ["$element", NgbAlertConfig.$name, NgbAnimationFactory.$name, NgbSyncHostFactory.$name]
+        return [
+            "$element",
+            NgbAlertConfig.$name,
+            NgbAnimationFactory.$name,
+            NgbHostSynchronizerFactory.$name,
+            "$scope"
+        ]
     }
 
     static get $factory(): IComponentOptions {

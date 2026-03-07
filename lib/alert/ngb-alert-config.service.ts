@@ -1,4 +1,5 @@
 import { NgbConfig } from "@/ngb-config.service"
+import type { StyleTypes } from "@/ngb.model"
 
 export class NgbAlertConfig {
     private _animation?: boolean;
@@ -6,7 +7,7 @@ export class NgbAlertConfig {
     constructor(private ngbConfig: NgbConfig) { }
 
     public dismissible = true;
-    public type: "success" | "info" | "warning" | "danger" | "primary" | "secondary" | "dark" = "warning"
+    public type: StyleTypes = "warning"
 
     get animation() {
         return this._animation ?? this.ngbConfig.animation
