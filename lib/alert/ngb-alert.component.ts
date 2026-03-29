@@ -16,6 +16,7 @@ export class NgbAlert implements IComponentController, INgbAlert {
 
     private closingInProgress = false
     protected isClosed = false
+    private isVisible = true
 
     private ngbRunTransition?: AnimationFunction
     private ngbHostSynchronizer?: IHostSynchronizer
@@ -34,25 +35,19 @@ export class NgbAlert implements IComponentController, INgbAlert {
         this.type = this.type ?? this.ngbAlertConfig.type
 
         this.ngbRunTransition = this.ngbAnimationFactory.$create()
-
-        this.ngbHostSynchronizer = this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
-            classNames: {
-                "alert show d-block": () => true,
-                [`alert-${this.type}`]: () => Boolean(this.type),
-                "fade": () => Boolean(this.animation),
-                "alert-dismissible": () => Boolean(this.dismissible)
-            },
-            attributes: {
-                "role": () => "alert"
-            }
-        })
     }
 
-    $onChanges(): void {
-        this.ngbHostSynchronizer?.apply({
+    $postLink(): void {
+        this.ngbHostSynchronizer = this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
             classNames: {
-                "fade": () => Boolean(this.animation),
-                "alert-dismissible": () => Boolean(this.dismissible)
+                alert: () => true,
+                show: () => this.isVisible,
+                fade: () => this.animation,
+                'alert-dismissible': () => this.dismissible,
+                [`alert-${this.type}`]: () => !!this.type
+            },
+            attributes: {
+                role: () => "alert"
             }
         })
     }
@@ -63,16 +58,21 @@ export class NgbAlert implements IComponentController, INgbAlert {
 
         if (!this.animation) {
             this.isClosed = true
-            this.$element.removeClass("show")
+            this.isVisible = false
+            this.$element.addClass("d-none")
             this.closed?.()
             return
         }
 
-        this.ngbRunTransition?.(this.$element, () => this.$element.removeClass("show")).then(() => {
+        this.ngbRunTransition?.(this.$element, () => this.isVisible = false).then(() => {
             this.isClosed = true
             this.closed?.()
         })
 
+    }
+
+    $onDestroy(): void {
+        this.ngbHostSynchronizer?.$destroy()
     }
 
     static get $name() {

@@ -10,16 +10,18 @@ export class NgbProgressbarStacked implements IComponentController {
     ) { }
 
     $onInit(): void {
+        this.$transclude(clone => {
+            if (!clone) return
+            this.$element.append(clone)
+        }, this.$element)
+    }
+
+    $postLink(): void {
         this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
             classNames: {
                 "progress-stacked": () => true
             }
         })
-
-        this.$transclude(clone => {
-            if (!clone) return
-            this.$element.append(clone)
-        }, this.$element)
     }
 
     static get $name() {

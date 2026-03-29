@@ -34,27 +34,23 @@ export class NgbProgressbar implements IComponentController {
         this.striped = this.striped ?? this.ngbProgressbarConfig.striped
         this.textType = this.textType ?? this.ngbProgressbarConfig.textType
         this.type = this.type ?? this.ngbProgressbarConfig.type
+    }
 
+    $postLink(): void {
         this.hostSynchronizer = this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
             attributes: {
                 "role": () => "progressbar",
-                "aria-valuemin": () => 0
+                "aria-valuemin": () => 0,
+                "aria-valuenow": () => this.value,
+                "aria-label": () => this.ariaLabel,
+                "aria-valuemax": () => this.max
             },
             classNames: {
-                "progress mb-3": () => true
-            }
-        })
-    }
-
-    $onChanges(): void {
-        this.hostSynchronizer?.apply({
-            attributes: {
-                "aria-valuenow": () => this.value,
-                "aria-valuemax": () => this.max,
-                "aria-label": () => this.ariaLabel
+                "progress": () => true,
+                "mb-3": () => !this.isStacked
             },
-            css: {
-                "height": () => this.height ?? ""
+            style: {
+                "width": () => this.isStacked ? this.width : "100%"
             }
         })
     }
@@ -71,12 +67,25 @@ export class NgbProgressbar implements IComponentController {
         return `${clamped}%`
     }
 
+    protected get width() {
+        if(this.isStacked) return "100%"
+        return this.percent
+    }
+
     protected get background() {
         return this.type ? `text-bg-${this.type}` : ""
     }
 
     protected get text() {
         return this.textType ? `text-${this.textType}` : ""
+    }
+
+    private get isStacked() {
+        return Boolean(this.ngbProgressbarStacked)
+    }
+
+    $onDestroy(): void {
+        this.hostSynchronizer?.$destroy()
     }
 
     static get $name() {
@@ -99,6 +108,9 @@ export class NgbProgressbar implements IComponentController {
                 textType: "@?",
                 type: "@?",
                 value: "<?"
+            },
+            require: {
+                ngbProgressbarStacked: "^?ngbProgressbarStacked"
             },
             transclude: true,
             controller: NgbProgressbar,

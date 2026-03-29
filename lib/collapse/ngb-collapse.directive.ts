@@ -1,14 +1,14 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import { NgbCollapseConfig } from "@/collapse/ngb-collapse-config.service"
 import { NgbAnimationFactory } from "@/ngb-animation.factory"
+import { NgbHostSynchronizerFactory } from "@/ngb-sync-host.factory"
 
 export class NgbCollapse implements IController {
     protected animation?: boolean
     protected horizontal?: boolean
     protected ngbCollapse?: boolean
 
-    protected hidden?: () => void
-    protected ngbHidden?: () => void
+    protected ngHidden?: () => void
     protected ngbCollapseChange?: () => void
     protected shown?: () => void
     protected handler!: () => void
@@ -19,7 +19,8 @@ export class NgbCollapse implements IController {
         private $element: IAugmentedJQuery,
         private ngbCollapseConfig: NgbCollapseConfig,
         private $scope: IScope,
-        private ngbAnimationFactory: NgbAnimationFactory
+        private ngbAnimationFactory: NgbAnimationFactory,
+        private ngbHostSynchronizerFactory: NgbHostSynchronizerFactory
     ) { }
 
     $onInit(): void {
@@ -31,48 +32,50 @@ export class NgbCollapse implements IController {
             if (prev == collapsed) return;
 
             const id = ++this.animationId
-            const { start } = this.size
 
             this.$element.removeClass("collapse show")
             this.$element.addClass("collapsing")
 
-            this.$element.css(this.direction, `${start}px`)
+            this.$element.css(this.direction, `${this.start}px`)
 
-            if (this.animation) {
-                await ngbRunTransition(this.$element, () => {
-                    const { end } = this.size
-                    this.$element.css(this.direction, `${end}px`)
-                })
-            } else {
-                const { end } = this.size
-                this.$element.css(this.direction, `${end}px`)
+            const finish = () => {
+                if (id !== this.animationId) return;
+
+                this.$element.removeClass("collapsing")
+                this.$element.addClass("collapse");
+
+                if (!collapsed) {
+                    this.$element.css(this.direction, "")
+                    this.$element.addClass("show")
+                    this.shown?.()
+                } else {
+                    this.$element.css(this.direction, "")
+                    this.ngHidden?.()
+                }
+
+                this.ngbCollapseChange?.()
             }
 
-            if (id !== this.animationId) return;
-
-            this.$element.removeClass("collapsing")
-            this.$element.addClass("collapse");
-
-            if (!collapsed) {
-                this.$element.css(this.direction, "")
-                this.$element.addClass("show")
-                this.shown?.()
-            } else {
-                this.$element.css(this.direction, "")
-                this.hidden?.()
-                this.ngbHidden?.()
+            if (!this.animation) {
+                this.$element.css(this.direction, `${this.end}px`)
+                finish()
+                return
             }
 
-            this.ngbCollapseChange?.()
+            ngbRunTransition(this.$element, () => {
+                this.$element.css(this.direction, `${this.end}px`)
+            }).then(finish)
         })
     }
 
     $postLink(): void {
-        this.$element.addClass("collapse")
-
-        if (!this.ngbCollapse) this.$element.addClass("show")
-        if (!this.horizontal) return
-        this.$element.addClass("collapse-horizontal")
+        this.ngbHostSynchronizerFactory.$create(this.$element, this.$scope, {
+            classNames: {
+                "collapse": () => true,
+                "show": () => !Boolean(this.ngbCollapse),
+                "collapse-horizontal": () => !Boolean(this.horizontal)
+            }
+        })
     }
 
     $onDestroy(): void {
@@ -87,27 +90,34 @@ export class NgbCollapse implements IController {
         return this.horizontal ? "width" : "height";
     }
 
-    private get size() {
+    private get end() {
         const isOpening = !this.ngbCollapse
         const [native] = Array.from(this.$element)
 
         const { scrollHeight, scrollWidth } = native
 
-        if (this.horizontal) {
-            const start = isOpening ? 0 : scrollWidth
-            const end = isOpening ? scrollWidth : 0
+        if (this.horizontal) return isOpening ? scrollWidth : 0
+        return isOpening ? scrollHeight : 0
+    }
 
-            return { start, end }
-        }
+    private get start() {
+        const isOpening = !this.ngbCollapse
+        const [native] = Array.from(this.$element)
 
-        const start = isOpening ? 0 : scrollHeight
-        const end = isOpening ? scrollHeight : 0
+        const { scrollHeight, scrollWidth } = native
 
-        return { start, end }
+        if (this.horizontal) return isOpening ? 0 : scrollWidth;
+        return isOpening ? 0 : scrollHeight
     }
 
     static get $inject() {
-        return ["$element", NgbCollapseConfig.$name, "$scope", NgbAnimationFactory.$name]
+        return [
+            "$element",
+            NgbCollapseConfig.$name,
+            "$scope",
+            NgbAnimationFactory.$name,
+            NgbHostSynchronizerFactory.$name
+        ]
     }
 
     static get $factory(): () => IDirective {
@@ -119,7 +129,7 @@ export class NgbCollapse implements IController {
                 horizontal: "<?",
                 ngbCollapse: "=",
                 hidden: "&?",
-                ngbHidden: "&?ngbHidden",
+                ngHidden: "&?ngHidden",
                 ngbCollapseChange: "&?",
                 shown: "&?"
             },

@@ -9,49 +9,8 @@
   <title>ngb-js</title>
 </head>
 
-<body class="container-fluid mt-2" ng-app="ngb.test" ng-controller="ngb.app as $">
-  <main class="container py-4" ng-init="progressValue = 35; progressMax = 100; showProgressValue = true; striped = true; animated = true;">
-    <h1 class="h3 mb-4">NGB JS Test: Alert + Progressbar</h1>
-
-    <section class="mb-5">
-      <h2 class="h5 mb-3">Alert</h2>
-
-      <ngb-alert type="success" dismissible="true" animation="true" closed="$.onCloseAlert()">
-        Alerta success con dismiss y callback a <code>onCloseAlert()</code>.
-      </ngb-alert>
-
-      <ngb-alert type="warning" dismissible="false" animation="false">
-        Alerta warning sin boton de cierre.
-      </ngb-alert>
-
-      <ngb-alert type="danger" dismissible="true" animation="false">
-        Alerta danger cerrable, sin animacion.
-      </ngb-alert>
-    </section>
-
-    <section>
-      <h2 class="h5 mb-3">Progressbar</h2>
-
-      <div class="d-flex gap-2 align-items-center mb-3">
-        <button type="button" class="btn btn-outline-secondary btn-sm" ng-click="progressValue = progressValue - 10">-10</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" ng-click="progressValue = progressValue + 10">+10</button>
-        <button type="button" class="btn btn-outline-primary btn-sm" ng-click="showProgressValue = !showProgressValue">
-          Toggle % text
-        </button>
-        <span class="small text-muted">Valor: {{ progressValue }} / {{ progressMax }}</span>
-      </div>
-
-      <ngb-progressbar value="progressValue" max="progressMax" type="primary" text-type="white"
-        show-value="showProgressValue" striped="striped" animated="animated">
-      </ngb-progressbar>
-
-      <ngb-progressbar value="70" type="success" show-value="true"></ngb-progressbar>
-      <ngb-progressbar value="45" type="warning" striped="true" animated="false" show-value="true"></ngb-progressbar>
-      <ngb-progressbar value="20" type="danger" show-value="false">
-        Sin show-value, renderiza transclusion
-      </ngb-progressbar>
-    </section>
-  </main>
+<body ng-app="ngb.demo">
+  <ngb-demo-app></ngb-demo-app>
 </body>
 
 </html>

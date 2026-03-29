@@ -1,61 +1,32 @@
-import angular, { type IController } from "angular"
+import angular from "angular"
 import { NgbModule } from "@ngb"
 import "node_modules/bootstrap/dist/css/bootstrap.css"
-import { NgbModal } from "@/modal/ngb-modal.service"
+import "./style.css"
 
-class ModalDemoContentController implements IController {
-    public ngbActiveModal!: {
-        close: (result?: any) => void
-        dismiss: (reason?: any) => void
-    }
+import { NgbDemoAppComponent } from "./app/ngb-demo-app.component"
+import { AlertDemoComponent } from "./features/alert/alert-demo.component"
+import { ProgressbarDemoComponent } from "./features/progressbar/progressbar-demo.component"
+import { CollapseDemoComponent } from "./features/collapse/collapse-demo.component"
+import { AccordionDemoComponent } from "./features/accordion/accordion-demo.component"
+import { ToastDemoComponent } from "./features/toast/toast-demo.component"
+import { ModalDemoComponent } from "./features/modal/modal-demo.component"
+import { ModalDemoContentComponent } from "./features/modal/modal-demo-content.component"
+import { DropdownDemoComponent } from "./features/dropdown/dropdown-demo.component"
+import { NavDemoComponent } from "./features/nav/nav-demo.component"
+import { TooltipDemoComponent } from "./features/tooltip/tooltip-demo.component"
+import { CarouselDemoComponent } from "./features/carousel/carousel-demo.component"
 
-    $onInit() {
-        void this.ngbActiveModal
-    }
+const app = angular.module("ngb.demo", [NgbModule.name])
 
-    static get $name() {
-        return "modalDemoContent"
-    }
-
-    static get $factory(): angular.IComponentOptions {
-        return {
-            bindings: {
-                ngbActiveModal: "<"
-            },
-            controller: ModalDemoContentController,
-            controllerAs: "$",
-            template: `
-                <div class="modal-header">
-                    <h5 class="modal-title">Ngb Modal Demo</h5>
-                    <button type="button" class="btn-close" aria-label="Close" ng-click="$.ngbActiveModal.dismiss('x')"></button>
-                </div>
-                <div class="modal-body">
-                    Contenido de prueba para modal.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" ng-click="$.ngbActiveModal.dismiss('cancel')">Cancelar</button>
-                    <button type="button" class="btn btn-primary" ng-click="$.ngbActiveModal.close('ok')">Aceptar</button>
-                </div>
-            `
-        }
-    }
-}
-
-const app = angular.module("ngb.test", [NgbModule.name])
-
-class AppController implements IController {
-    onCloseAlert() {
-        console.log("closed")
-    }
-
-    static get $inject() {
-        return []
-    }
-
-    static get $name() {
-        return "ngb.app"
-    }
-}
-
-app.component(ModalDemoContentController.$name, ModalDemoContentController.$factory)
-app.controller(AppController.$name, AppController)
+app.component(NgbDemoAppComponent.$name, NgbDemoAppComponent.$factory)
+app.component(AlertDemoComponent.$name, AlertDemoComponent.$factory)
+app.component(ProgressbarDemoComponent.$name, ProgressbarDemoComponent.$factory)
+app.component(CollapseDemoComponent.$name, CollapseDemoComponent.$factory)
+app.component(AccordionDemoComponent.$name, AccordionDemoComponent.$factory)
+app.component(ToastDemoComponent.$name, ToastDemoComponent.$factory)
+app.component(ModalDemoComponent.$name, ModalDemoComponent.$factory)
+app.component(ModalDemoContentComponent.$name, ModalDemoContentComponent.$factory)
+app.component(DropdownDemoComponent.$name, DropdownDemoComponent.$factory)
+app.component(NavDemoComponent.$name, NavDemoComponent.$factory)
+app.component(TooltipDemoComponent.$name, TooltipDemoComponent.$factory)
+app.component(CarouselDemoComponent.$name, CarouselDemoComponent.$factory)
