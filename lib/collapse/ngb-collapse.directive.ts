@@ -9,6 +9,7 @@ export class NgbCollapse implements IController {
     protected ngbCollapse?: boolean
 
     protected ngHidden?: () => void
+    protected ngbHidden?: () => void
     protected ngbCollapseChange?: () => void
     protected shown?: () => void
     protected handler!: () => void
@@ -28,15 +29,26 @@ export class NgbCollapse implements IController {
         this.horizontal = this.horizontal ?? this.ngbCollapseConfig.horizontal
         const ngbRunTransition = this.ngbAnimationFactory.$create()
 
-        this.handler = this.$scope.$watch(() => this.ngbCollapse, async (collapsed, prev) => {
+        this.handler = this.$scope.$watch(() => this.ngbCollapse, (collapsed, prev) => {
             if (prev == collapsed) return;
 
+            if (!this.animation) {
+                this.$element.toggleClass("show", !collapsed)
+
+                if (collapsed) this.ngbHidden?.()
+                else this.shown?.()
+
+                this.ngbCollapseChange?.()
+                return
+            }
+
             const id = ++this.animationId
+            const start = this.start
 
             this.$element.removeClass("collapse show")
             this.$element.addClass("collapsing")
 
-            this.$element.css(this.direction, `${this.start}px`)
+            this.$element.css(this.direction, `${start}px`)
 
             const finish = () => {
                 if (id !== this.animationId) return;
@@ -50,16 +62,10 @@ export class NgbCollapse implements IController {
                     this.shown?.()
                 } else {
                     this.$element.css(this.direction, "")
-                    this.ngHidden?.()
+                    this.ngbHidden?.()
                 }
 
                 this.ngbCollapseChange?.()
-            }
-
-            if (!this.animation) {
-                this.$element.css(this.direction, `${this.end}px`)
-                finish()
-                return
             }
 
             ngbRunTransition(this.$element, () => {
@@ -71,11 +77,12 @@ export class NgbCollapse implements IController {
     $postLink(): void {
         this.ngbHostSynchronizerFactory.$create(this.$element, this.$scope, {
             classNames: {
-                "collapse": () => true,
-                "show": () => !Boolean(this.ngbCollapse),
-                "collapse-horizontal": () => !Boolean(this.horizontal)
+                "collapse-horizontal": () => this.horizontal
             }
         })
+
+        this.$element.addClass("collapse")
+        this.$element.toggleClass("show", !this.ngbCollapse)
     }
 
     $onDestroy(): void {
@@ -129,7 +136,7 @@ export class NgbCollapse implements IController {
                 horizontal: "<?",
                 ngbCollapse: "=",
                 hidden: "&?",
-                ngHidden: "&?ngHidden",
+                ngbHidden: "&?",
                 ngbCollapseChange: "&?",
                 shown: "&?"
             },

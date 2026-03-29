@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IQService, ITimeoutService } from "angular";
+import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
 
 export type AnimationFunction = ($element: IAugmentedJQuery, startFn: () => void) => angular.IPromise<void>
 
@@ -24,14 +24,21 @@ export class NgbAnimationFactory {
         const defer = this.$q.defer<void>()
 
         el.getBoundingClientRect()
-        startFn()
-
-        if (total == 0) {
-            defer.resolve()
-            return defer.promise
-        }
 
         let finished = false
+        let timer: IPromise<void>
+
+        requestAnimationFrame(() => {
+            startFn()
+
+            if (total == 0) {
+                defer.resolve()
+                return defer.promise
+            }
+
+            $element.on("transitionend", handler)
+            timer = this.$timeout(done, total)
+        })
 
         const done = () => {
             if (finished) return
@@ -50,9 +57,6 @@ export class NgbAnimationFactory {
             $element.off("transitionend", handler)
             this.$timeout.cancel(timer)
         }
-
-        $element.on("transitionend", handler)
-        const timer = this.$timeout(done, total)
 
         return defer.promise
     }
