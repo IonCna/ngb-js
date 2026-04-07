@@ -1,4 +1,4 @@
-import { NgbConfig } from "../ngb-config.service"
+import { NgbConfig } from "@/ngb-config.service"
 
 export class NgbCarouselConfig {
     public _animation?: boolean

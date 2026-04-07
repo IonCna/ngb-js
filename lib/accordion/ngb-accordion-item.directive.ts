@@ -1,9 +1,8 @@
-import type { IController, IDirective, IScope } from "angular"
+import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular"
 import { NgbAccordionCounterService } from "@/accordion/ngb-accordion-counters.service"
 import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
 import { NgbAccordionItemChange, NgbAccordionRegisterEvent, NgbAccordionUnregisterEvent, type NgbAccordionItemPhase } from "@/accordion/ngb-accordion.events"
 import { NgbAccordion } from "@/accordion/ngb-accordion.directive"
-import template from "@/accordion/ngb-accordion-item.directive.html?raw"
 
 export class NgbAccordionItem implements IController {
     private ngbAccordion!: NgbAccordion
@@ -22,15 +21,21 @@ export class NgbAccordionItem implements IController {
     constructor(
         private $ngbAccordionItemCounter: NgbAccordionCounterService,
         private $ngbAccordionConfig: NgbAccordionConfig,
-        protected $scope: IScope
+        protected $scope: IScope,
+        private $element: IAugmentedJQuery
     ) {}
 
     $onInit(): void {
-        this.id = this.ngbAccordionItem ?? `ngb-accordion-item-${this.$ngbAccordionItemCounter.accordionItemCounter++}`
+        this.id = this.ngbAccordionItem ?? `ngb-accordion-item-${this.$ngbAccordionItemCounter.increase()}`
         this.destroyOnHide = this.destroyOnHide ?? this.$ngbAccordionConfig.destroyOnHide
         this.collapsed = this.collapsed ?? true
 
         this.ngbAccordion["$scope"].$emit(NgbAccordionRegisterEvent, this)
+    }
+
+    $postLink(): void {
+        this.$element.attr("id", this.id)
+        this.$element.addClass("accordion-item")
     }
 
     public toggle() {
@@ -67,7 +72,7 @@ export class NgbAccordionItem implements IController {
 
     $onDestroy(): void {
         this.emitUnregister()
-        this.$ngbAccordionItemCounter.accordionItemCounter--
+        this.$ngbAccordionItemCounter.decrease()
     }
 
     private emitChange(phase: NgbAccordionItemPhase) {
@@ -85,7 +90,8 @@ export class NgbAccordionItem implements IController {
         return [
             NgbAccordionCounterService.$name,
             NgbAccordionConfig.$name,
-            "$scope"
+            "$scope",
+            "$element"
         ]
     }
 
@@ -97,9 +103,8 @@ export class NgbAccordionItem implements IController {
         return () => ({
             bindToController: true,
             controller: NgbAccordionItem,
-            replace: true,
             transclude: true,
-            template,
+            template: '<ng-transclude></ng-transclude>',
             require: {
                 ngbAccordion: "^ngbAccordion"
             },

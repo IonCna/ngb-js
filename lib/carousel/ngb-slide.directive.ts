@@ -1,11 +1,47 @@
-import type { IController, IDirective } from "angular";
+import type { IAugmentedJQuery, IController, IDirective, ITranscludeFunction } from "angular";
 import type { NgbSingleSlideEvent } from "./ngb-carousel.module"
 import angular from "angular";
 import type { NgbCarousel } from "./ngb-carousel.component";
 import { NGB_CAROUSEL_SLIDE_COUNTER } from "./ngb-carousel.module"
 
 export class NgbSlide implements IController {
-    private slid?: ($event: NgbSingleSlideEvent) => void
+    constructor(
+        private $counter: number,
+        private $element: IAugmentedJQuery,
+        private $transclude: ITranscludeFunction
+    ) { }
+
+    $onInit(): void {
+    }
+
+    static get $factory(): () => IDirective {
+        return () => ({
+            require: {
+                carousel: "^ngbCarousel"
+            },
+            controller: NgbSlide,
+            bindToController: {
+                slid: "&?"
+            },
+            controllerAs: "$",
+            restrict: "A",
+            transclude: "element"
+        })
+    }
+
+    static get $inject() {
+        return [NGB_CAROUSEL_SLIDE_COUNTER, "$transclude"]
+    }
+
+    static get $name() {
+        return "ngbSlide"
+    }
+
+    //#endregion
+}
+
+/**
+ *     private slid?: ($event: NgbSingleSlideEvent) => void
     private currentId: string
     private carousel!: NgbCarousel
 
@@ -50,30 +86,4 @@ export class NgbSlide implements IController {
 
         this.slid?.({ direction, isShown, source })
     }
-
-    //#region $angular
-
-    static get $factory(): () => IDirective {
-        return () => ({
-            require: {
-                carousel: "^ngbCarousel"
-            },
-            scope: false,
-            controller: this,
-            bindToController: {
-                slid: "&?"
-            },
-            restrict: "A",
-        })
-    }
-
-    static get $inject() {
-        return [NGB_CAROUSEL_SLIDE_COUNTER, "$element"]
-    }
-
-    static get $name() {
-        return "ngbSlide"
-    }
-
-    //#endregion
-}
+ */

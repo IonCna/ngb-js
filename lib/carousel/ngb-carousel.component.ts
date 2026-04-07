@@ -1,39 +1,71 @@
 import type {
-    IAugmentedJQuery,
     IComponentController,
     IComponentOptions,
-    IIntervalService,
-    IPromise,
-    ITimeoutService
 } from "angular";
-import type { NgbSlideEvent, NgbSlideEventSource } from "./ngb-carousel.module";
+
 import { NgbCarouselConfig } from "./ngb-carousel-config.service";
-import { NgbSlide } from "./ngb-slide.directive";
-import angular from "angular";
 import { NgbAnimationFactory } from "@/ngb-animation.factory";
 import template from "@/carousel/ngb-carousel.component.html?raw";
 
-interface Slide {
-    id: string
-    container: JQLite
-    slide: NgbSlide
+export interface INgbCarousel {
+    select(slideId: string, source: unknown): void
+    prev(source: unknown): void
+    next(source: unknown): void
+    pause(): void
+    cycle(): void
+    focus(): void
 }
 
-enum CarouselKeyBoardKeys {
-    ARROW_RIGHT = "ArrowRight",
-    ARROW_LEFT = "ArrowLeft"
+export class NgbCarousel implements IComponentController, INgbCarousel {
+    private activeId?: string
+    private animation?: boolean
+    private interval?: number
+    private keyboard?: boolean
+    private pauseOnFocus?: boolean
+    private pauseOnHover?: boolean
+    private showNavigationArrows?: boolean
+    private showNavigationIndicators?: boolean
+    private wrap?: boolean
+
+    static get $name() {
+        return "ngbCarousel"
+    }
+
+    static get $factory(): IComponentOptions {
+        return {
+            controllerAs: "$",
+            controller: NgbCarousel,
+            transclude: true,
+            bindings: {
+                activeId: "<?",
+                animation: "<?",
+                interval: "<?",
+                keyboard: "<?",
+                pauseOnFocus: "<?",
+                pauseOnHover: "<?",
+                showNavigationArrows: "<?",
+                showNavigationIndicators: "<?",
+                wrap: "<?",
+                slid: "&?",
+                slide: "&?"
+            },
+            template
+        }
+    }
+
+    static get $inject() {
+        return [
+            '$element',
+            NgbCarouselConfig.$name,
+            '$interval',
+            '$timeout',
+            NgbAnimationFactory.$name
+        ]
+    }
 }
 
-export class NgbCarousel implements IComponentController {
-    private activeId!: string
-    private animation!: boolean
-    private interval!: number
-    private keyboard!: boolean
-    private pauseOnFocus!: boolean
-    private pauseOnHover!: boolean
-    private showNavigationArrows!: boolean
-    private showNavigationIndicators!: boolean
-    private wrap!: boolean
+/**
+ *  
     private slid?: ({ $event }: { $event: NgbSlideEvent }) => void
     private slide?: ({ $event }: { $event: NgbSlideEvent }) => void
 
@@ -313,33 +345,4 @@ export class NgbCarousel implements IComponentController {
         this.activeInterval = this.$interval(this.next.bind(this, "timer"), this.interval)
     }
 
-    static get $name() {
-        return "ngbCarousel"
-    }
-
-    static get $factory(): IComponentOptions {
-        return {
-            controllerAs: "$",
-            controller: NgbCarousel,
-            transclude: true,
-            bindings: {
-                activeId: "<?",
-                animation: "<?",
-                interval: "<?",
-                keyboard: "<?",
-                pauseOnFocus: "<?",
-                pauseOnHover: "<?",
-                showNavigationArrows: "<?",
-                showNavigationIndicators: "<?",
-                wrap: "<?",
-                slid: "&?",
-                slide: "&?"
-            },
-            template
-        }
-    }
-
-    static get $inject() {
-        return ['$element', NgbCarouselConfig.$name, '$interval', '$timeout', NgbAnimationFactory.$name]
-    }
-}
+ */

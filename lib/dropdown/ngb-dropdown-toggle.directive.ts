@@ -60,7 +60,7 @@ export class NgbDropdownToggle implements IController {
             require: {
                 ngbDropdown: "^ngbDropdown"
             },
-            controller: this,
+            controller: NgbDropdownToggle,
             restrict: "A"
         })
     }

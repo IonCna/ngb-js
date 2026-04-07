@@ -106,13 +106,13 @@ export class NgbDropdown implements IController {
             bindToController: {
                 autoClose: "<?",
                 animation: "<?",
-                container: "<?",
+                container: "@?",
                 display: "<?",
                 dropdownClass: "<?",
                 isOpened: "<?open",
                 popperOptions: "<?",
                 openChange: "&?",
-                placement: "<?"
+                placement: "@?"
             },
             controller: this,
         })

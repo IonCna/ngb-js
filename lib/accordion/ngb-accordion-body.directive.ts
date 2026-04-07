@@ -1,13 +1,19 @@
-import type { IController, IDirective } from "angular";
-import template from "@/accordion/ngb-accordion-body.directive.html?raw"
+import type { IAugmentedJQuery, IController, IDirective } from "angular";
 
 export class NgbAccordionBody implements IController {
+
+    constructor(private $element: IAugmentedJQuery) {}
+
+    $postLink(): void {
+        this.$element.addClass("accordion-body")
+    }
+
     static get $name() {
         return "ngbAccordionBody"
     }
 
     static get $inject() {
-        return []
+        return ["$element"]
     }
 
     static get $factory(): () => IDirective {
@@ -18,9 +24,8 @@ export class NgbAccordionBody implements IController {
                 ngbAccordionItem: "^^ngbAccordionItem"
             },
             restrict: "A",
-            template,
+            template: '<ng-transclude></ng-transclude>',
             transclude: true,
-            replace: true
         })
     }
 }

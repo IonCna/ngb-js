@@ -1,6 +1,10 @@
 import type { IController, IDirective } from "angular";
 import type { NgbDropdownMenu } from "./ngb-dropdown-menu.directive"
 
+function elementIsButton(element: unknown): element is HTMLButtonElement {
+    return element instanceof HTMLButtonElement
+}
+
 export class NgbDropdownButtonItem implements IController {
     private ngbDisabled!: boolean
     private tabIndex!: number
@@ -19,11 +23,12 @@ export class NgbDropdownButtonItem implements IController {
         this.$element.addClass("dropdown-item")
         this.ngbDisabled && this.$element.addClass("disabled")
         this.$element.attr("tabindex", this.tabIndex)
-        this.ngbDisabled && this.$element.attr("disabled", "true")
-
+        
         if(this.ngbDisabled) {
             const [nativeElement] = Array.from(this.$element);
-            (nativeElement as HTMLButtonElement).disabled = true
+            if(!elementIsButton(nativeElement)) return
+
+            nativeElement.disabled = true
         }
 
         this.ngbDropdownMenu.register({
@@ -47,7 +52,7 @@ export class NgbDropdownButtonItem implements IController {
             require: {
                 ngbDropdownMenu: "^ngbDropdownMenu"
             },
-            controller: this,
+            controller: NgbDropdownButtonItem,
             scope: true,
             restrict: "A"
         })

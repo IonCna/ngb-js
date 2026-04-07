@@ -14,10 +14,11 @@
     "moduleDetection": "force",
     "noEmit": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": [ "lib/*" ],
-      "@ngb": [ "lib/index.ts" ]
+      "@/*": [ "./lib/*" ],
+      "@ngb": [ "./lib/index.ts" ],
+      "@demo/*": ["./src/app/*"],
+      "@bootstrap": ["./node_modules/bootstrap/dist/css/bootstrap.css"]
     },
 
     /* Linting */

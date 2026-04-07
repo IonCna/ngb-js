@@ -1,20 +1,17 @@
-<div class="carousel-inner" carousel-inner-host></div>
+<div class="carousel-inner" ng-transclude>
 
-<div class="carousel-indicators" role="tablist" ng-if="$.showNavigationIndicators && $.orderedSlides.length > 1">
-    <button
-        type="button"
-        role="tab"
-        ng-repeat="slide in $.orderedSlides track by slide.id"
-        data-bs-target=""
-        ng-attr-data-bs-slide-to="{{ $index }}"
-        ng-class="{ active: $index === $.index }"
-        ng-attr-aria-current="{{ $index === $.index ? 'true' : undefined }}"
-        ng-attr-aria-label="{{ 'Slide ' + ($index + 1) }}"
-        ng-attr-aria-labelledby="{{ slide.id }}"
-        ng-attr-aria-controls="{{ slide.id }}"
-        ng-click="$.select(slide.id, 'indicator')">
-    </button>
 </div>
+
+<!-- <div class="carousel-indicators" role="tablist" ng-if="$.showNavigationIndicators && $.orderedSlides.length > 1">
+    <button type="button" role="tab" ng-repeat="slide in $.orderedSlides track by slide.id"
+        ng-attr-data-bs-slide-to="{{ $index }}" ng-class="{ active: $index === $.index }"
+        ng-attr-aria-current="{{ $index === $.index ? 'true' : undefined }}"
+        ng-attr-aria-label="{{ 'Slide ' + ($index + 1) }}" ng-attr-aria-labelledby="{{ slide.id }}"
+        ng-attr-aria-controls="{{ slide.id }}" ng-click="$.select(slide.id, 'indicator')">
+    </button>
+</div> -->
+
+<!-- 
 
 <button
     type="button"
@@ -34,4 +31,4 @@
     <span class="visually-hidden">Next</span>
 </button>
 
-<div class="d-none" ng-transclude></div>
+<div class="d-none" ng-transclude></div> -->

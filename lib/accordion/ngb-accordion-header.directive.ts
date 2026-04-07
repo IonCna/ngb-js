@@ -1,13 +1,20 @@
-import type { IController, IDirective } from "angular";
-import template from "@/accordion/ngb-accordion-header.directive.html?raw"
+import type { IAugmentedJQuery, IController, IDirective } from "angular";
 
 export class NgbAccordionHeader implements IController {
+
+    constructor(private $element: IAugmentedJQuery) {}
+
+    $postLink(): void {
+        this.$element.addClass("accordion-header")
+        this.$element.attr("role", "heading")
+    }
+
     static get $name() {
         return "ngbAccordionHeader"
     }
 
     static get $inject() {
-        return []
+        return ["$element"]
     }
 
     static get $factory(): () => IDirective {
@@ -15,9 +22,8 @@ export class NgbAccordionHeader implements IController {
             bindToController: true,
             controller: NgbAccordionHeader,
             restrict: "A",
-            replace: true,
             transclude: true,
-            template
+            template: '<ng-transclude></ng-transclude>'
         })
     }
 }
