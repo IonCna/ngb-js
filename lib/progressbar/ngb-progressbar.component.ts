@@ -1,91 +1,72 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import template from "@/progressbar/ngb-progressbar.component.html?raw"
 import { NgbProgressbarConfig } from "@/progressbar/ngb-progressbar-config.service"
 import type { NgbProgressbarStacked } from "@/progressbar/ngb-progressbar-stacked.component"
-import { NgbHostSynchronizerFactory, type IHostSynchronizer } from "@/ngb-sync-host.factory"
+import { getValueInRange } from '@/utils'
+import angular from "angular";
 
 export class NgbProgressbar implements IComponentController {
     protected animated?: boolean
     protected ariaLabel?: string
     protected height?: string
-    protected max?: number
+    protected _max?: number
     protected showValue?: boolean
     protected striped?: boolean
     protected textType?: string
     protected type?: string
     protected value?: number
-    protected ngbProgressbarStacked?: NgbProgressbarStacked
-
-    private hostSynchronizer?: IHostSynchronizer
+    protected stacked?: NgbProgressbarStacked
 
     constructor(
         private ngbProgressbarConfig: NgbProgressbarConfig,
         private $element: IAugmentedJQuery,
-        private ngbSyncHostFactory: NgbHostSynchronizerFactory,
-        private $scope: IScope
     ) { }
 
     $onInit(): void {
         this.animated = this.animated ?? this.ngbProgressbarConfig.animated
         this.ariaLabel = this.ariaLabel ?? this.ngbProgressbarConfig.ariaLabel
         this.height = this.height ?? this.ngbProgressbarConfig.height
-        this.max = this.max ?? this.ngbProgressbarConfig.max
+        this._max = this._max ?? this.ngbProgressbarConfig.max
         this.showValue = this.showValue ?? this.ngbProgressbarConfig.showValue
         this.striped = this.striped ?? this.ngbProgressbarConfig.striped
         this.textType = this.textType ?? this.ngbProgressbarConfig.textType
         this.type = this.type ?? this.ngbProgressbarConfig.type
+
+        this.value = this.value ?? 0
     }
 
     $postLink(): void {
-        this.hostSynchronizer = this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
-            attributes: {
-                "role": () => "progressbar",
-                "aria-valuemin": () => 0,
-                "aria-valuenow": () => this.value,
-                "aria-label": () => this.ariaLabel,
-                "aria-valuemax": () => this.max
-            },
-            classNames: {
-                "progress": () => true,
-                "mb-3": () => !this.isStacked
-            },
-            style: {
-                "width": () => this.isStacked ? this.width : "100%"
-            }
-        })
+        this.$element.attr("role", "progressbar")
+        this.$element.addClass("progress")
+        this.$element.css({ height: this.height ?? '' })
+
+        this.$element.attr("aria-valuemin", 0)
+        this.$element.attr("aria-label", `${this.ariaLabel}`)
     }
 
-    protected get percent() {
-        const value = Number(this.value ?? 0)
-        const max = Number(this.max ?? this.ngbProgressbarConfig.max ?? 100)
+    $onChanges(): void {
+        this.$element.attr("aria-valuenow", this.getValue())
+        this.$element.attr("aria-valuemax", this.max)
 
-        if (!Number.isFinite(max) || max <= 0) return "0%"
-
-        const percent = (value * 100) / max
-        const clamped = Math.min(100, Math.max(0, percent))
-
-        return `${clamped}%`
+        if (this.stacked) {
+            this.$element.css({ width: this.getPercentValue() + '%' })
+        }
     }
 
-    protected get width() {
-        if(this.isStacked) return "100%"
-        return this.percent
+    set max(max: number) {
+        this._max = !angular.isNumber(max) || max <= 0 ? 100 : max
     }
 
-    protected get background() {
-        return this.type ? `text-bg-${this.type}` : ""
+    get max() {
+        return this._max ?? this.ngbProgressbarConfig.max
     }
 
-    protected get text() {
-        return this.textType ? `text-${this.textType}` : ""
+    protected getValue() {
+        return getValueInRange(this.value ?? 0, this.max ?? this.ngbProgressbarConfig.max)
     }
 
-    private get isStacked() {
-        return Boolean(this.ngbProgressbarStacked)
-    }
-
-    $onDestroy(): void {
-        this.hostSynchronizer?.$destroy()
+    protected getPercentValue() {
+        return (100 * this.getValue()) / (this.max ?? this.ngbProgressbarConfig.max);
     }
 
     static get $name() {
@@ -93,7 +74,7 @@ export class NgbProgressbar implements IComponentController {
     }
 
     static get $inject() {
-        return [NgbProgressbarConfig.$name, "$element", NgbHostSynchronizerFactory.$name, "$scope"]
+        return [NgbProgressbarConfig.$name, "$element"]
     }
 
     static get $factory(): IComponentOptions {
@@ -107,10 +88,10 @@ export class NgbProgressbar implements IComponentController {
                 striped: "<?",
                 textType: "@?",
                 type: "@?",
-                value: "<?"
+                value: "<"
             },
             require: {
-                ngbProgressbarStacked: "^?ngbProgressbarStacked"
+                stacked: "^?ngbProgressbarStacked"
             },
             transclude: true,
             controller: NgbProgressbar,

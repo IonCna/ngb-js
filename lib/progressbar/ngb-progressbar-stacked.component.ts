@@ -1,27 +1,12 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope, ITranscludeFunction } from "angular"
-import { NgbHostSynchronizerFactory } from "@/ngb-sync-host.factory"
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular"
 
 export class NgbProgressbarStacked implements IComponentController {
     constructor(
-        private ngbSyncHostFactory: NgbHostSynchronizerFactory,
-        private $element: IAugmentedJQuery,
-        private $transclude: ITranscludeFunction,
-        private $scope: IScope
+        private $element: IAugmentedJQuery
     ) { }
 
-    $onInit(): void {
-        this.$transclude(clone => {
-            if (!clone) return
-            this.$element.append(clone)
-        }, this.$element)
-    }
-
     $postLink(): void {
-        this.ngbSyncHostFactory.$create(this.$element, this.$scope, {
-            classNames: {
-                "progress-stacked": () => true
-            }
-        })
+        this.$element.addClass("progress-stacked")
     }
 
     static get $name() {
@@ -29,14 +14,13 @@ export class NgbProgressbarStacked implements IComponentController {
     }
 
     static get $inject() {
-        return [NgbHostSynchronizerFactory.$name, "$element", "$transclude", "$scope"]
+        return ["$element"]
     }
 
     static get $factory(): IComponentOptions {
         return {
             controller: NgbProgressbarStacked,
             controllerAs: "$",
-            transclude: true,
         }
     }
 }
