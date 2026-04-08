@@ -1,5 +1,7 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IQService, ITimeoutService } from "angular";
 import { NgbAlertConfig } from "@/alert/ngb-alert-config.service"
+import { ngbRunTransition } from "@/utils/transition/ngb-transition"
+import { ngbAlertFadingTransition } from "@/alert/alert-transition"
 import template from "@/alert/ngb-alert.component.html?raw"
 
 export interface INgbAlert {
@@ -12,14 +14,11 @@ export class NgbAlert implements IComponentController, INgbAlert {
     protected type?: string
     protected closed?: () => void
 
-    private closingInProgress = false
-    protected isClosed = false
-    private isVisible = true
-
     constructor(
         private $element: IAugmentedJQuery,
         private ngbAlertConfig: NgbAlertConfig,
-        private $scope: IScope
+        private $q: IQService,
+        private $timeout: ITimeoutService
     ) { }
 
     $onInit(): void {
@@ -29,19 +28,32 @@ export class NgbAlert implements IComponentController, INgbAlert {
     }
 
     $postLink(): void {
+        this.$element.attr("role", "alert")
+        this.$element.addClass("alert d-block show")
+
+        const type = `alert-${this.type}`
+        this.$element.addClass(type)
+    }
+
+    $onChanges(): void {
+        this.$element.toggleClass("fade", this.animation)
+        this.$element.toggleClass("alert-dismissible", this.dismissible)
     }
 
     close() {
-        if (this.closingInProgress || this.isClosed) return
-        this.closingInProgress = true
+        const deferred = this.$q.defer<boolean>()
 
-        if (!this.animation) {
-            this.isClosed = true
-            this.isVisible = false
-            this.$element.addClass("d-none")
+        const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbAlertFadingTransition, {
+            animation: this.animation ?? this.ngbAlertConfig.animation,
+            runningTransition: 'continue'
+        })
+
+        transition.then(() => {
             this.closed?.()
-            return
-        }
+            deferred.resolve(true)
+        })
+
+        return deferred.promise
     }
 
     static get $name() {
@@ -52,7 +64,8 @@ export class NgbAlert implements IComponentController, INgbAlert {
         return [
             "$element",
             NgbAlertConfig.$name,
-            "$scope"
+            "$q",
+            "$timeout"
         ]
     }
 
