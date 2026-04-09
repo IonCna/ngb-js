@@ -1,4 +1,5 @@
 import type { IAugmentedJQuery } from "angular";
+export * from "@/utils/transition"
 
 export function reflow(element: IAugmentedJQuery) {
     const [native] = Array.from(element)

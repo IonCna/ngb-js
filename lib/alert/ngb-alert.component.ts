@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IQService, ITimeoutService } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService, IQService, ITimeoutService } from "angular";
 import { NgbAlertConfig } from "@/alert/ngb-alert-config.service"
 import { ngbRunTransition } from "@/utils/transition/ngb-transition"
 import { ngbAlertFadingTransition } from "@/alert/alert-transition"
@@ -18,7 +18,8 @@ export class NgbAlert implements IComponentController, INgbAlert {
         private $element: IAugmentedJQuery,
         private ngbAlertConfig: NgbAlertConfig,
         private $q: IQService,
-        private $timeout: ITimeoutService
+        private $timeout: ITimeoutService,
+        private $log: ILogService
     ) { }
 
     $onInit(): void {
@@ -50,6 +51,7 @@ export class NgbAlert implements IComponentController, INgbAlert {
 
         transition.then(() => {
             this.closed?.()
+            this.$log.info("[ngb.alert]: was closed")
             deferred.resolve(true)
         })
 
@@ -65,7 +67,8 @@ export class NgbAlert implements IComponentController, INgbAlert {
             "$element",
             NgbAlertConfig.$name,
             "$q",
-            "$timeout"
+            "$timeout",
+            "$log"
         ]
     }
 

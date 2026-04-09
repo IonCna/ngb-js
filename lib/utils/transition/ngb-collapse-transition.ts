@@ -20,7 +20,7 @@ function measureCollapsingElementDimensionPx(element: IAugmentedJQuery, dimensio
         element.addClass("show")
     }
 
-    element.css({ dimension: "" })
+    element.css({ [dimension]: "" })
     const [native] = Array.from(element)
     const dimensionSize = native.getBoundingClientRect()[dimension] + 'px'
 
@@ -53,7 +53,7 @@ export function ngbCollapsingTransition(element: IAugmentedJQuery, animation: bo
         angular.extend(context, { maxSize });
 
         element.css({
-            dimension: context.direction !== 'show' ? maxSize : '0px'
+            [context.dimension]: context.direction !== 'show' ? maxSize : '0px'
         })
 
         element.removeClass("collapse collapsing show")
@@ -65,7 +65,7 @@ export function ngbCollapsingTransition(element: IAugmentedJQuery, animation: bo
     if (!context.maxSize) throw new Error("[ngb-transition]: context.maxSize was undefined");
 
     element.css({
-        dimension: context.direction === 'show' ? context.maxSize : '0px'
+        [context.dimension]: context.direction === 'show' ? context.maxSize : '0px'
     })
 
     return () => {
