@@ -1,34 +1,14 @@
-<div class="carousel-inner" ng-transclude>
-
-</div>
-
-<!-- <div class="carousel-indicators" role="tablist" ng-if="$.showNavigationIndicators && $.orderedSlides.length > 1">
-    <button type="button" role="tab" ng-repeat="slide in $.orderedSlides track by slide.id"
-        ng-attr-data-bs-slide-to="{{ $index }}" ng-class="{ active: $index === $.index }"
-        ng-attr-aria-current="{{ $index === $.index ? 'true' : undefined }}"
-        ng-attr-aria-label="{{ 'Slide ' + ($index + 1) }}" ng-attr-aria-labelledby="{{ slide.id }}"
-        ng-attr-aria-controls="{{ slide.id }}" ng-click="$.select(slide.id, 'indicator')">
-    </button>
+<!-- <div class="carousel-indicators" ng-class="{ 'visually-hidden': !$.showNavigationIndicators }" role="tablist">
+    <button ng-repeat="slide of $.slides track slide" type="button" data-bs-target
+        ng-class="{ 'active': slide.id === $.activeId }" role="tab" ng-attr-aria-labelledby="'slide-' + slide.id"
+        ng-attr-aria-controls="'slide-' + slide.id" ng-attr-aria-selected="slide.id === $.activeId"
+        ng-click="$.focus(); $.select(slide.id, NgbSlideEventSource.INDICATOR)"></button>
 </div> -->
 
-<!-- 
+<div class="carousel-inner">
+    <div ng-repeat="slide in $.slides" ng-init="$element = $.build(slide.id)">
+        <div class="carousel-item">test</div>
+    </div>
+</div>
 
-<button
-    type="button"
-    class="carousel-control-prev"
-    ng-if="$.showNavigationArrows && $.orderedSlides.length > 1"
-    ng-click="$.prev('arrowLeft')">
-    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Previous</span>
-</button>
-
-<button
-    type="button"
-    class="carousel-control-next"
-    ng-if="$.showNavigationArrows && $.orderedSlides.length > 1"
-    ng-click="$.next('arrowRight')">
-    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Next</span>
-</button>
-
-<div class="d-none" ng-transclude></div> -->
+<ng-transclude></ng-transclude>

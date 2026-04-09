@@ -1,7 +1,7 @@
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService, IQService, ITimeoutService } from "angular";
 import { NgbAlertConfig } from "@/alert/ngb-alert-config.service"
 import { ngbRunTransition } from "@/utils/transition/ngb-transition"
-import { ngbAlertFadingTransition } from "@/alert/alert-transition"
+import { ngbAlertFadingTransition } from "@/alert/ngb-alert-transition"
 import template from "@/alert/ngb-alert.component.html?raw"
 
 export interface INgbAlert {

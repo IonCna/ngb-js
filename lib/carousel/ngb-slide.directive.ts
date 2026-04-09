@@ -1,17 +1,21 @@
-import type { IAugmentedJQuery, IController, IDirective, ITranscludeFunction } from "angular";
-import type { NgbSingleSlideEvent } from "./ngb-carousel.module"
-import angular from "angular";
-import type { NgbCarousel } from "./ngb-carousel.component";
-import { NGB_CAROUSEL_SLIDE_COUNTER } from "./ngb-carousel.module"
+import type { IController, IDirective, ITranscludeFunction } from "angular";
+import type { NgbSlideEventDirection } from "@/carousel/ngb-carousel-transition";
+import type { NgbCarousel } from "@/carousel/ngb-carousel.component"
 
 export class NgbSlide implements IController {
-    constructor(
-        private $counter: number,
-        private $element: IAugmentedJQuery,
-        private $transclude: ITranscludeFunction
-    ) { }
+    public id!: string
+    protected slid?: () => NgbSlideEventDirection
+    protected carousel!: NgbCarousel
+
+    constructor(public readonly $transclude: ITranscludeFunction) {}
 
     $onInit(): void {
+        this.id = this.id ?? `ngb-slide-`
+        if(!this.carousel) throw new Error("ngb-slide only can be used inside of ngb-carousel component");
+    }
+
+    $postLink(): void {
+        this.carousel.register(this)
     }
 
     static get $factory(): () => IDirective {
@@ -20,9 +24,11 @@ export class NgbSlide implements IController {
                 carousel: "^ngbCarousel"
             },
             controller: NgbSlide,
-            bindToController: {
-                slid: "&?"
+            scope: {
+                slid: "&?",
+                id: "@?"
             },
+            bindToController: true,
             controllerAs: "$",
             restrict: "A",
             transclude: "element"
@@ -30,7 +36,7 @@ export class NgbSlide implements IController {
     }
 
     static get $inject() {
-        return [NGB_CAROUSEL_SLIDE_COUNTER, "$transclude"]
+        return ["$transclude"]
     }
 
     static get $name() {

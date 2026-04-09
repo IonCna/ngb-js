@@ -1,11 +1,15 @@
 import type {
+    IAugmentedJQuery,
     IComponentController,
     IComponentOptions,
+    IIntervalService,
 } from "angular";
 
-import { NgbCarouselConfig } from "./ngb-carousel-config.service";
-import { NgbAnimationFactory } from "@/ngb-animation.factory";
+import { NgbCarouselConfig } from "@/carousel/ngb-carousel-config.service"
 import template from "@/carousel/ngb-carousel.component.html?raw";
+import type { NgbSlide } from "@/carousel/ngb-slide.directive";
+import { toNativeElement } from "@/utils"
+import angular from "angular";
 
 export interface INgbCarousel {
     select(slideId: string, source: unknown): void
@@ -17,15 +21,79 @@ export interface INgbCarousel {
 }
 
 export class NgbCarousel implements IComponentController, INgbCarousel {
-    private activeId?: string
-    private animation?: boolean
-    private interval?: number
-    private keyboard?: boolean
-    private pauseOnFocus?: boolean
-    private pauseOnHover?: boolean
-    private showNavigationArrows?: boolean
-    private showNavigationIndicators?: boolean
-    private wrap?: boolean
+    protected activeId?: string
+    protected animation?: boolean
+    protected interval?: number
+    protected keyboard?: boolean
+    protected pauseOnFocus?: boolean
+    protected pauseOnHover?: boolean
+    protected showNavigationArrows?: boolean
+    protected showNavigationIndicators?: boolean
+    protected wrap?: boolean
+
+    public id = `ngb-carousel-${0}`
+    private _transitionIds: [string, string] | null = null
+    private _container!: IAugmentedJQuery
+    private _transcluded: IAugmentedJQuery[] = []
+    private slides: NgbSlide[] = []
+
+    constructor(
+        private $element: IAugmentedJQuery,
+        private $ngbCarouselConfig: NgbCarouselConfig,
+        private $interval: IIntervalService
+    ) { }
+
+    $onInit(): void {
+        this.animation = this.animation ?? this.$ngbCarouselConfig.animation
+    }
+
+    $postLink() {
+        this.$element.addClass("carousel slide d-block")
+        this.$element.attr("tabIndex", 0)
+        this._container = this.$element.parent()
+
+        if (this.activeId) {
+            const slide = this._getSlideElement(this.activeId)
+            slide && slide.addClass("active")
+        }
+    }
+
+    $doCheck(): void {
+        const activeSlide = this._getSlideById(this.activeId)
+        const [first] = this.slides
+
+        this.activeId = activeSlide ? activeSlide.id : this.slides.length ? first.id : '';
+    }
+
+    focus(): void {
+        toNativeElement(this._container).focus()
+    }
+
+    register(slide: NgbSlide) {
+        this.slides = [...this.slides, slide]
+    }
+
+    build(slideId: string) {
+        const innerContainer = angular.element(
+            toNativeElement(this.$element).querySelector(".carousel-inner")!
+        )
+
+        const slide = this.slides.find(slide => slide.id == slideId)
+        if(!slide) throw new Error("[ngb-carousel] ngb-slide building slide id not found");
+
+        return slide.$transclude(angular.noop, innerContainer)
+    }
+
+    private _getSlideElement(slideId: string) {
+        const el = toNativeElement(this._container).querySelector(`#slide-${slideId}`)
+        if (!el) throw new Error("[ngb-carousel]: ngb-slide id not found");
+
+        return angular.element(el)
+    }
+
+    private _getSlideById(slideId?: string): NgbSlide | null {
+        return this.slides.find((slide) => slide.id === slideId) || null;
+    }
 
     static get $name() {
         return "ngbCarousel"
@@ -37,7 +105,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
             controller: NgbCarousel,
             transclude: true,
             bindings: {
-                activeId: "<?",
+                activeId: "@?",
                 animation: "<?",
                 interval: "<?",
                 keyboard: "<?",
@@ -58,8 +126,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
             '$element',
             NgbCarouselConfig.$name,
             '$interval',
-            '$timeout',
-            NgbAnimationFactory.$name
+            '$timeout'
         ]
     }
 }

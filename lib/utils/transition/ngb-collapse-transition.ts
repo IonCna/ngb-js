@@ -1,6 +1,6 @@
 import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
-import { reflow } from "@/utils"
+import { reflow, toNativeElement } from "@/utils"
 
 type Dimension = 'width' | 'height'
 
@@ -21,8 +21,7 @@ function measureCollapsingElementDimensionPx(element: IAugmentedJQuery, dimensio
     }
 
     element.css({ [dimension]: "" })
-    const [native] = Array.from(element)
-    const dimensionSize = native.getBoundingClientRect()[dimension] + 'px'
+    const dimensionSize = toNativeElement(element).getBoundingClientRect()[dimension] + 'px'
 
     if (!hasShowClass) {
         element.removeClass("show")

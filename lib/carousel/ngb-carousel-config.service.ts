@@ -1,14 +1,15 @@
 import { NgbConfig } from "@/ngb-config.service"
 
 export class NgbCarouselConfig {
-    public _animation?: boolean
+    private _animation?: boolean
+    
     public interval = 5000
+    public wrap = true
     public keyboard = true
     public pauseOnFocus = true
     public pauseOnHover = true
     public showNavigationArrows = true
     public showNavigationIndicators = true
-    public wrap = true
 
     constructor(
         private ngbConfig: NgbConfig

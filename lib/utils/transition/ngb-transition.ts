@@ -1,6 +1,7 @@
 import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
 import angular from "angular";
 import { getTransitionDurationMs } from "@/utils/transition"
+import { toNativeElement } from "@/utils"
 
 export type NgbTransitionStartFn<T = any> = (
     element: IAugmentedJQuery,
@@ -55,10 +56,10 @@ export function ngbRunTransition<T>(
 
     const endFn = startFn(element, options.animation, context) || angular.noop
 
-    const [native] = Array.from(element)
-    const transitionDurationMs = getTransitionDurationMs(native)
+    const nativeElement = toNativeElement(element)
+    const transitionDurationMs = getTransitionDurationMs(nativeElement)
 
-    if (!options.animation || window.getComputedStyle(native).transitionProperty === 'none') {
+    if (!options.animation || window.getComputedStyle(nativeElement).transitionProperty === 'none') {
         endFn()
         return $q.when()
     }
@@ -83,7 +84,7 @@ export function ngbRunTransition<T>(
     }
 
     const transitionEndHandler = (event: JQueryEventObject) => {
-        if (event.target !== native) return;
+        if (event.target !== nativeElement) return;
         done();
     };
 

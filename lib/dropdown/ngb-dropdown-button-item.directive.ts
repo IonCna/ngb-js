@@ -1,6 +1,7 @@
 import type { IController, IDirective } from "angular";
 import type { NgbDropdownMenu } from "./ngb-dropdown-menu.directive"
 
+
 function elementIsButton(element: unknown): element is HTMLButtonElement {
     return element instanceof HTMLButtonElement
 }
