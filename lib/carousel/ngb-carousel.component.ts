@@ -6,7 +6,6 @@ import type {
     IComponentController,
     IComponentOptions,
     IIntervalService,
-    ILogService,
     IPromise,
     IQService,
     IScope,
@@ -89,19 +88,19 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         this.$element.attr("tabIndex", 0)
         this._container = this.$element.parent()
 
-        if (this.activeId) {
-            const slide = this._getSlideElement(this.activeId)
-            slide && slide.addClass("active")
-        }
+        this._scheduleActiveSlideSync()
 
-        if (this.keyboard) this.$element.on("keydown", ({ key }) => {
+        if (this.keyboard) this.$element.on("keydown", (event) => {
             const keys: Record<string, () => void> = {
                 ["ArrowRight"]: () => this.arrowRight(),
                 ["ArrowLeft"]: () => this.arrowLeft()
             }
 
-            const arrowTo = keys[key]
-            arrowTo?.()
+            const arrowTo = keys[event.key]
+            if (!arrowTo) return
+
+            event.preventDefault()
+            arrowTo()
         })
 
         this.$element.on("mouseenter", () => {
@@ -161,6 +160,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
 
     register(slide: NgbSlide) {
         this.slides = [...this.slides, slide]
+        this._scheduleActiveSlideSync()
         this._syncCycle()
     }
 
@@ -216,6 +216,18 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         if (!this._activeInterval) return
         this.$interval.cancel(this._activeInterval)
         this._activeInterval = undefined
+    }
+
+    private _scheduleActiveSlideSync() {
+        this.$timeout(() => this._syncActiveSlideClass(), 0, false)
+    }
+
+    private _syncActiveSlideClass() {
+        if (this._transitionIds || !this.activeId) return
+
+        for (const slide of this.slides) {
+            this._getSlideElement(slide.id).toggleClass("active", slide.id === this.activeId)
+        }
     }
 
     private _cycleToSelected(slideIdx: string, direction: NgbSlideEventDirection, source?: NgbSlideEventSource) {
@@ -289,15 +301,20 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
 
             transitions.push(transition);
 
-            this.$q.all(transitions).then(() => this.slid?.({
-                $event: {
-                    prev: previousId,
-                    current: selectedSlide.id,
-                    direction,
-                    paused: this._paused,
-                    source,
-                }
-            })).finally(() => this._transitionIds = null)
+            this.$q.all(transitions)
+                .then(() => this.slid?.({
+                    $event: {
+                        prev: previousId,
+                        current: selectedSlide.id,
+                        direction,
+                        paused: this._paused,
+                        source,
+                    }
+                }))
+                .finally(() => {
+                    this._transitionIds = null
+                    this._syncCycle()
+                })
         }
 
         this.$scope.$evalAsync()
