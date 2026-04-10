@@ -8,3 +8,7 @@ export function getTransitionDurationMs(element: HTMLElement) {
 
     return (transitionDelaySec + transitionDurationSec) * 1000;
 }
+
+export interface INgbEvent<T> {
+    $event: T
+}

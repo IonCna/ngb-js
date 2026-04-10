@@ -1,20 +1,16 @@
 import type { IAugmentedJQuery, IController, IDirective, ILogService, IQService, ITimeoutService } from "angular";
 import { NgbCollapseConfig } from "@/collapse/ngb-collapse-config.service"
-import { ngbRunTransition, ngbCollapsingTransition } from "@/utils"
+import { ngbRunTransition, ngbCollapsingTransition, type INgbEvent } from "@/utils"
 
 export interface INgbCollapse {
     toggle(open: boolean): void
-}
-
-interface INgbCollapseChangeEvent {
-    $event: boolean
 }
 
 export class NgbCollapse implements IController, INgbCollapse {
     protected animation?: boolean
     protected horizontal?: boolean
     protected hidden?: () => void
-    protected ngbCollapseChange?: ({ $event }: INgbCollapseChangeEvent) => void
+    protected ngbCollapseChange?: ({ $event }: INgbEvent<boolean>) => void
     protected shown?: () => void
 
     private _afterInit = false
