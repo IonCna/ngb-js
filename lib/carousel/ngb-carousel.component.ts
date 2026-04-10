@@ -1,4 +1,5 @@
 import angular from "angular";
+import { NgbCarouselCounter } from "@/carousel/ngb-carousel-counter.value"
 
 import type {
     IAugmentedJQuery,
@@ -48,7 +49,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     protected slide?: ({ $event }: INgbEvent<NgbSlideEvent>) => void
     protected slid?: ({ $event }: INgbEvent<NgbSlideEvent>) => void
 
-    public id = `ngb-carousel-${0}`
+    public id?: string
 
     private _transitionIds: [string, string] | null = null
     private slides: NgbSlide[] = []
@@ -65,7 +66,8 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         private $interval: IIntervalService,
         private $timeout: ITimeoutService,
         private $scope: IScope,
-        private $q: IQService
+        private $q: IQService,
+        private $counter: number
     ) { }
 
     $onInit(): void {
@@ -78,6 +80,8 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         this.showNavigationIndicators = this.showNavigationIndicators ?? this.$ngbCarouselConfig.showNavigationIndicators
         this.showNavigationArrows = this.showNavigationArrows ?? this.$ngbCarouselConfig.showNavigationArrows
         this.wrap = this.wrap ?? this.$ngbCarouselConfig.wrap
+
+        this.id = `ngb-carousel-${this.$counter++}`
     }
 
     $postLink() {
@@ -97,7 +101,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
             }
 
             const arrowTo = keys[key]
-            arrowTo()
+            arrowTo?.()
         })
 
         this.$element.on("mouseenter", () => {
@@ -218,7 +222,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         const transitionIds = this._transitionIds;
         if (transitionIds && (transitionIds[0] !== slideIdx || transitionIds[1] !== this.activeId)) return;
 
-        let selectedSlide = this._getSlideById(slideIdx);
+        const selectedSlide = this._getSlideById(slideIdx);
 
         if (selectedSlide && selectedSlide.id !== this.activeId) {
             if (!this.activeId) throw new Error("[ngb-carousel]: ");
@@ -374,7 +378,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
             '$timeout',
             '$scope',
             "$q",
-            "$log"
+            NgbCarouselCounter
         ]
     }
 }
