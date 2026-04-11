@@ -1,96 +1,140 @@
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular"
-import { NgbAccordionCounterService } from "@/accordion/ngb-accordion-counters.service"
-import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
-import { NgbAccordionItemChange, NgbAccordionRegisterEvent, NgbAccordionUnregisterEvent, type NgbAccordionItemPhase } from "@/accordion/ngb-accordion.events"
+import type { IAugmentedJQuery, IController, IDirective } from "angular"
 import { NgbAccordion } from "@/accordion/ngb-accordion.directive"
+import type { NgbAccordionCollapse } from "./ngb-accordion-collapse.directive"
+import angular from "angular"
+
+let accordionItemCounter = 0
 
 export class NgbAccordionItem implements IController {
-    private ngbAccordion!: NgbAccordion
+    private _accordion!: NgbAccordion
+    private _collapsed = true
+    private _destroyOnHide: boolean | undefined;
 
-    protected collapsed?: boolean;
-    protected destroyOnHide?: boolean
-    protected disabled?: boolean
-    protected ngbAccordionItem?: string
-    protected hidden?: () => void
-    protected hide?: () => void
-    protected show?: () => void
-    protected shown?: () => void
+    private _collapseAnimationRunning = false
+    private _collapse!: NgbAccordionCollapse
+    private _id!: string
 
-    private id!: string
+    public hidden?: () => void
+    public hide?: () => void
+    public show?: () => void
+    public shown?: () => void
+
+    public disabled = false
 
     constructor(
-        private $ngbAccordionItemCounter: NgbAccordionCounterService,
-        private $ngbAccordionConfig: NgbAccordionConfig,
-        protected $scope: IScope,
         private $element: IAugmentedJQuery
-    ) {}
-
-    $onInit(): void {
-        this.id = this.ngbAccordionItem ?? `ngb-accordion-item-${this.$ngbAccordionItemCounter.increase()}`
-        this.destroyOnHide = this.destroyOnHide ?? this.$ngbAccordionConfig.destroyOnHide
-        this.collapsed = this.collapsed ?? true
-
-        this.ngbAccordion["$scope"].$emit(NgbAccordionRegisterEvent, this)
-    }
+    ) { }
 
     $postLink(): void {
-        this.$element.attr("id", this.id)
+        this._id = `ngb-accordion-item-${accordionItemCounter++}`;
+
+        this.$element.attr("id", this._id)
         this.$element.addClass("accordion-item")
+
+        console.log(this)
     }
 
-    public toggle() {
-        if (this.disabled) return
-
-        const collapsed = !(this.collapsed ?? true)
-        this.emitChange(collapsed ? "hide" : "show")
-        this.collapsed = collapsed
+    set id(id: string) {
+        if (!angular.isString(id) && id == '') return
+        this._id = id
     }
 
-    public expand() {
-        if(!this.collapsed) return
-        this.emitChange("show")
-        this.collapsed = false
+    set destroyOnHide(destroyOnHide: boolean) {
+        this._destroyOnHide = destroyOnHide
     }
 
-    public collapse() {
-        if(this.collapsed) return;
-        this.emitChange("hide")
-        this.collapsed = true
+    get destroyOnHide() {
+        return angular.isUndefined(this._destroyOnHide) ? this._accordion.destroyOnHide! : this._destroyOnHide!
     }
 
-    public getId() {
-        return this.id
+    set collapsed(collapsed: boolean) {
+        if (!this._accordion) {
+            this._collapsed = collapsed
+            return
+        }
+
+        if (collapsed) {
+            this.collapse()
+            return
+        }
+
+        this.expand()
     }
 
-    public getCollapseId() {
-        return `${this.id}-collapse`
+    get collapsed() {
+        return this._collapsed;
     }
 
-    public getToggleId() {
-        return `${this.id}-toggle`
+    get id() {
+        return `${this._id}`;
     }
 
-    $onDestroy(): void {
-        this.emitUnregister()
-        this.$ngbAccordionItemCounter.decrease()
+    get toggleId() {
+        return `${this.id}-toggle`;
     }
 
-    private emitChange(phase: NgbAccordionItemPhase) {
-        this.ngbAccordion["$scope"].$emit(NgbAccordionItemChange, {
-            itemId: this.id,
-            phase
-        })
+    get collapseId() {
+        return `${this.id}-collapse`;
     }
 
-    private emitUnregister() {
-        this.ngbAccordion["$scope"].$emit(NgbAccordionUnregisterEvent, this.id)
+    get _shouldBeInDOM() {
+        return !this.collapsed || this._collapseAnimationRunning || !this.destroyOnHide;
+    }
+
+    toggle() {
+        this.collapsed = !this.collapsed;
+    }
+
+    register(ngbAccordionCollapse: NgbAccordionCollapse) {
+        this._collapse = ngbAccordionCollapse
+    }
+
+    expand() {
+        if (!this.collapsed) return
+
+        // checking if accordion allows to expand the panel in respect to 'closeOthers' flag
+        if (!this._accordion._ensureCanExpand(this)) {
+            return;
+        }
+
+        this._collapsed = false;
+
+        // need if the accordion is used inside a component having OnPush change detection strategy
+        //this._cd.markForCheck();
+
+        // we need force CD to get template into DOM before starting animation to calculate its height correctly
+        // this will synchronously put the item body into DOM, because `this._collapsed` was flipped to `false`
+        //this._cd.detectChanges();
+
+        // firing events before starting animations
+        this.show?.();
+        this._accordion.show?.({ $event: this.id });
+
+        // we also need to make sure 'animation' flag is up-to- date
+        this._collapse.ngbCollapse.animation = this._accordion.animation;
+        this._collapse.ngbCollapse.collapsed = false;
+    }
+
+    collapse() {
+        if (this.collapsed) return;
+        this._collapsed = true;
+        this._collapseAnimationRunning = true;
+
+        // need if the accordion is used inside a component having OnPush change detection strategy
+        //this._cd.markForCheck();
+
+        // firing events before starting animations
+        this.hide?.();
+        this._accordion.hide?.({ $event: this.id });
+
+        // we also need to make sure 'animation' flag is up-to- date
+        this._collapse.ngbCollapse.animation = this._accordion.animation;
+        this._collapse.ngbCollapse.collapsed = true;
+
     }
 
     static get $inject() {
         return [
-            NgbAccordionCounterService.$name,
-            NgbAccordionConfig.$name,
-            "$scope",
             "$element"
         ]
     }
@@ -103,17 +147,15 @@ export class NgbAccordionItem implements IController {
         return () => ({
             bindToController: true,
             controller: NgbAccordionItem,
-            transclude: true,
-            template: '<ng-transclude></ng-transclude>',
             require: {
-                ngbAccordion: "^ngbAccordion"
+                _accordion: "^ngbAccordion"
             },
             restrict: "A",
             scope: {
-                collapsed: "=?",
+                collapsed: "<?",
                 destroyOnHide: "<?",
                 disabled: "<?",
-                ngbAccordionItem: "<?",
+                id: "<?ngbAccordionItem",
                 hidden: "&?",
                 hide: "&?",
                 show: "&?",

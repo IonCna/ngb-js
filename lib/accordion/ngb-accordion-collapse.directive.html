@@ -1,6 +1,6 @@
-<div class="accordion-collapse">
-    <div ngb-hidden="$.onHide()" shown="$.onShown()" ngb-collapse="$.ngbAccordionItem.collapsed">
-        <div ng-if="$.shouldRender" ng-transclude></div>
-    </div>
+<div
+    ngb-collapse="$.ngbAccordionItem.collapsed"
+    ng-if="$.shouldRender"
+    class="accordion-collapse"
+    ng-transclude>
 </div>
-

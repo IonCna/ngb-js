@@ -1,51 +1,28 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
-import { NgbHostSynchronizerFactory, type IHostSynchronizer } from "@/ngb-sync-host.factory"
+import { toNativeElement } from "@/utils";
 
 export class NgbAccordionButton implements IController {
-    protected ngbAccordionItem!: NgbAccordionItem
-    private hostSync?: IHostSynchronizer
+    private item!: NgbAccordionItem
+    private disableWatcher?: () => void
 
     constructor(
-        private hostSyncFactory: NgbHostSynchronizerFactory,
         private $element: IAugmentedJQuery,
         private $scope: IScope
     ) {}
 
-    private clickHandler = this.onClick.bind(this)
-
     $postLink(): void {
-        this.hostSync = this.hostSyncFactory.$create(this.$element, this.$scope, {
-            attributes: {
-                disabled: () => this.disabled,
-                "aria-expanded": () => !this.collapsed
-            },
-            classNames: {
-                collapsed: () => this.collapsed
-            }
-        })
-
         this.$element.attr("type", "button")
         this.$element.addClass("accordion-button")
-        this.$element.on("click", this.clickHandler)
-    }
 
-    private onClick() {
-        console.log(this)
-        this.ngbAccordionItem.toggle()
+        this.disableWatcher = this.$scope.$watch(() => this.item.disabled, value => {
+            const button = toNativeElement(this.$element) as HTMLButtonElement
+            button.disabled = value
+        })
     }
 
     $onDestroy(): void {
-        this.$element.off("click", this.clickHandler)
-        this.hostSync?.$destroy()
-    }
-
-    protected get collapsed() {
-        return this.ngbAccordionItem["collapsed"] ?? false
-    }
-
-    protected get disabled() {
-        return this.ngbAccordionItem["disabled"] ?? false
+        this.disableWatcher?.()
     }
 
     static get $name() {
@@ -53,20 +30,17 @@ export class NgbAccordionButton implements IController {
     }
 
     static get $inject() {
-        return [NgbHostSynchronizerFactory.$name, "$element", "$scope"]
+        return ["$element", "$scope"]
     }
 
     static get $factory(): () => IDirective {
         return () => ({
             controller: NgbAccordionButton,
             bindToController: true,
-            scope: true,
-            transclude: true,
             restrict: "A",
             controllerAs: "$",
-            template: '<ng-transclude></ng-transclude>',
             require: {
-                ngbAccordionItem: "^^ngbAccordionItem"
+                item: "^^ngbAccordionItem"
             },
         })
     }

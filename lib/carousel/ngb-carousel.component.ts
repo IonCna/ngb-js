@@ -1,5 +1,4 @@
 import angular from "angular";
-import { NgbCarouselCounter } from "@/carousel/ngb-carousel-counter.value"
 
 import type {
     IAugmentedJQuery,
@@ -23,6 +22,8 @@ import type { NgbSlide } from "@/carousel/ngb-slide.directive";
 import { NgbCarouselConfig } from "@/carousel/ngb-carousel-config.service"
 import { ngbCarouselTransitionIn, ngbCarouselTransitionOut, NgbSlideEventDirection, type NgbCarouselCtx } from "@/carousel/ngb-carousel-transition"
 import template from "@/carousel/ngb-carousel.component.html?raw";
+
+let carouselCounter = 0
 
 export interface INgbCarousel {
     select(slideId: string, source: NgbSlideEventSource): void
@@ -65,8 +66,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         private $interval: IIntervalService,
         private $timeout: ITimeoutService,
         private $scope: IScope,
-        private $q: IQService,
-        private $counter: number
+        private $q: IQService
     ) { }
 
     $onInit(): void {
@@ -80,7 +80,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         this.showNavigationArrows = this.showNavigationArrows ?? this.$ngbCarouselConfig.showNavigationArrows
         this.wrap = this.wrap ?? this.$ngbCarouselConfig.wrap
 
-        this.id = `ngb-carousel-${this.$counter++}`
+        this.id = `ngb-carousel-${carouselCounter++}`
     }
 
     $postLink() {
@@ -401,8 +401,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
             '$interval',
             '$timeout',
             '$scope',
-            "$q",
-            NgbCarouselCounter
+            "$q"
         ]
     }
 }

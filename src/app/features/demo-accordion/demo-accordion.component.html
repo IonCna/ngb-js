@@ -1,0 +1,59 @@
+<div class="container py-3">
+    <h2 class="mb-3">Accordion demo</h2>
+
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-primary" ng-click="$.toggleCloseOthers()">
+            Close others: {{ $.closeOthers ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleDestroyOnHide()">
+            Destroy on hide: {{ $.destroyOnHide ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleAnimation()">
+            Animation: {{ $.animation ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" ng-click="$.toggleSecondDisabled()">
+            Second disabled: {{ $.secondDisabled ? 'on' : 'off' }}
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <div><strong>firstCollapsed:</strong> {{ $.firstCollapsed }}</div>
+        <div><strong>secondCollapsed:</strong> {{ $.secondCollapsed }}</div>
+        <div><strong>thirdCollapsed:</strong> {{ $.thirdCollapsed }}</div>
+    </div>
+
+    <div ngb-accordion close-others="$.closeOthers" destroy-on-hide="$.destroyOnHide" animation="$.animation">
+        <div ngb-accordion-item="first" collapsed="$.firstCollapsed">
+            <h2 ngb-accordion-header>
+                <button ngb-accordion-button>First panel</button>
+            </h2>
+            <div ngb-accordion-collapse>
+                <div ngb-accordion-body>
+                    First panel content with two-way collapsed binding.
+                </div>
+            </div>
+        </div>
+
+        <div ngb-accordion-item="second" collapsed="$.secondCollapsed" disabled="$.secondDisabled">
+            <h2 ngb-accordion-header>
+                <button ngb-accordion-button>Second panel</button>
+            </h2>
+            <div ngb-accordion-collapse>
+                <div ngb-accordion-body>
+                    Use the disabled toggle above to block this panel.
+                </div>
+            </div>
+        </div>
+
+        <div ngb-accordion-item="third" collapsed="$.thirdCollapsed">
+            <h2 ngb-accordion-header>
+                <button ngb-accordion-button>Third panel</button>
+            </h2>
+            <div ngb-accordion-collapse>
+                <div ngb-accordion-body>
+                    This panel gives closeOthers another item to coordinate.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

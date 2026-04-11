@@ -1,9 +1,10 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
+import type { NgbAccordion } from "@/accordion/ngb-accordion.directive";
 
 export class NgbAccordionToggle implements IController {
-    protected ngbAccordionItem!: NgbAccordionItem
-    private clickHandler?: () => void
+    private item!: NgbAccordionItem
+    private accordion!: NgbAccordion
 
     constructor(
         private $element: IAugmentedJQuery,
@@ -11,19 +12,19 @@ export class NgbAccordionToggle implements IController {
     ) {}
 
     $postLink(): void {
-        this.$element.attr("id", this.ngbAccordionItem.getToggleId())
-        this.$element.attr("aria-controls", this.ngbAccordionItem.getCollapseId())
+        this.$element.attr("id", this.item.toggleId)
+        this.$element.attr("aria-controls", this.item.collapseId)
 
-        this.clickHandler = () => this.$scope.$evalAsync(() => this.ngbAccordionItem.toggle())
-        this.$element.on("click", this.clickHandler.bind(this))
+        const watchers = [
+            () => this.item.collapsed,
+            () => this.item.collapseId,
+            () => this.item.disabled
+        ]
 
-        this.$scope.$watch(() => this.ngbAccordionItem["collapsed"], (collapsed) => {
-            this.$element.attr("aria-expanded", `${!collapsed}`)
-        })
+        this.$scope.$watchGroup(watchers, () => {})
     }
 
     $onDestroy(): void {
-        this.$element.off("click", this.clickHandler!.bind(this))
     }
 
     static get $name() {
@@ -36,7 +37,8 @@ export class NgbAccordionToggle implements IController {
             controller: NgbAccordionToggle,
             controllerAs: "$",
             require: {
-                ngbAccordionItem: "^^ngbAccordionItem"
+                item: "^^ngbAccordionItem",
+                accordion: "^^ngbAccordionDirective"
             },
             scope: true,
             restrict: "A"

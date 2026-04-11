@@ -5,6 +5,7 @@ import { DemoAlertComponent } from "@demo/features/demo-alert/demo-alert.compone
 import { DemoProgressbarComponent } from "@demo/features/demo-progressbar/demo-progressbar.component"
 import { DemoCollapseComponent } from "@demo/features/demo-collapse/demo-collapse.component"
 import { DemoToastComponent } from "@demo/features/demo-toast/demo-toast.component"
+import { DemoAccordionComponent } from "@demo/features/demo-accordion/demo-accordion.component"
 
 import "../node_modules/bootstrap/dist/css/bootstrap.css"
 import "./style.css"
@@ -18,3 +19,4 @@ AppModule.component(DemoAlertComponent.$name, DemoAlertComponent.$factory)
 AppModule.component(DemoProgressbarComponent.$name, DemoProgressbarComponent.$factory)
 AppModule.component(DemoCollapseComponent.$name, DemoCollapseComponent.$factory)
 AppModule.component(DemoToastComponent.$name, DemoToastComponent.$factory)
+AppModule.component(DemoAccordionComponent.$name, DemoAccordionComponent.$factory)

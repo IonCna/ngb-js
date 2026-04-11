@@ -1,7 +1,6 @@
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 
 export class NgbAccordionBody implements IController {
-
     constructor(private $element: IAugmentedJQuery) {}
 
     $postLink(): void {
@@ -21,11 +20,9 @@ export class NgbAccordionBody implements IController {
             controller: NgbAccordionBody,
             bindToController: true,
             require: {
-                ngbAccordionItem: "^^ngbAccordionItem"
+                item: "^^ngbAccordionItem"
             },
             restrict: "A",
-            template: '<ng-transclude></ng-transclude>',
-            transclude: true,
         })
     }
 }

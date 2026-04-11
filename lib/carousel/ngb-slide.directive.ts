@@ -1,7 +1,8 @@
 import type { IController, IDirective, ITranscludeFunction } from "angular";
 import type { NgbCarousel, NgbSingleSlideEvent } from "@/carousel/ngb-carousel.component"
 import type { INgbEvent } from "@/utils";
-import { NgbSlideCounter } from "@/carousel/ngb-carousel-counter.value"
+
+let slideCounter = 0
 
 export class NgbSlide implements IController {
     public id!: string
@@ -9,12 +10,11 @@ export class NgbSlide implements IController {
     protected carousel!: NgbCarousel
 
     constructor(
-        public readonly $transclude: ITranscludeFunction,
-        private $counter: number
+        public readonly $transclude: ITranscludeFunction
     ) {}
 
     $onInit(): void {
-        this.id = this.id ?? `ngb-slide-${this.$counter++}`
+        this.id = this.id ?? `ngb-slide-${slideCounter++}`
         if(!this.carousel) throw new Error("ngb-slide only can be used inside of ngb-carousel component");
     }
 
@@ -40,7 +40,7 @@ export class NgbSlide implements IController {
     }
 
     static get $inject() {
-        return ["$transclude", NgbSlideCounter]
+        return ["$transclude"]
     }
 
     static get $name() {

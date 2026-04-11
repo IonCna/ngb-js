@@ -1,12 +1,26 @@
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
+import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
+import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive";
 
 export class NgbAccordionHeader implements IController {
+    private item!: NgbAccordionItem
+    private collapseWatcher?: () => void
 
-    constructor(private $element: IAugmentedJQuery) {}
+    constructor(
+        private $element: IAugmentedJQuery,
+        private $scope: IScope
+    ) {}
 
     $postLink(): void {
         this.$element.addClass("accordion-header")
         this.$element.attr("role", "heading")
+
+        this.collapseWatcher = this.$scope.$watch(() => this.item.collapsed, value => {
+            this.$element.toggleClass("collapsed", value)
+        })
+    }
+
+    $onDestroy(): void {
+        this.collapseWatcher?.()
     }
 
     static get $name() {
@@ -14,16 +28,17 @@ export class NgbAccordionHeader implements IController {
     }
 
     static get $inject() {
-        return ["$element"]
+        return ["$element", "$scope"]
     }
 
     static get $factory(): () => IDirective {
         return () => ({
             bindToController: true,
+            require: {
+                item: "^ngbAccordionItem"
+            },
             controller: NgbAccordionHeader,
             restrict: "A",
-            transclude: true,
-            template: '<ng-transclude></ng-transclude>'
         })
     }
 }
