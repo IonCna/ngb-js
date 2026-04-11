@@ -68,6 +68,7 @@ export class NgbAccordionButton implements IController {
                 item: "^^ngbAccordionItem",
                 accordion: "^^ngbAccordion"
             },
+            scope: true
         })
     }
 }
