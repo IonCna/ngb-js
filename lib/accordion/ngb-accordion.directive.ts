@@ -39,7 +39,13 @@ export class NgbAccordion implements IController, INgbAccordion {
     }
 
     register(item: NgbAccordionItem) {
-        this._items = [...this._items, item]
+        if (!this._items.includes(item)) {
+            this._items = [...this._items, item]
+        }
+    }
+
+    unregister(item: NgbAccordionItem) {
+        this._items = this._items.filter(registeredItem => registeredItem !== item)
     }
 
     $postLink(): void {

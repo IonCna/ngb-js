@@ -1,5 +1,12 @@
 import type { IAugmentedJQuery } from "angular";
-export * from "@/utils/transition"
+export {
+    type NgbTransitionStartFn,
+    type NgbTransitionOptions,
+    ngbCompleteTransition,
+    ngbRunTransition
+} from "@/utils/transition/ngb-transition"
+export { ngbCollapsingTransition } from "@/utils/transition/ngb-collapse-transition"
+export type { INgbEvent } from "@/utils/transition"
 
 export function reflow(element: IAugmentedJQuery) {
     return (toNativeElement(element) || document.body).getBoundingClientRect()

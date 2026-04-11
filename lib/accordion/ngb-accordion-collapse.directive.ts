@@ -25,6 +25,14 @@ export class NgbAccordionCollapse implements IController {
         this._collapse = collapse
     }
 
+    hidden() {
+        this.item.onCollapseHidden()
+    }
+
+    shown() {
+        this.item.onCollapseShown()
+    }
+
     static get $name() {
         return "ngbAccordionCollapse"
     }

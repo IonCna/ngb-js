@@ -25,15 +25,23 @@ export class NgbAccordionItem implements IController {
         private $element: IAugmentedJQuery
     ) { }
 
+    $onInit(): void {
+        this._accordion.register(this)
+    }
+
     $postLink(): void {
-        this._id = `ngb-accordion-item-${accordionItemCounter++}`;
+        this._id = this._id ?? `ngb-accordion-item-${accordionItemCounter++}`;
 
         this.$element.attr("id", this._id)
         this.$element.addClass("accordion-item")
     }
 
+    $onDestroy(): void {
+        this._accordion.unregister(this)
+    }
+
     set id(id: string) {
-        if (!angular.isString(id) && id == '') return
+        if (!angular.isString(id) || id === '') return
         this._id = id
     }
 
@@ -45,7 +53,9 @@ export class NgbAccordionItem implements IController {
         return angular.isUndefined(this._destroyOnHide) ? this._accordion.destroyOnHide! : this._destroyOnHide!
     }
 
-    set collapsed(collapsed: boolean) {
+    set collapsed(collapsed: boolean | undefined) {
+        if (collapsed === undefined) return
+
         if (!this._accordion) {
             this._collapsed = collapsed
             return
@@ -87,6 +97,17 @@ export class NgbAccordionItem implements IController {
         this._collapse = ngbAccordionCollapse
     }
 
+    onCollapseHidden() {
+        this._collapseAnimationRunning = false
+        this.hidden?.()
+        this._accordion.hidden?.({ $event: this.id })
+    }
+
+    onCollapseShown() {
+        this.shown?.()
+        this._accordion.shown?.({ $event: this.id })
+    }
+
     expand() {
         if (!this.collapsed) return
 
@@ -110,7 +131,7 @@ export class NgbAccordionItem implements IController {
 
         // we also need to make sure 'animation' flag is up-to- date
         this._collapse._collapse.animation = this._accordion.animation;
-        this._collapse._collapse.toggle(false);
+        this._collapse._collapse.collapsed = false;
     }
 
     collapse() {
@@ -127,7 +148,7 @@ export class NgbAccordionItem implements IController {
 
         // we also need to make sure 'animation' flag is up-to- date
         this._collapse._collapse.animation = this._accordion.animation;
-        this._collapse._collapse.toggle(true)
+        this._collapse._collapse.collapsed = true
 
     }
 

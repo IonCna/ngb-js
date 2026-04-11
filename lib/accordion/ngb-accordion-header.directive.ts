@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IController, IDirective, ILogService, IScope } from "angular";
+import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive";
 
 export class NgbAccordionHeader implements IController {
@@ -7,8 +7,7 @@ export class NgbAccordionHeader implements IController {
 
     constructor(
         private $element: IAugmentedJQuery,
-        private $scope: IScope,
-        private $log: ILogService
+        private $scope: IScope
     ) {}
 
     $postLink(): void {
@@ -16,7 +15,6 @@ export class NgbAccordionHeader implements IController {
         this.$element.attr("role", "heading")
 
         this.collapseWatcher = this.$scope.$watch(() => this.item.collapsed, value => {
-            this.$log.info(`[ngb-accordion-header-${this.item.id}] collapse is ${value}`)
             this.$element.toggleClass("collapsed", value)
         })
     }
@@ -30,7 +28,7 @@ export class NgbAccordionHeader implements IController {
     }
 
     static get $inject() {
-        return ["$element", "$scope", "$log"]
+        return ["$element", "$scope"]
     }
 
     static get $factory(): () => IDirective {
