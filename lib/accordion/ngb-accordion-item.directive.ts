@@ -30,8 +30,6 @@ export class NgbAccordionItem implements IController {
 
         this.$element.attr("id", this._id)
         this.$element.addClass("accordion-item")
-
-        console.log(this)
     }
 
     set id(id: string) {
@@ -111,8 +109,8 @@ export class NgbAccordionItem implements IController {
         this._accordion.show?.({ $event: this.id });
 
         // we also need to make sure 'animation' flag is up-to- date
-        this._collapse.ngbCollapse.animation = this._accordion.animation;
-        this._collapse.ngbCollapse.collapsed = false;
+        this._collapse._collapse.animation = this._accordion.animation;
+        this._collapse._collapse.toggle(false);
     }
 
     collapse() {
@@ -128,15 +126,13 @@ export class NgbAccordionItem implements IController {
         this._accordion.hide?.({ $event: this.id });
 
         // we also need to make sure 'animation' flag is up-to- date
-        this._collapse.ngbCollapse.animation = this._accordion.animation;
-        this._collapse.ngbCollapse.collapsed = true;
+        this._collapse._collapse.animation = this._accordion.animation;
+        this._collapse._collapse.toggle(true)
 
     }
 
     static get $inject() {
-        return [
-            "$element"
-        ]
+        return [ "$element" ]
     }
 
     static get $name() {

@@ -1,6 +1,5 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
-import { toNativeElement } from "@/utils";
 
 export class NgbAccordionButton implements IController {
     private item!: NgbAccordionItem
@@ -16,8 +15,7 @@ export class NgbAccordionButton implements IController {
         this.$element.addClass("accordion-button")
 
         this.disableWatcher = this.$scope.$watch(() => this.item.disabled, value => {
-            const button = toNativeElement(this.$element) as HTMLButtonElement
-            button.disabled = value
+            this.$element.attr("disabled", `${value}`)
         })
     }
 

@@ -1,10 +1,13 @@
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
 import template from "@/accordion/ngb-accordion-collapse.directive.html?raw"
+import type { NgbCollapse } from "@/collapse/ngb-collapse.directive";
 
 export class NgbAccordionCollapse implements IController {
     protected item!: NgbAccordionItem
     protected shouldRender = true
+
+    _collapse!: NgbCollapse
 
     constructor(
         private $element: IAugmentedJQuery
@@ -16,6 +19,10 @@ export class NgbAccordionCollapse implements IController {
         this.$element.attr("aria-labelledby", this.item.toggleId)
 
         this.item.register(this)
+    }
+
+    register(collapse: NgbCollapse) {
+        this._collapse = collapse
     }
 
     static get $name() {

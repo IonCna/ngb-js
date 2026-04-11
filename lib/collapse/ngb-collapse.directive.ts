@@ -1,13 +1,14 @@
 import type { IAugmentedJQuery, IController, IDirective, ILogService, IQService, ITimeoutService } from "angular";
 import { NgbCollapseConfig } from "@/collapse/ngb-collapse-config.service"
 import { ngbRunTransition, ngbCollapsingTransition, type INgbEvent } from "@/utils"
+import type { NgbAccordionCollapse } from "@/accordion/ngb-accordion-collapse.directive";
 
 export interface INgbCollapse {
     toggle(open: boolean): void
 }
 
 export class NgbCollapse implements IController, INgbCollapse {
-    protected animation?: boolean
+    public animation?: boolean
     protected horizontal?: boolean
     protected hidden?: () => void
     protected ngbCollapseChange?: ({ $event }: INgbEvent<boolean>) => void
@@ -15,6 +16,7 @@ export class NgbCollapse implements IController, INgbCollapse {
 
     private _afterInit = false
     private _isCollapsed = false
+    private _accordionCollapse?: NgbAccordionCollapse
 
     constructor(
         private $element: IAugmentedJQuery,
@@ -30,6 +32,12 @@ export class NgbCollapse implements IController, INgbCollapse {
 
         this._runTransition(this._isCollapsed, false)
         this._afterInit = true
+    }
+
+    $postLink(): void {
+        if(this._accordionCollapse) {
+            this._accordionCollapse.register(this)
+        }
     }
 
     $onChanges(): void {
@@ -85,6 +93,9 @@ export class NgbCollapse implements IController, INgbCollapse {
         return () => ({
             controller: NgbCollapse,
             restrict: "A",
+            require: {
+                _accordionCollapse: "^?ngbAccordionCollapse"
+            },
             scope: {
                 animation: "<?",
                 horizontal: "<?",

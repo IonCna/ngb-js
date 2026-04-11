@@ -21,7 +21,9 @@ export class NgbAccordionToggle implements IController {
             () => this.item.disabled
         ]
 
-        this.$scope.$watchGroup(watchers, () => {})
+        this.$scope.$watchGroup(watchers, value => {
+            console.log(value)
+        })
     }
 
     $onDestroy(): void {
