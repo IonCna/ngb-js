@@ -52,20 +52,10 @@
         <div><strong>last event:</strong> {{ $.lastEvent }}</div>
     </div>
 
-    <!-- active-id="{{ $.activeId }}"
-            animation="$.animation"
-        interval="$.interval"
-        keyboard="$.keyboard"
-        pause-on-focus="$.pauseOnFocus"
-        pause-on-hover="$.pauseOnHover"
-        show-navigation-arrows="$.showNavigationArrows"
-        show-navigation-indicators="$.showNavigationIndicators"
-        wrap="$.wrap"
-        slide="$.onSlide($event)"
-        slid="$.onSlid($event)" 
-    -->
-
-    <ngb-carousel active-id="slide-1">
+    <ngb-carousel active-id="{{ $.activeId }}" animation="$.animation" interval="$.interval" keyboard="$.keyboard"
+        pause-on-focus="$.pauseOnFocus" pause-on-hover="$.pauseOnHover" show-navigation-arrows="$.showNavigationArrows"
+        show-navigation-indicators="$.showNavigationIndicators" wrap="$.wrap" slide="$.onSlide($event)"
+        slid="$.onSlid($event)">
         <section ngb-slide id="slide-1">
             <div class="picsum-img-wrapper">
                 <img class="d-block w-100" ng-src="{{ $.images[0] }}" alt="Random first slide" />

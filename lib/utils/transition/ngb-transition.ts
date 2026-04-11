@@ -23,7 +23,7 @@ export interface NgbTransitionCtx<T> {
     context: T;
 }
 
-const runningTransitions = new Map<IAugmentedJQuery, NgbTransitionCtx<any>>();
+const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<any>>();
 
 export const environment = {
     getTransitionTimerDelayMs: () => 5,
@@ -37,15 +37,16 @@ export function ngbRunTransition<T>(
     options: NgbTransitionOptions<T>,
 ): IPromise<void> {
     let context = options.context || <T>{}
+    const nativeElement = toNativeElement(element)
 
-    const running = runningTransitions.get(element)
+    const running = runningTransitions.get(nativeElement)
 
     const events = {
         "continue": () => $q.when(),
         "stop": () => {
             running?.complete()
             context = angular.extend(running?.context, context)
-            runningTransitions.delete(element)
+            runningTransitions.delete(nativeElement)
         }
     }
 
@@ -56,7 +57,6 @@ export function ngbRunTransition<T>(
 
     const endFn = startFn(element, options.animation, context) || angular.noop
 
-    const nativeElement = toNativeElement(element)
     const transitionDurationMs = getTransitionDurationMs(nativeElement)
 
     if (!options.animation || window.getComputedStyle(nativeElement).transitionProperty === 'none') {
@@ -78,7 +78,7 @@ export function ngbRunTransition<T>(
             $timeout.cancel(timePromise);
         }
 
-        runningTransitions.delete(element);
+        runningTransitions.delete(nativeElement);
         endFn();
         deferred.resolve();
     }
@@ -88,7 +88,7 @@ export function ngbRunTransition<T>(
         done();
     };
 
-    runningTransitions.set(element, {
+    runningTransitions.set(nativeElement, {
         transition: deferred.promise,
         complete: done,
         context,
@@ -101,5 +101,5 @@ export function ngbRunTransition<T>(
 }
 
 export function ngbCompleteTransition(element: IAugmentedJQuery) {
-    runningTransitions.get(element)?.complete();
+    runningTransitions.get(toNativeElement(element))?.complete();
 }

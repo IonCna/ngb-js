@@ -239,6 +239,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         if (selectedSlide && selectedSlide.id !== this.activeId) {
             if (!this.activeId) throw new Error("[ngb-carousel]: ");
             this._transitionIds = [this.activeId, slideIdx];
+            const currentTransitionIds = this._transitionIds
 
             this.slide?.({
                 $event: {
@@ -302,16 +303,22 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
             transitions.push(transition);
 
             this.$q.all(transitions)
-                .then(() => this.slid?.({
-                    $event: {
-                        prev: previousId,
-                        current: selectedSlide.id,
-                        direction,
-                        paused: this._paused,
-                        source,
-                    }
-                }))
+                .then(() => {
+                    if (this._transitionIds !== currentTransitionIds) return
+
+                    this.slid?.({
+                        $event: {
+                            prev: previousId,
+                            current: selectedSlide.id,
+                            direction,
+                            paused: this._paused,
+                            source,
+                        }
+                    })
+                })
                 .finally(() => {
+                    if (this._transitionIds !== currentTransitionIds) return
+
                     this._transitionIds = null
                     this._syncCycle()
                 })
