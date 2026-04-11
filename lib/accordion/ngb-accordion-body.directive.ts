@@ -1,6 +1,9 @@
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
+import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive";
 
 export class NgbAccordionBody implements IController {
+    protected item!: NgbAccordionItem
+
     constructor(private $element: IAugmentedJQuery) {}
 
     $postLink(): void {
@@ -19,10 +22,14 @@ export class NgbAccordionBody implements IController {
         return () => ({
             controller: NgbAccordionBody,
             bindToController: true,
+            controllerAs: "$",
             require: {
                 item: "^^ngbAccordionItem"
             },
+            scope: true,
             restrict: "A",
+            transclude: true,
+            template: `<ng-transclude ng-if="$.item._shouldBeInDOM"></ng-transclude>`,
         })
     }
 }

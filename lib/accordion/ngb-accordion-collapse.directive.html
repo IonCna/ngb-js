@@ -1,8 +1,10 @@
 <div
+    class="accordion-collapse"
+    ng-attr-id="{{ $.item.collapseId }}"
+    ng-attr-aria-labelledby="{{ $.item.toggleId }}"
+    role="region"
     ngb-collapse="$.item.collapsed"
     ngb-hidden="$.hidden()"
-    ng-if="$.shouldRender"
     shown="$.shown()"
-    class="accordion-collapse"
     ng-transclude>
 </div>

@@ -5,7 +5,6 @@ import type { NgbCollapse } from "@/collapse/ngb-collapse.directive";
 
 export class NgbAccordionCollapse implements IController {
     protected item!: NgbAccordionItem
-    protected shouldRender = true
 
     _collapse!: NgbCollapse
 
@@ -14,10 +13,6 @@ export class NgbAccordionCollapse implements IController {
     ) { }
 
     $postLink(): void {
-        this.$element.addClass("accordion-collapse")
-        this.$element.attr("id", this.item.collapseId)
-        this.$element.attr("aria-labelledby", this.item.toggleId)
-
         this.item.register(this)
     }
 
@@ -38,7 +33,7 @@ export class NgbAccordionCollapse implements IController {
     }
 
     static get $inject() {
-        return ["$element", "$scope"]
+        return ["$element"]
     }
 
     static get $factory(): () => IDirective {
