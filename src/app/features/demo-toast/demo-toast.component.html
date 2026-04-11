@@ -1,0 +1,38 @@
+<div class="container py-3">
+    <h2 class="mb-3">Toast demo</h2>
+
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-primary" ng-click="$.toggleToast()">
+            {{ $.showToast ? 'Hide toast' : 'Show toast' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.refresh()">
+            Recreate toast
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleAnimation()">
+            Animation: {{ $.animation ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleAutohide()">
+            Autohide: {{ $.autohide ? 'on' : 'off' }}
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <div><strong>delay:</strong> {{ $.delay }}</div>
+        <div><strong>last event:</strong> {{ $.lastEvent }}</div>
+    </div>
+
+    <div class="toast-container position-static">
+        <ngb-toast ng-if="$.showToast" animation="$.animation" autohide="$.autohide" delay="$.delay"
+            header="Bootstrap toast" shown="$.onShown()" hidden="$.onHidden()">
+            This toast uses the header input and the component bindings.
+        </ngb-toast>
+
+        <ngb-toast ng-if="$.showToast" animation="$.animation" autohide="false">
+            <div class="me-auto" ngb-toast-header>
+                <strong>Custom header</strong>
+                <small>now</small>
+            </div>
+            This toast projects a custom header with <code>ngb-toast-header</code>.
+        </ngb-toast>
+    </div>
+</div>

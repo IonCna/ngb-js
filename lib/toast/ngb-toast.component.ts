@@ -1,90 +1,99 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IPromise, IScope, ITranscludeFunction } from "angular";
+import type { IAugmentedJQuery, IAttributes, IComponentController, IComponentOptions, IOnChangesObject, IPromise, IQService, ITimeoutService, ITranscludeFunction } from "angular";
 import { NgbToastConfig } from "@/toast/ngb-toast-config.service"
-import { NgbAnimationFactory } from "@/ngb-animation.factory"
 import template from "@/toast/ngb-toast.component.html?raw"
-import angular from "angular";
+import { ngbRunTransition } from "@/utils/transition/ngb-transition";
+import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@/toast/ngb-toast-transition";
+import type { NgbToastHeader } from "@/toast/ngb-toast-header.directive"
 
-export class NgbToast implements IComponentController {
+export interface INgbToast {
+    hide(): IPromise<void>
+    show(): IPromise<void>
+}
+
+export class NgbToast implements IComponentController, INgbToast {
     protected animation?: boolean
     protected autohide?: boolean
     protected delay?: number
     protected header?: string
+    protected ariaLive?: string
+    protected contentHeaderTpl?: ITranscludeFunction | null = null
 
     protected hidden?: () => void
     protected shown?: () => void
 
-    private closingInProgress = false
-    private isClosed = false
-    private headerTransclude?: ITranscludeFunction
-    protected elementTranscluded = false
-    private ngbRunTransition?: ($element: IAugmentedJQuery, startFn: () => void) => IPromise<void>
+    private _timeoutID?: IPromise<void> | null = null
 
     constructor(
         private $element: IAugmentedJQuery,
         private ngbToastConfig: NgbToastConfig,
-        private ngbAnimationFactory: NgbAnimationFactory,
-        protected $scope: IScope
+        private $q: IQService,
+        private $timeout: ITimeoutService,
+        private $attrs: IAttributes
     ) { }
 
     $onInit(): void {
         this.animation = this.animation ?? this.ngbToastConfig.animation
         this.autohide = this.autohide ?? this.ngbToastConfig.autohide
         this.delay = this.delay ?? this.ngbToastConfig.delay
-
-        this.ngbRunTransition = this.ngbAnimationFactory.$create()
+        this.ariaLive = this.$attrs["ariaLive"] ?? this.ngbToastConfig.ariaLive
     }
 
     $postLink(): void {
         this.$element.attr("role", "alert")
+        this.$element.attr("aria-live", this.ariaLive ?? this.ngbToastConfig.ariaLive)
         this.$element.attr("aria-atomic", "true")
-        this.$element.addClass("toast show d-block")
+        this.$element.addClass("toast d-block")
 
-        if (this.animation) {
-            this.$element.addClass("fade")
+        this._init()
+        this.show()
+    }
+
+    $onChanges(changes: IOnChangesObject): void {
+        this.$element.toggleClass("fade", this.animation)
+
+        if ("autohide" in changes) {
+            this._clearTimeout()
+            this._init()
         }
-
-        this.renderHeader()
     }
 
-    public registerHeaderTransclude($transclude: ITranscludeFunction): void {
-        this.headerTransclude = $transclude
-        this.elementTranscluded = true
-
-        this.renderHeader()
+    register(header: NgbToastHeader): void {
+        this.contentHeaderTpl = header.$transclude
     }
 
-    private renderHeader(): void {
-        if (!this.headerTransclude) return
+    hide(): IPromise<void> {
+        this._clearTimeout()
 
-        const [host] = Array.from(this.$element)
-        const wrapper = host.querySelector("[wrapper]")
-        if (!wrapper) return
-
-        const ngWrapper = angular.element(wrapper)
-        ngWrapper.empty()
-
-        this.headerTransclude(clone => {
-            if (!clone?.length) return
-            ngWrapper.append(clone)
-        }, this.$element)
-    }
-
-    protected async close() {
-        if (this.closingInProgress || this.isClosed) return
-        this.closingInProgress = true
-
-        if (!this.animation) {
-            this.$element.removeClass("show showing")
-            this.isClosed = true
-            return
-        }
-
-        await this.ngbRunTransition?.(this.$element, () => {
-            this.$element.addClass("showing")
+        const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbToastFadeOutTransition, {
+            animation: this.animation ?? this.ngbToastConfig.animation,
+            runningTransition: "stop"
         })
 
-        this.$element.removeClass("show showing")
-        this.isClosed = true
+        transition.then(() => this.hidden?.())
+        return transition
+    }
+
+    show(): IPromise<void> {
+        const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbToastFadeInTransition, {
+            animation: this.animation ?? this.ngbToastConfig.animation,
+            runningTransition: "continue"
+        })
+
+        transition.then(() => this.shown?.())
+        return transition
+    }
+
+    private _init(): void {
+        if (this.autohide && !this._timeoutID) {
+            this._timeoutID = this.$timeout(() => this.hide(), this.delay)
+        }
+    }
+
+    private _clearTimeout(): void {
+        if (this._timeoutID) {
+            this.$timeout.cancel(this._timeoutID)
+            this._timeoutID = null
+        }
     }
 
     static get $name() {
@@ -95,8 +104,9 @@ export class NgbToast implements IComponentController {
         return [
             "$element",
             NgbToastConfig.$name,
-            NgbAnimationFactory.$name,
-            "$scope"
+            "$q",
+            "$timeout",
+            "$attrs"
         ]
     }
 
@@ -107,7 +117,7 @@ export class NgbToast implements IComponentController {
                 autohide: "<?",
                 delay: "<?",
                 header: "@?",
-                hidden: "&?ngbHidden",
+                hidden: "&?",
                 shown: "&?"
             },
             controllerAs: "$",

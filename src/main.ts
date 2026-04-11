@@ -4,6 +4,7 @@ import { DemoCarouselComponent } from "@demo/features/demo-carousel/demo-carouse
 import { DemoAlertComponent } from "@demo/features/demo-alert/demo-alert.component"
 import { DemoProgressbarComponent } from "@demo/features/demo-progressbar/demo-progressbar.component"
 import { DemoCollapseComponent } from "@demo/features/demo-collapse/demo-collapse.component"
+import { DemoToastComponent } from "@demo/features/demo-toast/demo-toast.component"
 
 import "../node_modules/bootstrap/dist/css/bootstrap.css"
 import "./style.css"
@@ -16,3 +17,4 @@ AppModule.component(DemoCarouselComponent.$name, DemoCarouselComponent.$factory)
 AppModule.component(DemoAlertComponent.$name, DemoAlertComponent.$factory)
 AppModule.component(DemoProgressbarComponent.$name, DemoProgressbarComponent.$factory)
 AppModule.component(DemoCollapseComponent.$name, DemoCollapseComponent.$factory)
+AppModule.component(DemoToastComponent.$name, DemoToastComponent.$factory)

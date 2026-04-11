@@ -1,12 +1,7 @@
-<div ng-if="$.header && !$.elementTranscluded" class="toast-header">
-    <strong class="me-auto">{{ $.header }}</strong>
-
-    <button ng-click="$.close()" type="button" aria-label="Close" class="btn-close"></button>
-</div>
-
-<div ng-show="$.elementTranscluded" class="toast-header">
-    <div class="me-auto" wrapper></div>
-    <button ng-click="$.close()" type="button" aria-label="Close" class="btn-close"></button>
+<div ng-if="$.contentHeaderTpl || $.header" class="toast-header">
+    <ngb-content ng-if="$.contentHeaderTpl" $render="$.contentHeaderTpl"></ngb-content>
+    <strong ng-if="!$.contentHeaderTpl && $.header" class="me-auto">{{ $.header }}</strong>
+    <button type="button" class="btn-close" aria-label="Close" ng-click="$.hide()"></button>
 </div>
 
 <div class="toast-body" ng-transclude></div>

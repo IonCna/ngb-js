@@ -1,6 +1,12 @@
 import { NgbConfig } from "@/ngb-config.service"
 
-export class NgbToastConfig {
+export interface NgbToastOptions {
+    ariaLive: 'polite' | 'assertive'
+    autohide: boolean
+    delay: number
+}
+
+export class NgbToastConfig implements NgbToastOptions {
     private _animation!: boolean
     public ariaLive: 'polite' | 'assertive' = 'polite';
     public autohide = true

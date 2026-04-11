@@ -11,11 +11,9 @@ export class NgbContent implements IController {
     }
 
     $postLink(): void {
-        this.parent = this.$element.parent()
-
         this.$render(clone => {
             if(!clone) return
-            this.parent.append(clone)
+            this.$element.after(clone)
         }, this.parent)
     }
 

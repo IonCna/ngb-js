@@ -4,10 +4,10 @@ import type { NgbToast } from "@/toast/ngb-toast.component"
 export class NgbToastHeader implements IController {
     private ngbToast!: NgbToast
 
-    constructor(private $transclude: ITranscludeFunction) {}
+    constructor(public readonly $transclude: ITranscludeFunction) {}
 
     $onInit(): void {
-        this.ngbToast.registerHeaderTransclude(this.$transclude)
+        this.ngbToast.register(this)
     }
 
     static get $name() {
@@ -22,8 +22,7 @@ export class NgbToastHeader implements IController {
             require: {
                 ngbToast: "^ngbToast"
             },
-            controller: NgbToastHeader,
-            scope: true
+            controller: NgbToastHeader
         })
     }
 
