@@ -12,7 +12,7 @@ export class NgbAccordionButton implements IController {
     constructor(
         private $element: IAugmentedJQuery,
         private $scope: IScope
-    ) {}
+    ) { }
 
     $postLink(): void {
         this.$element.attr("type", "button")
@@ -33,11 +33,10 @@ export class NgbAccordionButton implements IController {
             this.$element.attr("aria-expanded", `${!collapsed}`)
         })
 
-        this.clickHandler = () => {
-            if (!this.item.disabled) {
-                this.accordion.toggle(this.item.id)
-            }
-        }
+        this.clickHandler = () => this.$scope.$evalAsync(() => {
+            if (this.item.disabled) return
+            this.accordion.toggle(this.item.id)
+        })
 
         this.$element.on("click", this.clickHandler)
     }

@@ -11,7 +11,7 @@ export class NgbAccordionToggle implements IController {
     constructor(
         private $element: IAugmentedJQuery,
         private $scope: IScope
-    ) {}
+    ) { }
 
     $postLink(): void {
         this.$element.attr("id", this.item.toggleId)
@@ -32,9 +32,10 @@ export class NgbAccordionToggle implements IController {
         })
 
         this.clickHandler = () => {
-            if (!this.item.disabled) {
+            this.$scope.$evalAsync(() => {
+                if (this.item.disabled) return
                 this.accordion.toggle(this.item.id)
-            }
+            })
         }
 
         this.$element.on("click", this.clickHandler)
