@@ -17,9 +17,9 @@ export function getValueInRange(value: number, max: number, min = 0): number {
     return Math.max(Math.min(value, max), min);
 }
 
-export function toNativeElement(element: IAugmentedJQuery) {
+export function toNativeElement<T = HTMLElement>(element: IAugmentedJQuery) {
     const [native] = Array.from(element)
-    return native
+    return native as T
 }
 
 export function isInteger(value: any): value is number {
@@ -42,4 +42,25 @@ export function isNumber(value: any): value is number {
 	return !isNaN(toInteger(value));
 }
 
-export function kebabCase() { }
+/**
+ * @example 
+ * let name = 'contentType'
+ * let kebab = camelToKebabCase(name) = 'content-type'
+ */
+export function camelToKebabCase(str: string) {
+    return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
+ * @example 
+ * let name = 'ContentType'
+ * let camel = kebabToCamelCase(name) = 'contentType'
+ */
+export function kebabToCamelCase(str: string) {
+  return str
+    .toLowerCase()
+    .split('-')
+    .filter(Boolean)
+    .map((p, i) => i === 0 ? p : p.charAt(0).toUpperCase() + p.slice(1))
+    .join('');
+}

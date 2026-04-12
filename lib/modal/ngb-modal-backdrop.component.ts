@@ -1,85 +1,90 @@
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IQService, IScope, ITimeoutService } from "angular";
+import { NgbModalConfig, type NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service"
 import angular from "angular";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDocumentService, IPromise } from "angular";
-import { NgbModalConfig } from "./ngb-modal-config.service";
-import type { NgbModalOptions } from "./ngb-modal.module"
-import { NgbAnimationFactory } from "@/ngb-animation.factory"
+import { ngbRunTransition } from "@/utils";
+import { ngbModalBackdropFadeInTransition, ngbModalBackdropFadeOutTransition } from "@/modal/ngb-modal-backdrop-transition"
 
-export class NgbModalBackdropComponent implements IComponentController {
-    private body!: JQLite
-    private container!: JQLite
-    private config!: NgbModalOptions
+const BACKDROP_ATTRIBUTES = ['animation', 'backdropClass'] as const satisfies readonly (keyof NgbModalUpdatableOptions)[];
+type NgbModalBackdropAttribute = (typeof BACKDROP_ATTRIBUTES)[number];
 
-    private animation!: boolean
-    private ngbRunTransition?: ($element: IAugmentedJQuery, startFn: () => void) => IPromise<void>
+export class NgbModalBackdrop implements IComponentController {
+    animation?: boolean
+    backdropClass?: string
+
+    private _options: Partial<Pick<NgbModalUpdatableOptions, NgbModalBackdropAttribute>> = {}
 
     constructor(
-        private $element: JQLite,
-        private $document: IDocumentService,
-        private $ngbConfig: NgbModalConfig,
-        private ngbAnimationFactory: NgbAnimationFactory
-    ) { }
-
-    $onInit(): void {
-        this.body = this.$document.find("body")
-        this.animation = this.config?.animation ?? this.$ngbConfig.animation
-        this.ngbRunTransition = this.ngbAnimationFactory.$create()
-    }
-
+        private $element: IAugmentedJQuery,
+        private $scope: IScope,
+        private $ngbModalConfig: NgbModalConfig,
+        private $q: IQService,
+        private $timeout: ITimeoutService
+    ) {}
+    
     $postLink(): void {
-        this.config?.backdropClass && this.$element.addClass(this.config.backdropClass)
+        const backdropClass = this.backdropClass ? this.backdropClass : ''
 
-        this.$element.addClass("modal-backdrop")
-        this.animation && this.$element.addClass("fade")
-        this.$element.css("z-index", `${1050 + (((this.config.__stackLevel ?? 1) - 1) * 20)}`)
+        this.$element.addClass(`modal-backdrop ${backdropClass}`)
+        this.$element.css({ "z-index": "1055" })
 
-        this.container = angular.isString(this.config?.container)
-            ? this.resolveContainer(this.config.container as string)
-            : angular.element(this.config.container ?? this.body)
-        this.container.append(this.$element)
-        this.enter()
+        this.$scope.$evalAsync(() => ngbRunTransition(this.$q, this.$timeout, this.$element, ngbModalBackdropFadeInTransition, {
+            animation: this.animation ?? this.$ngbModalConfig.animation,
+            runningTransition: "continue"
+        }))
     }
 
-    public async remove() {
-        if (this.animation) {
-            await this.ngbRunTransition?.(this.$element, () => this.$element.removeClass("show"))
-        }
-        this.$element.remove()
+    $onChanges(): void {
+        this.$element.toggleClass("show", !!this.animation)
+        this.$element.toggleClass("fade", this.animation)
     }
 
-    private resolveContainer(target: string) {
-        const searched = this.body[0].querySelector(target)
-        if (!searched) {
-            console.warn("custom container not found - ", target)
-        }
-        return angular.element(searched ?? this.body)
+    hide() {
+        return ngbRunTransition(this.$q, this.$timeout, this.$element, ngbModalBackdropFadeOutTransition, {
+            animation: this.animation ?? this.$ngbModalConfig.animation,
+            runningTransition: "stop"
+        })
     }
 
-    private enter() {
-        if (!this.animation) {
-            this.$element.addClass("show")
-            return
-        }
-        this.ngbRunTransition?.(this.$element, () => this.$element.addClass("show"))
+    updateOptions(options: NgbModalUpdatableOptions) {
+        BACKDROP_ATTRIBUTES.forEach(attr => {
+            if(!(attr in options)) return
+
+            const value = options[attr]
+            const isDefined = angular.isDefined(value)
+            if(!isDefined) return
+
+            this._setOption(attr, value)
+        })
+
+        this.$scope.$evalAsync()
     }
 
-    //#region $angular
+    private _setOption<K extends NgbModalBackdropAttribute>(attr: K, value: NgbModalUpdatableOptions[K]) {
+        this._options[attr] = value
+    }
 
     static get $name() {
         return "ngbModalBackdrop"
     }
 
+    static get $inject() {
+        return [
+            "$element",
+            "$scope",
+            NgbModalConfig.$name,
+            "$q",
+            "$timeout"
+        ]
+    }
+
     static get $factory(): IComponentOptions {
         return {
-            controller: this,
+            controller: NgbModalBackdrop,
+            controllerAs: "$",
             bindings: {
-                config: "<"
+                animation: "<?",
+                backdropClass: "@?"
             }
         }
     }
-
-    static get $inject() {
-        return ['$element', '$document', NgbModalConfig.$name, NgbAnimationFactory.$name]
-    }
-
-    //#endregion
 }

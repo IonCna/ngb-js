@@ -6,6 +6,8 @@ import { DemoProgressbarComponent } from "@demo/features/demo-progressbar/demo-p
 import { DemoCollapseComponent } from "@demo/features/demo-collapse/demo-collapse.component"
 import { DemoToastComponent } from "@demo/features/demo-toast/demo-toast.component"
 import { DemoAccordionComponent } from "@demo/features/demo-accordion/demo-accordion.component"
+import { DemoModalComponent } from "@demo/features/demo-modal/demo-modal.component"
+import { DemoModalContentComponent } from "@demo/features/demo-modal/demo-modal-content.component"
 
 import "../node_modules/bootstrap/dist/css/bootstrap.css"
 import "./style.css"
@@ -20,3 +22,5 @@ AppModule.component(DemoProgressbarComponent.$name, DemoProgressbarComponent.$fa
 AppModule.component(DemoCollapseComponent.$name, DemoCollapseComponent.$factory)
 AppModule.component(DemoToastComponent.$name, DemoToastComponent.$factory)
 AppModule.component(DemoAccordionComponent.$name, DemoAccordionComponent.$factory)
+AppModule.component(DemoModalComponent.$name, DemoModalComponent.$factory)
+AppModule.component(DemoModalContentComponent.$name, DemoModalContentComponent.$factory)

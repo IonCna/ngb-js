@@ -1,1 +1,0 @@
-export type StyleTypes = "success" | "info" | "warning" | "danger" | "primary" | "secondary" | "dark" | "light"

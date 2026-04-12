@@ -1,0 +1,48 @@
+<div class="container py-3">
+    <h2 class="mb-3">Modal demo</h2>
+
+    <!-- Options -->
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleAnimation()">
+            Animation: {{ $.animation ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleCentered()">
+            Centered: {{ $.centered ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleScrollable()">
+            Scrollable: {{ $.scrollable ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.cycleBackdrop()">
+            Backdrop: {{ $.backdrop }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleKeyboard()">
+            Keyboard: {{ $.keyboard ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.cycleSize()">
+            Size: {{ $.size || 'default' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleFullscreen()">
+            Fullscreen: {{ $.fullscreen ? 'on' : 'off' }}
+        </button>
+    </div>
+
+    <!-- Actions -->
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-primary" ng-click="$.open()">
+            Open modal
+        </button>
+        <button type="button" class="btn btn-warning" ng-click="$.openMultiple()">
+            Open 3 modals
+        </button>
+        <button type="button" class="btn btn-danger" ng-click="$.dismissAll()">
+            Dismiss all
+        </button>
+    </div>
+
+    <!-- State -->
+    <div class="mb-3">
+        <div><strong>Has open modals:</strong> {{ $.hasOpenModals() }}</div>
+        <div><strong>Last result:</strong> {{ $.lastResult }}</div>
+        <div><strong>Last dismissed:</strong> {{ $.lastDismissed }}</div>
+    </div>
+</div>

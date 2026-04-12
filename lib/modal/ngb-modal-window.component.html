@@ -1,12 +1,12 @@
 <div
+    role="document"
     class="modal-dialog"
-    dialog-host
     ng-class="[
-        $.config.centered && 'modal-dialog-centered',
-        $.config.size && ('modal-' + $.config.size),
-        $.config.modalDialogClass,
-        $.config.scrollable && 'modal-dialog-scrollable',
-        $.fullscreenClass
+        $fullscreenClass,
+        $modalSizeClas,
+        $modalCentredClass,
+        $modalScrollableClass,
+        $modalDialogClass
     ]">
-    <div class="modal-content" modal-host></div>
+    <div class="modal-content" ng-transclude></div>
 </div>

@@ -1,92 +1,108 @@
-type StackEntry = {
-    id: number
-    opener: HTMLElement | null
-    modalEl?: HTMLElement
-}
+import type { NgbModalOptions } from "@/modal/ngb-modal-config.service";
+import { camelToKebabCase, toNativeElement } from "@/utils";
+import angular, { type IAugmentedJQuery, type ICompileService, type IDocumentService, type IRootScopeService } from "angular";
+import { NgbScrollbar } from "@/ngb-scrollbar.service"
+import { NgbActiveModal, NgbModalRef } from "@/modal/ngb-modal-ref"
 
-export class NgbModalStackService {
-    private entries: StackEntry[] = []
-    private seq = 0
-    private originalBodyOverflow = ""
-    private originalBodyPaddingRight = ""
+export class NgbModalStack {
+    private _scrollBarRestoreFn: null | (() => void) = null;
+	private _modalRefs: NgbModalRef[] = [];
 
-    public open(opener: Element | null) {
-        if (this.entries.length === 0) {
-            this.lockBodyScroll()
+    constructor(
+        private $document: IDocumentService,
+        private ngbScrollbar: NgbScrollbar,
+        private $compile: ICompileService,
+        private $rootScope: IRootScopeService
+    ) { }
+
+    public open(content: any, options: NgbModalOptions) {
+        const container = this._resolveContainer(options.container)
+
+        if (!container) {
+            throw new Error(`The specified modal container "${options.container || 'body'}" was not found in the DOM.`);
         }
 
-        const id = ++this.seq
-        this.entries.push({
-            id,
-            opener: opener instanceof HTMLElement ? opener : null
-        })
+        this._hideScrollBar()
 
-        return { id, level: this.entries.length }
+        const activeModal = new NgbActiveModal()
+        debugger
     }
 
-    public registerModalElement(id: number | undefined, modalEl: HTMLElement) {
-        if (!id) return
-        const entry = this.entries.find(item => item.id === id)
-        if (!entry) return
-        entry.modalEl = modalEl
-    }
+    private _registerModalRef(ngbModalRef: NgbModalRef) {
+        const unregisterModalRef = () => {
+            const index = this._modalRefs.indexOf(ngbModalRef)
 
-    public isTop(id: number | undefined) {
-        if (!id || this.entries.length === 0) return false
-        return this.entries[this.entries.length - 1].id === id
-    }
-
-    public close(id: number | undefined) {
-        if (!id) return
-        const idx = this.entries.findIndex(item => item.id === id)
-        if (idx < 0) return
-
-        const wasTop = idx === this.entries.length - 1
-        const [entry] = this.entries.splice(idx, 1)
-
-        if (this.entries.length === 0) {
-            this.restoreBodyStyles()
-            if (entry?.opener && document.contains(entry.opener)) {
-                entry.opener.focus()
+            if(index > -1) {
+                this._modalRefs.splice(index, 1)
             }
-            return
+        }
+        
+        this._modalRefs.push(ngbModalRef)
+        ngbModalRef
+    }
+
+    private _resolveContainer(container?: IAugmentedJQuery | string) {
+        if (angular.isString(container)) {
+            const native = toNativeElement(this.$document).querySelector(
+                String(container)
+            )
+
+            if (!native) return this.$document.find("body");
+            return angular.element(native)
         }
 
-        if (!wasTop) return
+        return container ?? this.$document.find("body")
+    }
 
-        const previous = this.entries[this.entries.length - 1]
-        if (previous?.modalEl && document.contains(previous.modalEl)) {
-            previous.modalEl.focus()
+    private _attachBackdrop(container: IAugmentedJQuery) {
+        const scope = this.$rootScope.$new(true)
+        const linkFn = this.$compile("<ngb-modal-backdrop></ng-modal-backdrop>")
+
+        const compiled = linkFn(scope)
+        container.append(compiled)
+
+        return scope
+    }
+
+    private _attachWindowComponent(container: IAugmentedJQuery, content: any) {
+        const scope = this.$rootScope.$new(true)
+        const componentName = camelToKebabCase(content)
+
+        return () => {
+            const linkFn = this.$compile(`<ngb-modal-window> <${componentName}></${componentName}> </ng-modal-window>`)
+
+            const compiled = linkFn(scope)
+            container.append(compiled)
+
+            return scope
         }
     }
 
-    private getScrollbarWidth() {
-        return Math.max(0, window.innerWidth - document.documentElement.clientWidth)
-    }
+    private _restoreScrollBar() {
+        const scrollBarRestoreFn = this._scrollBarRestoreFn;
 
-    private lockBodyScroll() {
-        const body = document.body
-        this.originalBodyOverflow = body.style.overflow
-        this.originalBodyPaddingRight = body.style.paddingRight
-
-        body.classList.add("modal-open")
-        body.style.overflow = "hidden"
-
-        const width = this.getScrollbarWidth()
-        if (width > 0) {
-            body.style.paddingRight = `${width}px`
+        if (scrollBarRestoreFn) {
+            this._scrollBarRestoreFn = null;
+            scrollBarRestoreFn();
         }
     }
 
-    private restoreBodyStyles() {
-        const body = document.body
-        body.classList.remove("modal-open")
-        body.style.overflow = this.originalBodyOverflow
-        body.style.paddingRight = this.originalBodyPaddingRight
+    private _hideScrollBar() {
+        if (!this._scrollBarRestoreFn) {
+            this._scrollBarRestoreFn = this.ngbScrollbar.hide();
+        }
     }
 
     static get $name() {
         return "ngb.modal.stack.service"
     }
-}
 
+    static get $inject() {
+        return [
+            "$document",
+            NgbScrollbar.$name,
+            "$compile",
+            "$rootScope"
+        ]
+    }
+}
