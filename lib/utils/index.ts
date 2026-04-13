@@ -34,6 +34,15 @@ export function padNumber(value: number) {
     return '';
 }
 
+export function closest(element: IAugmentedJQuery, selector?: string) {
+    if(!selector) return null
+    const target = toNativeElement(element)
+
+    if(typeof target.closest === "undefined") return null;
+
+    return target.closest(selector)
+}
+
 export function toInteger(value: any): number {
 	return parseInt(`${value}`, 10);
 }

@@ -1,97 +1,74 @@
-import type { IController, IDirective, IScope } from "angular"
+import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, IQService, ITimeoutService } from "angular"
 import { NgbDropdownConfig } from "./ngb-dropdown-config.service"
-import type { ComputePositionConfig, Placement } from "@floating-ui/dom"
-import type { DropdownConfigSave } from "./ngb-dropdown.module"
-import angular from "angular"
-import {
-    NgbDropdownCloseEvent,
-    NgbDropdownClosedEvent,
-    NgbDropdownToggleEvent
-} from "./ngb-dropdown.events"
+import type { Placement } from "@floating-ui/dom"
+
+import { ngbPositioning, type NgbPositioning } from "@/utils/positioning"
+import { NgbRTL } from "@/utils/rtl.service"
+import type { Options } from "@popperjs/core"
+import { toNativeElement, type INgbEvent } from "@/utils"
+import type { NgbDropdownMenu } from "./ngb-dropdown-menu.directive"
+import type { NgbDropdownAnchor } from "./ngb-dropdown-anchor.directive"
 
 export class NgbDropdown implements IController {
-    private animation?: boolean
-    private autoClose!: boolean | "inside" | "outside"
-    private container!: "body" | null
-    private display?: 'dynamic' | 'static'
-    private dropdownClass?: string
-    private isOpened!: boolean
-    private popperOptions?: (opts?: Partial<ComputePositionConfig>) => Partial<ComputePositionConfig>
-    private openChange?: (locals: { state: boolean }) => void
-    private placement?: Placement
+    static ngAcceptInputType_autoClose: boolean | string;
+    static ngAcceptInputType_display: string;
 
-    private toggleListener?: () => void
+    private _positioning!: NgbPositioning
+
+    public autoClose?: boolean
+    public animation?: boolean
+    public container?: string
+    public display?: 'dynamic' | 'static'
+    public dropdownClass?: string
+    private _open = false
+    public popperOptions?: Options
+    public openChange?: ({ $event }: INgbEvent<unknown>) => void
+    public placement?: Placement
+
+    private _menu?: NgbDropdownMenu
+    private _anchor?: NgbDropdownAnchor
+    private _destroyCloseHandlers?: IDeferred<void>
 
     constructor(
         private $ngbDropdownConfig: NgbDropdownConfig,
-        private $element: JQLite,
-        private $scope: IScope,
-        private $config: DropdownConfigSave
+        private $element: IAugmentedJQuery,
+        private $document: IDocumentService,
+        private $rtl: NgbRTL,
+        private $timeout: ITimeoutService,
+        private $q: IQService
     ) { }
 
     $onInit(): void {
-        this.autoClose = this.autoClose ?? this.$ngbDropdownConfig.autoClose
-        this.animation = this.animation ?? this.$ngbDropdownConfig.animation
-        this.container = this.container ?? this.$ngbDropdownConfig.container
-
-        if (angular.isString(this.container) && this.container != "body") {
-            throw new Error("ngbDropdown only supports 'body' as container")
-        }
-
-        if(this.display) {
-            throw new Error("dropdown display is not supported")
-        }
-
-        this.isOpened = this.isOpened ?? false
-
-        this.$config.set(this, {
-            container: this.container,
-            dropdownClass: this.dropdownClass,
-            defaultOpen: this.isOpened,
-            placement: this.placement ?? "bottom",
-            popperOptions: this.popperOptions,
-            autoClose: this.autoClose,
-            animation: this.animation
-        })
+        this._positioning = ngbPositioning(this.$rtl)
     }
 
     $postLink(): void {
-        this.$element.addClass("dropdown")
-
-        this.$scope.$on(NgbDropdownClosedEvent, () => {
-            this.isOpened = false
-            this.openChange?.({ state: this.isOpened })
-            this.$scope.$broadcast(NgbDropdownCloseEvent)
-        })
-    }
-
-    $onDestroy(): void {
-        this.toggleListener?.()
-        this.$config.delete(this)
-    }
-
-    public isOpen = () => this.isOpened
-
-    public open = () => {
-        this.isOpened = true
-        this.openChange?.({ state: this.isOpened })
-        this.$scope.$broadcast(NgbDropdownToggleEvent, this.isOpened)
-    }
-
-    public close = () => {
-        this.isOpened = false
-        this.openChange?.({ state: this.isOpened })
-        this.$scope.$broadcast(NgbDropdownToggleEvent, this.isOpened)
-    }
-
-    public toggle() {
-        if (!this.isOpened) {
-            this.open()
-            return
+        if(!this.display) {
+            const isClosestNavbar = toNativeElement(this.$element).closest("navbar")
+            this.display = isClosestNavbar ? 'static' : 'dynamic'
         }
 
-        this.close()
+        this.$timeout(() => {
+            this._applyPlacementClasses()
+            if(this._open) {
+
+            }
+        }, 0)
     }
+
+    public registerMenu(menu: NgbDropdownMenu) {
+        this._menu = menu
+    }
+    
+    public registerAnchor(anchor: NgbDropdownAnchor) {
+        this._anchor = anchor
+    }
+
+    private _applyPlacementClasses(placement?: Placement | null) {
+
+    }
+
+    private _setCloseHandlers() {}
 
     //#region $angular
 
@@ -109,17 +86,24 @@ export class NgbDropdown implements IController {
                 container: "@?",
                 display: "<?",
                 dropdownClass: "<?",
-                isOpened: "<?open",
+                _open: "<?open",
                 popperOptions: "<?",
                 openChange: "&?",
                 placement: "@?"
             },
-            controller: this,
+            controller: NgbDropdown,
         })
     }
 
     static get $inject() {
-        return [NgbDropdownConfig.$name, '$element', '$scope', '$dropdownConfigSave']
+        return [
+            NgbDropdownConfig.$name,
+            '$element',
+            '$scope',
+            NgbRTL.$name,
+            "$timeout",
+            "$q"
+        ]
     }
 
     //#endregion

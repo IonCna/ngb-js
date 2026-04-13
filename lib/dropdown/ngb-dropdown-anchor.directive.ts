@@ -1,6 +1,8 @@
 import type { IController, IDirective } from "angular";
+import type { NgbDropdown } from "@/dropdown/ngb-dropdown.directive";
 
 export class NgbDropdownAnchor implements IController {
+    private dropdown!: NgbDropdown
 
     constructor(
         private $element: JQLite
@@ -8,6 +10,11 @@ export class NgbDropdownAnchor implements IController {
 
     $postLink(): void {
         this.$element.addClass("dropdown-toggle")
+    }
+
+    $onChanges(): void {
+        this.$element.toggleClass("show", this.dropdown.isOpen())
+        this.$element.attr("aria-expanded", `${this.dropdown.isOpen()}`)
     }
 
     static get $inject() {
@@ -20,8 +27,13 @@ export class NgbDropdownAnchor implements IController {
 
     static get $factory(): () => IDirective {
         return () => ({
-            controller: this,
-            restrict: "A"
+            controller: NgbDropdownAnchor,
+            restrict: "A",
+            require: {
+                dropdown: "^ngbDropdown"
+            },
+            bindToController: true,
+            scope: true
         })
     }
 }

@@ -1,24 +1,11 @@
-import { type Placement, type ComputePositionConfig, flip, shift } from "@floating-ui/dom"
+import { type Placement, type Options } from "@popperjs/core"
 
 export class NgbDropdownConfig {
-    public animation = true
     public autoClose: boolean | "inside" | "outside" = true
     public container: null | 'body' = null
     public placement: Placement[] = ['bottom-start', 'bottom-end', 'top-start', 'top-end']
     
-    public popperOptions(opts?: Partial<ComputePositionConfig>): Partial<ComputePositionConfig> {
-        return {
-            ...opts,
-            strategy: "absolute",
-            middleware: [
-                flip({
-                    fallbackAxisSideDirection: "start",
-                    fallbackPlacements: this.placement
-                }),
-                shift()
-            ]
-        }
-    }
+    public popperOptions = (options?: Partial<Options>) => options
 
     static get $name() {
         return "ngb.dropdown.config.service"
