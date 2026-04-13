@@ -18,8 +18,16 @@ export class NgbModal {
         return this.ngbModalStack.open(content, combinedOptions)
     }
 
+    get activeInstances() {
+        return this.ngbModalStack.activeInstances
+    }
+
+    dismissAll(reason?: any) {
+        this.ngbModalStack.dismissAll(reason)
+    }
+
     hasOpenModals() {
-        return false
+        return this.ngbModalStack.hasOpenModals()
     }
 
     static get $name() {

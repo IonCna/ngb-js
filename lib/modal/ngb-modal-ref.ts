@@ -51,7 +51,7 @@ export class NgbModalRef<T = any> {
         const dismiss = this._beforeDismiss();
     }
 
-    close() { }
+    close(result: any) { }
 
     get closed() {
 

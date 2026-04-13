@@ -60,7 +60,9 @@ export class NgbModalBackdrop implements IComponentController {
     }
 
     private _setOption<K extends NgbModalBackdropAttribute>(attr: K, value: NgbModalUpdatableOptions[K]) {
-        this._options[attr] = value
+        this.$scope.$evalAsync(() => {
+            this._options[attr] = value
+        })
     }
 
     static get $name() {
