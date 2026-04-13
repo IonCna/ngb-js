@@ -3,15 +3,17 @@ import template from "@demo/features/demo-modal/demo-modal-content.component.htm
 
 export class DemoModalContentComponent implements IComponentController {
     public name = ""
+    // public activeModal: any
+    // "ngbActiveModal"
 
-    constructor(public activeModal: any) {}
+    constructor() {}
 
     static get $name() {
         return "ngbDemoModalContent"
     }
 
     static get $inject() {
-        return ["ngbActiveModal"]
+        return []
     }
 
     static get $factory(): IComponentOptions {

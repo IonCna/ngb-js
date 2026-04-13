@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IPromise } from "angular";
 import template from "@/modal/ngb-modal-window.component.html?raw"
 import {
     type NgbModalUpdatableOptions
@@ -64,7 +64,7 @@ export class NgbModalWindow implements IComponentController {
 
     public dismiss() { }
 
-    public hide() { }
+    public hide(): IPromise<void> { }
 
     public updateOptions(options: NgbModalUpdatableOptions) { }
 
