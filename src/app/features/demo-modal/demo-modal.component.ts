@@ -1,5 +1,6 @@
 import type { IComponentController, IComponentOptions } from "angular"
 import template from "@demo/features/demo-modal/demo-modal.component.html?raw"
+import { NgbModal } from "@ngb"
 
 const SIZES = ["", "sm", "lg", "xl"]
 const BACKDROPS: Array<boolean | "static"> = [true, false, "static"]
@@ -15,7 +16,7 @@ export class DemoModalComponent implements IComponentController {
     public size = ""
     public fullscreen = false
 
-    constructor(private ngbModal: any) {}
+    constructor(private ngbModal: NgbModal) {}
 
     private buildOptions() {
         const opts: Record<string, any> = {
@@ -30,22 +31,34 @@ export class DemoModalComponent implements IComponentController {
         return opts
     }
 
-    public open() {
-        const modalRef = this.ngbModal.open("ngbDemoModalContent", this.buildOptions())
+    public async open() {
+        const modalRef = await this.ngbModal.open("ngbDemoModalContent", this.buildOptions())
 
-        // modalRef.closed.subscribe((result: any) => {
-        //     this.lastResult = result
-        // })
+        modalRef.closed.then(result => {
+            this.lastResult = result
+        })
 
-        // modalRef.dismissed.subscribe((reason: any) => {
-        //     this.lastDismissed = String(reason)
-        // })
+        modalRef.dismissed.then((reason: any) => {
+            this.lastDismissed = String(reason)
+        })
     }
 
     public openMultiple() {
         for (let i = 1; i <= 3; i++) {
             this.ngbModal.open("ngbDemoModalContent", this.buildOptions())
         }
+    }
+
+    public openScrollable() {
+        this.ngbModal.open("ngbDemoModalScrollableContent", {
+            ...this.buildOptions(),
+            scrollable: true,
+            size: "lg",
+        })
+    }
+
+    public openUpdateOptions() {
+        this.ngbModal.open("ngbDemoModalUpdateOptionsContent", this.buildOptions())
     }
 
     public dismissAll() {

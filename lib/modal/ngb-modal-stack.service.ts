@@ -9,6 +9,11 @@ import { ngbFocusTrap } from "@/utils/focus-trap";
 
 const NGB_ACTIVE_WINDOW_HAS_CHANGE = "ngb:active:window:has:change"
 
+type ModalContentScope = angular.IScope & {
+    activeModal: NgbActiveModal;
+    [key: string]: any;
+}
+
 export class NgbModalStack {
     private _scrollBarRestoreFn: null | (() => void) = null;
     private _modalRefs: NgbModalRef[] = [];
@@ -112,7 +117,7 @@ export class NgbModalStack {
     }
 
     get activeInstances() {
-        return this._modalRefs
+        return this._modalRefs.slice()
     }
 
     dismissAll(reason?: any) {
@@ -176,11 +181,11 @@ export class NgbModalStack {
         const linkFn = this.$compile(`<ngb-modal-window></ngb-modal-window>`)
 
         const compiled = linkFn(scope)
-        const modalContent = toNativeElement(compiled).querySelector(".modal-content")
+        const modalDialog = toNativeElement(compiled).querySelector(".modal-dialog")
 
-        if (modalContent) {
-            angular.element(modalContent).append(content.contents())
-            // TODO ver si no rompe bindings el contents()
+        if (modalDialog) {
+            content.addClass("modal-content")
+            angular.element(modalDialog).append(content)
         }
 
         container.append(compiled)
@@ -198,11 +203,15 @@ export class NgbModalStack {
         return deferred.promise
     }
 
-    // TODO hacer sistema de injection con bindings, activeModal por constructor o por inyección directa al componente + correr eval de angular
     private _getContentRef<T>(content: any, activeModal: NgbActiveModal, options: NgbModalOptions) {
         const deferred = this.$q.defer<ComponentRef<T>>()
-        const scope = this.$rootScope.$new(true)
-        const linkFn = this.$compile(`<${camelToKebabCase(content)}></${camelToKebabCase(content)}>`)
+        const scope = this.$rootScope.$new(true) as ModalContentScope
+        const componentName = camelToKebabCase(content)
+        const attrs = this._buildBindingsAttrs(options)
+        const linkFn = this.$compile(`<${componentName} ${attrs} ngb-active-modal="activeModal"></${componentName}>`)
+
+        scope.activeModal = activeModal
+        angular.extend(scope, options.bindings)
 
         const compiled = linkFn(scope)
 
@@ -221,6 +230,12 @@ export class NgbModalStack {
         })
 
         return deferred.promise
+    }
+
+    private _buildBindingsAttrs(options: NgbModalOptions) {
+        return Object.keys(options.bindings || {})
+            .map(key => `${camelToKebabCase(key)}="${key}"`)
+            .join(" ")
     }
 
     private _setAriaHidden(element: IAugmentedJQuery) {

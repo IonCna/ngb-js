@@ -8,6 +8,8 @@ import { DemoToastComponent } from "@demo/features/demo-toast/demo-toast.compone
 import { DemoAccordionComponent } from "@demo/features/demo-accordion/demo-accordion.component"
 import { DemoModalComponent } from "@demo/features/demo-modal/demo-modal.component"
 import { DemoModalContentComponent } from "@demo/features/demo-modal/demo-modal-content.component"
+import { DemoModalScrollableContentComponent } from "@demo/features/demo-modal/demo-modal-scrollable-content.component"
+import { DemoModalUpdateOptionsContentComponent } from "@demo/features/demo-modal/demo-modal-update-options-content.component"
 
 import "../node_modules/bootstrap/dist/css/bootstrap.css"
 import "./style.css"
@@ -24,3 +26,5 @@ AppModule.component(DemoToastComponent.$name, DemoToastComponent.$factory)
 AppModule.component(DemoAccordionComponent.$name, DemoAccordionComponent.$factory)
 AppModule.component(DemoModalComponent.$name, DemoModalComponent.$factory)
 AppModule.component(DemoModalContentComponent.$name, DemoModalContentComponent.$factory)
+AppModule.component(DemoModalScrollableContentComponent.$name, DemoModalScrollableContentComponent.$factory)
+AppModule.component(DemoModalUpdateOptionsContentComponent.$name, DemoModalUpdateOptionsContentComponent.$factory)

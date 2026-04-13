@@ -6,12 +6,13 @@ import { ngbModalBackdropFadeInTransition, ngbModalBackdropFadeOutTransition } f
 
 const BACKDROP_ATTRIBUTES = ['animation', 'backdropClass'] as const satisfies readonly (keyof NgbModalUpdatableOptions)[];
 type NgbModalBackdropAttribute = (typeof BACKDROP_ATTRIBUTES)[number];
+type BackdropOptions = Partial<Record<NgbModalBackdropAttribute, unknown>> & NgbModalUpdatableOptions;
 
 export class NgbModalBackdrop implements IComponentController {
     animation?: boolean
     backdropClass?: string
 
-    private _options: Partial<Pick<NgbModalUpdatableOptions, NgbModalBackdropAttribute>> = {}
+    private _appliedBackdropClass?: string
 
     constructor(
         private $element: IAugmentedJQuery,
@@ -34,8 +35,18 @@ export class NgbModalBackdrop implements IComponentController {
     }
 
     $onChanges(): void {
-        this.$element.toggleClass("show", !!this.animation)
+        this.$element.toggleClass("show", !this.animation)
         this.$element.toggleClass("fade", this.animation)
+
+        if (this._appliedBackdropClass) this._appliedBackdropClass.split(/\s+/).filter(Boolean).forEach(className => {
+            this.$element.removeClass(className)
+        })
+
+        if (this.backdropClass) this.backdropClass.split(/\s+/).filter(Boolean).forEach(className => {
+            this.$element.addClass(className)
+        })
+
+        this._appliedBackdropClass = this.backdropClass
     }
 
     hide() {
@@ -46,23 +57,13 @@ export class NgbModalBackdrop implements IComponentController {
     }
 
     updateOptions(options: NgbModalUpdatableOptions) {
-        BACKDROP_ATTRIBUTES.forEach(attr => {
-            if(!(attr in options)) return
+        const source: BackdropOptions = options
 
-            const value = options[attr]
-            const isDefined = angular.isDefined(value)
-            if(!isDefined) return
-
-            this._setOption(attr, value)
-        })
-
-        this.$scope.$evalAsync()
-    }
-
-    private _setOption<K extends NgbModalBackdropAttribute>(attr: K, value: NgbModalUpdatableOptions[K]) {
-        this.$scope.$evalAsync(() => {
-            this._options[attr] = value
-        })
+        this.$scope.$evalAsync(() => BACKDROP_ATTRIBUTES.forEach(attr => {
+            if (angular.isDefined(source[attr])) {
+                Object.assign(this, { [attr]: source[attr] })
+            }
+        }))
     }
 
     static get $name() {

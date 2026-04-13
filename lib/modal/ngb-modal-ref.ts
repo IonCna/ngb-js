@@ -5,9 +5,9 @@ import type { NgbModalBackdrop } from "./ngb-modal-backdrop.component";
 import type { NgbModalWindow } from "./ngb-modal-window.component";
 
 export class NgbActiveModal {
-    update(options: NgbModalUpdatableOptions): void { }
-    close(result?: any): void { }
-    dismiss(reason?: any): void { }
+    update(_options: NgbModalUpdatableOptions): void { }
+    close(_result?: any): void { }
+    dismiss(_reason?: any): void { }
 }
 
 export class NgbModalRef<T = any> {
@@ -17,8 +17,8 @@ export class NgbModalRef<T = any> {
     public result?: IPromise<any>;
 
     private _hidden!: IDeferred<void>
-    private _dismissed!: IDeferred<void>
-    private _closed!: IDeferred<void>
+    private _dismissed!: IDeferred<any>
+    private _closed!: IDeferred<any>
 
     constructor(
         private $q: IQService,
@@ -34,31 +34,51 @@ export class NgbModalRef<T = any> {
         this._resolve = deferred.resolve
 
         deferred.promise.then(angular.noop, angular.noop)
+        this._closed = this.$q.defer()
+        this._dismissed = this.$q.defer()
         this._hidden = this.$q.defer()
+
+        windowRef.componentInstance.onDismiss((reason) => {
+            this.dismiss(reason)
+        })
     }
 
     update(options: NgbModalUpdatableOptions): void {
-
+        this.windowRef.componentInstance.updateOptions(options)
+        if (this.backdropRef && this.backdropRef.componentInstance) {
+            this.backdropRef.componentInstance.updateOptions(options);
+        }
     }
 
     dismiss(reason: any) {
         if (!this.windowRef) return
         if (!this._beforeDismiss) {
-            this.dismiss(reason)
+            this._dismiss(reason)
             return
         }
 
-        const dismiss = this._beforeDismiss();
+        const dismiss = this._beforeDismiss()
+
+        this.$q.when(dismiss).then(result => {
+            if (result !== false) this._dismiss(reason)
+        }, angular.noop)
     }
 
-    close(result: any) { }
+    close(result?: any) {
+        if (!this.windowRef) return
+        this._closed.resolve(result)
+        this._resolve?.(result)
+        this._removeModalElements()
+    }
+
+    private _dismiss(reason?: any) {
+        this._dismissed.resolve(reason)
+        this._reject?.(reason)
+        this._removeModalElements()
+    }
 
     get closed() {
-
-        // check
-        return this._closed.promise.then(value => {
-            return value
-        })
+        return this._closed.promise
     }
 
     get dismissed() {
@@ -69,13 +89,17 @@ export class NgbModalRef<T = any> {
         return this._hidden.promise
     }
 
+    get shown() {
+        return this.windowRef.componentInstance.shown
+    }
+
     get componentInstance() {
-        return
+        return this.contentRef.componentInstance
     }
 
     private _removeModalElements() {
         const windowTransition = this.windowRef.componentInstance.hide()
-        const backdropTransition = this.backdropRef?.componentInstance.hide()
+        const backdropTransition = this.backdropRef?.componentInstance.hide() ?? this.$q.resolve()
 
         windowTransition.then(() => {
             this.windowRef.$element.remove()

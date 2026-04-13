@@ -1,0 +1,16 @@
+<div class="modal-header">
+    <h4 class="modal-title">Scrollable content</h4>
+    <button type="button" class="btn-close" aria-label="Close" ng-click="$.ngbActiveModal.dismiss('scrollable close')"></button>
+</div>
+<div class="modal-body">
+    <p>Use the mouse wheel or keyboard to move through this content.</p>
+    <div class="list-group">
+        <div class="list-group-item" ng-repeat="item in $.items track by $index">
+            {{ item }}
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" ng-click="$.ngbActiveModal.dismiss('scrollable cancel')">Cancel</button>
+    <button type="button" class="btn btn-primary" ng-click="$.ngbActiveModal.close('scrollable done')">Done</button>
+</div>

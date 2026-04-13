@@ -25,6 +25,7 @@ export interface NgbModalOptions {
     windowClass?: string;
     modalDialogClass?: string;
     backdropClass?: string;
+    bindings?: Record<string, any>;
 }
 
 export type NgbModalUpdatableOptions = Pick<
@@ -58,6 +59,7 @@ export class NgbModalConfig implements NgbModalOptions {
     public windowClass?: string;
     public modalDialogClass?: string;
     public backdropClass?: string;
+    public bindings?: Record<string, any>;
 
     constructor(
         private $ngbConfig: NgbConfig

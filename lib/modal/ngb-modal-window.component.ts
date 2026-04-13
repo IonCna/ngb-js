@@ -1,10 +1,10 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDeferred, IDocumentService, IPromise, IQService, IScope, ITimeoutService } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IDeferred, IDocumentService, ILogService, IPromise, IQService, IScope, ITimeoutService } from "angular";
 import template from "@/modal/ngb-modal-window.component.html?raw"
 import {
     type NgbModalUpdatableOptions
 } from "@/modal/ngb-modal-config.service"
 import angular from "angular";
-import { ngbRunTransition, toNativeElement, type INgbEvent, type NgbTransitionOptions } from "@/utils";
+import { ngbRunTransition, toNativeElement, type NgbTransitionOptions } from "@/utils";
 import { ngbModalBumpBackdropTransition, ngbModalWindowFadeInTransition, ngbModalWindowFadeOutTransition } from "./ngb-modal-window-transition";
 import { getFocusableBoundaryElements } from "@/utils/focus-trap";
 import { ModalDismissReasons } from "./ngb-modal-dismiss-reasons";
@@ -40,11 +40,13 @@ export class NgbModalWindow implements IComponentController {
     public size?: string;
     public windowClass?: string;
     public modalDialogClass?: string;
-    protected dismissEvent?: ({ $event }: INgbEvent<any>) => void
-
+    
     private _elWithFocus: Element | null = null;
     private _dialogEl?: IAugmentedJQuery
-    private _closed?: IDeferred<void>
+    private _eventHandlingStop?: IDeferred<void>
+    private _shown!: IDeferred<void>
+    private _hidden!: IDeferred<void>
+    private _dismissListener?: (reason: any) => void
     private _appliedWindowClass?: string
 
     constructor(
@@ -52,13 +54,15 @@ export class NgbModalWindow implements IComponentController {
         private $element: IAugmentedJQuery,
         private $q: IQService,
         private $timeout: ITimeoutService,
-        private $document: IDocumentService
+        private $document: IDocumentService,
+        private $log: ILogService
     ) { }
 
     $onInit(): void {
         const document = toNativeElement<Document>(this.$document)
 
-        this._closed = this.$q.defer()
+        this._shown = this.$q.defer()
+        this._hidden = this.$q.defer()
         this._elWithFocus = document.activeElement
     }
 
@@ -76,35 +80,47 @@ export class NgbModalWindow implements IComponentController {
         if (!nativeDialog) throw new Error("modal-dialog element is not present in template!")
         this._dialogEl = angular.element(nativeDialog)
 
-        this._show()
+        this.$timeout(() => this._show(), 0)
     }
 
     $onChanges(): void {
         this.$element.toggleClass("fade", this.animation)
 
-        if (this._appliedWindowClass) {
-            this.$element.removeClass(this._appliedWindowClass)
-        }
+        if (this._appliedWindowClass) this._appliedWindowClass.split(/\s+/).filter(Boolean).forEach(className => {
+            this.$element.removeClass(className)
+        })
 
-        if (this.windowClass) {
-            this.$element.addClass(this.windowClass)
-        }
+        if (this.windowClass) this.windowClass.split(/\s+/).filter(Boolean).forEach(className => {
+            this.$element.addClass(className)
+        })
 
         this._appliedWindowClass = this.windowClass
 
-        if (this.ariaLabelledBy) {
-            this.$element.attr("aria-labelledby", this.ariaLabelledBy)
-        }
+        if (this.ariaLabelledBy) this.$element.attr("aria-labelledby", this.ariaLabelledBy)
+        else this.$element.removeAttr("aria-labelledby")
 
-        if (this.ariaDescribedBy) {
-            this.$element.attr("aria-describedby", this.ariaDescribedBy)
-        }
 
-        this.$element.attr("role", this.role)
+        if (this.ariaDescribedBy) this.$element.attr("aria-describedby", this.ariaDescribedBy)
+        else this.$element.removeAttr("aria-describedby")
+
+        if (this.role) this.$element.attr("role", this.role)
+        else this.$element.removeAttr("role")
     }
 
     public dismiss(reason: any): void {
-        this.dismissEvent?.({ $event: reason })
+        this._dismissListener?.(reason)
+    }
+
+    public onDismiss(listener: (reason: any) => void): void {
+        this._dismissListener = listener
+    }
+
+    get shown(): IPromise<void> {
+        return this._shown.promise
+    }
+
+    get hidden(): IPromise<void> {
+        return this._hidden.promise
     }
 
     public hide(): IPromise<void> {
@@ -113,7 +129,7 @@ export class NgbModalWindow implements IComponentController {
             runningTransition: 'stop'
         };
 
-		const windowTransition = ngbRunTransition(
+        const windowTransition = ngbRunTransition(
             this.$q,
             this.$timeout,
             this.$element,
@@ -132,8 +148,7 @@ export class NgbModalWindow implements IComponentController {
         )
 
         const transitions = this.$q.all([windowTransition, dialogTransition]).then(() => {
-            // TODO aquí también ver traducción a Subject
-            // this.hidden()
+            this._hidden.resolve()
         })
 
         this._disableEventHandling()
@@ -171,8 +186,7 @@ export class NgbModalWindow implements IComponentController {
         )
 
         this.$q.all([windowTransition, dialogTransition]).then(() => {
-            // TODO traducir Subject a AngularJS scope.$on?
-            // shown()
+            this._shown.resolve()
         })
 
         this._enableEventHandling()
@@ -183,7 +197,7 @@ export class NgbModalWindow implements IComponentController {
         const native = toNativeElement(this.$element)
         const document = toNativeElement<Document>(this.$document)
         if (!native.contains(document.activeElement)) {
-            const autoFocusable = native.querySelector("[ngb-auto-focus]") as HTMLElement
+            const autoFocusable = native.querySelector("[ngbAutofocus]") as HTMLElement
             const [firstFocusable] = getFocusableBoundaryElements(this.$element)
 
             const elementToFocus = autoFocusable || firstFocusable || native
@@ -192,20 +206,27 @@ export class NgbModalWindow implements IComponentController {
     }
 
     private _enableEventHandling() {
+        this._disableEventHandling()
+        this._eventHandlingStop = this.$q.defer()
+
+        const eventHandlingStop = this._eventHandlingStop.promise
         const native = toNativeElement(this.$element)
         const dialog = this._dialogEl
         let preventClose = false
         let onMouseUp: ((event: JQueryEventObject) => void) | undefined
 
         const onKeyDown = (event: JQueryEventObject) => {
+            this.$log.info("ngbModalWindow keydown", event)
+
             if (event.key !== "Escape") return
 
             if (this.keyboard) {
                 requestAnimationFrame(() => {
-                    if (!event.defaultPrevented) {
+                    if (!event.defaultPrevented) this.$scope.$evalAsync(() => {
                         this.dismiss(ModalDismissReasons.ESC)
-                    }
+                    })
                 })
+
                 return
             }
 
@@ -215,8 +236,12 @@ export class NgbModalWindow implements IComponentController {
         }
 
         const onDialogMouseDown = () => {
+            this.$log.info("ngbModalWindow dialog mousedown")
+
             preventClose = false
             onMouseUp = (event: JQueryEventObject) => {
+                this.$log.info("ngbModalWindow mouseup", event)
+
                 const mouseUpHandler = onMouseUp
                 onMouseUp = undefined
 
@@ -233,13 +258,17 @@ export class NgbModalWindow implements IComponentController {
         }
 
         const onClick = (event: JQueryEventObject) => {
+            this.$log.info("ngbModalWindow click", event)
+
             if (event.target === native) {
                 if (this.backdrop === "static") {
                     this._bumpBackdrop()
                 }
 
                 if (this.backdrop === true && !preventClose) {
-                    this.dismiss(ModalDismissReasons.BACKDROP_CLICK)
+                    this.$scope.$evalAsync(() => {
+                        this.dismiss(ModalDismissReasons.BACKDROP_CLICK)
+                    })
                 }
             }
 
@@ -250,7 +279,7 @@ export class NgbModalWindow implements IComponentController {
         dialog?.on("mousedown", onDialogMouseDown)
         this.$element.on("click", onClick)
 
-        this._closed?.promise.then(() => {
+        eventHandlingStop.then(() => {
             this.$element.off("keydown", onKeyDown)
             dialog?.off("mousedown", onDialogMouseDown)
             this.$element.off("click", onClick)
@@ -262,7 +291,8 @@ export class NgbModalWindow implements IComponentController {
     }
 
     private _disableEventHandling() {
-        this._closed?.resolve()
+        this._eventHandlingStop?.resolve()
+        this._eventHandlingStop = undefined
     }
 
     private _restoreFocus() {
@@ -295,7 +325,7 @@ export class NgbModalWindow implements IComponentController {
     }
 
     static get $inject() {
-        return ["$scope", "$element", "$q", "$timeout", "$document"]
+        return ["$scope", "$element", "$q", "$timeout", "$document", "$log"]
     }
 
     static get $factory(): IComponentOptions {
@@ -316,7 +346,6 @@ export class NgbModalWindow implements IComponentController {
                 size: "<?",
                 windowClass: "<?",
                 modalDialogClass: "<?",
-                dismissEvent: "&?dismiss"
             }
         }
     }

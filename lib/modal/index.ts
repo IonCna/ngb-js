@@ -1,0 +1,5 @@
+export { ModalDismissReasons } from "@/modal/ngb-modal-dismiss-reasons"
+export { NgbModalConfig, type NgbModalOptions, type NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service"
+export { NgbModal } from "@/modal/ngb-modal.service"
+export { NgbModalModule } from "@/modal/ngb-modal.module"
+export { NgbActiveModal, NgbModalRef } from "@/modal/ngb-modal-ref"

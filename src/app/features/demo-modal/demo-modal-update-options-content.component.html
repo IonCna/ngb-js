@@ -1,0 +1,25 @@
+<div class="modal-header">
+    <h4 class="modal-title">Update options</h4>
+    <button type="button" class="btn-close" aria-label="Close" ng-click="$.ngbActiveModal.dismiss('update close')"></button>
+</div>
+<div class="modal-body">
+    <p>Change modal options after it opens.</p>
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleCentered()">
+            Centered: {{ $.centered ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.cycleSize()">
+            Size: {{ $.size || 'default' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleFullscreen()">
+            Fullscreen: {{ $.fullscreen ? 'on' : 'off' }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.toggleClasses()">
+            Classes: {{ $.windowClass ? 'on' : 'off' }}
+        </button>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" ng-click="$.ngbActiveModal.dismiss('update cancel')">Cancel</button>
+    <button type="button" class="btn btn-primary" ng-click="$.ngbActiveModal.close('update done')">Done</button>
+</div>

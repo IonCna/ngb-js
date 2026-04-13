@@ -1,10 +1,10 @@
 import type { IComponentController, IComponentOptions } from "angular"
 import template from "@demo/features/demo-modal/demo-modal-content.component.html?raw"
+import type { NgbActiveModal } from "@ngb"
 
 export class DemoModalContentComponent implements IComponentController {
     public name = ""
-    // public activeModal: any
-    // "ngbActiveModal"
+    public activeModal!: NgbActiveModal
 
     constructor() {}
 
@@ -20,7 +20,10 @@ export class DemoModalContentComponent implements IComponentController {
         return {
             controller: DemoModalContentComponent,
             controllerAs: "$",
-            template
+            template,
+            bindings: {
+                ngbActiveModal: "<"
+            }
         }
     }
 }

@@ -1,14 +1,14 @@
 <div class="modal-header">
     <h4 class="modal-title" id="modal-basic-title">Greet someone</h4>
-    <button type="button" class="btn-close" aria-label="Close" ng-click="$.activeModal.dismiss('header close')"></button>
+    <button type="button" class="btn-close" aria-label="Close" ng-click="$.ngbActiveModal.dismiss('header close')"></button>
 </div>
 <div class="modal-body">
     <p>Enter a name to greet:</p>
     <input type="text" class="form-control" ng-model="$.name" placeholder="e.g. World" />
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-outline-secondary" ng-click="$.activeModal.dismiss('cancel')">Cancel</button>
-    <button type="button" class="btn btn-primary" ng-click="$.activeModal.close('Hello, ' + ($.name || 'World') + '!')">
+    <button type="button" class="btn btn-outline-secondary" ng-click="$.ngbActiveModal.dismiss('cancel')">Cancel</button>
+    <button type="button" class="btn btn-primary" ng-click="$.ngbActiveModal.close('Hello, ' + ($.name || 'World') + '!')">
         Say hello
     </button>
 </div>
