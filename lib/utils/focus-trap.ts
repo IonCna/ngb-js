@@ -1,5 +1,5 @@
 import type { IAugmentedJQuery, IPromise } from "angular";
-import { toNativeElement } from ".";
+import { toNativeElement } from "@/utils";
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = [
     'a[href]',
