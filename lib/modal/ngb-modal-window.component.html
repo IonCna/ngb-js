@@ -2,11 +2,11 @@
     role="document"
     class="modal-dialog"
     ng-class="[
-        $.$fullscreenClass,
-        $.$modalSizeClass,
-        $.$modalCentredClass,
-        $.$modalScrollableClass,
-        $.$modalDialogClass
+        $.fullscreen === true ? 'modal-fullscreen' : ($.fullscreen ? 'modal-fullscreen-' + $.fullscreen + '-down' : ''),
+        $.size ? 'modal-' + $.size : '',
+        $.centered ? 'modal-dialog-centered' : '',
+        $.scrollable ? 'modal-dialog-scrollable' : '',
+        $.modalDialogClass || ''
     ]">
     <div class="modal-content"></div>
 </div>
