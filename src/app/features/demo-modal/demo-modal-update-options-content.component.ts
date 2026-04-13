@@ -40,10 +40,10 @@ export class DemoModalUpdateOptionsContentComponent implements IComponentControl
     private update() {
         this.ngbActiveModal.update({
             centered: this.centered,
-            size: this.size || undefined,
+            size: this.size,
             fullscreen: this.fullscreen,
-            windowClass: this.windowClass || undefined,
-            modalDialogClass: this.modalDialogClass || undefined,
+            windowClass: this.windowClass,
+            modalDialogClass: this.modalDialogClass,
         })
     }
 

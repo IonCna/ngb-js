@@ -160,11 +160,15 @@ export class NgbModalWindow implements IComponentController {
     public updateOptions(options: NgbModalUpdatableOptions) {
         const source: WindowOptions = options
 
-        this.$scope.$evalAsync(() => WINDOW_ATTRIBUTES.forEach(option => {
-            if (angular.isDefined(source[option])) {
-                Object.assign(this, { [option]: source[option] })
-            }
-        }));
+        this.$scope.$evalAsync(() => {
+            WINDOW_ATTRIBUTES.forEach(option => {
+                if (angular.isDefined(source[option])) {
+                    Object.assign(this, { [option]: source[option] })
+                }
+            })
+
+            this.$onChanges()
+        });
     }
 
     private _show() {
