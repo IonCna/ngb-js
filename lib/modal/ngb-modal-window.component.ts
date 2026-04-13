@@ -5,9 +5,9 @@ import {
 } from "@/modal/ngb-modal-config.service"
 import angular from "angular";
 import { ngbRunTransition, toNativeElement, type NgbTransitionOptions } from "@/utils";
-import { ngbModalBumpBackdropTransition, ngbModalWindowFadeInTransition, ngbModalWindowFadeOutTransition } from "./ngb-modal-window-transition";
+import { ngbModalBumpBackdropTransition, ngbModalWindowFadeInTransition, ngbModalWindowFadeOutTransition } from "@/modal/ngb-modal-window-transition";
 import { getFocusableBoundaryElements } from "@/utils/focus-trap";
-import { ModalDismissReasons } from "./ngb-modal-dismiss-reasons";
+import { ModalDismissReasons } from "@/modal/ngb-modal-dismiss-reasons";
 
 const WINDOW_ATTRIBUTES = [
     'animation',
