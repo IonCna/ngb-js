@@ -1,19 +1,21 @@
 import { toNativeElement } from "@/utils";
 import type { IController, IDirective } from "angular";
+import type { NgbDropdownMenu } from "@/dropdown/ngb-dropdown-menu.directive";
 
 export class NgbDropdownItem implements IController {
     static ngAcceptInputType_disabled: boolean | ''
     private _disabled = false
-    private _isButton: boolean = false
 
-    tabIndex: string | number = 0
+    public nativeElement!: HTMLElement
+    public ngbDropdownMenu!: NgbDropdownMenu
+    public tabindex: string | number = 0
 
     constructor(
         public $element: JQLite
     ) { }
 
     set disabled(value: boolean) {
-        this._disabled = <any>value == '' || value === true
+        this._disabled = <any>value === '' || value === true
     }
 
     get disabled() {
@@ -21,22 +23,24 @@ export class NgbDropdownItem implements IController {
     }
 
     $postLink(): void {
-        this._isButton = toNativeElement(this.$element) instanceof HTMLButtonElement
+        this.nativeElement = toNativeElement(this.$element)
 
-        if (!this._isButton) {
-            this.$element.addClass("dropdown-item")
-        }
+        this.$element.addClass("dropdown-item")
+        this.ngbDropdownMenu.register(this)
+        this._applyHostBindings()
     }
 
     $onChanges(): void {
-        if (!this._isButton) {
-            this.$element.toggleClass("disabled", this.disabled)
-            this.$element.attr("tabIndex", this.disabled ? -1 : this.tabIndex)
-        }
+        this._applyHostBindings()
+    }
 
-        if(this._isButton) {
-            this.$element.attr("disabled", `${this.disabled}`)
-        }
+    $onDestroy(): void {
+        this.ngbDropdownMenu.unregister(this)
+    }
+
+    private _applyHostBindings() {
+        this.$element.toggleClass("disabled", this.disabled)
+        this.$element.attr("tabIndex", this.disabled ? -1 : this.tabindex)
     }
 
     //#region $angular
@@ -48,7 +52,7 @@ export class NgbDropdownItem implements IController {
         return () => ({
             bindToController: {
                 disabled: "<?",
-                tabIndex: "<?"
+                tabindex: "<?"
             },
             require: {
                 ngbDropdownMenu: "^ngbDropdownMenu"

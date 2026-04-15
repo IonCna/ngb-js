@@ -1,5 +1,9 @@
 import { type Placement, type Options } from "@popperjs/core"
 
+export interface INgbDropdownAnchor {
+    nativeElement: HTMLElement
+}
+
 export class NgbDropdownConfig {
     public autoClose: boolean | "inside" | "outside" = true
     public container: null | 'body' = null

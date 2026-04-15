@@ -1,4 +1,4 @@
-import type { IController, IDirective } from "angular"
+import type { IController, IDirective, IScope } from "angular"
 import type { NgbDropdown } from "./ngb-dropdown.directive"
 import { toNativeElement } from "@/utils"
 import type { NgbDropdownItem } from "@/dropdown/ngb-dropdown-item.directive"
@@ -9,9 +9,9 @@ const ALLOWED_KEYS = new Set([
     "Home",
     "End",
     "Enter",
+    " ",
     "Space",
     "Tab",
-    "ShiftTab",
 ])
 
 export class NgbDropdownMenu implements IController {
@@ -19,9 +19,12 @@ export class NgbDropdownMenu implements IController {
     public nativeElement!: HTMLElement
 
     public menuItems: NgbDropdownItem[] = []
+    private keydownListener?: (event: JQueryEventObject) => void
+    private unwatchOpenState?: () => void
 
     constructor(
-        public $element: JQLite
+        public $element: JQLite,
+        private $scope: IScope
     ) { }
 
     $postLink(): void {
@@ -29,31 +32,31 @@ export class NgbDropdownMenu implements IController {
         this.$element.addClass("dropdown-menu")
         this.nativeElement = toNativeElement(this.$element)
 
-        this.$element.on("keydown", (event) => {
+        this.unwatchOpenState = this.$scope.$watch(
+            () => this.ngbDropdown.isOpen(),
+            (isOpen) => this.$element.toggleClass("show", isOpen)
+        )
+
+        this.keydownListener = (event) => {
             if (!ALLOWED_KEYS.has(event.key)) return;
 
-            const onKeydown: Record<string, () => void> = {
-                ["ArrowUp"]: () => this.ngbDropdown.onKeyDown(event),
-                ["ArrowDown"]: () => this.ngbDropdown.onKeyDown(event),
-                ["Home"]: () => this.ngbDropdown.onKeyDown(event),
-                ["End"]: () => this.ngbDropdown.onKeyDown(event),
-                ["Enter"]: () => this.ngbDropdown.onKeyDown(event),
-                ["Space"]: () => this.ngbDropdown.onKeyDown(event),
-                ["Tab"]: () => this.ngbDropdown.onKeyDown(event),
-                ["ShiftTab"]: () => this.ngbDropdown.onKeyDown(event)
-            }
+            this.ngbDropdown.onKeyDown(event)
+        }
 
-            const action = onKeydown[event.key]
-            action?.()
-        })
+        this.$element.on("keydown", this.keydownListener)
     }
 
     $onDestroy(): void {
-        this.$element.off("keydown")
+        if (this.keydownListener) this.$element.off("keydown", this.keydownListener)
+        this.unwatchOpenState?.()
     }
 
     public register(item: NgbDropdownItem) {
         this.menuItems.push(item)
+    }
+
+    public unregister(item: NgbDropdownItem) {
+        this.menuItems = this.menuItems.filter(menuItem => menuItem !== item)
     }
 
     //#region $angular
@@ -74,7 +77,7 @@ export class NgbDropdownMenu implements IController {
     }
 
     static get $inject() {
-        return ['$element']
+        return ['$element', '$scope']
     }
     //#endregion
 }

@@ -1,30 +1,66 @@
-import type { IController, IDirective, IOnChangesObject, IScope } from "angular"
+import type { IController, IDirective, IScope } from "angular"
 import type { NgbDropdown } from "./ngb-dropdown.directive"
-import { NgbDropdownCloseEvent, NgbDropdownToggleEvent } from "./ngb-dropdown.events"
+import { toNativeElement } from "@/utils"
+
+const ALLOWED_KEYS = new Set([
+    "ArrowUp",
+    "ArrowDown",
+    "Home",
+    "End",
+    "Tab",
+])
 
 export class NgbDropdownToggle implements IController {
-    private ngbDropdown!: NgbDropdown
+    public ngbDropdown!: NgbDropdown
+    public nativeElement!: HTMLElement
+
+    private clickListener?: (event: JQueryEventObject) => void
+    private keydownListener?: (event: JQueryEventObject) => void
+    private unwatchOpenState?: () => void
 
     constructor(
-        private $element: JQLite
+        private $element: JQLite,
+        private $scope: IScope
     ) { }
 
     $onInit(): void {
     }
 
     $postLink(): void {
+        this.nativeElement = toNativeElement(this.$element)
         this.$element.addClass("dropdown-toggle")
+        this.ngbDropdown.registerAnchor(this)
 
-        this.$element.on("click", () => {
-            this.ngbDropdown.toggle()
-        })
-    }
+        this.unwatchOpenState = this.$scope.$watch(
+            () => this.ngbDropdown.isOpen(),
+            (isOpen) => this._applyHostBindings(isOpen)
+        )
 
-    $onChanges(onChangesObj: IOnChangesObject): void {
-        this.$element.toggleClass("show", this.ngbDropdown.isOpen())
+        this.clickListener = () => {
+            this.$scope.$evalAsync(() => {
+                this.ngbDropdown.toggle()
+            })
+        }
+
+        this.keydownListener = (event) => {
+            if (!ALLOWED_KEYS.has(event.key)) return
+
+            this.ngbDropdown.onKeyDown(event)
+        }
+
+        this.$element.on("click", this.clickListener)
+        this.$element.on("keydown", this.keydownListener)
     }
 
     $onDestroy(): void {
+        if (this.clickListener) this.$element.off("click", this.clickListener)
+        if (this.keydownListener) this.$element.off("keydown", this.keydownListener)
+        this.unwatchOpenState?.()
+    }
+
+    private _applyHostBindings(isOpen = this.ngbDropdown.isOpen()) {
+        this.$element.toggleClass("show", isOpen)
+        this.$element.attr("aria-expanded", `${isOpen}`)
     }
 
     //#region $angular
@@ -45,7 +81,7 @@ export class NgbDropdownToggle implements IController {
     }
 
     static get $inject() {
-        return ["$element"]
+        return ["$element", "$scope"]
     }
     //#endregion
 }

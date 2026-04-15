@@ -6,9 +6,8 @@ import { NgbRTL } from "@/utils/rtl.service"
 import type { Options } from "@popperjs/core"
 import { getActiveElement, toNativeElement, type INgbEvent } from "@/utils"
 import type { NgbDropdownMenu } from "./ngb-dropdown-menu.directive"
-import type { NgbDropdownAnchor } from "./ngb-dropdown-anchor.directive"
 import { ngbAutoClose, SOURCE } from "@/utils/autoclose"
-import { NgbDropdownConfig } from "@/dropdown/ngb-dropdown-config.service"
+import { NgbDropdownConfig, type INgbDropdownAnchor } from "@/dropdown/ngb-dropdown-config.service"
 import angular from "angular"
 import { addPopperOffset } from "@/utils/positioning.util"
 
@@ -34,7 +33,7 @@ export class NgbDropdown implements IController {
     private _positioning: NgbPositioning | null = null
 
     private _menu!: NgbDropdownMenu
-    private _anchor!: NgbDropdownAnchor
+    private _anchor!: INgbDropdownAnchor
     private _destroyCloseHandlers?: IDeferred<void>
 
     private autoClose!: boolean | "inside" | "outside"
@@ -86,7 +85,7 @@ export class NgbDropdown implements IController {
         this.$log.info(this._menu)
     }
 
-    registerAnchor(anchor: NgbDropdownAnchor) {
+    registerAnchor(anchor: INgbDropdownAnchor) {
         this._anchor = anchor
         this.$log.info(`[ngb-dropdown]: Anchor Registered`)
         this.$log.info(this._anchor)

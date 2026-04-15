@@ -1,29 +1,40 @@
-import type { IController, IDirective } from "angular";
+import type { IController, IDirective, IScope } from "angular";
 import type { NgbDropdown } from "@/dropdown/ngb-dropdown.directive";
 import { toNativeElement } from "@/utils";
 
 export class NgbDropdownAnchor implements IController {
-    private dropdown!: NgbDropdown
+    public dropdown!: NgbDropdown
+    public nativeElement!: HTMLElement
+
+    private unwatchOpenState?: () => void
 
     constructor(
-        private $element: JQLite
+        private $element: JQLite,
+        private $scope: IScope
     ) { }
 
     $postLink(): void {
+        this.nativeElement = toNativeElement(this.$element)
         this.$element.addClass("dropdown-toggle")
+        this.dropdown.registerAnchor(this)
+
+        this.unwatchOpenState = this.$scope.$watch(
+            () => this.dropdown.isOpen(),
+            (isOpen) => this._applyHostBindings(isOpen)
+        )
     }
 
-    $onChanges(): void {
-        this.$element.toggleClass("show", this.dropdown.isOpen())
-        this.$element.attr("aria-expanded", `${this.dropdown.isOpen()}`)
+    $onDestroy(): void {
+        this.unwatchOpenState?.()
     }
 
-    get nativeElement() {
-        return toNativeElement(this.$element)
+    private _applyHostBindings(isOpen = this.dropdown.isOpen()) {
+        this.$element.toggleClass("show", isOpen)
+        this.$element.attr("aria-expanded", `${isOpen}`)
     }
 
     static get $inject() {
-        return ['$element']
+        return ['$element', '$scope']
     }
 
     static get $name() {
