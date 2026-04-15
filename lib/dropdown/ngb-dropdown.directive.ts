@@ -4,7 +4,7 @@ import type { Placement } from "@popperjs/core"
 import { ngbPositioning, type NgbPositioning, type PlacementArray } from "@/utils/positioning"
 import { NgbRTL } from "@/utils/rtl.service"
 import type { Options } from "@popperjs/core"
-import { getActiveElement, toNativeElement, type INgbEvent } from "@/utils"
+import { FOCUSABLE_ELEMENTS_SELECTOR, getActiveElement, toNativeElement, type INgbEvent } from "@/utils"
 import type { NgbDropdownMenu } from "./ngb-dropdown-menu.directive"
 import { ngbAutoClose, SOURCE } from "@/utils/autoclose"
 import { NgbDropdownConfig, type INgbDropdownAnchor } from "@/dropdown/ngb-dropdown-config.service"
@@ -14,16 +14,6 @@ import { addPopperOffset } from "@/utils/positioning.util"
 function isValidElement(element: unknown): element is IAugmentedJQuery {
     return angular.isElement(element)
 }
-
-const FOCUSABLE_ELEMENTS_SELECTOR = [
-    'a[href]',
-    'button:not([disabled])',
-    'input:not([disabled]):not([type="hidden"])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
-    '[contenteditable]',
-    '[tabindex]:not([tabindex="-1"])',
-].join(', ')
 
 export class NgbDropdown implements IController {
     static ngAcceptInputType_autoClose: boolean | string;
@@ -35,6 +25,7 @@ export class NgbDropdown implements IController {
     private _menu!: NgbDropdownMenu
     private _anchor!: INgbDropdownAnchor
     private _destroyCloseHandlers?: IDeferred<void>
+    private _unwatchOpenState?: () => void
 
     private autoClose!: boolean | "inside" | "outside"
     private dropdownClass?: string
@@ -63,6 +54,11 @@ export class NgbDropdown implements IController {
         this.placement = this.placement ?? this.$config.placement
         this.popperOptions = this.popperOptions ?? this.$config.popperOptions
         this.container = this.container ?? this.$config.container
+
+        this._unwatchOpenState = this.$scope.$watch(
+            () => this.isOpen(),
+            (isOpen) => this.$element.toggleClass("show", isOpen)
+        )
     }
 
     $postLink(): void {
@@ -86,12 +82,18 @@ export class NgbDropdown implements IController {
     }
 
     registerAnchor(anchor: INgbDropdownAnchor) {
+        if (this._anchor) return
+
         this._anchor = anchor
         this.$log.info(`[ngb-dropdown]: Anchor Registered`)
         this.$log.info(this._anchor)
     }
 
     $onChanges(changes: IOnChangesObject): void {
+        if (changes.container && !changes.container.isFirstChange()) {
+            this._validateContainer(this.container)
+        }
+
         if (changes.container && this._open) {
             this._applyContainer(this.container);
         }
@@ -120,6 +122,7 @@ export class NgbDropdown implements IController {
 
     $onDestroy(): void {
         this.close()
+        this._unwatchOpenState?.()
     }
 
     public isOpen() {
@@ -132,15 +135,13 @@ export class NgbDropdown implements IController {
             return
         }
 
+        this._assertMenu()
+        this._assertAnchor()
+
         this._open = true
         this._applyContainer(this.container);
         this.openChange?.({ $event: true })
         this._setCloseHandlers();
-
-        if (!this._anchor) {
-            this.$scope.$evalAsync()
-            return
-        }
 
         this._anchor.nativeElement.focus();
 
@@ -294,7 +295,7 @@ export class NgbDropdown implements IController {
                 const $target = angular.element(target)
                 const onFocusOut = (focusEvent: JQueryEventObject) => {
                     $target.off('focusout', onFocusOut)
-                    const relatedTarget = (focusEvent.originalEvent as FocusEvent | undefined)?.relatedTarget
+                    const relatedTarget = focusEvent.relatedTarget ?? (focusEvent.originalEvent as FocusEvent | undefined)?.relatedTarget
                     if (!toNativeElement(this.$element).contains(relatedTarget as HTMLElement)) {
                         this.close();
                     }
@@ -381,6 +382,7 @@ export class NgbDropdown implements IController {
     }
 
     private _applyContainer(container: null | 'body' = null) {
+        this._assertMenu()
         this._resetContainer()
 
         if (container === 'body') {
@@ -407,6 +409,24 @@ export class NgbDropdown implements IController {
 
         if (oldClass) target.removeClass(oldClass)
         if (newClass) target.addClass(newClass)
+    }
+
+    private _validateContainer(container?: null | string) {
+        if (container == null || container === 'body') return
+
+        throw new Error(`[ngb-dropdown]: Unsupported container value "${container}". Use "body" or null.`)
+    }
+
+    private _assertAnchor() {
+        if (this._anchor) return
+
+        throw new Error(`[ngb-dropdown]: NgbDropdown requires an ngbDropdownToggle or ngbDropdownAnchor.`)
+    }
+
+    private _assertMenu() {
+        if (this._menu) return
+
+        throw new Error(`[ngb-dropdown]: NgbDropdown requires an ngbDropdownMenu.`)
     }
 
     private _applyPlacementClasses(placement?: Placement | null) {

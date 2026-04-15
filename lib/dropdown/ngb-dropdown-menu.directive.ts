@@ -10,7 +10,6 @@ const ALLOWED_KEYS = new Set([
     "End",
     "Enter",
     " ",
-    "Space",
     "Tab",
 ])
 

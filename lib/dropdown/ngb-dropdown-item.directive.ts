@@ -1,6 +1,7 @@
 import { toNativeElement } from "@/utils";
-import type { IController, IDirective } from "angular";
+import type { IController, IDirective, ILogService } from "angular";
 import type { NgbDropdownMenu } from "@/dropdown/ngb-dropdown-menu.directive";
+import type { NgbDropdownButtonItem } from "@/dropdown/ngb-dropdown-button-item.directive";
 
 export class NgbDropdownItem implements IController {
     static ngAcceptInputType_disabled: boolean | ''
@@ -8,10 +9,12 @@ export class NgbDropdownItem implements IController {
 
     public nativeElement!: HTMLElement
     public ngbDropdownMenu!: NgbDropdownMenu
+    public ngbDropdownButtonItem?: NgbDropdownButtonItem
     public tabindex: string | number = 0
 
     constructor(
-        public $element: JQLite
+        public $element: JQLite,
+        private $log: ILogService
     ) { }
 
     set disabled(value: boolean) {
@@ -24,6 +27,10 @@ export class NgbDropdownItem implements IController {
 
     $postLink(): void {
         this.nativeElement = toNativeElement(this.$element)
+
+        if (this.nativeElement instanceof HTMLButtonElement && !this.ngbDropdownButtonItem) {
+            this.$log.warn(`[ngb-dropdown]: ngbDropdownButtonItem is required when ngbDropdownItem is used on a button element.`)
+        }
 
         this.$element.addClass("dropdown-item")
         this.ngbDropdownMenu.register(this)
@@ -55,7 +62,8 @@ export class NgbDropdownItem implements IController {
                 tabindex: "<?"
             },
             require: {
-                ngbDropdownMenu: "^ngbDropdownMenu"
+                ngbDropdownMenu: "^ngbDropdownMenu",
+                ngbDropdownButtonItem: "?ngbDropdownButtonItem"
             },
             controller: NgbDropdownItem,
             scope: true,
@@ -64,7 +72,7 @@ export class NgbDropdownItem implements IController {
     }
 
     static get $inject() {
-        return ['$element']
+        return ['$element', '$log']
     }
     //#endregion
 }
