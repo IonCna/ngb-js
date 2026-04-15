@@ -58,6 +58,7 @@ export class NgbDropdownItem implements IController {
     static get $factory(): () => IDirective {
         return () => ({
             bindToController: {
+                // TODO: add system to watch ng-disabled compatible, disabled use vanilla and do not work here
                 disabled: "<?",
                 tabindex: "<?"
             },
