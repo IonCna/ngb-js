@@ -12,7 +12,7 @@ export class NgbDropdownItem implements IController {
         public $element: JQLite
     ) { }
 
-    set disables(value: boolean) {
+    set disabled(value: boolean) {
         this._disabled = <any>value == '' || value === true
     }
 

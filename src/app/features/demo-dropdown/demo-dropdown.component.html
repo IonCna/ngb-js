@@ -1,0 +1,64 @@
+<div class="container py-3">
+    <h2 class="mb-3">Dropdown demo</h2>
+
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-primary" ng-click="$.cycleAutoClose()">
+            Auto close: {{ $.autoClose }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.cycleDisplay()">
+            Display: {{ $.display }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" ng-click="$.cycleContainer()">
+            Container: {{ $.container || 'inline' }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" ng-click="$.toggleDisabled()">
+            Disabled item: {{ $.disabled ? 'on' : 'off' }}
+        </button>
+    </div>
+
+    <div class="mb-3">
+        <div><strong>Open:</strong> {{ $.open }}</div>
+        <div><strong>Last event:</strong> {{ $.lastEvent }}</div>
+    </div>
+
+    <div class="mb-3 d-flex gap-3 flex-wrap align-items-start">
+        <div ngb-dropdown
+             open="$.open"
+             auto-close="$.autoClose"
+             display="$.display"
+             container="{{ $.container }}"
+             placement="$.placement"
+             open-change="$.onOpenChange($event)">
+            <button type="button" class="btn btn-primary" ngb-dropdown-toggle>
+                Actions
+            </button>
+            <div ngb-dropdown-menu>
+                <button type="button" ngb-dropdown-item>Profile</button>
+                <button type="button" ngb-dropdown-item>Settings</button>
+                <button type="button" ngb-dropdown-item disabled="$.disabled">Disabled check</button>
+                <div class="dropdown-divider"></div>
+                <button type="button" ngb-dropdown-item>Sign out</button>
+            </div>
+        </div>
+
+        <div ngb-dropdown placement="'top-start bottom-start'">
+            <button type="button" class="btn btn-outline-primary" ngb-dropdown-toggle>
+                Placement sample
+            </button>
+            <div ngb-dropdown-menu>
+                <button type="button" ngb-dropdown-item>Top preferred</button>
+                <button type="button" ngb-dropdown-item>Fallback bottom</button>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="h5 mb-2">Port task list</h3>
+    <ul class="mb-0">
+        <li>Wire menu, anchor, toggle and items through AngularJS require controllers.</li>
+        <li>Make open, close and toggle update host, toggle and menu classes consistently.</li>
+        <li>Finish autoClose using the existing ngbAutoClose helper.</li>
+        <li>Restore keyboard navigation for arrows, Home, End, Tab, Enter, Space and Escape.</li>
+        <li>Finish container body behavior and dynamic Popper positioning.</li>
+        <li>Compare the demo against the modern Angular behavior and close gaps one by one.</li>
+    </ul>
+</div>

@@ -6,6 +6,7 @@ import { NgbCarouselModule } from "@/carousel/ngb-carousel.module"
 import { NgbToastModule } from "@/toast/ngb-toast.module"
 import { NgbAccordionModule } from "@/accordion/ngb-accordion.module"
 import { NgbModalModule } from "@/modal/ngb-modal.module"
+import { NgbDropdownModule } from "@/dropdown/ngb-dropdown.module"
 
 import { NgbConfig } from "@/ngb-config.service"
 import { NgbContent } from "@/ngb-content.directive"
@@ -22,7 +23,8 @@ export const NgbModule = angular.module("ngb", [
     NgbCarouselModule.name,
     NgbToastModule.name,
     NgbAccordionModule.name,
-    NgbModalModule.name
+    NgbModalModule.name,
+    NgbDropdownModule.name
 ])
 
 NgbModule.service(NgbConfig.$name, NgbConfig)

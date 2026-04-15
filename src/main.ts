@@ -10,6 +10,7 @@ import { DemoModalComponent } from "@demo/features/demo-modal/demo-modal.compone
 import { DemoModalContentComponent } from "@demo/features/demo-modal/demo-modal-content.component"
 import { DemoModalScrollableContentComponent } from "@demo/features/demo-modal/demo-modal-scrollable-content.component"
 import { DemoModalUpdateOptionsContentComponent } from "@demo/features/demo-modal/demo-modal-update-options-content.component"
+import { DemoDropdownComponent } from "@demo/features/demo-dropdown/demo-dropdown.component"
 
 import "../node_modules/bootstrap/dist/css/bootstrap.css"
 import "./style.css"
@@ -24,6 +25,7 @@ AppModule.component(DemoProgressbarComponent.$name, DemoProgressbarComponent.$fa
 AppModule.component(DemoCollapseComponent.$name, DemoCollapseComponent.$factory)
 AppModule.component(DemoToastComponent.$name, DemoToastComponent.$factory)
 AppModule.component(DemoAccordionComponent.$name, DemoAccordionComponent.$factory)
+AppModule.component(DemoDropdownComponent.$name, DemoDropdownComponent.$factory)
 AppModule.component(DemoModalComponent.$name, DemoModalComponent.$factory)
 AppModule.component(DemoModalContentComponent.$name, DemoModalContentComponent.$factory)
 AppModule.component(DemoModalScrollableContentComponent.$name, DemoModalScrollableContentComponent.$factory)

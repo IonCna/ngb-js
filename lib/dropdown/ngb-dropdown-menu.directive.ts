@@ -25,6 +25,7 @@ export class NgbDropdownMenu implements IController {
     ) { }
 
     $postLink(): void {
+        this.ngbDropdown.registerMenu(this)
         this.$element.addClass("dropdown-menu")
         this.nativeElement = toNativeElement(this.$element)
 
@@ -32,14 +33,14 @@ export class NgbDropdownMenu implements IController {
             if (!ALLOWED_KEYS.has(event.key)) return;
 
             const onKeydown: Record<string, () => void> = {
-                ["ArrowUp"]: () => this.ngbDropdown,
-                ["ArrowDown"]: () => this.ngbDropdown,
-                ["Home"]: () => this.ngbDropdown,
-                ["End"]: () => this.ngbDropdown,
-                ["Enter"]: () => this.ngbDropdown,
-                ["Space"]: () => this.ngbDropdown,
-                ["Tab"]: () => this.ngbDropdown,
-                ["ShiftTab"]: () => this.ngbDropdown
+                ["ArrowUp"]: () => this.ngbDropdown.onKeyDown(event),
+                ["ArrowDown"]: () => this.ngbDropdown.onKeyDown(event),
+                ["Home"]: () => this.ngbDropdown.onKeyDown(event),
+                ["End"]: () => this.ngbDropdown.onKeyDown(event),
+                ["Enter"]: () => this.ngbDropdown.onKeyDown(event),
+                ["Space"]: () => this.ngbDropdown.onKeyDown(event),
+                ["Tab"]: () => this.ngbDropdown.onKeyDown(event),
+                ["ShiftTab"]: () => this.ngbDropdown.onKeyDown(event)
             }
 
             const action = onKeydown[event.key]

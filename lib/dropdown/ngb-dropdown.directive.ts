@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IController, IDirective, IDocumentService, IOnChangesObject, IScope, ITimeoutService } from "angular"
+import type { IAugmentedJQuery, IController, IDirective, IDocumentService, ILogService, IOnChangesObject, IScope, ITimeoutService } from "angular"
 import type { Placement } from "@popperjs/core"
 
 import { ngbPositioning, type NgbPositioning, type PlacementArray } from "@/utils/positioning"
@@ -42,7 +42,8 @@ export class NgbDropdown implements IController {
         private $element: IAugmentedJQuery,
         private $ngbRTL: NgbRTL,
         private $timeout: ITimeoutService,
-        private $scope: IScope
+        private $scope: IScope,
+        private $log: ILogService
     ) { }
 
     $onInit(): void {
@@ -65,6 +66,12 @@ export class NgbDropdown implements IController {
             if (!this._open) return
             this._setCloseHandlers();
         }, 0, false)
+    }
+
+    registerMenu(menu: NgbDropdownMenu) {
+        this._menu = menu
+        this.$log.info(`[ngb-dropdown]: Menu Registered`)
+        this.$log.info(this._menu)
     }
 
     $onChanges(changes: IOnChangesObject): void {
@@ -103,6 +110,7 @@ export class NgbDropdown implements IController {
     }
 
     public open(): void {
+        debugger
         if (this._open) {
             this.$scope.$evalAsync()
             return
@@ -137,7 +145,7 @@ export class NgbDropdown implements IController {
             }
         })
 
-        // this._applyPlacementClasses();
+        this._applyPlacementClasses();
 
         this.$timeout(() => {
             this._positionMenu();
@@ -401,10 +409,12 @@ export class NgbDropdown implements IController {
     static get $inject() {
         return [
             NgbDropdownConfig.$name,
+            "$document",
             '$element',
-            '$scope',
             NgbRTL.$name,
             "$timeout",
+            '$scope',
+            "$log",
             "$q"
         ]
     }
