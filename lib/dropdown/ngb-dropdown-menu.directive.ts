@@ -21,7 +21,7 @@ export class NgbDropdownMenu implements IController {
     public menuItems: NgbDropdownItem[] = []
 
     constructor(
-        private $element: JQLite
+        public $element: JQLite
     ) { }
 
     $postLink(): void {

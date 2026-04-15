@@ -35,20 +35,20 @@ export function padNumber(value: number) {
 }
 
 export function closest(element: IAugmentedJQuery, selector?: string) {
-    if(!selector) return null
+    if (!selector) return null
     const target = toNativeElement(element)
 
-    if(typeof target.closest === "undefined") return null;
+    if (typeof target.closest === "undefined") return null;
 
     return target.closest(selector)
 }
 
 export function toInteger(value: any): number {
-	return parseInt(`${value}`, 10);
+    return parseInt(`${value}`, 10);
 }
 
 export function isNumber(value: any): value is number {
-	return !isNaN(toInteger(value));
+    return !isNaN(toInteger(value));
 }
 
 /**
@@ -66,10 +66,20 @@ export function camelToKebabCase(str: string) {
  * let camel = kebabToCamelCase(name) = 'contentType'
  */
 export function kebabToCamelCase(str: string) {
-  return str
-    .toLowerCase()
-    .split('-')
-    .filter(Boolean)
-    .map((p, i) => i === 0 ? p : p.charAt(0).toUpperCase() + p.slice(1))
-    .join('');
+    return str
+        .toLowerCase()
+        .split('-')
+        .filter(Boolean)
+        .map((p, i) => i === 0 ? p : p.charAt(0).toUpperCase() + p.slice(1))
+        .join('');
+}
+
+export function getActiveElement(root: Document | ShadowRoot = document): Element | null {
+    const activeEl = root?.activeElement;
+
+    if (!activeEl) {
+        return null;
+    }
+
+    return activeEl.shadowRoot ? getActiveElement(activeEl.shadowRoot) : activeEl;
 }

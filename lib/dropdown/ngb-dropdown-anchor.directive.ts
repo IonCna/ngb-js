@@ -1,5 +1,6 @@
 import type { IController, IDirective } from "angular";
 import type { NgbDropdown } from "@/dropdown/ngb-dropdown.directive";
+import { toNativeElement } from "@/utils";
 
 export class NgbDropdownAnchor implements IController {
     private dropdown!: NgbDropdown
@@ -15,6 +16,10 @@ export class NgbDropdownAnchor implements IController {
     $onChanges(): void {
         this.$element.toggleClass("show", this.dropdown.isOpen())
         this.$element.attr("aria-expanded", `${this.dropdown.isOpen()}`)
+    }
+
+    get nativeElement() {
+        return toNativeElement(this.$element)
     }
 
     static get $inject() {

@@ -47,12 +47,13 @@ export class LiveService implements ILiveService {
 
     public say(message: string) {
         const element = getLiveElement(this.$document, true)
+        const delay = this.ariaLiveDelay
         if (!element) return
 
         element.empty()
         const setText = () => element.append(message)
 
-        if (!this.ariaLiveDelay) {
+        if (!delay) {
             setText()
             return
         }

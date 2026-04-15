@@ -9,7 +9,7 @@ export class NgbDropdownItem implements IController {
     tabIndex: string | number = 0
 
     constructor(
-        private $element: JQLite
+        public $element: JQLite
     ) { }
 
     set disables(value: boolean) {
