@@ -41,6 +41,19 @@ export class NgbDropdownItem implements IController {
         this._applyHostBindings()
     }
 
+    $doCheck(): void {
+        const disabled = this.$element.attr("disabled")
+        const needChange = Boolean(disabled) != this._disabled
+
+        if(!needChange) return
+
+        this._disabled = Boolean(
+            disabled
+        )
+
+        this._applyHostBindings()
+    }
+
     $onDestroy(): void {
         this.ngbDropdownMenu.unregister(this)
     }
@@ -59,7 +72,6 @@ export class NgbDropdownItem implements IController {
         return () => ({
             bindToController: {
                 // TODO: add system to watch ng-disabled compatible, disabled use vanilla and do not work here
-                disabled: "<?",
                 tabindex: "<?"
             },
             require: {
