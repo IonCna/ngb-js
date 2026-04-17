@@ -1,7 +1,10 @@
-import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, ITranscludeFunction } from "angular"
-import type { NgbTooltipConfig } from "@/tooltip/ngb-tooltip-config.service";
+import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, IQService, ITimeoutService, ITranscludeFunction } from "angular"
+import { NgbTooltipConfig } from "@/tooltip/ngb-tooltip-config.service";
 import type { PlacementArray } from "@/utils/positioning";
 import type { Options } from "@popperjs/core";
+import { listenToTriggers } from "@/utils/triggers";
+import angular from "angular";
+import { toNativeElement } from "@/utils";
 
 let nextId = 0;
 
@@ -26,11 +29,25 @@ export class NgbTooltip implements IController {
     private _ngbTooltip?: string | ITranscludeFunction
     private _ngbTooltipWindowId = `ngb-tooltip-${nextId++}`
 
+    private _unregisterListenersFn?: () => void
+    private _mouseEnterTooltip?: IDeferred<void>
+    private _mouseLeaveTooltip?: IDeferred<void>
+
     constructor(
         private $config: NgbTooltipConfig,
         private $element: IAugmentedJQuery,
-        private $document: IDocumentService
+        private $document: IDocumentService,
+        private $timeout: ITimeoutService,
+        private $q: IQService
     ) { }
+
+    set ngbTooltip(value: string | ITranscludeFunction | null | undefined) {
+        this._ngbTooltip = <any>value
+    }
+
+    get ngbTooltip() {
+        return this._ngbTooltip
+    }
 
     $onInit(): void {
         this.animation = this.animation ?? this.$config.animation
@@ -43,14 +60,46 @@ export class NgbTooltip implements IController {
         this.tooltipClass = this.tooltipClass ?? this.$config.tooltipClass
         this.openDelay = this.openDelay ?? this.$config.openDelay
         this.closeDelay = this.closeDelay ?? this.$config.closeDelay
+
+        this._mouseEnterTooltip = this.$q.defer()
+        this._mouseLeaveTooltip = this.$q.defer()
+
+        this._unregisterListenersFn = listenToTriggers(
+            this.$timeout,
+            this.$q,
+            this.$element,
+            this.triggers,
+            this.isOpen.bind(this),
+            this.open.bind(this),
+            this.close.bind(this),
+            +this.openDelay,
+            +this.closeDelay,
+            this._mouseEnterTooltip.promise,
+            this._mouseLeaveTooltip.promise
+        )
     }
 
     $onDestroy(): void { }
 
     $postLink(): void { }
 
+    public open() {}
+
+    public close(animation = this.animation) {}
+
+    public isOpen() {
+        return false
+    }
+
+	private _getPositionTargetElement(): IAugmentedJQuery {
+        const isString = angular.isString(this.positionTarget)
+        const document = toNativeElement<Document>(this.$document)
+
+        return isString ? document.querySelector(this.positionTarget)
+    }
+
     static get $inject() {
-        return []
+        return [NgbTooltipConfig.$name, "$element", "$document", "$timeout", "$q"]
     }
 
     static get $name() {
@@ -77,6 +126,7 @@ export class NgbTooltip implements IController {
                 hidden: "&?",
                 shown: "&?"
             },
+            require: {},
             controller: NgbTooltip,
             restrict: "A"
         })

@@ -1,12 +1,6 @@
 import { NgbConfig } from "@/ngb-config.service";
-import type { IAugmentedJQuery, IScope } from "angular";
+import type { IAugmentedJQuery } from "angular";
 import type angular from "angular";
-
-export interface ComponentRef<T> {
-    componentInstance: T,
-    $scope: IScope,
-    $element: IAugmentedJQuery
-}
 
 export interface NgbModalOptions {
     animation?: boolean;

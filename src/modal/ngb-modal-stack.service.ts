@@ -1,5 +1,6 @@
-import type { ComponentRef, NgbModalOptions, NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service";
+import type { NgbModalOptions, NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service";
 import { camelToKebabCase, toNativeElement } from "@/utils";
+import type { ComponentRef } from "@/utils/popup.service"
 import angular, { type IAugmentedJQuery, type ICompileService, type IDocumentService, type IDeferred, type IQService, type IRootScopeService } from "angular";
 import { NgbScrollbar } from "@/ngb-scrollbar.service"
 import { NgbActiveModal, NgbModalRef } from "@/modal/ngb-modal-ref"

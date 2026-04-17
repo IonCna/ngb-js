@@ -42,20 +42,15 @@ export class NgbAlert implements IComponentController, INgbAlert {
     }
 
     close() {
-        const deferred = this.$q.defer<boolean>()
-
         const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbAlertFadingTransition, {
             animation: this.animation ?? this.ngbAlertConfig.animation,
             runningTransition: 'continue'
         })
 
-        transition.then(() => {
+        return transition.then(() => {
             this.closed?.()
             this.$log.info("[ngb.alert]: was closed")
-            deferred.resolve(true)
         })
-
-        return deferred.promise
     }
 
     static get $name() {

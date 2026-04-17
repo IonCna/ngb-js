@@ -1,8 +1,9 @@
-import type { ComponentRef, NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service"
+import type { NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service"
 import type { IDeferred, IPromise, IQService } from "angular";
 import angular from "angular";
 import type { NgbModalBackdrop } from "@/modal/ngb-modal-backdrop.component";
 import type { NgbModalWindow } from "@/modal/ngb-modal-window.component";
+import type { ComponentRef } from "@/utils/popup.service"
 
 export class NgbActiveModal {
     update(_options: NgbModalUpdatableOptions): void { }
