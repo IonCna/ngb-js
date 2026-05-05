@@ -54,6 +54,7 @@ export class NgbDropdown implements IController {
         this.placement = this.placement ?? this.$config.placement
         this.popperOptions = this.popperOptions ?? this.$config.popperOptions
         this.container = this.container ?? this.$config.container
+        this._destroyCloseHandlers = this.$q.defer()
 
         this._unwatchOpenState = this.$scope.$watch(
             () => this.isOpen(),
@@ -169,14 +170,14 @@ export class NgbDropdown implements IController {
     }
 
     private _setCloseHandlers() {
-        this._destroyCloseHandlers?.resolve()
-        this._destroyCloseHandlers = this.$q.defer<void>()
+        this._destroyCloseHandlers?.notify()
+        this._destroyCloseHandlers = this.$q.defer()
 
         ngbAutoClose(
             this.$timeout,
             this.$document,
             this.autoClose,
-            this._destroyCloseHandlers.promise,
+            this._destroyCloseHandlers!.promise,
             (source: SOURCE) => {
                 this.close()
                 if (source === SOURCE.ESCAPE) {
@@ -195,8 +196,7 @@ export class NgbDropdown implements IController {
         this._open = false
         this._resetContainer();
         this._positioning?.destroy();
-        this._destroyCloseHandlers?.resolve()
-        this._destroyCloseHandlers = undefined
+        this._destroyCloseHandlers?.notify()
         this.openChange?.({ $event: false })
 
         this.$scope.$evalAsync()

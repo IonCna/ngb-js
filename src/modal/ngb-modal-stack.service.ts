@@ -8,7 +8,6 @@ import type { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
 import type { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 
-const NGB_ACTIVE_WINDOW_HAS_CHANGE = "ngb:active:window:has:change"
 
 type ModalContentScope = angular.IScope & {
     activeModal: NgbActiveModal;
@@ -20,7 +19,8 @@ export class NgbModalStack {
     private _modalRefs: NgbModalRef[] = [];
     private _windowRefs: ContentRef<NgbModalWindow>[] = []
     private _ariaHiddenValues: Map<Element, string | null> = new Map();
-    private _stopFocusTrap?: IDeferred<void>
+
+    private _activeWindowCmptHasChanged?: IDeferred<void>
 
     constructor(
         private $document: IDocumentService,
@@ -29,19 +29,16 @@ export class NgbModalStack {
         private $rootScope: IRootScopeService,
         private $q: IQService
     ) {
-        this.$rootScope.$on(NGB_ACTIVE_WINDOW_HAS_CHANGE, () => {
-            this._stopFocusTrap?.resolve()
-            this._stopFocusTrap = undefined
+        this._activeWindowCmptHasChanged = this.$q.defer()
 
+        this._activeWindowCmptHasChanged.promise.then(null, null, () => {
             if (!this._windowRefs.length) {
                 this._revertAriaHidden()
                 return
             }
 
             const activeWindow = this._windowRefs[this._windowRefs.length - 1]
-            this._stopFocusTrap = this.$q.defer<void>()
-
-            ngbFocusTrap(activeWindow.$element, this._stopFocusTrap.promise)
+            ngbFocusTrap(activeWindow.$element, this._activeWindowCmptHasChanged!.promise)
             this._revertAriaHidden()
             this._setAriaHidden(activeWindow.$element)
         })
@@ -105,14 +102,14 @@ export class NgbModalStack {
 
     private _registerWindow(ngbWindow: ContentRef<NgbModalWindow>) {
         this._windowRefs.push(ngbWindow)
-        this.$rootScope.$emit(NGB_ACTIVE_WINDOW_HAS_CHANGE)
+        this._activeWindowCmptHasChanged?.notify()
 
         ngbWindow.$scope?.$on("$destroy", () => {
             const index = this._windowRefs.indexOf(ngbWindow)
 
             if (index > -1) {
                 this._windowRefs.splice(index, 1)
-                this.$rootScope.$emit(NGB_ACTIVE_WINDOW_HAS_CHANGE)
+                this._activeWindowCmptHasChanged?.notify()
             }
         })
     }
@@ -166,11 +163,8 @@ export class NgbModalStack {
         const watcher = this.$rootScope.$watch(() => compiled.controller("ngbModalBackdrop"), instance => {
             watcher()
 
-            deferred.resolve({
-                $element: compiled,
-                $scope: scope,
-                componentInstance: instance
-            })
+            const ref = new ContentRef(compiled, scope, instance)
+            deferred.resolve(ref)
         })
 
         return deferred.promise
@@ -194,11 +188,8 @@ export class NgbModalStack {
         const watcher = this.$rootScope.$watch(() => compiled.controller("ngbModalWindow"), instance => {
             watcher()
 
-            deferred.resolve({
-                $element: compiled,
-                $scope: scope,
-                componentInstance: instance
-            })
+            const ref = new ContentRef(compiled, scope, instance)
+            deferred.resolve(ref)
         })
 
         return deferred.promise
@@ -223,11 +214,8 @@ export class NgbModalStack {
         const watcher = this.$rootScope.$watch(() => compiled.controller(content), instance => {
             watcher()
 
-            deferred.resolve({
-                $element: compiled,
-                $scope: scope,
-                componentInstance: instance
-            })
+            const ref = new ContentRef(compiled, scope, instance)
+            deferred.resolve(ref)
         })
 
         return deferred.promise

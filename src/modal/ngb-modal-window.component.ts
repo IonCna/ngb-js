@@ -40,10 +40,10 @@ export class NgbModalWindow implements IComponentController {
     public size?: string;
     public windowClass?: string;
     public modalDialogClass?: string;
-    
+
     private _elWithFocus: Element | null = null;
     private _dialogEl?: IAugmentedJQuery
-    private _eventHandlingStop?: IDeferred<void>
+    private _closed?: IDeferred<void>
     private _shown!: IDeferred<void>
     private _hidden!: IDeferred<void>
     private _dismissListener?: (reason: any) => void
@@ -63,6 +63,7 @@ export class NgbModalWindow implements IComponentController {
 
         this._shown = this.$q.defer()
         this._hidden = this.$q.defer()
+
         this._elWithFocus = document.activeElement
     }
 
@@ -211,9 +212,6 @@ export class NgbModalWindow implements IComponentController {
 
     private _enableEventHandling() {
         this._disableEventHandling()
-        this._eventHandlingStop = this.$q.defer()
-
-        const eventHandlingStop = this._eventHandlingStop.promise
         const native = toNativeElement(this.$element)
         const dialog = this._dialogEl
         let preventClose = false
@@ -283,7 +281,7 @@ export class NgbModalWindow implements IComponentController {
         dialog?.on("mousedown", onDialogMouseDown)
         this.$element.on("click", onClick)
 
-        eventHandlingStop.then(() => {
+        this._closed?.promise.then(null, null, () => {
             this.$element.off("keydown", onKeyDown)
             dialog?.off("mousedown", onDialogMouseDown)
             this.$element.off("click", onClick)
@@ -295,8 +293,8 @@ export class NgbModalWindow implements IComponentController {
     }
 
     private _disableEventHandling() {
-        this._eventHandlingStop?.resolve()
-        this._eventHandlingStop = undefined
+        this._closed?.notify()
+        this._closed = this.$q.defer()
     }
 
     private _restoreFocus() {

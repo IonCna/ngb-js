@@ -62,7 +62,7 @@ export function ngbFocusTrap(element: IAugmentedJQuery, stopFocusTrap: IPromise<
         element.on("click", onClick)
     }
 
-    stopFocusTrap.finally(() => {
+    stopFocusTrap.then(null, null, () => {
         element.off("focusin", onFocus)
         element.off("click", onClick)
         element.off("keydown", onKeydown)

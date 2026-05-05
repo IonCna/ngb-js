@@ -101,9 +101,11 @@ export function ngbAutoClose(
     }
 
     const onMouseUp = () => {
-        if (!shouldCloseOnMouseUp) return
-
+        const shouldClose = shouldCloseOnMouseUp
         shouldCloseOnMouseUp = false
+
+        if (!shouldClose) return
+
         void $timeout(() => closeOnce(SOURCE.CLICK), 0, false)
     }
 
@@ -115,7 +117,7 @@ export function ngbAutoClose(
         $document.on("mouseup", onMouseUp)
     })()
 
-    closed.finally(() => {
+    closed.then(null, null, () => {
         isClosed = true
         cleanup()
     })
