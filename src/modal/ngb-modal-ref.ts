@@ -3,7 +3,7 @@ import type { IDeferred, IPromise, IQService } from "angular";
 import angular from "angular";
 import type { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
 import type { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
-import type { ComponentRef } from "@ngb/utils/popup.service"
+import { ContentRef } from "@ngb/utils/popup.service"
 
 export class NgbActiveModal {
     update(_options: NgbModalUpdatableOptions): void { }
@@ -23,9 +23,9 @@ export class NgbModalRef<T = any> {
 
     constructor(
         private $q: IQService,
-        private windowRef: ComponentRef<NgbModalWindow>,
-        private contentRef: ComponentRef<T>,
-        private backdropRef?: ComponentRef<NgbModalBackdrop>,
+        private windowRef: ContentRef<NgbModalWindow>,
+        private contentRef: ContentRef<T>,
+        private backdropRef?: ContentRef<NgbModalBackdrop>,
         private _beforeDismiss?: () => boolean | Promise<boolean>,
     ) {
         const deferred = this.$q.defer()
@@ -39,7 +39,7 @@ export class NgbModalRef<T = any> {
         this._dismissed = this.$q.defer()
         this._hidden = this.$q.defer()
 
-        windowRef.componentInstance.onDismiss((reason) => {
+        windowRef.componentInstance?.onDismiss((reason: any) => {
             this.dismiss(reason)
         })
     }
@@ -104,9 +104,9 @@ export class NgbModalRef<T = any> {
 
         windowTransition.then(() => {
             this.windowRef.$element.remove()
-            this.windowRef.$scope.$destroy()
+            this.windowRef.$scope?.$destroy()
 
-            this.contentRef.$scope.$destroy()
+            this.contentRef.$scope?.$destroy()
             this.windowRef = <any>null
             this.contentRef = <any>null
         })
@@ -114,7 +114,7 @@ export class NgbModalRef<T = any> {
         backdropTransition?.then(() => {
             if (!this.backdropRef) return
             this.backdropRef.$element.remove()
-            this.backdropRef.$scope.$destroy()
+            this.backdropRef.$scope?.$destroy()
             this.backdropRef = <any>null
         })
 

@@ -1,6 +1,6 @@
 import type { NgbModalOptions, NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { camelToKebabCase, toNativeElement } from "@ngb/utils";
-import type { ComponentRef } from "@ngb/utils/popup.service"
+import { ContentRef } from "@ngb/utils/popup.service"
 import angular, { type IAugmentedJQuery, type ICompileService, type IDocumentService, type IDeferred, type IQService, type IRootScopeService } from "angular";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service"
 import { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref"
@@ -18,7 +18,7 @@ type ModalContentScope = angular.IScope & {
 export class NgbModalStack {
     private _scrollBarRestoreFn: null | (() => void) = null;
     private _modalRefs: NgbModalRef[] = [];
-    private _windowRefs: ComponentRef<NgbModalWindow>[] = []
+    private _windowRefs: ContentRef<NgbModalWindow>[] = []
     private _ariaHiddenValues: Map<Element, string | null> = new Map();
     private _stopFocusTrap?: IDeferred<void>
 
@@ -103,11 +103,11 @@ export class NgbModalStack {
         return modal.promise
     }
 
-    private _registerWindow(ngbWindow: ComponentRef<NgbModalWindow>) {
+    private _registerWindow(ngbWindow: ContentRef<NgbModalWindow>) {
         this._windowRefs.push(ngbWindow)
         this.$rootScope.$emit(NGB_ACTIVE_WINDOW_HAS_CHANGE)
 
-        ngbWindow.$scope.$on("$destroy", () => {
+        ngbWindow.$scope?.$on("$destroy", () => {
             const index = this._windowRefs.indexOf(ngbWindow)
 
             if (index > -1) {
@@ -156,7 +156,7 @@ export class NgbModalStack {
     }
 
     private _attachBackdrop(container: IAugmentedJQuery) {
-        const deferred = this.$q.defer<ComponentRef<NgbModalBackdrop>>()
+        const deferred = this.$q.defer<ContentRef<NgbModalBackdrop>>()
         const scope = this.$rootScope.$new(true)
         const linkFn = this.$compile("<ngb-modal-backdrop></ngb-modal-backdrop>")
 
@@ -177,7 +177,7 @@ export class NgbModalStack {
     }
 
     private _attachWindowComponent(container: IAugmentedJQuery, content: IAugmentedJQuery) {
-        const deferred = this.$q.defer<ComponentRef<NgbModalWindow>>()
+        const deferred = this.$q.defer<ContentRef<NgbModalWindow>>()
         const scope = this.$rootScope.$new(true)
         const linkFn = this.$compile(`<ngb-modal-window></ngb-modal-window>`)
 
@@ -205,7 +205,7 @@ export class NgbModalStack {
     }
 
     private _getContentRef<T>(content: any, activeModal: NgbActiveModal, options: NgbModalOptions) {
-        const deferred = this.$q.defer<ComponentRef<T>>()
+        const deferred = this.$q.defer<ContentRef<T>>()
         const scope = this.$rootScope.$new(true) as ModalContentScope
         const componentName = camelToKebabCase(content)
         const attrs = this._buildBindingsAttrs(options)

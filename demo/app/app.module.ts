@@ -10,6 +10,7 @@ import { DemoDropdownModule } from "@demo/features/demo-dropdown/demo-dropdown.m
 import { DemoModalModule } from "@demo/features/demo-modal/demo-modal.module"
 import { DemoProgressbarModule } from "@demo/features/demo-progressbar/demo-progressbar.module"
 import { DemoToastModule } from "@demo/features/demo-toast/demo-toast.module"
+import { DemoTooltipModule } from "@demo/features/demo-tooltip/demo-tooltip.module"
 
 export const AppModule = angular.module("ngb.demo", [
     NgbModule.name,
@@ -21,6 +22,7 @@ export const AppModule = angular.module("ngb.demo", [
     DemoModalModule.name,
     DemoProgressbarModule.name,
     DemoToastModule.name,
+    DemoTooltipModule.name,
 ])
 
 AppModule.component(AppComponent.$name, AppComponent.$factory)

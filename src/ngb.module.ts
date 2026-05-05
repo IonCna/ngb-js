@@ -7,6 +7,7 @@ import { NgbToastModule } from "@ngb/toast/ngb-toast.module"
 import { NgbAccordionModule } from "@ngb/accordion/ngb-accordion.module"
 import { NgbModalModule } from "@ngb/modal/ngb-modal.module"
 import { NgbDropdownModule } from "@ngb/dropdown/ngb-dropdown.module"
+import { NgbToolTipModule } from "@ngb/tooltip/ngb-tooltip.module"
 
 import { NgbConfig } from "@ngb/ngb-config.service"
 import { NgbContent } from "@ngb/ngb-content.directive"
@@ -15,6 +16,7 @@ import { NgbScrollbar } from "@ngb/ngb-scrollbar.service"
 import { NgbRTL } from "@ngb/utils/rtl.service"
 import { LiveService } from "@ngb/utils/accessibility/live.service"
 import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant"
+import { PopupFactory } from "@ngb/utils/popup.service"
 
 export const NgbModule = angular.module("ngb", [
     NgbAlertModule.name,
@@ -24,12 +26,14 @@ export const NgbModule = angular.module("ngb", [
     NgbToastModule.name,
     NgbAccordionModule.name,
     NgbModalModule.name,
-    NgbDropdownModule.name
+    NgbDropdownModule.name,
+    NgbToolTipModule.name
 ])
 
 NgbModule.service(NgbConfig.$name, NgbConfig)
 NgbModule.directive(NgbContent.$name, NgbContent.$factory)
 NgbModule.service(NgbScrollbar.$name, NgbScrollbar)
+NgbModule.factory(PopupFactory.$name, PopupFactory)
 
 NgbModule.service(LiveService.$name, LiveService)
 NgbModule.service(NgbRTL.$name, NgbRTL)

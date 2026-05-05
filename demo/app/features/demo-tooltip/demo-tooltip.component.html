@@ -1,0 +1,58 @@
+<h5 class="mb-3">Placements</h5>
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <button class="btn btn-outline-secondary" ngb-tooltip="'Top'" placement="'top'">Top</button>
+    <button class="btn btn-outline-secondary" ngb-tooltip="'Bottom'" placement="'bottom'">Bottom</button>
+    <button class="btn btn-outline-secondary" ngb-tooltip="'Start'" placement="'start'">Start</button>
+    <button class="btn btn-outline-secondary" ngb-tooltip="'End'" placement="'end'">End</button>
+    <button class="btn btn-outline-secondary" ngb-tooltip="'Auto placement'" placement="'auto'">Auto</button>
+</div>
+
+<h5 class="mb-3">Triggers</h5>
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <button class="btn btn-outline-primary" ngb-tooltip="'Default: hover + focus'">hover focus (default)</button>
+    <button class="btn btn-outline-primary" ngb-tooltip="'Click to toggle'" triggers="click">click</button>
+</div>
+
+<h5 class="mb-3">Live demo</h5>
+<div class="row g-3 align-items-center mb-3">
+    <div class="col-auto">
+        <button class="btn btn-sm btn-outline-secondary" ng-click="$.toggleAnimation()">
+            Animation: <strong>{{$.animation ? 'on' : 'off'}}</strong>
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-sm btn-outline-secondary" ng-click="$.toggleDisabled()">
+            {{$.disabled ? 'Enable tooltip' : 'Disable tooltip'}}
+        </button>
+    </div>
+    <div class="col-auto text-muted small">
+        Last event: <strong>{{$.lastEvent}}</strong>
+    </div>
+</div>
+<div class="p-4 border rounded d-flex justify-content-center">
+    <button
+        class="btn btn-primary"
+        ngb-tooltip="'Hello from ngb-js!'"
+        animation="$.animation"
+        disable-tooltip="$.disabled"
+        shown="$.onShown()"
+        hidden="$.onHidden()">
+        Hover me
+    </button>
+</div>
+
+<h5 class="mt-4 mb-3">Custom class</h5>
+<div class="d-flex flex-wrap gap-2">
+    <button class="btn btn-outline-dark" ngb-tooltip="'Dark background'" tooltip-class="bg-dark text-white">
+        Dark
+    </button>
+    <button class="btn btn-outline-danger" ngb-tooltip="'Danger style'" tooltip-class="bg-danger text-white">
+        Danger
+    </button>
+</div>
+
+<h5 class="mt-4 mb-3">Open / close delays</h5>
+<div class="d-flex flex-wrap gap-2">
+    <button class="btn btn-outline-secondary" ngb-tooltip="'Opens after 500ms'" open-delay="500">Open delay 500ms</button>
+    <button class="btn btn-outline-secondary" ngb-tooltip="'Closes after 1s'" close-delay="1000">Close delay 1s</button>
+</div>

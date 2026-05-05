@@ -32,7 +32,8 @@ export class DemoModalComponent implements IComponentController {
     }
 
     public async open() {
-        const modalRef = await this.ngbModal.open("ngbDemoModalContent", this.buildOptions())
+        const modal = this.scrollable ? "ngbDemoModalScrollableContent" : "ngbDemoModalContent"
+        const modalRef = await this.ngbModal.open(modal, this.buildOptions())
 
         modalRef.closed.then(result => {
             this.lastResult = result

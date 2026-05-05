@@ -1,15 +1,21 @@
-import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, IQService, ITimeoutService, ITranscludeFunction } from "angular"
+import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, ILogService, IQService, ITimeoutService, ITranscludeFunction } from "angular"
 import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
 import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
 import { listenToTriggers } from "@ngb/utils/triggers";
 import angular from "angular";
-import { toNativeElement } from "@ngb/utils";
+import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
+import { ContentRef, PopupFactory, type IPopupService } from "@ngb/utils/popup.service"
+import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component"
+
+function targetIsString(target: unknown): target is string {
+    return angular.isString(target)
+}
 
 let nextId = 0;
 
 export class NgbTooltip implements IController {
-	static ngAcceptInputType_autoClose: boolean | string;
+    static ngAcceptInputType_autoClose: boolean | string;
     private animation?: boolean
     private autoClose?: boolean | "inside" | "outside"
     private placement?: PlacementArray
@@ -24,6 +30,7 @@ export class NgbTooltip implements IController {
     private hidden?: () => void
 
     private tooltipContext?: unknown
+    private _popupService?: IPopupService
 
     private positionTarget?: string | IAugmentedJQuery
     private _ngbTooltip?: string | ITranscludeFunction
@@ -33,12 +40,18 @@ export class NgbTooltip implements IController {
     private _mouseEnterTooltip?: IDeferred<void>
     private _mouseLeaveTooltip?: IDeferred<void>
 
+    private _windowRef: ContentRef<NgbTooltipWindow> | null = null;
+    private _opening = true;
+    private _transitioning = false;
+
     constructor(
         private $config: NgbTooltipConfig,
         private $element: IAugmentedJQuery,
         private $document: IDocumentService,
         private $timeout: ITimeoutService,
-        private $q: IQService
+        private $q: IQService,
+        private $log: ILogService,
+        private $popupFactory: PopupFactory
     ) { }
 
     set ngbTooltip(value: string | ITranscludeFunction | null | undefined) {
@@ -50,6 +63,8 @@ export class NgbTooltip implements IController {
     }
 
     $onInit(): void {
+        this._popupService = this.$popupFactory.$create(NgbTooltipWindow.$name)
+
         this.animation = this.animation ?? this.$config.animation
         this.autoClose = this.autoClose ?? this.$config.autoClose
         this.placement = this.placement ?? this.$config.placement
@@ -79,27 +94,77 @@ export class NgbTooltip implements IController {
         )
     }
 
-    $onDestroy(): void { }
+    $onDestroy(): void {
+        this.close(false)
+        this._unregisterListenersFn?.()
+    }
+
+    $onChanges(changes: angular.IOnChangesObject): void {
+        if (changes.tooltipClass && this.isOpen()) {
+
+        }
+    }
 
     $postLink(): void { }
 
-    public open() {}
+    public open(context?: any) {
+        if (!this._opening && this._transitioning) {
+            this._transitioning = false;
+            ngbCompleteTransition(this._windowRef!.$element)
+        }
 
-    public close(animation = this.animation) {}
+        if (!this._windowRef && this._ngbTooltip && !this.disableTooltip) {
+            debugger
+            const { windowRef, transition$ } = this._popupService!.open(
+                this._ngbTooltip,
+                context ?? this.tooltipContext,
+                this.animation,
+            );
+
+            this._opening = true;
+            this._transitioning = true;
+            this._windowRef = windowRef;
+
+            this._windowRef?.setInput('animation', this.animation);
+            this._windowRef?.setInput('tooltipClass', this.tooltipClass);
+            this._windowRef?.setInput('id', this._ngbTooltipWindowId);
+
+            this._windowRef.setInput('onMouseEnter', () => this._mouseEnterTooltip?.notify());
+            this._windowRef.setInput('onMouseLeave', () => this._mouseLeaveTooltip?.notify());
+
+            console.log(this._windowRef)
+
+        }
+    }
+
+    public close(animation = this.animation) {
+        this.$log.info("close")
+    }
 
     public isOpen() {
         return false
     }
 
-	private _getPositionTargetElement(): IAugmentedJQuery {
-        const isString = angular.isString(this.positionTarget)
-        const document = toNativeElement<Document>(this.$document)
+    private _getPositionTargetElement(): IAugmentedJQuery {
+        if (targetIsString(this.positionTarget)) {
+            const el = toNativeElement(this.$document).querySelector(this.positionTarget)
 
-        return isString ? document.querySelector(this.positionTarget)
+            if (!el) {
+                throw new Error("element target does not exist")
+            }
+
+            return angular.element(el)
+        }
+
+        if (!this.positionTarget) {
+            throw new Error("element target does not exist")
+        }
+
+        return this.positionTarget
     }
 
     static get $inject() {
-        return [NgbTooltipConfig.$name, "$element", "$document", "$timeout", "$q"]
+        return [NgbTooltipConfig.$name, "$element", "$document", "$timeout", "$q", "$log", PopupFactory.$name]
     }
 
     static get $name() {
@@ -113,20 +178,19 @@ export class NgbTooltip implements IController {
                 animation: "<?",
                 autoClose: "<?",
                 closeDelay: "<?",
-                container: "<?",
+                container: "@?",
                 disableTooltip: "<?",
                 ngbTooltip: "<",
                 openDelay: "<?",
                 placement: "<?",
                 popperOptions: "<?",
                 positionTarget: "<?",
-                tooltipClass: "<?",
+                tooltipClass: "@?",
                 tooltipContext: "<?",
                 triggers: "@?",
                 hidden: "&?",
                 shown: "&?"
             },
-            require: {},
             controller: NgbTooltip,
             restrict: "A"
         })
