@@ -21,6 +21,7 @@ export class NgbModalStack {
     private _ariaHiddenValues: Map<Element, string | null> = new Map();
 
     private _activeWindowCmptHasChanged?: IDeferred<void>
+    private _activeInstances?: IDeferred<NgbModalRef[]>
 
     constructor(
         private $document: IDocumentService,
@@ -29,6 +30,7 @@ export class NgbModalStack {
         private $rootScope: IRootScopeService,
         private $q: IQService
     ) {
+        this._activeInstances = this.$q.defer()
         this._activeWindowCmptHasChanged = this.$q.defer()
 
         this._activeWindowCmptHasChanged.promise.then(null, null, () => {
@@ -115,7 +117,7 @@ export class NgbModalStack {
     }
 
     get activeInstances() {
-        return this._modalRefs.slice()
+        return this._activeInstances!
     }
 
     dismissAll(reason?: any) {
@@ -132,10 +134,12 @@ export class NgbModalStack {
 
             if (index > -1) {
                 this._modalRefs.splice(index, 1)
+                this._activeInstances?.notify(this._modalRefs)
             }
         }
 
         this._modalRefs.push(ngbModalRef)
+        this._activeInstances?.notify(this._modalRefs)
         ngbModalRef.result?.then(unregisterModalRef, unregisterModalRef)
     }
 
