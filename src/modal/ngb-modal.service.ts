@@ -1,6 +1,6 @@
-import type { NgbModalOptions } from "@/modal/ngb-modal-config.service"
-import { NgbModalStack } from "@/modal/ngb-modal-stack.service"
-import { NgbModalConfig } from "@/modal/ngb-modal-config.service"
+import type { NgbModalOptions } from "@ngb/modal/ngb-modal-config.service"
+import { NgbModalStack } from "@ngb/modal/ngb-modal-stack.service"
+import { NgbModalConfig } from "@ngb/modal/ngb-modal-config.service"
 
 export class NgbModal {
     constructor(

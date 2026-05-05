@@ -1,4 +1,4 @@
-import { reflow } from "@/utils"
+import { reflow } from "@ngb/utils"
 import type { IAugmentedJQuery } from "angular"
 
 export function ngbModalBackdropFadeOutTransition(element: IAugmentedJQuery) {

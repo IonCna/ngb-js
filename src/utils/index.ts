@@ -5,10 +5,10 @@ export {
     type NgbTransitionOptions,
     ngbCompleteTransition,
     ngbRunTransition
-} from "@/utils/transition/ngb-transition"
-export { ngbCollapsingTransition } from "@/utils/transition/ngb-collapse-transition"
-export type { INgbEvent } from "@/utils/transition"
-export { FOCUSABLE_ELEMENTS_SELECTOR } from "@/utils/focus-trap"
+} from "@ngb/utils/transition/ngb-transition"
+export { ngbCollapsingTransition } from "@ngb/utils/transition/ngb-collapse-transition"
+export type { INgbEvent } from "@ngb/utils/transition"
+export { FOCUSABLE_ELEMENTS_SELECTOR } from "@ngb/utils/focus-trap"
 
 export function reflow(element: IAugmentedJQuery) {
     return (toNativeElement(element) || document.body).getBoundingClientRect()

@@ -1,5 +1,5 @@
 import type { IDocumentService, IWindowService } from "angular"
-import { toNativeElement } from "@/utils"
+import { toNativeElement } from "@ngb/utils"
 
 export type ScrollbarReverter = () => void;
 

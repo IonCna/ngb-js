@@ -1,5 +1,5 @@
-import { NgbConfig } from "@/ngb-config.service"
-import type { PlacementArray } from "@/utils/positioning"
+import { NgbConfig } from "@ngb/ngb-config.service"
+import type { PlacementArray } from "@ngb/utils/positioning"
 import type { Options } from "@popperjs/core"
 
 export class NgbTooltipConfig {

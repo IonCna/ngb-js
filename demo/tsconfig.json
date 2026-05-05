@@ -1,0 +1,12 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "paths": {
+            "@demo/*": ["./app/*"],
+            "@ngb": ["../src/index"],
+            "@ngb/*": ["../src/*"],
+        },
+        "types": ["../types/index.d.ts", "node"]
+    },
+    "include": ["."]
+}

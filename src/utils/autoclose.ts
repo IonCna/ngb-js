@@ -1,5 +1,5 @@
 import angular, { type IAugmentedJQuery, type IDocumentService, type IPromise, type ITimeoutService } from "angular";
-import { closest, toNativeElement } from "@/utils";
+import { closest, toNativeElement } from "@ngb/utils";
 
 export const enum SOURCE {
     ESCAPE,

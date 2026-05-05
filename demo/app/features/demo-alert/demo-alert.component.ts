@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@demo/features/demo-alert/demo-alert.component.html?raw"
+import template from "@demo/features/demo-alert/demo-alert.component.html"
 
 export class DemoAlertComponent implements IComponentController {
     animation = true

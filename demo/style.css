@@ -1,7 +1,1 @@
-body {
-    background: #f8f9fa;
-}
-
-.card {
-    border: 1px solid #e9ecef;
-}
+@import "bootstrap/dist/css/bootstrap.min.css";

@@ -1,7 +1,7 @@
-import { toNativeElement } from "@/utils";
+import { toNativeElement } from "@ngb/utils";
 import type { IController, IDirective, ILogService } from "angular";
-import type { NgbDropdownMenu } from "@/dropdown/ngb-dropdown-menu.directive";
-import type { NgbDropdownButtonItem } from "@/dropdown/ngb-dropdown-button-item.directive";
+import type { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
+import type { NgbDropdownButtonItem } from "@ngb/dropdown/ngb-dropdown-button-item.directive";
 
 export class NgbDropdownItem implements IController {
     static ngAcceptInputType_disabled: boolean | ''

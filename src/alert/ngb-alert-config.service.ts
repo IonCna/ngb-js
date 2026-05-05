@@ -1,4 +1,4 @@
-import { NgbConfig } from "@/ngb-config.service"
+import { NgbConfig } from "@ngb/ngb-config.service"
 
 export class NgbAlertConfig {
     private _animation?: boolean;

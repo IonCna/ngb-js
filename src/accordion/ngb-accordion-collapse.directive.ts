@@ -1,16 +1,12 @@
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
-import template from "@/accordion/ngb-accordion-collapse.directive.html?raw"
-import type { NgbCollapse } from "@/collapse/ngb-collapse.directive";
+import type { IController, IDirective } from "angular";
+import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive"
+import template from "@ngb/accordion/ngb-accordion-collapse.directive.html"
+import type { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
 
 export class NgbAccordionCollapse implements IController {
     protected item!: NgbAccordionItem
 
     _collapse!: NgbCollapse
-
-    constructor(
-        private $element: IAugmentedJQuery
-    ) { }
 
     $postLink(): void {
         this.item.register(this)
@@ -33,7 +29,7 @@ export class NgbAccordionCollapse implements IController {
     }
 
     static get $inject() {
-        return ["$element"]
+        return []
     }
 
     static get $factory(): () => IDirective {

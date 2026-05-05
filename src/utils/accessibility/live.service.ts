@@ -1,4 +1,4 @@
-import { ARIA_LIVE_DELAY } from "@/utils/accessibility/live.constant"
+import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant"
 import type { IAugmentedJQuery, IDocumentService, ITimeoutService } from "angular"
 import angular from "angular"
 

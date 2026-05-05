@@ -1,4 +1,4 @@
-import { reflow, type NgbTransitionStartFn } from "@/utils";
+import { reflow, type NgbTransitionStartFn } from "@ngb/utils";
 import angular from "angular";
 
 export const ngbModalWindowFadeInTransition: NgbTransitionStartFn = (element, animation) => {

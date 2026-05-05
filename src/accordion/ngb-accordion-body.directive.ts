@@ -1,5 +1,5 @@
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive";
+import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 
 export class NgbAccordionBody implements IController {
     protected item!: NgbAccordionItem

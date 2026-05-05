@@ -1,5 +1,5 @@
 import type { IController, IDirective } from "angular";
-import type { NgbTypeaheadSelectItemEvent } from "@/typeahead/ngb-typeahead-select-item-event.model"
+import type { NgbTypeaheadSelectItemEvent } from "@ngb/typeahead/ngb-typeahead-select-item-event.model"
 
 export class NgbTypeahead implements IController {
     protected autocomplete?: string

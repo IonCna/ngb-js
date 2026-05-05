@@ -1,6 +1,6 @@
 import type { IController, IDirective, IScope } from "angular";
-import type { NgbDropdown } from "@/dropdown/ngb-dropdown.directive";
-import { toNativeElement } from "@/utils";
+import type { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
+import { toNativeElement } from "@ngb/utils";
 
 export class NgbDropdownAnchor implements IController {
     public dropdown!: NgbDropdown

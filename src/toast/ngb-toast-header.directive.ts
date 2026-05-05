@@ -1,5 +1,5 @@
 import type { IController, IDirective, ITranscludeFunction } from "angular";
-import type { NgbToast } from "@/toast/ngb-toast.component"
+import type { NgbToast } from "@ngb/toast/ngb-toast.component"
 
 export class NgbToastHeader implements IController {
     private ngbToast!: NgbToast

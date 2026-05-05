@@ -1,5 +1,5 @@
 import type { IDocumentService } from "angular";
-import { toNativeElement } from "@/utils";
+import { toNativeElement } from "@ngb/utils";
 
 export class NgbRTL {
     private _element!: HTMLElement

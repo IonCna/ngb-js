@@ -1,6 +1,6 @@
 import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
-import { reflow, toNativeElement } from "@/utils"
+import { reflow, toNativeElement } from "@ngb/utils"
 
 type Dimension = 'width' | 'height'
 

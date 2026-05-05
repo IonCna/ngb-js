@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@demo/features/demo-accordion/demo-accordion.component.html?raw"
+import template from "@demo/features/demo-accordion/demo-accordion.component.html"
 
 export class DemoAccordionComponent implements IComponentController {
     public firstCollapsed = false

@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@demo/features/demo-collapse/demo-collapse.component.html?raw"
+import template from "@demo/features/demo-collapse/demo-collapse.component.html"
 
 export class DemoCollapseComponent implements IComponentController {
     public firstCollapsed = true

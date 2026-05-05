@@ -1,2 +1,2 @@
-export { NgbTypeaheadConfig } from "@/typeahead/ngb-typeahead-config.service"
-export { NgbTypeaheadModule } from "@/typeahead/ngb-typeahead.module"
+export { NgbTypeaheadConfig } from "@ngb/typeahead/ngb-typeahead-config.service"
+export { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module"

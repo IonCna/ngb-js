@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@demo/app.component.html?raw"
+import template from "@demo/app.component.html"
 
 export class AppComponent implements IComponentController {
     static get $name() {

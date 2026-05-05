@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions, ITimeoutService } from "angular";
-import template from "@demo/features/demo-toast/demo-toast.component.html?raw"
+import template from "@demo/features/demo-toast/demo-toast.component.html"
 
 export class DemoToastComponent implements IComponentController {
     public animation = true

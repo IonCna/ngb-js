@@ -1,8 +1,8 @@
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, IQService, IScope, ITimeoutService } from "angular";
-import { NgbModalConfig, type NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service"
+import { NgbModalConfig, type NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service"
 import angular from "angular";
-import { ngbRunTransition } from "@/utils";
-import { ngbModalBackdropFadeInTransition, ngbModalBackdropFadeOutTransition } from "@/modal/ngb-modal-backdrop-transition"
+import { ngbRunTransition } from "@ngb/utils";
+import { ngbModalBackdropFadeInTransition, ngbModalBackdropFadeOutTransition } from "@ngb/modal/ngb-modal-backdrop-transition"
 
 const BACKDROP_ATTRIBUTES = ['animation', 'backdropClass'] as const satisfies readonly (keyof NgbModalUpdatableOptions)[];
 type NgbModalBackdropAttribute = (typeof BACKDROP_ATTRIBUTES)[number];

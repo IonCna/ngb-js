@@ -1,6 +1,6 @@
 import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
-import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
-import type { NgbAccordion } from "@/accordion/ngb-accordion.directive";
+import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive"
+import type { NgbAccordion } from "@ngb/accordion/ngb-accordion.directive";
 
 export class NgbAccordionToggle implements IController {
     private item!: NgbAccordionItem

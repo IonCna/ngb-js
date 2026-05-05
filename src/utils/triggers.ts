@@ -1,4 +1,4 @@
-import type { IAugmentedJQuery, IDeferred, IPromise, IQService, ITimeoutService } from "angular";
+import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
 import angular from "angular";
 
 const ALIASES: Record<string, string[]> = {

@@ -1,7 +1,7 @@
 import angular from "angular";
-import { NgbToastConfig } from "@/toast/ngb-toast-config.service"
-import { NgbToast } from "@/toast/ngb-toast.component"
-import { NgbToastHeader } from "@/toast/ngb-toast-header.directive"
+import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service"
+import { NgbToast } from "@ngb/toast/ngb-toast.component"
+import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive"
 
 export const NgbToastModule = angular.module("ngb.toast", [])
 NgbToastModule.service(NgbToastConfig.$name, NgbToastConfig)

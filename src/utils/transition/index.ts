@@ -1,5 +1,5 @@
-export * from "@/utils/transition/ngb-collapse-transition"
-export * from "@/utils/transition/ngb-transition"
+export * from "@ngb/utils/transition/ngb-collapse-transition"
+export * from "@ngb/utils/transition/ngb-transition"
 
 export function getTransitionDurationMs(element: HTMLElement) {
     const { transitionDelay, transitionDuration } = window.getComputedStyle(element);

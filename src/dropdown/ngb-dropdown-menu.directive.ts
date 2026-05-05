@@ -1,7 +1,7 @@
 import type { IController, IDirective, IScope } from "angular"
-import type { NgbDropdown } from "./ngb-dropdown.directive"
-import { toNativeElement } from "@/utils"
-import type { NgbDropdownItem } from "@/dropdown/ngb-dropdown-item.directive"
+import type { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive"
+import { toNativeElement } from "@ngb/utils"
+import type { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive"
 
 const ALLOWED_KEYS = new Set([
     "ArrowUp",

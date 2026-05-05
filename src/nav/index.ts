@@ -1,3 +1,3 @@
-export { NgbNavModule } from "@/nav/ngb-nav.module"
-export { NgbNavConfig } from "@/nav/ngb-nav-config.service"
-export { NgbNav } from "@/nav/ngb-nav.directive"
+export { NgbNavModule } from "@ngb/nav/ngb-nav.module"
+export { NgbNavConfig } from "@ngb/nav/ngb-nav-config.service"
+export { NgbNav } from "@ngb/nav/ngb-nav.directive"

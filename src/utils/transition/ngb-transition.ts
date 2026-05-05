@@ -1,7 +1,7 @@
 import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
 import angular from "angular";
-import { getTransitionDurationMs } from "@/utils/transition"
-import { toNativeElement } from "@/utils"
+import { getTransitionDurationMs } from "@ngb/utils/transition"
+import { toNativeElement } from "@ngb/utils"
 
 export type NgbTransitionStartFn<T = any> = (
     element: IAugmentedJQuery,

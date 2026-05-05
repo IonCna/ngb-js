@@ -1,5 +1,5 @@
 import type { IComponentOptions } from "angular"
-import template from "@demo/features/demo-progressbar/demo-progressbar.component.html?raw"
+import template from "@demo/features/demo-progressbar/demo-progressbar.component.html"
 
 export class DemoProgressbarComponent {
     static get $name() {

@@ -1,6 +1,6 @@
 import type { IController, IDirective, ITranscludeFunction } from "angular";
-import type { NgbCarousel, NgbSingleSlideEvent } from "@/carousel/ngb-carousel.component"
-import type { INgbEvent } from "@/utils";
+import type { NgbCarousel, NgbSingleSlideEvent } from "@ngb/carousel/ngb-carousel.component"
+import type { INgbEvent } from "@ngb/utils";
 
 let slideCounter = 0
 

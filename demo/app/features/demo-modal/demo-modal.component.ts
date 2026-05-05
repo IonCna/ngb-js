@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular"
-import template from "@demo/features/demo-modal/demo-modal.component.html?raw"
+import template from "@demo/features/demo-modal/demo-modal.component.html"
 import { NgbModal } from "@ngb"
 
 const SIZES = ["", "sm", "lg", "xl"]

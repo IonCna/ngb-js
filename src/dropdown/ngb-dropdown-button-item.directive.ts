@@ -1,5 +1,5 @@
 import type { IController, IDirective, IScope } from "angular";
-import type { NgbDropdownItem } from "@/dropdown/ngb-dropdown-item.directive";
+import type { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
 
 export class NgbDropdownButtonItem implements IController {
     public item!: NgbDropdownItem

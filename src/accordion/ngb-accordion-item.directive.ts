@@ -1,5 +1,5 @@
 import type { IAugmentedJQuery, IController, IDirective } from "angular"
-import { NgbAccordion } from "@/accordion/ngb-accordion.directive"
+import { NgbAccordion } from "@ngb/accordion/ngb-accordion.directive"
 import type { NgbAccordionCollapse } from "./ngb-accordion-collapse.directive"
 import angular from "angular"
 

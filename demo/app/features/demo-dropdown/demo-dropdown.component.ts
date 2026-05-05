@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@demo/features/demo-dropdown/demo-dropdown.component.html?raw"
+import template from "@demo/features/demo-dropdown/demo-dropdown.component.html"
 
 type AutoClose = boolean | "inside" | "outside"
 type Display = "dynamic" | "static"

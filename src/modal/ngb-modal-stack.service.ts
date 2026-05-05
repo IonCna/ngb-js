@@ -1,12 +1,12 @@
-import type { NgbModalOptions, NgbModalUpdatableOptions } from "@/modal/ngb-modal-config.service";
-import { camelToKebabCase, toNativeElement } from "@/utils";
-import type { ComponentRef } from "@/utils/popup.service"
+import type { NgbModalOptions, NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
+import { camelToKebabCase, toNativeElement } from "@ngb/utils";
+import type { ComponentRef } from "@ngb/utils/popup.service"
 import angular, { type IAugmentedJQuery, type ICompileService, type IDocumentService, type IDeferred, type IQService, type IRootScopeService } from "angular";
-import { NgbScrollbar } from "@/ngb-scrollbar.service"
-import { NgbActiveModal, NgbModalRef } from "@/modal/ngb-modal-ref"
-import type { NgbModalBackdrop } from "@/modal/ngb-modal-backdrop.component";
-import type { NgbModalWindow } from "@/modal/ngb-modal-window.component";
-import { ngbFocusTrap } from "@/utils/focus-trap";
+import { NgbScrollbar } from "@ngb/ngb-scrollbar.service"
+import { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref"
+import type { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
+import type { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
+import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 
 const NGB_ACTIVE_WINDOW_HAS_CHANGE = "ngb:active:window:has:change"
 

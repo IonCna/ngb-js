@@ -1,5 +1,5 @@
-import type { NgbTransitionStartFn } from "@/utils";
-import { reflow } from "@/utils";
+import type { NgbTransitionStartFn } from "@ngb/utils";
+import { reflow } from "@ngb/utils";
 import angular from "angular";
 
 export const ngbToastFadeInTransition: NgbTransitionStartFn = (element, animation) => {

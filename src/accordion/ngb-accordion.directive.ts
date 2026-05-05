@@ -1,7 +1,7 @@
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import { NgbAccordionConfig } from "@/accordion/ngb-accordion-config.service"
-import type { NgbAccordionItem } from "@/accordion/ngb-accordion-item.directive"
-import type { INgbEvent } from "@/utils";
+import { NgbAccordionConfig } from "@ngb/accordion/ngb-accordion-config.service"
+import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive"
+import type { INgbEvent } from "@ngb/utils";
 
 export interface INgbAccordion {
     toggle(itemId: string): void

@@ -1,7 +1,7 @@
 import type { IAugmentedJQuery, IController, IDirective, ILogService, IQService, ITimeoutService } from "angular";
-import { NgbCollapseConfig } from "@/collapse/ngb-collapse-config.service"
-import { ngbRunTransition, ngbCollapsingTransition, type INgbEvent } from "@/utils"
-import type { NgbAccordionCollapse } from "@/accordion/ngb-accordion-collapse.directive";
+import { NgbCollapseConfig } from "@ngb/collapse/ngb-collapse-config.service"
+import { ngbRunTransition, ngbCollapsingTransition, type INgbEvent } from "@ngb/utils"
+import type { NgbAccordionCollapse } from "@ngb/accordion/ngb-accordion-collapse.directive";
 
 export interface INgbCollapse {
     toggle(open: boolean): void

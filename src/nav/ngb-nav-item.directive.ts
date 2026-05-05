@@ -1,8 +1,8 @@
 import type { IController, IDirective, IScope, ITranscludeFunction } from "angular";
 import angular from "angular";
 
-import { NgbNav } from "./ngb-nav.directive"
-//import { navMap } from "./ngb-nav.module"
+import { NgbNav } from "@ngb/nav/ngb-nav.directive"
+import { navMap } from "@ngb/nav/ngb-nav.module"
 
 import { NgbNavContent } from "./ngb-nav-content.directive"
 import { NgbNavLink } from "./ngb-nav-link.directive"

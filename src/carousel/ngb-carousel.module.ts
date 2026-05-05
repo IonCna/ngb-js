@@ -1,7 +1,7 @@
 import angular from "angular";
-import { NgbCarousel } from "@/carousel/ngb-carousel.component"
-import { NgbCarouselConfig } from "@/carousel/ngb-carousel-config.service"
-import { NgbSlide } from "@/carousel/ngb-slide.directive"
+import { NgbCarousel } from "@ngb/carousel/ngb-carousel.component"
+import { NgbCarouselConfig } from "@ngb/carousel/ngb-carousel-config.service"
+import { NgbSlide } from "@ngb/carousel/ngb-slide.directive"
 
 export const NgbCarouselModule = angular.module("ngb.carousel", [])
 

@@ -1,4 +1,4 @@
-import { type NgbTransitionStartFn, reflow } from '@/utils';
+import { type NgbTransitionStartFn, reflow } from '@ngb/utils';
 import type { IAugmentedJQuery } from 'angular';
 
 export enum NgbSlideEventDirection {

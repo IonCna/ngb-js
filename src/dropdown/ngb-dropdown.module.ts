@@ -1,11 +1,11 @@
 import angular from "angular";
-import { NgbDropdown } from "@/dropdown/ngb-dropdown.directive";
-import { NgbDropdownToggle } from "@/dropdown/ngb-dropdown-toggle.directive";
-import { NgbDropdownMenu } from "@/dropdown/ngb-dropdown-menu.directive"
-import { NgbDropdownItem } from "@/dropdown/ngb-dropdown-item.directive";
-import { NgbDropdownConfig } from "@/dropdown/ngb-dropdown-config.service"
-import { NgbDropdownAnchor } from "@/dropdown/ngb-dropdown-anchor.directive"
-import { NgbDropdownButtonItem } from "@/dropdown/ngb-dropdown-button-item.directive"
+import { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
+import { NgbDropdownToggle } from "@ngb/dropdown/ngb-dropdown-toggle.directive";
+import { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive"
+import { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
+import { NgbDropdownConfig } from "@ngb/dropdown/ngb-dropdown-config.service"
+import { NgbDropdownAnchor } from "@ngb/dropdown/ngb-dropdown-anchor.directive"
+import { NgbDropdownButtonItem } from "@ngb/dropdown/ngb-dropdown-button-item.directive"
 
 
 export const NgbDropdownModule = angular.module("ngb.dropdown", [])

@@ -4,7 +4,7 @@
     "useDefineForClassFields": true,
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
+    "types": ["./types/index.d.ts"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -15,10 +15,8 @@
     "noEmit": true,
 
     "paths": {
-      "@/*": [ "./lib/*" ],
-      "@ngb": [ "./lib/index.ts" ],
-      "@demo/*": ["./src/app/*"],
-      "@bootstrap": ["./node_modules/bootstrap/dist/css/bootstrap.css"]
+      "@ngb": ["./src/"],
+      "@ngb/*": ["./src/*"]
     },
 
     /* Linting */
@@ -29,6 +27,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "lib"],
+  "include": ["src"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts", "test"]
 }

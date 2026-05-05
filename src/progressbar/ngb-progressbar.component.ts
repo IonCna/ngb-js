@@ -1,8 +1,8 @@
 import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
-import template from "@/progressbar/ngb-progressbar.component.html?raw"
-import { NgbProgressbarConfig } from "@/progressbar/ngb-progressbar-config.service"
-import type { NgbProgressbarStacked } from "@/progressbar/ngb-progressbar-stacked.component"
-import { getValueInRange } from '@/utils'
+import template from "@ngb/progressbar/ngb-progressbar.component.html"
+import { NgbProgressbarConfig } from "@ngb/progressbar/ngb-progressbar-config.service"
+import type { NgbProgressbarStacked } from "@ngb/progressbar/ngb-progressbar-stacked.component"
+import { getValueInRange } from '@ngb/utils'
 import angular from "angular";
 
 export class NgbProgressbar implements IComponentController {

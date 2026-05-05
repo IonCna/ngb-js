@@ -1,15 +1,15 @@
 import type { IAugmentedJQuery, IController, IDirective, IDocumentService, ILogService, IOnChangesObject, IQService, IScope, ITimeoutService, IDeferred } from "angular"
 import type { Placement } from "@popperjs/core"
 
-import { ngbPositioning, type NgbPositioning, type PlacementArray } from "@/utils/positioning"
-import { NgbRTL } from "@/utils/rtl.service"
+import { ngbPositioning, type NgbPositioning, type PlacementArray } from "@ngb/utils/positioning"
+import { NgbRTL } from "@ngb/utils/rtl.service"
 import type { Options } from "@popperjs/core"
-import { FOCUSABLE_ELEMENTS_SELECTOR, getActiveElement, toNativeElement, type INgbEvent } from "@/utils"
-import type { NgbDropdownMenu } from "./ngb-dropdown-menu.directive"
-import { ngbAutoClose, SOURCE } from "@/utils/autoclose"
-import { NgbDropdownConfig, type INgbDropdownAnchor } from "@/dropdown/ngb-dropdown-config.service"
+import { FOCUSABLE_ELEMENTS_SELECTOR, getActiveElement, toNativeElement, type INgbEvent } from "@ngb/utils"
+import type { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive"
+import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose"
+import { NgbDropdownConfig, type INgbDropdownAnchor } from "@ngb/dropdown/ngb-dropdown-config.service"
 import angular from "angular"
-import { addPopperOffset } from "@/utils/positioning.util"
+import { addPopperOffset } from "@ngb/utils/positioning.util"
 
 function isValidElement(element: unknown): element is IAugmentedJQuery {
     return angular.isElement(element)

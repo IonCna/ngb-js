@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@demo/features/demo-carousel/demo-carousel.component.html?raw"
+import template from "@demo/features/demo-carousel/demo-carousel.component.html"
 
 export class DemoCarouselComponent implements IComponentController {
     public activeId = "slide-1"

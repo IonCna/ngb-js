@@ -1,2 +1,2 @@
-export { NgbCarouselModule } from "@/carousel/ngb-carousel.module"
-export { NgbCarouselConfig } from "@/carousel/ngb-carousel-config.service"
+export { NgbCarouselModule } from "@ngb/carousel/ngb-carousel.module"
+export { NgbCarouselConfig } from "@ngb/carousel/ngb-carousel-config.service"

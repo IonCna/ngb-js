@@ -1,9 +1,9 @@
 import type { IAugmentedJQuery, IAttributes, IComponentController, IComponentOptions, IOnChangesObject, IPromise, IQService, ITimeoutService, ITranscludeFunction } from "angular";
-import { NgbToastConfig } from "@/toast/ngb-toast-config.service"
-import template from "@/toast/ngb-toast.component.html?raw"
-import { ngbRunTransition } from "@/utils/transition/ngb-transition";
-import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@/toast/ngb-toast-transition";
-import type { NgbToastHeader } from "@/toast/ngb-toast-header.directive"
+import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service"
+import template from "@ngb/toast/ngb-toast.component.html"
+import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
+import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
+import type { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive"
 
 export interface INgbToast {
     hide(): IPromise<void>

@@ -1,20 +1,20 @@
 import angular from "angular";
-import { NgbAlertModule } from "@/alert/ngb-alert.module"
-import { NgbProgressbarModule } from "@/progressbar/ngb-progressbar.module"
-import { NgbCollapseModule } from "@/collapse/ngb-collapse.module"
-import { NgbCarouselModule } from "@/carousel/ngb-carousel.module"
-import { NgbToastModule } from "@/toast/ngb-toast.module"
-import { NgbAccordionModule } from "@/accordion/ngb-accordion.module"
-import { NgbModalModule } from "@/modal/ngb-modal.module"
-import { NgbDropdownModule } from "@/dropdown/ngb-dropdown.module"
+import { NgbAlertModule } from "@ngb/alert/ngb-alert.module"
+import { NgbProgressbarModule } from "@ngb/progressbar/ngb-progressbar.module"
+import { NgbCollapseModule } from "@ngb/collapse/ngb-collapse.module"
+import { NgbCarouselModule } from "@ngb/carousel/ngb-carousel.module"
+import { NgbToastModule } from "@ngb/toast/ngb-toast.module"
+import { NgbAccordionModule } from "@ngb/accordion/ngb-accordion.module"
+import { NgbModalModule } from "@ngb/modal/ngb-modal.module"
+import { NgbDropdownModule } from "@ngb/dropdown/ngb-dropdown.module"
 
-import { NgbConfig } from "@/ngb-config.service"
-import { NgbContent } from "@/ngb-content.directive"
-import { NgbScrollbar } from "@/ngb-scrollbar.service"
+import { NgbConfig } from "@ngb/ngb-config.service"
+import { NgbContent } from "@ngb/ngb-content.directive"
+import { NgbScrollbar } from "@ngb/ngb-scrollbar.service"
 
-import { NgbRTL } from "@/utils/rtl.service"
-import { LiveService } from "@/utils/accessibility/live.service"
-import { ARIA_LIVE_DELAY } from "@/utils/accessibility/live.constant"
+import { NgbRTL } from "@ngb/utils/rtl.service"
+import { LiveService } from "@ngb/utils/accessibility/live.service"
+import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant"
 
 export const NgbModule = angular.module("ngb", [
     NgbAlertModule.name,

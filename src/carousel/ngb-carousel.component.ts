@@ -16,12 +16,12 @@ import {
     toNativeElement,
     type INgbEvent,
     type NgbTransitionOptions
-} from "@/utils"
+} from "@ngb/utils"
 
-import type { NgbSlide } from "@/carousel/ngb-slide.directive";
-import { NgbCarouselConfig } from "@/carousel/ngb-carousel-config.service"
-import { ngbCarouselTransitionIn, ngbCarouselTransitionOut, NgbSlideEventDirection, type NgbCarouselCtx } from "@/carousel/ngb-carousel-transition"
-import template from "@/carousel/ngb-carousel.component.html?raw";
+import type { NgbSlide } from "@ngb/carousel/ngb-slide.directive";
+import { NgbCarouselConfig } from "@ngb/carousel/ngb-carousel-config.service"
+import { ngbCarouselTransitionIn, ngbCarouselTransitionOut, NgbSlideEventDirection, type NgbCarouselCtx } from "@ngb/carousel/ngb-carousel-transition"
+import template from "@ngb/carousel/ngb-carousel.component.html";
 
 let carouselCounter = 0
 

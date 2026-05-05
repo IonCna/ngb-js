@@ -1,10 +1,10 @@
 import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, IQService, ITimeoutService, ITranscludeFunction } from "angular"
-import { NgbTooltipConfig } from "@/tooltip/ngb-tooltip-config.service";
-import type { PlacementArray } from "@/utils/positioning";
+import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
+import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
-import { listenToTriggers } from "@/utils/triggers";
+import { listenToTriggers } from "@ngb/utils/triggers";
 import angular from "angular";
-import { toNativeElement } from "@/utils";
+import { toNativeElement } from "@ngb/utils";
 
 let nextId = 0;
 

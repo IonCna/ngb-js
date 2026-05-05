@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular"
-import template from "@demo/features/demo-modal/demo-modal-content.component.html?raw"
+import template from "@demo/features/demo-modal/demo-modal-content.component.html"
 import type { NgbActiveModal } from "@ngb"
 
 export class DemoModalContentComponent implements IComponentController {

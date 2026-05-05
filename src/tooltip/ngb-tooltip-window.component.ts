@@ -1,5 +1,5 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@/tooltip/ngb-tooltip-window.component.html?raw"
+import template from "@ngb/tooltip/ngb-tooltip-window.component.html"
 
 export class NgbTooltipWindow implements IComponentController {
     public id?: string

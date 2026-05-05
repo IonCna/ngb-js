@@ -1,6 +1,6 @@
 import type { Options, Placement as PopperPlacement } from "@popperjs/core";
 import { createPopperLite, type Instance, type Modifier, flip, preventOverflow, arrow } from "@popperjs/core";
-import type { NgbRTL } from "@/utils/rtl.service";
+import type { NgbRTL } from "@ngb/utils/rtl.service";
 
 const placementSeparator = /\s+/;
 const spacesRegExp = /  +/gi;

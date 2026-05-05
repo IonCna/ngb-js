@@ -1,33 +1,27 @@
 {
   "name": "ngb-js",
-  "private": true,
   "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "preview": "vite preview"
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "@types/node": "^25.6.0"
   },
   "devDependencies": {
+    "@types/angular": "^1.8.9",
     "@types/angular-mocks": "^1.7.4",
-    "angular": "1.8.2",
     "angular-mocks": "^1.8.3",
-    "bootstrap": "^5.3.8",
+    "esbuild": "^0.28.0",
     "jsdom": "^28.1.0",
     "typescript": "~5.9.3",
-    "vite": "npm:rolldown-vite@7.2.5",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.4"
   },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.2.5"
+  "private": true,
+  "scripts": {
+    "build": "esbuild",
+    "serve": "bun demo/esbuild.config.ts"
   },
-  "dependencies": {
-    "@types/angular": "^1.8.9"
-  },
+  "type": "module",
   "peerDependencies": {
-    "@popperjs/core": "^2.11.8"
+    "angular": "1.8.2",
+    "bootstrap": "^5.3.8"
   }
 }
