@@ -1,6 +1,6 @@
-import angular from "angular";
 import type { NgbDateStruct } from "@ngb/datepicker/adapters/ngb-date-adapter.factory";
 import { isNumber, padNumber, toInteger } from "@ngb/utils";
+import angular from "angular";
 
 export function NGB_DATEPICKER_PARSER_FORMATTER_FACTORY() {
   return new NgbDateISOParserFormatter();

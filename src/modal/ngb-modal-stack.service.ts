@@ -46,7 +46,7 @@ export class NgbModalStack {
       }
 
       const activeWindow = this._windowRefs[this._windowRefs.length - 1];
-      ngbFocusTrap(activeWindow.$element, this._activeWindowCmptHasChanged!.promise);
+      ngbFocusTrap(activeWindow.$element, this._activeWindowCmptHasChanged?.promise);
       this._revertAriaHidden();
       this._setAriaHidden(activeWindow.$element);
     });
@@ -125,7 +125,7 @@ export class NgbModalStack {
   }
 
   get activeInstances() {
-    return this._activeInstances!.promise;
+    return this._activeInstances?.promise;
   }
 
   dismissAll(reason?: any) {

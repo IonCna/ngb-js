@@ -1,5 +1,5 @@
 <div class="carousel-indicators" ng-class="{ 'visually-hidden': !$.showNavigationIndicators }" role="tablist">
-    <button ng-repeat="$slide in $.slides track by $index" type="button" data-bs-target
+    <button title="indicator {{ $index }}" ng-repeat="$slide in $.slides track by $index" type="button" data-bs-target
         ng-class="{ 'active': $slide.id === $.activeId }" role="tab" ng-attr-aria-labelledby="slide-{{ $slide.id }}"
         ng-attr-aria-controls="slide-{{ $slide.id }}" ng-attr-aria-selected="{{ $slide.id === $.activeId }}"
         ng-click="$.focus(); $.select($slide.id, $.NgbSlideEventSource.INDICATOR)"></button>

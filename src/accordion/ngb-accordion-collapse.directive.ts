@@ -4,46 +4,46 @@ import type { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
 import type { IController, IDirective } from "angular";
 
 export class NgbAccordionCollapse implements IController {
-	protected item!: NgbAccordionItem;
+  protected item!: NgbAccordionItem;
 
-	_collapse!: NgbCollapse;
+  _collapse!: NgbCollapse;
 
-	$postLink(): void {
-		this.item.register(this);
-	}
+  $postLink(): void {
+    this.item.register(this);
+  }
 
-	register(collapse: NgbCollapse) {
-		this._collapse = collapse;
-	}
+  register(collapse: NgbCollapse) {
+    this._collapse = collapse;
+  }
 
-	hidden() {
-		this.item.onCollapseHidden();
-	}
+  hidden() {
+    this.item.onCollapseHidden();
+  }
 
-	shown() {
-		this.item.onCollapseShown();
-	}
+  shown() {
+    this.item.onCollapseShown();
+  }
 
-	static get $name() {
-		return "ngbAccordionCollapse";
-	}
+  static get $name() {
+    return "ngbAccordionCollapse";
+  }
 
-	static get $inject() {
-		return [];
-	}
+  static get $inject() {
+    return [];
+  }
 
-	static get $factory(): () => IDirective {
-		return () => ({
-			bindToController: true,
-			scope: true,
-			require: {
-				item: "^ngbAccordionItem",
-			},
-			restrict: "A",
-			transclude: true,
-			controllerAs: "$",
-			template,
-			controller: NgbAccordionCollapse,
-		});
-	}
+  static get $factory(): () => IDirective {
+    return () => ({
+      bindToController: true,
+      scope: true,
+      require: {
+        item: "^ngbAccordionItem",
+      },
+      restrict: "A",
+      transclude: true,
+      controllerAs: "$",
+      template,
+      controller: NgbAccordionCollapse,
+    });
+  }
 }

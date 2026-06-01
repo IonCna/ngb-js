@@ -5,5 +5,5 @@ import "angular-mocks";
 globalThis.angular = angular;
 
 if (typeof window !== "undefined") {
-	window.angular = angular;
+  window.angular = angular;
 }

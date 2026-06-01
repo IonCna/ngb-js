@@ -26,9 +26,9 @@
       "quoteStyle": "double"
     }
   },
-  "css": {
+  "html": {
     "parser": {
-      "tailwindDirectives": true
+      "interpolation": true
     }
   },
   "assist": {

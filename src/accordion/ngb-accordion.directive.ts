@@ -28,8 +28,8 @@ export class NgbAccordion implements IController, INgbAccordion {
   public hide?: ({ $event }: INgbEvent<string>) => void;
 
   constructor(
-    private $element: IAugmentedJQuery,
-    private ngbAccordionConfig: NgbAccordionConfig,
+    private readonly $element: IAugmentedJQuery,
+    private readonly ngbAccordionConfig: NgbAccordionConfig,
   ) {}
 
   $onInit(): void {
@@ -63,7 +63,9 @@ export class NgbAccordion implements IController, INgbAccordion {
   public expandAll() {
     if (!this._items) return;
     if (!this.closeOthers) {
-      this._items.forEach((item) => item.expand());
+      this._items.forEach((item) => {
+        item.expand();
+      });
       return;
     }
 
@@ -80,7 +82,9 @@ export class NgbAccordion implements IController, INgbAccordion {
   }
 
   public collapseAll() {
-    this._items.forEach((item) => item.collapse());
+    this._items.forEach((item) => {
+      item.collapse();
+    });
   }
 
   public isExpanded(itemId: string) {

@@ -22,11 +22,11 @@ export function parseTriggers(triggers: string = ""): [string, string?][] {
   const manual = parsed.filter((trigger) => trigger.includes("manual"));
 
   if (manual.length > 1) {
-    throw "Triggers parse error: only one manual trigger is allowed";
+    throw new Error("Triggers parse error: only one manual trigger is allowed");
   }
 
   if (manual.length === 1 && parsed.length > 1) {
-    throw `Triggers parse error: manual trigger can't be mixed with other triggers`;
+    throw new Error(`Triggers parse error: manual trigger can't be mixed with other triggers`);
   }
 
   return manual.length ? [] : parsed;
@@ -112,5 +112,9 @@ export function listenToTriggers(
   }
 
   cleanupFns.push(() => $timeout.cancel(timeout));
-  return () => cleanupFns.forEach(fn => fn());
+  return () => {
+    cleanupFns.forEach((fn) => {
+      fn();
+    });
+  };
 }

@@ -9,28 +9,14 @@ import { NgbAccordionToggle } from "@ngb/accordion/ngb-accordion-toggle.directiv
 import { NgbCollapseModule } from "@ngb/collapse";
 import angular from "angular";
 
-export const NgbAccordionModule = angular.module("ngb.accordion", [
-	NgbCollapseModule.name,
-]);
+export const NgbAccordionModule = angular.module("ngb.accordion", [NgbCollapseModule.name]);
 
 NgbAccordionModule.service(NgbAccordionConfig.$name, NgbAccordionConfig);
 
 NgbAccordionModule.directive(NgbAccordionBody.$name, NgbAccordionBody.$factory);
-NgbAccordionModule.directive(
-	NgbAccordionButton.$name,
-	NgbAccordionButton.$factory,
-);
-NgbAccordionModule.directive(
-	NgbAccordionCollapse.$name,
-	NgbAccordionCollapse.$factory,
-);
-NgbAccordionModule.directive(
-	NgbAccordionHeader.$name,
-	NgbAccordionHeader.$factory,
-);
+NgbAccordionModule.directive(NgbAccordionButton.$name, NgbAccordionButton.$factory);
+NgbAccordionModule.directive(NgbAccordionCollapse.$name, NgbAccordionCollapse.$factory);
+NgbAccordionModule.directive(NgbAccordionHeader.$name, NgbAccordionHeader.$factory);
 NgbAccordionModule.directive(NgbAccordionItem.$name, NgbAccordionItem.$factory);
-NgbAccordionModule.directive(
-	NgbAccordionToggle.$name,
-	NgbAccordionToggle.$factory,
-);
+NgbAccordionModule.directive(NgbAccordionToggle.$name, NgbAccordionToggle.$factory);
 NgbAccordionModule.directive(NgbAccordion.$name, NgbAccordion.$factory);

@@ -1,50 +1,40 @@
-import type {
-	ICompileService,
-	IRootScopeService,
-	ITimeoutService,
-} from "angular";
+import type { ICompileService, IRootScopeService, ITimeoutService } from "angular";
 import angular from "angular";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NgbModule } from "../ngb.module";
 
 type MockTimeoutService = ITimeoutService & {
-	flush: (delay?: number) => void;
-	verifyNoPendingTasks: () => void;
+  flush: (delay?: number) => void;
+  verifyNoPendingTasks: () => void;
 };
 
 describe("ngbTooltip", () => {
-	let $compile: ICompileService;
-	let $rootScope: IRootScopeService;
-	let $timeout: MockTimeoutService;
+  let $compile: ICompileService;
+  let $rootScope: IRootScopeService;
+  let $timeout: MockTimeoutService;
 
-	beforeEach(() => {
-		angular.mock.module(NgbModule.name);
-		angular.mock.inject(
-			(
-				_$compile_: ICompileService,
-				_$rootScope_: IRootScopeService,
-				_$timeout_: ITimeoutService,
-			) => {
-				$compile = _$compile_;
-				$rootScope = _$rootScope_;
-				$timeout = _$timeout_ as MockTimeoutService;
-			},
-		);
-	});
+  beforeEach(() => {
+    angular.mock.module(NgbModule.name);
+    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService, _$timeout_: ITimeoutService) => {
+      $compile = _$compile_;
+      $rootScope = _$rootScope_;
+      $timeout = _$timeout_ as MockTimeoutService;
+    });
+  });
 
-	afterEach(() => {
-		document.body.innerHTML = "";
-	});
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
 
-	it("opens and closes tooltip via controller api", () => {
-		const scope = $rootScope.$new() as IRootScopeService & {
-			shown: () => void;
-			hidden: () => void;
-		};
-		scope.shown = () => void 0;
-		scope.hidden = () => void 0;
+  it("opens and closes tooltip via controller api", () => {
+    const scope = $rootScope.$new() as IRootScopeService & {
+      shown: () => void;
+      hidden: () => void;
+    };
+    scope.shown = () => void 0;
+    scope.hidden = () => void 0;
 
-		const element = $compile(`
+    const element = $compile(`
             <button
                 type="button"
                 ngb-tooltip="'Tooltip text'"
@@ -56,34 +46,34 @@ describe("ngbTooltip", () => {
                 Toggle
             </button>
         `)(scope);
-		angular.element(document.body).append(element);
-		scope.$digest();
+    angular.element(document.body).append(element);
+    scope.$digest();
 
-		expect(document.body.querySelector(".tooltip")).toBeNull();
+    expect(document.body.querySelector(".tooltip")).toBeNull();
 
-		const ctrl = element.controller("ngbTooltip") as {
-			open: () => void;
-			close: () => void;
-		};
-		ctrl.open();
-		scope.$digest();
-		$timeout.flush();
-		scope.$digest();
+    const ctrl = element.controller("ngbTooltip") as {
+      open: () => void;
+      close: () => void;
+    };
+    ctrl.open();
+    scope.$digest();
+    $timeout.flush();
+    scope.$digest();
 
-		expect((ctrl as { isOpen: () => boolean }).isOpen()).toBe(true);
+    expect((ctrl as { isOpen: () => boolean }).isOpen()).toBe(true);
 
-		ctrl.close();
-		scope.$digest();
-		$timeout.flush();
-		scope.$digest();
+    ctrl.close();
+    scope.$digest();
+    $timeout.flush();
+    scope.$digest();
 
-		expect((ctrl as { isOpen: () => boolean }).isOpen()).toBe(false);
-		element.remove();
-	});
+    expect((ctrl as { isOpen: () => boolean }).isOpen()).toBe(false);
+    element.remove();
+  });
 
-	it("does not open when disabled", () => {
-		const scope = $rootScope.$new();
-		const element = $compile(`
+  it("does not open when disabled", () => {
+    const scope = $rootScope.$new();
+    const element = $compile(`
             <button
                 type="button"
                 ngb-tooltip="'Hidden tooltip'"
@@ -94,19 +84,19 @@ describe("ngbTooltip", () => {
                 Disabled
             </button>
         `)(scope);
-		angular.element(document.body).append(element);
-		scope.$digest();
+    angular.element(document.body).append(element);
+    scope.$digest();
 
-		element.triggerHandler("click");
-		scope.$digest();
+    element.triggerHandler("click");
+    scope.$digest();
 
-		expect(document.body.querySelector(".tooltip")).toBeNull();
-		element.remove();
-	});
+    expect(document.body.querySelector(".tooltip")).toBeNull();
+    element.remove();
+  });
 
-	it("supports literal attribute values without expression bindings", () => {
-		const scope = $rootScope.$new();
-		const element = $compile(`
+  it("supports literal attribute values without expression bindings", () => {
+    const scope = $rootScope.$new();
+    const element = $compile(`
             <button
                 type="button"
                 ngb-tooltip="Tooltip"
@@ -116,19 +106,19 @@ describe("ngbTooltip", () => {
                 Literal
             </button>
         `)(scope);
-		angular.element(document.body).append(element);
-		scope.$digest();
+    angular.element(document.body).append(element);
+    scope.$digest();
 
-		const ctrl = element.controller("ngbTooltip") as {
-			open: () => void;
-			isOpen: () => boolean;
-		};
-		ctrl.open();
-		scope.$digest();
-		$timeout.flush();
-		scope.$digest();
+    const ctrl = element.controller("ngbTooltip") as {
+      open: () => void;
+      isOpen: () => boolean;
+    };
+    ctrl.open();
+    scope.$digest();
+    $timeout.flush();
+    scope.$digest();
 
-		expect(ctrl.isOpen()).toBe(true);
-		element.remove();
-	});
+    expect(ctrl.isOpen()).toBe(true);
+    element.remove();
+  });
 });

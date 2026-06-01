@@ -7,11 +7,5 @@ import angular from "angular";
 export const NgbProgressbarModule = angular.module("ngb.progressbar", []);
 NgbProgressbarModule.service(NgbProgressbarConfig.$name, NgbProgressbarConfig);
 NgbProgressbarModule.component(NgbProgressbar.$name, NgbProgressbar.$factory);
-NgbProgressbarModule.component(
-	NgbProgressbarStacked.$name,
-	NgbProgressbarStacked.$factory,
-);
-NgbProgressbarModule.filter(
-	NgbProgressbarPercentFilter.$name,
-	NgbProgressbarPercentFilter.$transform,
-);
+NgbProgressbarModule.component(NgbProgressbarStacked.$name, NgbProgressbarStacked.$factory);
+NgbProgressbarModule.filter(NgbProgressbarPercentFilter.$name, NgbProgressbarPercentFilter.$transform);

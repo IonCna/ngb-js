@@ -1,55 +1,49 @@
-import type {
-	NgbCarousel,
-	NgbSingleSlideEvent,
-} from "@ngb/carousel/ngb-carousel.component";
+import type { NgbCarousel, NgbSingleSlideEvent } from "@ngb/carousel/ngb-carousel.component";
 import type { INgbEvent } from "@ngb/utils";
 import type { IController, IDirective, ITranscludeFunction } from "angular";
 
 let slideCounter = 0;
 
 export class NgbSlide implements IController {
-	public id!: string;
-	public slid?: ({ $event }: INgbEvent<NgbSingleSlideEvent>) => void;
-	protected carousel!: NgbCarousel;
+  public id!: string;
+  public slid?: ({ $event }: INgbEvent<NgbSingleSlideEvent>) => void;
+  protected carousel!: NgbCarousel;
 
-	constructor(public readonly $transclude: ITranscludeFunction) {}
+  constructor(public readonly $transclude: ITranscludeFunction) {}
 
-	$onInit(): void {
-		this.id = this.id ?? `ngb-slide-${slideCounter++}`;
-		if (!this.carousel)
-			throw new Error(
-				"ngb-slide only can be used inside of ngb-carousel component",
-			);
-	}
+  $onInit(): void {
+    this.id = this.id ?? `ngb-slide-${slideCounter++}`;
+    if (!this.carousel) throw new Error("ngb-slide only can be used inside of ngb-carousel component");
+  }
 
-	$postLink(): void {
-		this.carousel.register(this);
-	}
+  $postLink(): void {
+    this.carousel.register(this);
+  }
 
-	static get $factory(): () => IDirective {
-		return () => ({
-			require: {
-				carousel: "^ngbCarousel",
-			},
-			controller: NgbSlide,
-			scope: {
-				slid: "&?",
-				id: "@?",
-			},
-			bindToController: true,
-			controllerAs: "$",
-			restrict: "A",
-			transclude: "element",
-		});
-	}
+  static get $factory(): () => IDirective {
+    return () => ({
+      require: {
+        carousel: "^ngbCarousel",
+      },
+      controller: NgbSlide,
+      scope: {
+        slid: "&?",
+        id: "@?",
+      },
+      bindToController: true,
+      controllerAs: "$",
+      restrict: "A",
+      transclude: "element",
+    });
+  }
 
-	static get $inject() {
-		return ["$transclude"];
-	}
+  static get $inject() {
+    return ["$transclude"];
+  }
 
-	static get $name() {
-		return "ngbSlide";
-	}
+  static get $name() {
+    return "ngbSlide";
+  }
 
-	//#endregion
+  //#endregion
 }

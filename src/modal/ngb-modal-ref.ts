@@ -6,121 +6,120 @@ import type { IDeferred, IPromise, IQService } from "angular";
 import angular from "angular";
 
 export class NgbActiveModal {
-	update(_options: NgbModalUpdatableOptions): void {}
-	close(_result?: any): void {}
-	dismiss(_reason?: any): void {}
+  update(_options: NgbModalUpdatableOptions): void {}
+  close(_result?: any): void {}
+  dismiss(_reason?: any): void {}
 }
 
 export class NgbModalRef<T = any> {
-	private _resolve?: (result?: any) => void;
-	private _reject?: (reason?: any) => void;
+  private _resolve?: (result?: any) => void;
+  private _reject?: (reason?: any) => void;
 
-	public result?: IPromise<any>;
+  public result?: IPromise<any>;
 
-	private _hidden!: IDeferred<void>;
-	private _dismissed!: IDeferred<any>;
-	private _closed!: IDeferred<any>;
+  private _hidden!: IDeferred<void>;
+  private _dismissed!: IDeferred<any>;
+  private _closed!: IDeferred<any>;
 
-	constructor(
-		private $q: IQService,
-		private windowRef: ContentRef<NgbModalWindow>,
-		private contentRef: ContentRef<T>,
-		private backdropRef?: ContentRef<NgbModalBackdrop>,
-		private _beforeDismiss?: () => boolean | Promise<boolean>,
-	) {
-		const deferred = this.$q.defer();
+  constructor(
+    private $q: IQService,
+    private windowRef: ContentRef<NgbModalWindow>,
+    private contentRef: ContentRef<T>,
+    private backdropRef?: ContentRef<NgbModalBackdrop>,
+    private _beforeDismiss?: () => boolean | Promise<boolean>,
+  ) {
+    const deferred = this.$q.defer();
 
-		this.result = deferred.promise;
-		this._reject = deferred.reject;
-		this._resolve = deferred.resolve;
+    this.result = deferred.promise;
+    this._reject = deferred.reject;
+    this._resolve = deferred.resolve;
 
-		deferred.promise.then(angular.noop, angular.noop);
-		this._closed = this.$q.defer();
-		this._dismissed = this.$q.defer();
-		this._hidden = this.$q.defer();
+    deferred.promise.then(angular.noop, angular.noop);
+    this._closed = this.$q.defer();
+    this._dismissed = this.$q.defer();
+    this._hidden = this.$q.defer();
 
-		windowRef.componentInstance?.onDismiss((reason: any) => {
-			this.dismiss(reason);
-		});
-	}
+    windowRef.componentInstance?.onDismiss((reason: any) => {
+      this.dismiss(reason);
+    });
+  }
 
-	update(options: NgbModalUpdatableOptions): void {
-		this.windowRef.componentInstance.updateOptions(options);
-		if (this.backdropRef && this.backdropRef.componentInstance) {
-			this.backdropRef.componentInstance.updateOptions(options);
-		}
-	}
+  update(options: NgbModalUpdatableOptions): void {
+    this.windowRef.componentInstance.updateOptions(options);
+    if (this.backdropRef?.componentInstance) {
+      this.backdropRef.componentInstance.updateOptions(options);
+    }
+  }
 
-	dismiss(reason: any) {
-		if (!this.windowRef) return;
-		if (!this._beforeDismiss) {
-			this._dismiss(reason);
-			return;
-		}
+  dismiss(reason: any) {
+    if (!this.windowRef) return;
+    if (!this._beforeDismiss) {
+      this._dismiss(reason);
+      return;
+    }
 
-		const dismiss = this._beforeDismiss();
+    const dismiss = this._beforeDismiss();
 
-		this.$q.when(dismiss).then((result) => {
-			if (result !== false) this._dismiss(reason);
-		}, angular.noop);
-	}
+    this.$q.when(dismiss).then((result) => {
+      if (result !== false) this._dismiss(reason);
+    }, angular.noop);
+  }
 
-	close(result?: any) {
-		if (!this.windowRef) return;
-		this._closed.resolve(result);
-		this._resolve?.(result);
-		this._removeModalElements();
-	}
+  close(result?: any) {
+    if (!this.windowRef) return;
+    this._closed.resolve(result);
+    this._resolve?.(result);
+    this._removeModalElements();
+  }
 
-	private _dismiss(reason?: any) {
-		this._dismissed.resolve(reason);
-		this._reject?.(reason);
-		this._removeModalElements();
-	}
+  private _dismiss(reason?: any) {
+    this._dismissed.resolve(reason);
+    this._reject?.(reason);
+    this._removeModalElements();
+  }
 
-	get closed() {
-		return this._closed.promise;
-	}
+  get closed() {
+    return this._closed.promise;
+  }
 
-	get dismissed() {
-		return this._dismissed.promise;
-	}
+  get dismissed() {
+    return this._dismissed.promise;
+  }
 
-	get hidden() {
-		return this._hidden.promise;
-	}
+  get hidden() {
+    return this._hidden.promise;
+  }
 
-	get shown() {
-		return this.windowRef.componentInstance.shown;
-	}
+  get shown() {
+    return this.windowRef.componentInstance.shown;
+  }
 
-	get componentInstance() {
-		return this.contentRef.componentInstance;
-	}
+  get componentInstance() {
+    return this.contentRef.componentInstance;
+  }
 
-	private _removeModalElements() {
-		const windowTransition = this.windowRef.componentInstance.hide();
-		const backdropTransition =
-			this.backdropRef?.componentInstance.hide() ?? this.$q.resolve();
+  private _removeModalElements() {
+    const windowTransition = this.windowRef.componentInstance.hide();
+    const backdropTransition = this.backdropRef?.componentInstance.hide() ?? this.$q.resolve();
 
-		windowTransition.then(() => {
-			this.windowRef.$element.remove();
-			this.windowRef.$scope?.$destroy();
+    windowTransition.then(() => {
+      this.windowRef.$element.remove();
+      this.windowRef.$scope?.$destroy();
 
-			this.contentRef.$scope?.$destroy();
-			this.windowRef = <any>null;
-			this.contentRef = <any>null;
-		});
+      this.contentRef.$scope?.$destroy();
+      this.windowRef = <any>null;
+      this.contentRef = <any>null;
+    });
 
-		backdropTransition?.then(() => {
-			if (!this.backdropRef) return;
-			this.backdropRef.$element.remove();
-			this.backdropRef.$scope?.$destroy();
-			this.backdropRef = <any>null;
-		});
+    backdropTransition?.then(() => {
+      if (!this.backdropRef) return;
+      this.backdropRef.$element.remove();
+      this.backdropRef.$scope?.$destroy();
+      this.backdropRef = <any>null;
+    });
 
-		this.$q.all([windowTransition, backdropTransition]).then(() => {
-			this._hidden.resolve();
-		});
-	}
+    this.$q.all([windowTransition, backdropTransition]).then(() => {
+      this._hidden.resolve();
+    });
+  }
 }

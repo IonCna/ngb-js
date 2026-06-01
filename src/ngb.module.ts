@@ -17,15 +17,15 @@ import { NgbRTL } from "@ngb/utils/rtl.service";
 import angular from "angular";
 
 export const NgbModule = angular.module("ngb", [
-	NgbAlertModule.name,
-	NgbProgressbarModule.name,
-	NgbCollapseModule.name,
-	NgbCarouselModule.name,
-	NgbToastModule.name,
-	NgbAccordionModule.name,
-	NgbModalModule.name,
-	NgbDropdownModule.name,
-	NgbToolTipModule.name,
+  NgbAlertModule.name,
+  NgbProgressbarModule.name,
+  NgbCollapseModule.name,
+  NgbCarouselModule.name,
+  NgbToastModule.name,
+  NgbAccordionModule.name,
+  NgbModalModule.name,
+  NgbDropdownModule.name,
+  NgbToolTipModule.name,
 ]);
 
 NgbModule.service(NgbConfig.$name, NgbConfig);

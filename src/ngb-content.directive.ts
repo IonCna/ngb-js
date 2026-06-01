@@ -1,45 +1,39 @@
-import type {
-	IAugmentedJQuery,
-	IController,
-	IDirective,
-	ITranscludeFunction,
-} from "angular";
+import type { IAugmentedJQuery, IController, IDirective, ITranscludeFunction } from "angular";
 
 export class NgbContent implements IController {
-	protected $render!: ITranscludeFunction;
-	private parent!: IAugmentedJQuery;
+  protected $render!: ITranscludeFunction;
+  private readonly parent!: IAugmentedJQuery;
 
-	constructor(private $element: IAugmentedJQuery) {}
+  constructor(private readonly $element: IAugmentedJQuery) {}
 
-	$onInit(): void {
-		if (!this.$render)
-			throw new Error("[ngb-content]: needs a $transcludeFn to work");
-	}
+  $onInit(): void {
+    if (!this.$render) throw new Error("[ngb-content]: needs a $transcludeFn to work");
+  }
 
-	$postLink(): void {
-		this.$render((clone) => {
-			if (!clone) return;
-			this.$element.after(clone);
-		}, this.parent);
-	}
+  $postLink(): void {
+    this.$render((clone) => {
+      if (!clone) return;
+      this.$element.after(clone);
+    }, this.parent);
+  }
 
-	static get $name() {
-		return "ngbContent";
-	}
+  static get $name() {
+    return "ngbContent";
+  }
 
-	static get $inject() {
-		return ["$element"];
-	}
+  static get $inject() {
+    return ["$element"];
+  }
 
-	static get $factory(): () => IDirective {
-		return () => ({
-			bindToController: true,
-			scope: {
-				$render: "<",
-			},
-			restrict: "E",
-			transclude: "element",
-			controller: NgbContent,
-		});
-	}
+  static get $factory(): () => IDirective {
+    return () => ({
+      bindToController: true,
+      scope: {
+        $render: "<",
+      },
+      restrict: "E",
+      transclude: "element",
+      controller: NgbContent,
+    });
+  }
 }
