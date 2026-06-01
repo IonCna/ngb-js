@@ -14,7 +14,7 @@ export class NgbTooltipConfig {
   public openDelay = 0;
   public closeDelay = 0;
 
-  constructor(private $config: NgbConfig) {}
+  constructor(private readonly $config: NgbConfig) {}
 
   get animation() {
     return this._animation ?? this.$config.animation;

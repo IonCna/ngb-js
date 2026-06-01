@@ -8,7 +8,7 @@ export class NgbTooltipWindow implements IComponentController {
   public onMouseEnter?: () => void;
   public onMouseLeave?: () => void;
 
-  constructor(private $element: JQLite) {}
+  constructor(private readonly $element: JQLite) {}
 
   $postLink(): void {
     this.$element.attr("role", "tooltip");

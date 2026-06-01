@@ -3,7 +3,7 @@ import { getTransitionDurationMs } from "@ngb/utils/transition";
 import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
 import angular from "angular";
 
-export type NgbTransitionStartFn<T = any> = (
+export type NgbTransitionStartFn<T = unknown> = (
   element: IAugmentedJQuery,
   animation: boolean,
   context: T,
@@ -18,12 +18,12 @@ export interface NgbTransitionOptions<T> {
 }
 
 export interface NgbTransitionCtx<T> {
-  transition: IPromise<any>;
+  transition: IPromise<void>;
   complete: () => void;
   context: T;
 }
 
-const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<any>>();
+const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<unknown>>();
 
 export const environment = {
   getTransitionTimerDelayMs: () => 5,
@@ -36,7 +36,7 @@ export function ngbRunTransition<T>(
   startFn: NgbTransitionStartFn<T>,
   options: NgbTransitionOptions<T>,
 ): IPromise<void> {
-  let context = options.context || <T>{};
+  let context = options.context ?? <T>{};
   const nativeElement = toNativeElement(element);
 
   const running = runningTransitions.get(nativeElement);
@@ -59,7 +59,7 @@ export function ngbRunTransition<T>(
 
   const transitionDurationMs = getTransitionDurationMs(nativeElement);
 
-  if (!options.animation || window.getComputedStyle(nativeElement).transitionProperty === "none") {
+  if (!options.animation || globalThis.getComputedStyle(nativeElement).transitionProperty === "none") {
     endFn();
     return $q.when();
   }

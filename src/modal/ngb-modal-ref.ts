@@ -12,21 +12,21 @@ export class NgbActiveModal {
 }
 
 export class NgbModalRef<T = any> {
-  private _resolve?: (result?: any) => void;
-  private _reject?: (reason?: any) => void;
+  private readonly _resolve?: (result?: any) => void;
+  private readonly _reject?: (reason?: any) => void;
 
   public result?: IPromise<any>;
 
-  private _hidden!: IDeferred<void>;
-  private _dismissed!: IDeferred<any>;
-  private _closed!: IDeferred<any>;
+  private readonly _hidden!: IDeferred<void>;
+  private readonly _dismissed!: IDeferred<any>;
+  private readonly _closed!: IDeferred<any>;
 
   constructor(
-    private $q: IQService,
+    private readonly $q: IQService,
     private windowRef: ContentRef<NgbModalWindow>,
     private contentRef: ContentRef<T>,
     private backdropRef?: ContentRef<NgbModalBackdrop>,
-    private _beforeDismiss?: () => boolean | Promise<boolean>,
+    private readonly _beforeDismiss?: () => boolean | Promise<boolean>,
   ) {
     const deferred = this.$q.defer();
 

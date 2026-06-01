@@ -10,16 +10,16 @@ export interface NgbModalOptions {
   beforeDismiss?: () => boolean | Promise<boolean>;
   centered?: boolean;
   container?: string | IAugmentedJQuery;
-  fullscreen?: "sm" | "md" | "lg" | "xl" | "xxl" | boolean | string;
+  fullscreen?: "sm" | "md" | "lg" | "xl" | "xxl" | boolean;
   injector?: angular.auto.IInjectorService;
   keyboard?: boolean;
   role?: "alertdialog" | "dialog";
   scrollable?: boolean;
-  size?: "sm" | "lg" | "xl" | string;
+  size?: "sm" | "lg" | "xl";
   windowClass?: string;
   modalDialogClass?: string;
   backdropClass?: string;
-  bindings?: Record<string, any>;
+  bindings?: Record<string, unknown>;
 }
 
 export type NgbModalUpdatableOptions = Pick<
@@ -44,18 +44,18 @@ export class NgbModalConfig implements NgbModalOptions {
   public beforeDismiss?: () => boolean | Promise<boolean>;
   public centered?: boolean;
   public container?: string | IAugmentedJQuery;
-  public fullscreen: "sm" | "md" | "lg" | "xl" | "xxl" | boolean | string = false;
+  public fullscreen: "sm" | "md" | "lg" | "xl" | "xxl" | boolean = false;
   public injector?: angular.auto.IInjectorService;
   public keyboard = true;
   public role: "alertdialog" | "dialog" = "dialog";
   public scrollable?: boolean;
-  public size?: "sm" | "lg" | "xl" | string;
+  public size?: "sm" | "lg" | "xl";
   public windowClass?: string;
   public modalDialogClass?: string;
   public backdropClass?: string;
-  public bindings?: Record<string, any>;
+  public bindings?: Record<string, unknown>;
 
-  constructor(private $ngbConfig: NgbConfig) {}
+  constructor(private readonly $ngbConfig: NgbConfig) {}
 
   get animation(): boolean {
     return this._animation ?? this.$ngbConfig.animation;
