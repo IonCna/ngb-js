@@ -1,24 +1,22 @@
 import type { IController, IDirective } from "angular";
 
 export class NgbNavLinkButton implements IController {
+	constructor() {}
 
-    constructor() { }
+	$postLink(): void {}
 
-    $postLink(): void {
-    }
+	//#region $angular
 
-    //#region $angular
+	static get $name() {
+		return "ngbNavLinkButton";
+	}
 
-    static get $name() {
-        return "ngbNavLinkButton"
-    }
+	static get $factory(): () => IDirective {
+		return () => ({
+			controller: NgbNavLinkButton,
+			bindToController: true,
+		});
+	}
 
-    static get $factory(): () => IDirective {
-        return () => ({
-            controller: this,
-            bindToController: true
-        })
-    }
-
-    //#endregion
+	//#endregion
 }

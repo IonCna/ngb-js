@@ -1,33 +1,31 @@
-import { NgbConfig } from "@ngb/ngb-config.service"
+import { NgbConfig } from "@ngb/ngb-config.service";
 
 export class NgbCarouselConfig {
-    private _animation?: boolean
-    
-    public interval = 5000
-    public wrap = true
-    public keyboard = true
-    public pauseOnFocus = true
-    public pauseOnHover = true
-    public showNavigationArrows = true
-    public showNavigationIndicators = true
+	private _animation?: boolean;
 
-    constructor(
-        private ngbConfig: NgbConfig
-    ) {}
+	public interval = 5000;
+	public wrap = true;
+	public keyboard = true;
+	public pauseOnFocus = true;
+	public pauseOnHover = true;
+	public showNavigationArrows = true;
+	public showNavigationIndicators = true;
 
-    public get animation() {
-        return this._animation ?? this.ngbConfig.animation
-    }
+	constructor(private ngbConfig: NgbConfig) {}
 
-    public set animation(value: boolean) {
-        this._animation = value
-    }
+	public get animation() {
+		return this._animation ?? this.ngbConfig.animation;
+	}
 
-    static get $inject() {
-        return [NgbConfig.$name]
-    }
+	public set animation(value: boolean) {
+		this._animation = value;
+	}
 
-    static get $name() {
-        return "ngb.carousel.config.service"
-    }
+	static get $inject() {
+		return [NgbConfig.$name];
+	}
+
+	static get $name() {
+		return "ngb.carousel.config.service";
+	}
 }

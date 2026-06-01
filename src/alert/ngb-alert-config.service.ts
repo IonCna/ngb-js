@@ -1,26 +1,26 @@
-import { NgbConfig } from "@ngb/ngb-config.service"
+import { NgbConfig } from "@ngb/ngb-config.service";
 
 export class NgbAlertConfig {
-    private _animation?: boolean;
+	private _animation?: boolean;
 
-    constructor(private ngbConfig: NgbConfig) { }
+	constructor(private ngbConfig: NgbConfig) {}
 
-    public dismissible = true;
-    public type = "warning"
+	public dismissible = true;
+	public type = "warning";
 
-    get animation() {
-        return this._animation ?? this.ngbConfig.animation
-    }
+	get animation() {
+		return this._animation ?? this.ngbConfig.animation;
+	}
 
-    set animation(animation: boolean) {
-        this._animation = animation
-    }
+	set animation(animation: boolean) {
+		this._animation = animation;
+	}
 
-    static get $name() {
-        return "ngb.alert.config.service"
-    }
+	static get $name() {
+		return "ngb.alert.config.service";
+	}
 
-    static get $inject() {
-        return [NgbConfig.$name]
-    }
+	static get $inject() {
+		return [NgbConfig.$name];
+	}
 }

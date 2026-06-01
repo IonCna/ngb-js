@@ -1,20 +1,20 @@
 import type { IComponentController, IComponentOptions } from "angular";
-import template from "@demo/app.component.html"
+import template from "@demo/app.component.html";
 
 export class AppComponent implements IComponentController {
-    static get $name() {
-        return "ngbDemoApp"
-    }
+	static get $name() {
+		return "ngbDemoApp";
+	}
 
-    static get $inject() {
-        return []
-    }
+	static get $inject() {
+		return [];
+	}
 
-    static get $factory(): IComponentOptions {
-        return {
-            controller: AppComponent,
-            controllerAs: "$",
-            template
-        }
-    }
+	static get $factory(): IComponentOptions {
+		return {
+			controller: AppComponent,
+			controllerAs: "$",
+			template,
+		};
+	}
 }

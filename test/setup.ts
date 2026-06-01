@@ -1,9 +1,9 @@
-import "./test-framework-shim"
-import angular from "angular"
-import "angular-mocks"
+import "./test-framework-shim";
+import angular from "angular";
+import "angular-mocks";
 
-globalThis.angular = angular
+globalThis.angular = angular;
 
 if (typeof window !== "undefined") {
-    window.angular = angular
+	window.angular = angular;
 }

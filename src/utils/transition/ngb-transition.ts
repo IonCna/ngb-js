@@ -1,105 +1,117 @@
-import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
+import { toNativeElement } from "@ngb/utils";
+import { getTransitionDurationMs } from "@ngb/utils/transition";
+import type {
+	IAugmentedJQuery,
+	IPromise,
+	IQService,
+	ITimeoutService,
+} from "angular";
 import angular from "angular";
-import { getTransitionDurationMs } from "@ngb/utils/transition"
-import { toNativeElement } from "@ngb/utils"
 
 export type NgbTransitionStartFn<T = any> = (
-    element: IAugmentedJQuery,
-    animation: boolean,
-    context: T,
+	element: IAugmentedJQuery,
+	animation: boolean,
+	context: T,
 ) => NgbTransitionEndFn | void;
 
 export type NgbTransitionEndFn = () => void;
 
 export interface NgbTransitionOptions<T> {
-    animation: boolean;
-    runningTransition: 'continue' | 'stop';
-    context?: T;
+	animation: boolean;
+	runningTransition: "continue" | "stop";
+	context?: T;
 }
 
 export interface NgbTransitionCtx<T> {
-    transition: IPromise<any>;
-    complete: () => void;
-    context: T;
+	transition: IPromise<any>;
+	complete: () => void;
+	context: T;
 }
 
 const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<any>>();
 
 export const environment = {
-    getTransitionTimerDelayMs: () => 5,
+	getTransitionTimerDelayMs: () => 5,
 };
 
 export function ngbRunTransition<T>(
-    $q: IQService,
-    $timeout: ITimeoutService,
-    element: IAugmentedJQuery,
-    startFn: NgbTransitionStartFn<T>,
-    options: NgbTransitionOptions<T>,
+	$q: IQService,
+	$timeout: ITimeoutService,
+	element: IAugmentedJQuery,
+	startFn: NgbTransitionStartFn<T>,
+	options: NgbTransitionOptions<T>,
 ): IPromise<void> {
-    let context = options.context || <T>{}
-    const nativeElement = toNativeElement(element)
+	let context = options.context || <T>{};
+	const nativeElement = toNativeElement(element);
 
-    const running = runningTransitions.get(nativeElement)
+	const running = runningTransitions.get(nativeElement);
 
-    const events = {
-        "continue": () => $q.when(),
-        "stop": () => {
-            running?.complete()
-            context = angular.extend(running?.context, context)
-            runningTransitions.delete(nativeElement)
-        }
-    }
+	const events = {
+		continue: () => $q.when(),
+		stop: () => {
+			running?.complete();
+			context = angular.extend(running?.context, context);
+			runningTransitions.delete(nativeElement);
+		},
+	};
 
-    if (running) {
-        const actionFn = events[options.runningTransition]
-        actionFn()
-    }
+	if (running) {
+		const actionFn = events[options.runningTransition];
+		actionFn();
+	}
 
-    const endFn = startFn(element, options.animation, context) || angular.noop
+	const endFn = startFn(element, options.animation, context) || angular.noop;
 
-    const transitionDurationMs = getTransitionDurationMs(nativeElement)
+	const transitionDurationMs = getTransitionDurationMs(nativeElement);
 
-    if (!options.animation || window.getComputedStyle(nativeElement).transitionProperty === 'none') {
-        endFn()
-        return $q.when()
-    }
+	if (
+		!options.animation ||
+		window.getComputedStyle(nativeElement).transitionProperty === "none"
+	) {
+		endFn();
+		return $q.when();
+	}
 
-    const deferred = $q.defer<void>()
-    let finished = false
-    let timePromise: IPromise<void> | undefined
+	const deferred = $q.defer<void>();
+	let finished = false;
+	let timePromise: IPromise<void> | undefined;
 
-    const done = () => {
-        if (finished) return
-        finished = true
+	const done = () => {
+		if (finished) return;
+		finished = true;
 
-        element.off("transitionend", transitionEndHandler)
+		element.off("transitionend", transitionEndHandler);
 
-        if (timePromise) {
-            $timeout.cancel(timePromise);
-        }
+		if (timePromise) {
+			$timeout.cancel(timePromise);
+		}
 
-        runningTransitions.delete(nativeElement);
-        endFn();
-        deferred.resolve();
-    }
+		runningTransitions.delete(nativeElement);
+		endFn();
+		deferred.resolve();
+	};
 
-    const transitionEndHandler = (event: JQueryEventObject) => {
-        if (event.target !== nativeElement) return;
-        done();
-    };
+	const transitionEndHandler = (event: JQueryEventObject) => {
+		if (event.target !== nativeElement) return;
+		done();
+	};
 
-    runningTransitions.set(nativeElement, {
-        transition: deferred.promise,
-        complete: done,
-        context,
-    });
+	runningTransitions.set(nativeElement, {
+		transition: deferred.promise,
+		complete: done,
+		context,
+	});
 
-    element.on("transitionend", transitionEndHandler);
-    timePromise = $timeout(done, transitionDurationMs + environment.getTransitionTimerDelayMs(), false)
+	element.on("transitionend", transitionEndHandler);
+	timePromise = $timeout(
+		done,
+		transitionDurationMs + environment.getTransitionTimerDelayMs(),
+		false,
+	);
 
-    return deferred.promise
+	return deferred.promise;
 }
 
 export function ngbCompleteTransition(element: IAugmentedJQuery) {
-    runningTransitions.get(toNativeElement(element))?.complete();
+	runningTransitions.get(toNativeElement(element))?.complete();
 }

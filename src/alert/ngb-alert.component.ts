@@ -1,84 +1,91 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService, IQService, ITimeoutService } from "angular";
-import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service"
-import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition"
-import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition"
-import template from "@ngb/alert/ngb-alert.component.html"
+import template from "@ngb/alert/ngb-alert.component.html";
+import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
+import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition";
+import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
+import type {
+	IAugmentedJQuery,
+	IComponentController,
+	IComponentOptions,
+	ILogService,
+	IQService,
+	ITimeoutService,
+} from "angular";
 
 export interface INgbAlert {
-    close(): void
+	close(): void;
 }
 
 export class NgbAlert implements IComponentController, INgbAlert {
-    protected animation?: boolean
-    protected dismissible?: boolean
-    protected type?: string
-    protected closed?: () => void
+	protected animation?: boolean;
+	protected dismissible?: boolean;
+	protected type?: string;
+	protected closed?: () => void;
 
-    constructor(
-        private $element: IAugmentedJQuery,
-        private ngbAlertConfig: NgbAlertConfig,
-        private $q: IQService,
-        private $timeout: ITimeoutService,
-        private $log: ILogService
-    ) { }
+	constructor(
+		private $element: IAugmentedJQuery,
+		private ngbAlertConfig: NgbAlertConfig,
+		private $q: IQService,
+		private $timeout: ITimeoutService,
+		private $log: ILogService,
+	) {}
 
-    $onInit(): void {
-        this.animation = this.animation ?? this.ngbAlertConfig.animation
-        this.dismissible = this.dismissible ?? this.ngbAlertConfig.dismissible
-        this.type = this.type ?? this.ngbAlertConfig.type
-    }
+	$onInit(): void {
+		this.animation = this.animation ?? this.ngbAlertConfig.animation;
+		this.dismissible = this.dismissible ?? this.ngbAlertConfig.dismissible;
+		this.type = this.type ?? this.ngbAlertConfig.type;
+	}
 
-    $postLink(): void {
-        this.$element.attr("role", "alert")
-        this.$element.addClass("alert d-block show")
+	$postLink(): void {
+		this.$element.attr("role", "alert");
+		this.$element.addClass("alert d-block show");
 
-        const type = `alert-${this.type}`
-        this.$element.addClass(type)
-    }
+		const type = `alert-${this.type}`;
+		this.$element.addClass(type);
+	}
 
-    $onChanges(): void {
-        this.$element.toggleClass("fade", this.animation)
-        this.$element.toggleClass("alert-dismissible", this.dismissible)
-    }
+	$onChanges(): void {
+		this.$element.toggleClass("fade", this.animation);
+		this.$element.toggleClass("alert-dismissible", this.dismissible);
+	}
 
-    close() {
-        const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbAlertFadingTransition, {
-            animation: this.animation ?? this.ngbAlertConfig.animation,
-            runningTransition: 'continue'
-        })
+	close() {
+		const transition = ngbRunTransition(
+			this.$q,
+			this.$timeout,
+			this.$element,
+			ngbAlertFadingTransition,
+			{
+				animation: this.animation ?? this.ngbAlertConfig.animation,
+				runningTransition: "continue",
+			},
+		);
 
-        return transition.then(() => {
-            this.closed?.()
-            this.$log.info("[ngb.alert]: was closed")
-        })
-    }
+		return transition.then(() => {
+			this.closed?.();
+			this.$log.info("[ngb.alert]: was closed");
+		});
+	}
 
-    static get $name() {
-        return "ngbAlert"
-    }
+	static get $name() {
+		return "ngbAlert";
+	}
 
-    static get $inject() {
-        return [
-            "$element",
-            NgbAlertConfig.$name,
-            "$q",
-            "$timeout",
-            "$log"
-        ]
-    }
+	static get $inject() {
+		return ["$element", NgbAlertConfig.$name, "$q", "$timeout", "$log"];
+	}
 
-    static get $factory(): IComponentOptions {
-        return {
-            bindings: {
-                animation: "<?",
-                dismissible: "<?",
-                type: "@?",
-                closed: "&?"
-            },
-            transclude: true,
-            controller: NgbAlert,
-            controllerAs: "$",
-            template
-        }
-    }
+	static get $factory(): IComponentOptions {
+		return {
+			bindings: {
+				animation: "<?",
+				dismissible: "<?",
+				type: "@?",
+				closed: "&?",
+			},
+			transclude: true,
+			controller: NgbAlert,
+			controllerAs: "$",
+			template,
+		};
+	}
 }

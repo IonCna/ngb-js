@@ -1,11 +1,11 @@
-import { NgbConfig } from "@/ngb-config.service"
+import { NgbConfig } from "@/ngb-config.service";
 
-export class NgbDatepickerConfig  {
-    static get $name() {
-        return "datepicker.config.service"
-    }
+export class NgbDatepickerConfig {
+	static get $name() {
+		return "datepicker.config.service";
+	}
 
-    static get $inject() {
-        return [NgbConfig.$name]
-    }
+	static get $inject() {
+		return [NgbConfig.$name];
+	}
 }

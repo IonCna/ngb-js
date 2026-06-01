@@ -1,104 +1,116 @@
-import type { IComponentController, IComponentOptions } from "angular"
-import template from "@demo/features/demo-modal/demo-modal.component.html"
-import { NgbModal } from "@ngb"
+import type { IComponentController, IComponentOptions } from "angular";
+import template from "@demo/features/demo-modal/demo-modal.component.html";
+import { NgbModal } from "@ngb";
 
-const SIZES = ["", "sm", "lg", "xl"]
-const BACKDROPS: Array<boolean | "static"> = [true, false, "static"]
+const SIZES = ["", "sm", "lg", "xl"];
+const BACKDROPS: Array<boolean | "static"> = [true, false, "static"];
 
 export class DemoModalComponent implements IComponentController {
-    public lastResult = "—"
-    public lastDismissed = "—"
-    public animation = true
-    public centered = false
-    public scrollable = false
-    public backdrop: boolean | "static" = true
-    public keyboard = true
-    public size = ""
-    public fullscreen = false
+	public lastResult = "—";
+	public lastDismissed = "—";
+	public animation = true;
+	public centered = false;
+	public scrollable = false;
+	public backdrop: boolean | "static" = true;
+	public keyboard = true;
+	public size = "";
+	public fullscreen = false;
 
-    constructor(private ngbModal: NgbModal) {}
+	constructor(private ngbModal: NgbModal) {}
 
-    private buildOptions() {
-        const opts: Record<string, any> = {
-            animation: this.animation,
-            centered: this.centered,
-            scrollable: this.scrollable,
-            backdrop: this.backdrop,
-            keyboard: this.keyboard,
-            fullscreen: this.fullscreen,
-        }
-        if (this.size) opts["size"] = this.size
-        return opts
-    }
+	private buildOptions() {
+		const opts: Record<string, any> = {
+			animation: this.animation,
+			centered: this.centered,
+			scrollable: this.scrollable,
+			backdrop: this.backdrop,
+			keyboard: this.keyboard,
+			fullscreen: this.fullscreen,
+		};
+		if (this.size) opts["size"] = this.size;
+		return opts;
+	}
 
-    public async open() {
-        const modal = this.scrollable ? "ngbDemoModalScrollableContent" : "ngbDemoModalContent"
-        const modalRef = await this.ngbModal.open(modal, this.buildOptions())
+	public async open() {
+		const modal = this.scrollable
+			? "ngbDemoModalScrollableContent"
+			: "ngbDemoModalContent";
+		const modalRef = await this.ngbModal.open(modal, this.buildOptions());
 
-        modalRef.closed.then(result => {
-            this.lastResult = result
-        })
+		modalRef.closed.then((result) => {
+			this.lastResult = result;
+		});
 
-        modalRef.dismissed.then((reason: any) => {
-            this.lastDismissed = String(reason)
-        })
-    }
+		modalRef.dismissed.then((reason: any) => {
+			this.lastDismissed = String(reason);
+		});
+	}
 
-    public openMultiple() {
-        for (let i = 1; i <= 3; i++) {
-            this.ngbModal.open("ngbDemoModalContent", this.buildOptions())
-        }
-    }
+	public openMultiple() {
+		for (let i = 1; i <= 3; i++) {
+			this.ngbModal.open("ngbDemoModalContent", this.buildOptions());
+		}
+	}
 
-    public openScrollable() {
-        this.ngbModal.open("ngbDemoModalScrollableContent", {
-            ...this.buildOptions(),
-            scrollable: true,
-            size: "lg",
-        })
-    }
+	public openScrollable() {
+		this.ngbModal.open("ngbDemoModalScrollableContent", {
+			...this.buildOptions(),
+			scrollable: true,
+			size: "lg",
+		});
+	}
 
-    public openUpdateOptions() {
-        this.ngbModal.open("ngbDemoModalUpdateOptionsContent", this.buildOptions())
-    }
+	public openUpdateOptions() {
+		this.ngbModal.open("ngbDemoModalUpdateOptionsContent", this.buildOptions());
+	}
 
-    public dismissAll() {
-        this.ngbModal.dismissAll("dismissAll clicked")
-    }
+	public dismissAll() {
+		this.ngbModal.dismissAll("dismissAll clicked");
+	}
 
-    public hasOpenModals(): boolean {
-        return this.ngbModal.hasOpenModals()
-    }
+	public hasOpenModals(): boolean {
+		return this.ngbModal.hasOpenModals();
+	}
 
-    public toggleAnimation() { this.animation = !this.animation }
-    public toggleCentered() { this.centered = !this.centered }
-    public toggleScrollable() { this.scrollable = !this.scrollable }
-    public toggleKeyboard() { this.keyboard = !this.keyboard }
-    public toggleFullscreen() { this.fullscreen = !this.fullscreen }
+	public toggleAnimation() {
+		this.animation = !this.animation;
+	}
+	public toggleCentered() {
+		this.centered = !this.centered;
+	}
+	public toggleScrollable() {
+		this.scrollable = !this.scrollable;
+	}
+	public toggleKeyboard() {
+		this.keyboard = !this.keyboard;
+	}
+	public toggleFullscreen() {
+		this.fullscreen = !this.fullscreen;
+	}
 
-    public cycleSize() {
-        const idx = SIZES.indexOf(this.size)
-        this.size = SIZES[(idx + 1) % SIZES.length]
-    }
+	public cycleSize() {
+		const idx = SIZES.indexOf(this.size);
+		this.size = SIZES[(idx + 1) % SIZES.length];
+	}
 
-    public cycleBackdrop() {
-        const idx = BACKDROPS.indexOf(this.backdrop)
-        this.backdrop = BACKDROPS[(idx + 1) % BACKDROPS.length]
-    }
+	public cycleBackdrop() {
+		const idx = BACKDROPS.indexOf(this.backdrop);
+		this.backdrop = BACKDROPS[(idx + 1) % BACKDROPS.length];
+	}
 
-    static get $name() {
-        return "ngbDemoModal"
-    }
+	static get $name() {
+		return "ngbDemoModal";
+	}
 
-    static get $inject() {
-        return ["ngb.modal.service"]
-    }
+	static get $inject() {
+		return ["ngb.modal.service"];
+	}
 
-    static get $factory(): IComponentOptions {
-        return {
-            controller: DemoModalComponent,
-            controllerAs: "$",
-            template
-        }
-    }
+	static get $factory(): IComponentOptions {
+		return {
+			controller: DemoModalComponent,
+			controllerAs: "$",
+			template,
+		};
+	}
 }

@@ -1,9 +1,15 @@
-import type { NgbDateStruct } from "@/datepicker/ngb-date-struct"
-import type { NgbDate } from "@/datepicker/ngb-date"
+import type { NgbDate } from "@/datepicker/ngb-date";
+import type { NgbDateStruct } from "@/datepicker/ngb-date-struct";
 // import type {} from "@/datepicker/date"
 
-export type NgbMarkDisabled = (date: NgbDateStruct, current?: { year: number; month: number }) => boolean;
-export type NgbDayTemplateData = (date: NgbDateStruct, current?: { year: number; month: number }) => any;
+export type NgbMarkDisabled = (
+	date: NgbDateStruct,
+	current?: { year: number; month: number },
+) => boolean;
+export type NgbDayTemplateData = (
+	date: NgbDateStruct,
+	current?: { year: number; month: number },
+) => any;
 
 export type DayViewModel = {
 	date: NgbDate;
@@ -41,8 +47,8 @@ export type DatepickerViewModel = {
 	maxDate: NgbDate | null;
 	minDate: NgbDate | null;
 	months: MonthViewModel[];
-	navigation: 'select' | 'arrows' | 'none';
-	outsideDays: 'visible' | 'collapsed' | 'hidden';
+	navigation: "select" | "arrows" | "none";
+	outsideDays: "visible" | "collapsed" | "hidden";
 	prevDisabled: boolean;
 	nextDisabled: boolean;
 	selectBoxes: {
@@ -50,7 +56,7 @@ export type DatepickerViewModel = {
 		months: number[];
 	};
 	selectedDate: NgbDate | null;
-	weekdayWidth: Exclude<Intl.DateTimeFormatOptions['weekday'], undefined>;
+	weekdayWidth: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined>;
 	weekdaysVisible: boolean;
 };
 

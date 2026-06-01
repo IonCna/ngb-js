@@ -1,17 +1,22 @@
-import { type Placement, type Options } from "@popperjs/core"
+import type { Options, Placement } from "@popperjs/core";
 
 export interface INgbDropdownAnchor {
-    nativeElement: HTMLElement
+	nativeElement: HTMLElement;
 }
 
 export class NgbDropdownConfig {
-    public autoClose: boolean | "inside" | "outside" = true
-    public container: null | 'body' = null
-    public placement: Placement[] = ['bottom-start', 'bottom-end', 'top-start', 'top-end']
-    
-    public popperOptions = (options?: Partial<Options>) => options
+	public autoClose: boolean | "inside" | "outside" = true;
+	public container: null | "body" = null;
+	public placement: Placement[] = [
+		"bottom-start",
+		"bottom-end",
+		"top-start",
+		"top-end",
+	];
 
-    static get $name() {
-        return "ngb.dropdown.config.service"
-    }
+	public popperOptions = (options?: Partial<Options>) => options;
+
+	static get $name() {
+		return "ngb.dropdown.config.service";
+	}
 }

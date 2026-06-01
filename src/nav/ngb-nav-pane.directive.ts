@@ -1,32 +1,30 @@
-import type { IController, IDirective } from "angular"
+import type { IController, IDirective } from "angular";
 
 export class NgbNavPane implements IController {
-    constructor(
-        private $element: JQLite
-    ) {}
+	constructor(private $element: JQLite) {}
 
-    $postLink(): void {
-        this.$element.addClass("tab-pane")
-        this.$element.attr("role", "tabpanel")
-    }
+	$postLink(): void {
+		this.$element.addClass("tab-pane");
+		this.$element.attr("role", "tabpanel");
+	}
 
-    //#region $angular
+	//#region $angular
 
-    static get $name() {
-        return "ngbNavPane"
-    }
+	static get $name() {
+		return "ngbNavPane";
+	}
 
-    static get $inject() {
-        return ['$element']
-    }
+	static get $inject() {
+		return ["$element"];
+	}
 
-    static get $factory(): () => IDirective {
-        return () => ({
-            controller: this,
-            restrict: "A",
-            bindToController: true,
-        })
-    }
+	static get $factory(): () => IDirective {
+		return () => ({
+			controller: NgbNavPane,
+			restrict: "A",
+			bindToController: true,
+		});
+	}
 
-    //#endregion
+	//#endregion
 }
