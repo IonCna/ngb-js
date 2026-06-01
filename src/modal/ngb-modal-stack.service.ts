@@ -1,8 +1,5 @@
 import type { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
-import type {
-	NgbModalOptions,
-	NgbModalUpdatableOptions,
-} from "@ngb/modal/ngb-modal-config.service";
+import type { NgbModalOptions, NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
 import type { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
@@ -10,329 +7,295 @@ import { camelToKebabCase, toNativeElement } from "@ngb/utils";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
 import angular, {
-	type IAugmentedJQuery,
-	type ICompileService,
-	type IDeferred,
-	type IDocumentService,
-	type IQService,
-	type IRootScopeService,
+  type IAugmentedJQuery,
+  type ICompileService,
+  type IDeferred,
+  type IDocumentService,
+  type IQService,
+  type IRootScopeService,
 } from "angular";
 
 type ModalContentScope = angular.IScope & {
-	activeModal: NgbActiveModal;
-	[key: string]: any;
+  activeModal: NgbActiveModal;
+  [key: string]: any;
 };
 
 export class NgbModalStack {
-	private _scrollBarRestoreFn: null | (() => void) = null;
-	private _modalRefs: NgbModalRef[] = [];
-	private _windowRefs: ContentRef<NgbModalWindow>[] = [];
-	private _ariaHiddenValues: Map<Element, string | null> = new Map();
+  private _scrollBarRestoreFn: null | (() => void) = null;
+  private _modalRefs: NgbModalRef[] = [];
+  private _windowRefs: ContentRef<NgbModalWindow>[] = [];
+  private _ariaHiddenValues: Map<Element, string | null> = new Map();
 
-	private _activeWindowCmptHasChanged?: IDeferred<void>;
-	private _activeInstances?: IDeferred<NgbModalRef[]>;
+  private _activeWindowCmptHasChanged?: IDeferred<void>;
+  private _activeInstances?: IDeferred<NgbModalRef[]>;
 
-	constructor(
-		private $document: IDocumentService,
-		private ngbScrollbar: NgbScrollbar,
-		private $compile: ICompileService,
-		private $rootScope: IRootScopeService,
-		private $q: IQService,
-	) {
-		this._activeInstances = this.$q.defer();
-		this._activeWindowCmptHasChanged = this.$q.defer();
+  constructor(
+    private $document: IDocumentService,
+    private ngbScrollbar: NgbScrollbar,
+    private $compile: ICompileService,
+    private $rootScope: IRootScopeService,
+    private $q: IQService,
+  ) {
+    this._activeInstances = this.$q.defer();
+    this._activeWindowCmptHasChanged = this.$q.defer();
 
-		this._activeWindowCmptHasChanged.promise.then(null, null, () => {
-			if (!this._windowRefs.length) {
-				this._revertAriaHidden();
-				return;
-			}
+    this._activeWindowCmptHasChanged.promise.then(null, null, () => {
+      if (!this._windowRefs.length) {
+        this._revertAriaHidden();
+        return;
+      }
 
-			const activeWindow = this._windowRefs[this._windowRefs.length - 1];
-			ngbFocusTrap(
-				activeWindow.$element,
-				this._activeWindowCmptHasChanged!.promise,
-			);
-			this._revertAriaHidden();
-			this._setAriaHidden(activeWindow.$element);
-		});
-	}
+      const activeWindow = this._windowRefs[this._windowRefs.length - 1];
+      ngbFocusTrap(activeWindow.$element, this._activeWindowCmptHasChanged!.promise);
+      this._revertAriaHidden();
+      this._setAriaHidden(activeWindow.$element);
+    });
+  }
 
-	public async open<T = any>(content: any, options: NgbModalOptions) {
-		const modal = this.$q.defer<NgbModalRef>();
-		const container = this._resolveContainer(options.container);
+  public async open<T = any>(content: any, options: NgbModalOptions) {
+    const modal = this.$q.defer<NgbModalRef>();
+    const container = this._resolveContainer(options.container);
 
-		if (!container) {
-			throw new Error(
-				`The specified modal container "${options.container || "body"}" was not found in the DOM.`,
-			);
-		}
+    if (!container) {
+      throw new Error(`The specified modal container "${options.container || "body"}" was not found in the DOM.`);
+    }
 
-		this._hideScrollBar();
+    this._hideScrollBar();
 
-		const activeModal = new NgbActiveModal();
-		const contentRef = this._getContentRef<T>(content, activeModal, options);
+    const activeModal = new NgbActiveModal();
+    const contentRef = this._getContentRef<T>(content, activeModal, options);
 
-		const backdropRef =
-			options.backdrop !== false ? this._attachBackdrop(container) : undefined;
+    const backdropRef = options.backdrop !== false ? this._attachBackdrop(container) : undefined;
 
-		await this.$q
-			.all([backdropRef, contentRef])
-			.then(([backdropRef, contentRef]) => {
-				const windowRef = this._attachWindowComponent(
-					container,
-					contentRef.$element,
-				);
+    await this.$q.all([backdropRef, contentRef]).then(([backdropRef, contentRef]) => {
+      const windowRef = this._attachWindowComponent(container, contentRef.$element);
 
-				return windowRef.then((windowRef) => {
-					const ngbModalRef = new NgbModalRef<T>(
-						this.$q,
-						windowRef,
-						contentRef,
-						backdropRef,
-						options.beforeDismiss,
-					);
+      return windowRef.then((windowRef) => {
+        const ngbModalRef = new NgbModalRef<T>(this.$q, windowRef, contentRef, backdropRef, options.beforeDismiss);
 
-					activeModal.close = (result: any) => {
-						ngbModalRef.close(result);
-					};
+        activeModal.close = (result: any) => {
+          ngbModalRef.close(result);
+        };
 
-					activeModal.dismiss = (reason: any) => {
-						ngbModalRef.dismiss(reason);
-					};
+        activeModal.dismiss = (reason: any) => {
+          ngbModalRef.dismiss(reason);
+        };
 
-					activeModal.update = (options: NgbModalUpdatableOptions) => {
-						ngbModalRef.update(options);
-					};
+        activeModal.update = (options: NgbModalUpdatableOptions) => {
+          ngbModalRef.update(options);
+        };
 
-					ngbModalRef.update(options);
-					this._registerModalRef(ngbModalRef);
-					this._registerWindow(windowRef);
+        ngbModalRef.update(options);
+        this._registerModalRef(ngbModalRef);
+        this._registerWindow(windowRef);
 
-					if (this._modalRefs.length === 1) {
-						this.$document.find("body").addClass("modal-open");
-					}
+        if (this._modalRefs.length === 1) {
+          this.$document.find("body").addClass("modal-open");
+        }
 
-					ngbModalRef.hidden.then(() =>
-						this.$q.resolve(true).then(() => {
-							if (this._modalRefs.length) return;
-							this.$document.find("body").removeClass("modal-open");
+        ngbModalRef.hidden.then(() =>
+          this.$q.resolve(true).then(() => {
+            if (this._modalRefs.length) return;
+            this.$document.find("body").removeClass("modal-open");
 
-							this._restoreScrollBar();
-							this._revertAriaHidden();
-						}),
-					);
+            this._restoreScrollBar();
+            this._revertAriaHidden();
+          }),
+        );
 
-					modal.resolve(ngbModalRef);
-				});
-			});
+        modal.resolve(ngbModalRef);
+      });
+    });
 
-		return modal.promise;
-	}
+    return modal.promise;
+  }
 
-	private _registerWindow(ngbWindow: ContentRef<NgbModalWindow>) {
-		this._windowRefs.push(ngbWindow);
-		this._activeWindowCmptHasChanged?.notify();
+  private _registerWindow(ngbWindow: ContentRef<NgbModalWindow>) {
+    this._windowRefs.push(ngbWindow);
+    this._activeWindowCmptHasChanged?.notify();
 
-		ngbWindow.$scope?.$on("$destroy", () => {
-			const index = this._windowRefs.indexOf(ngbWindow);
+    ngbWindow.$scope?.$on("$destroy", () => {
+      const index = this._windowRefs.indexOf(ngbWindow);
 
-			if (index > -1) {
-				this._windowRefs.splice(index, 1);
-				this._activeWindowCmptHasChanged?.notify();
-			}
-		});
-	}
+      if (index > -1) {
+        this._windowRefs.splice(index, 1);
+        this._activeWindowCmptHasChanged?.notify();
+      }
+    });
+  }
 
-	get activeInstances() {
-		return this._activeInstances!;
-	}
+  get activeInstances() {
+    return this._activeInstances!.promise;
+  }
 
-	dismissAll(reason?: any) {
-		this._modalRefs.forEach((ngbModalRef) => ngbModalRef.dismiss(reason));
-	}
+  dismissAll(reason?: any) {
+    this._modalRefs.forEach((ngbModalRef) => ngbModalRef.dismiss(reason));
+  }
 
-	hasOpenModals(): boolean {
-		return this._modalRefs.length > 0;
-	}
+  hasOpenModals(): boolean {
+    return this._modalRefs.length > 0;
+  }
 
-	private _registerModalRef(ngbModalRef: NgbModalRef) {
-		const unregisterModalRef = () => {
-			const index = this._modalRefs.indexOf(ngbModalRef);
+  private _registerModalRef(ngbModalRef: NgbModalRef) {
+    const unregisterModalRef = () => {
+      const index = this._modalRefs.indexOf(ngbModalRef);
 
-			if (index > -1) {
-				this._modalRefs.splice(index, 1);
-				this._activeInstances?.notify(this._modalRefs);
-			}
-		};
+      if (index > -1) {
+        this._modalRefs.splice(index, 1);
+        this._activeInstances?.notify(this._modalRefs);
+      }
+    };
 
-		this._modalRefs.push(ngbModalRef);
-		this._activeInstances?.notify(this._modalRefs);
-		ngbModalRef.result?.then(unregisterModalRef, unregisterModalRef);
-	}
+    this._modalRefs.push(ngbModalRef);
+    this._activeInstances?.notify(this._modalRefs);
+    ngbModalRef.result?.then(unregisterModalRef, unregisterModalRef);
+  }
 
-	private _resolveContainer(
-		container?: IAugmentedJQuery | string,
-	): IAugmentedJQuery | undefined {
-		if (angular.isString(container)) {
-			const native = toNativeElement(this.$document).querySelector(
-				String(container),
-			);
+  private _resolveContainer(container?: IAugmentedJQuery | string): IAugmentedJQuery | undefined {
+    if (angular.isString(container)) {
+      const native = toNativeElement(this.$document).querySelector(String(container));
 
-			if (!native) return undefined;
-			return angular.element(native);
-		}
+      if (!native) return undefined;
+      return angular.element(native);
+    }
 
-		return container ?? this.$document.find("body");
-	}
+    return container ?? this.$document.find("body");
+  }
 
-	private _attachBackdrop(container: IAugmentedJQuery) {
-		const deferred = this.$q.defer<ContentRef<NgbModalBackdrop>>();
-		const scope = this.$rootScope.$new(true);
-		const linkFn = this.$compile("<ngb-modal-backdrop></ngb-modal-backdrop>");
+  private _attachBackdrop(container: IAugmentedJQuery) {
+    const deferred = this.$q.defer<ContentRef<NgbModalBackdrop>>();
+    const scope = this.$rootScope.$new(true);
+    const linkFn = this.$compile("<ngb-modal-backdrop></ngb-modal-backdrop>");
 
-		const compiled = linkFn(scope);
-		container.append(compiled);
+    const compiled = linkFn(scope);
+    container.append(compiled);
 
-		const watcher = this.$rootScope.$watch(
-			() => compiled.controller("ngbModalBackdrop"),
-			(instance) => {
-				watcher();
+    const watcher = this.$rootScope.$watch(
+      () => compiled.controller("ngbModalBackdrop"),
+      (instance) => {
+        watcher();
 
-				const ref = new ContentRef(compiled, scope, instance);
-				deferred.resolve(ref);
-			},
-		);
+        const ref = new ContentRef(compiled, scope, instance);
+        deferred.resolve(ref);
+      },
+    );
 
-		return deferred.promise;
-	}
+    return deferred.promise;
+  }
 
-	private _attachWindowComponent(
-		container: IAugmentedJQuery,
-		content: IAugmentedJQuery,
-	) {
-		const deferred = this.$q.defer<ContentRef<NgbModalWindow>>();
-		const scope = this.$rootScope.$new(true);
-		const linkFn = this.$compile(`<ngb-modal-window></ngb-modal-window>`);
+  private _attachWindowComponent(container: IAugmentedJQuery, content: IAugmentedJQuery) {
+    const deferred = this.$q.defer<ContentRef<NgbModalWindow>>();
+    const scope = this.$rootScope.$new(true);
+    const linkFn = this.$compile(`<ngb-modal-window></ngb-modal-window>`);
 
-		const compiled = linkFn(scope);
-		const modalDialog =
-			toNativeElement(compiled).querySelector(".modal-dialog");
+    const compiled = linkFn(scope);
+    const modalDialog = toNativeElement(compiled).querySelector(".modal-dialog");
 
-		if (modalDialog) {
-			content.addClass("modal-content");
-			angular.element(modalDialog).append(content);
-		}
+    if (modalDialog) {
+      content.addClass("modal-content");
+      angular.element(modalDialog).append(content);
+    }
 
-		container.append(compiled);
+    container.append(compiled);
 
-		const watcher = this.$rootScope.$watch(
-			() => compiled.controller("ngbModalWindow"),
-			(instance) => {
-				watcher();
+    const watcher = this.$rootScope.$watch(
+      () => compiled.controller("ngbModalWindow"),
+      (instance) => {
+        watcher();
 
-				const ref = new ContentRef(compiled, scope, instance);
-				deferred.resolve(ref);
-			},
-		);
+        const ref = new ContentRef(compiled, scope, instance);
+        deferred.resolve(ref);
+      },
+    );
 
-		return deferred.promise;
-	}
+    return deferred.promise;
+  }
 
-	private _getContentRef<T>(
-		content: any,
-		activeModal: NgbActiveModal,
-		options: NgbModalOptions,
-	) {
-		const deferred = this.$q.defer<ContentRef<T>>();
-		const scope = this.$rootScope.$new(true) as ModalContentScope;
-		const componentName = camelToKebabCase(content);
-		const attrs = this._buildBindingsAttrs(options);
-		const linkFn = this.$compile(
-			`<${componentName} ${attrs} ngb-active-modal="activeModal"></${componentName}>`,
-		);
+  private _getContentRef<T>(content: any, activeModal: NgbActiveModal, options: NgbModalOptions) {
+    const deferred = this.$q.defer<ContentRef<T>>();
+    const scope = this.$rootScope.$new(true) as ModalContentScope;
+    const componentName = camelToKebabCase(content);
+    const attrs = this._buildBindingsAttrs(options);
+    const linkFn = this.$compile(`<${componentName} ${attrs} ngb-active-modal="activeModal"></${componentName}>`);
 
-		scope.activeModal = activeModal;
-		angular.extend(scope, options.bindings);
+    scope.activeModal = activeModal;
+    angular.extend(scope, options.bindings);
 
-		const compiled = linkFn(scope);
+    const compiled = linkFn(scope);
 
-		if (options.scrollable) {
-			compiled.addClass("d-flex flex-column overflow-hidden");
-		}
+    if (options.scrollable) {
+      compiled.addClass("d-flex flex-column overflow-hidden");
+    }
 
-		const watcher = this.$rootScope.$watch(
-			() => compiled.controller(content),
-			(instance) => {
-				watcher();
+    const watcher = this.$rootScope.$watch(
+      () => compiled.controller(content),
+      (instance) => {
+        watcher();
 
-				const ref = new ContentRef(compiled, scope, instance);
-				deferred.resolve(ref);
-			},
-		);
+        const ref = new ContentRef(compiled, scope, instance);
+        deferred.resolve(ref);
+      },
+    );
 
-		return deferred.promise;
-	}
+    return deferred.promise;
+  }
 
-	private _buildBindingsAttrs(options: NgbModalOptions) {
-		return Object.keys(options.bindings || {})
-			.map((key) => `${camelToKebabCase(key)}="${key}"`)
-			.join(" ");
-	}
+  private _buildBindingsAttrs(options: NgbModalOptions) {
+    return Object.keys(options.bindings || {})
+      .map((key) => `${camelToKebabCase(key)}="${key}"`)
+      .join(" ");
+  }
 
-	private _setAriaHidden(element: IAugmentedJQuery) {
-		const node = toNativeElement(element);
-		const parent = node.parentElement;
-		const body = toNativeElement<HTMLBodyElement>(this.$document.find("body"));
+  private _setAriaHidden(element: IAugmentedJQuery) {
+    const node = toNativeElement(element);
+    const parent = node.parentElement;
+    const body = toNativeElement<HTMLBodyElement>(this.$document.find("body"));
 
-		if (parent && node !== body) {
-			Array.from(parent.children).forEach((sibling) => {
-				if (sibling !== node && sibling.nodeName !== "SCRIPT") {
-					this._ariaHiddenValues.set(
-						sibling,
-						sibling.getAttribute("aria-hidden"),
-					);
-					sibling.setAttribute("aria-hidden", "true");
-				}
-			});
+    if (parent && node !== body) {
+      Array.from(parent.children).forEach((sibling) => {
+        if (sibling !== node && sibling.nodeName !== "SCRIPT") {
+          this._ariaHiddenValues.set(sibling, sibling.getAttribute("aria-hidden"));
+          sibling.setAttribute("aria-hidden", "true");
+        }
+      });
 
-			this._setAriaHidden(angular.element(parent));
-		}
-	}
+      this._setAriaHidden(angular.element(parent));
+    }
+  }
 
-	private _revertAriaHidden() {
-		this._ariaHiddenValues.forEach((value, element) => {
-			if (value) {
-				element.setAttribute("aria-hidden", value);
-				return;
-			}
+  private _revertAriaHidden() {
+    this._ariaHiddenValues.forEach((value, element) => {
+      if (value) {
+        element.setAttribute("aria-hidden", value);
+        return;
+      }
 
-			element.removeAttribute("aria-hidden");
-		});
+      element.removeAttribute("aria-hidden");
+    });
 
-		this._ariaHiddenValues.clear();
-	}
+    this._ariaHiddenValues.clear();
+  }
 
-	private _restoreScrollBar() {
-		const scrollBarRestoreFn = this._scrollBarRestoreFn;
+  private _restoreScrollBar() {
+    const scrollBarRestoreFn = this._scrollBarRestoreFn;
 
-		if (scrollBarRestoreFn) {
-			this._scrollBarRestoreFn = null;
-			scrollBarRestoreFn();
-		}
-	}
+    if (scrollBarRestoreFn) {
+      this._scrollBarRestoreFn = null;
+      scrollBarRestoreFn();
+    }
+  }
 
-	private _hideScrollBar() {
-		if (!this._scrollBarRestoreFn) {
-			this._scrollBarRestoreFn = this.ngbScrollbar.hide();
-		}
-	}
+  private _hideScrollBar() {
+    if (!this._scrollBarRestoreFn) {
+      this._scrollBarRestoreFn = this.ngbScrollbar.hide();
+    }
+  }
 
-	static get $name() {
-		return "ngb.modal.stack.service";
-	}
+  static get $name() {
+    return "ngb.modal.stack.service";
+  }
 
-	static get $inject() {
-		return ["$document", NgbScrollbar.$name, "$compile", "$rootScope", "$q"];
-	}
+  static get $inject() {
+    return ["$document", NgbScrollbar.$name, "$compile", "$rootScope", "$q"];
+  }
 }
