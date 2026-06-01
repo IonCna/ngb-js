@@ -16,7 +16,6 @@ export class ContentRef<T = any> {
     public setInput(key: string, value?: unknown) {
         const isFn = angular.isFunction(value)
         this.$scope?.$evalAsync(() => {
-            debugger
             if (!this.componentInstance) {
                 throw new Error("can not set on componentInstance because is undefined")
             }

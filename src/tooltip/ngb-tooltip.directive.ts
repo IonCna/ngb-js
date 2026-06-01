@@ -1,12 +1,15 @@
-import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, ILogService, IQService, ITimeoutService, ITranscludeFunction } from "angular"
+import type { IAugmentedJQuery, IController, IDeferred, IDirective, IDocumentService, IPromise, IQService, IScope, ITimeoutService, ITranscludeFunction } from "angular"
 import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
-import type { PlacementArray } from "@ngb/utils/positioning";
+import { ngbPositioning, type NgbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
 import { listenToTriggers } from "@ngb/utils/triggers";
 import angular from "angular";
 import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
 import { ContentRef, PopupFactory, type IPopupService } from "@ngb/utils/popup.service"
 import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component"
+import { NgbRTL } from "@ngb/utils/rtl.service"
+import { addPopperOffset } from "@ngb/utils/positioning.util";
+import { ngbAutoClose } from "@ngb/utils/autoclose";
 
 function targetIsString(target: unknown): target is string {
     return angular.isString(target)
@@ -43,6 +46,8 @@ export class NgbTooltip implements IController {
     private _windowRef: ContentRef<NgbTooltipWindow> | null = null;
     private _opening = true;
     private _transitioning = false;
+    private _positioning?: NgbPositioning
+    private _afterRenderRef?: IPromise<void>
 
     constructor(
         private $config: NgbTooltipConfig,
@@ -50,8 +55,9 @@ export class NgbTooltip implements IController {
         private $document: IDocumentService,
         private $timeout: ITimeoutService,
         private $q: IQService,
-        private $log: ILogService,
-        private $popupFactory: PopupFactory
+        private $popupFactory: PopupFactory,
+        private $rtl: NgbRTL,
+        private $scope: IScope
     ) { }
 
     set ngbTooltip(value: string | ITranscludeFunction | null | undefined) {
@@ -79,6 +85,8 @@ export class NgbTooltip implements IController {
         this._mouseEnterTooltip = this.$q.defer()
         this._mouseLeaveTooltip = this.$q.defer()
 
+        this._positioning = ngbPositioning(this.$rtl)
+
         this._unregisterListenersFn = listenToTriggers(
             this.$timeout,
             this.$q,
@@ -101,11 +109,9 @@ export class NgbTooltip implements IController {
 
     $onChanges(changes: angular.IOnChangesObject): void {
         if (changes.tooltipClass && this.isOpen()) {
-
+            this._windowRef?.setInput("tooltipClass", changes.tooltipClass.currentValue)
         }
     }
-
-    $postLink(): void { }
 
     public open(context?: any) {
         if (!this._opening && this._transitioning) {
@@ -114,7 +120,6 @@ export class NgbTooltip implements IController {
         }
 
         if (!this._windowRef && this._ngbTooltip && !this.disableTooltip) {
-            debugger
             const { windowRef, transition$ } = this._popupService!.open(
                 this._ngbTooltip,
                 context ?? this.tooltipContext,
@@ -132,39 +137,103 @@ export class NgbTooltip implements IController {
             this._windowRef.setInput('onMouseEnter', () => this._mouseEnterTooltip?.notify());
             this._windowRef.setInput('onMouseLeave', () => this._mouseLeaveTooltip?.notify());
 
-            console.log(this._windowRef)
+            this._getPositionTargetElement().attr('aria-describedby', this._ngbTooltipWindowId);
 
+            if (this.container === 'body') {
+                const body = this.$document.find("body");
+                body.append(this._windowRef.$element);
+            }
+
+            this._windowRef.$scope?.$evalAsync()
+
+            this._positioning?.createPopper({
+                hostElement: toNativeElement(this._getPositionTargetElement()),
+                targetElement: toNativeElement(this._windowRef.$element),
+                placement: this.placement!,
+                baseClass: 'bs-tooltip',
+                updatePopperOptions: (options) => {
+                    const offsetOptions = addPopperOffset([0, 6])
+                    return offsetOptions(options)
+                }
+            })
+
+            this.$q.resolve().then(() => {
+                this._positioning?.update()
+            })
+
+            this._afterRenderRef = this.$timeout(() => {
+                this._positioning?.update()
+            }, 0)
+
+            ngbAutoClose(
+                this.$timeout,
+                this.$document,
+                this.autoClose!,
+                this.$q.resolve().then(() => this.close()),
+                this.hidden!,
+                [this._windowRef.$element],
+                [this.$element]
+            )
+
+            transition$.then(() => {
+                if (this._transitioning) {
+                    this._transitioning = false
+                    this.shown?.()
+                }
+            })
         }
     }
 
+    public toggle() {
+        if (this._windowRef) {
+            this.close();
+            return
+        }
+
+        this.open()
+    }
+
     public close(animation = this.animation) {
-        this.$log.info("close")
+        if (this._opening && this._transitioning) {
+            this._transitioning = false;
+            ngbCompleteTransition(this._windowRef!.$element);
+        }
+
+        if (this._windowRef != null) {
+            this._getPositionTargetElement().removeAttr('aria-describedby');
+            this._opening = false;
+            this._transitioning = true;
+
+            this._popupService?.close(animation).then(() => {
+                this._windowRef = null;
+                this._positioning?.destroy();
+                this._afterRenderRef
+
+                if (this._transitioning) {
+                    this._transitioning = false;
+                    this.hidden?.()
+                }
+
+                this.$scope.$evalAsync()
+            })
+        }
     }
 
     public isOpen() {
-        return false
+        return this._windowRef != null
     }
 
     private _getPositionTargetElement(): IAugmentedJQuery {
         if (targetIsString(this.positionTarget)) {
             const el = toNativeElement(this.$document).querySelector(this.positionTarget)
-
-            if (!el) {
-                throw new Error("element target does not exist")
-            }
-
             return angular.element(el)
-        }
-
-        if (!this.positionTarget) {
-            throw new Error("element target does not exist")
         }
 
         return this.positionTarget
     }
 
     static get $inject() {
-        return [NgbTooltipConfig.$name, "$element", "$document", "$timeout", "$q", "$log", PopupFactory.$name]
+        return [NgbTooltipConfig.$name, "$element", "$document", "$timeout", "$q", PopupFactory.$name, NgbRTL.$name, "$scope"]
     }
 
     static get $name() {

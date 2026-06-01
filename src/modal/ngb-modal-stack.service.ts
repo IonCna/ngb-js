@@ -117,7 +117,7 @@ export class NgbModalStack {
     }
 
     get activeInstances() {
-        return this._activeInstances!
+        return this._activeInstances!.promise
     }
 
     dismissAll(reason?: any) {
