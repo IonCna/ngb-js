@@ -43,21 +43,6 @@ export class NgbTooltip implements IController {
 	private _mouseEnterTooltip?: IDeferred<void>;
 	private _mouseLeaveTooltip?: IDeferred<void>;
 
-<<<<<<< HEAD
-	private _windowRef: ContentRef<NgbTooltipWindow> | null = null;
-	private _opening = true;
-	private _transitioning = false;
-
-	constructor(
-		private $config: NgbTooltipConfig,
-		private $element: IAugmentedJQuery,
-		private $document: IDocumentService,
-		private $timeout: ITimeoutService,
-		private $q: IQService,
-		private $log: ILogService,
-		private $popupFactory: PopupFactory,
-	) {}
-=======
     private _windowRef: ContentRef<NgbTooltipWindow> | null = null;
     private _opening = true;
     private _transitioning = false;
@@ -74,7 +59,6 @@ export class NgbTooltip implements IController {
         private $rtl: NgbRTL,
         private $scope: IScope
     ) { }
->>>>>>> 76f55d60c8fa06527002871e449d0ec03877bf07
 
 	set ngbTooltip(value: string | ITranscludeFunction | null | undefined) {
 		this._ngbTooltip = <any>value;
@@ -101,22 +85,6 @@ export class NgbTooltip implements IController {
 		this._mouseEnterTooltip = this.$q.defer();
 		this._mouseLeaveTooltip = this.$q.defer();
 
-<<<<<<< HEAD
-		this._unregisterListenersFn = listenToTriggers(
-			this.$timeout,
-			this.$q,
-			this.$element,
-			this.triggers,
-			this.isOpen.bind(this),
-			this.open.bind(this),
-			this.close.bind(this),
-			+this.openDelay,
-			+this.closeDelay,
-			this._mouseEnterTooltip.promise,
-			this._mouseLeaveTooltip.promise,
-		);
-	}
-=======
         this._positioning = ngbPositioning(this.$rtl)
 
         this._unregisterListenersFn = listenToTriggers(
@@ -133,39 +101,12 @@ export class NgbTooltip implements IController {
             this._mouseLeaveTooltip.promise
         )
     }
->>>>>>> 76f55d60c8fa06527002871e449d0ec03877bf07
 
 	$onDestroy(): void {
 		this.close(false);
 		this._unregisterListenersFn?.();
 	}
 
-<<<<<<< HEAD
-	$onChanges(changes: angular.IOnChangesObject): void {
-		if (changes.tooltipClass && this.isOpen()) {
-		}
-	}
-
-	$postLink(): void {}
-
-	public open(context?: any) {
-		if (!this._opening && this._transitioning) {
-			this._transitioning = false;
-			ngbCompleteTransition(this._windowRef!.$element);
-		}
-
-		if (!this._windowRef && this._ngbTooltip && !this.disableTooltip) {
-			debugger;
-			const { windowRef, transition$ } = this._popupService!.open(
-				this._ngbTooltip,
-				context ?? this.tooltipContext,
-				this.animation,
-			);
-
-			this._opening = true;
-			this._transitioning = true;
-			this._windowRef = windowRef;
-=======
     $onChanges(changes: angular.IOnChangesObject): void {
         if (changes.tooltipClass && this.isOpen()) {
             this._windowRef?.setInput("tooltipClass", changes.tooltipClass.currentValue)
@@ -184,7 +125,6 @@ export class NgbTooltip implements IController {
                 context ?? this.tooltipContext,
                 this.animation,
             );
->>>>>>> 76f55d60c8fa06527002871e449d0ec03877bf07
 
 			this._windowRef?.setInput("animation", this.animation);
 			this._windowRef?.setInput("tooltipClass", this.tooltipClass);
@@ -201,76 +141,6 @@ export class NgbTooltip implements IController {
 		}
 	}
 
-<<<<<<< HEAD
-	public close(animation = this.animation) {
-		this.$log.info("close");
-	}
-
-	public isOpen() {
-		return false;
-	}
-
-	private _getPositionTargetElement(): IAugmentedJQuery {
-		if (targetIsString(this.positionTarget)) {
-			const el = toNativeElement(this.$document).querySelector(
-				this.positionTarget,
-			);
-
-			if (!el) {
-				throw new Error("element target does not exist");
-			}
-
-			return angular.element(el);
-		}
-
-		if (!this.positionTarget) {
-			throw new Error("element target does not exist");
-		}
-
-		return this.positionTarget;
-	}
-
-	static get $inject() {
-		return [
-			NgbTooltipConfig.$name,
-			"$element",
-			"$document",
-			"$timeout",
-			"$q",
-			"$log",
-			PopupFactory.$name,
-		];
-	}
-
-	static get $name() {
-		return "ngbTooltip";
-	}
-
-	static get $factory(): () => IDirective {
-		return () => ({
-			scope: true,
-			bindToController: {
-				animation: "<?",
-				autoClose: "<?",
-				closeDelay: "<?",
-				container: "@?",
-				disableTooltip: "<?",
-				ngbTooltip: "<",
-				openDelay: "<?",
-				placement: "<?",
-				popperOptions: "<?",
-				positionTarget: "<?",
-				tooltipClass: "@?",
-				tooltipContext: "<?",
-				triggers: "@?",
-				hidden: "&?",
-				shown: "&?",
-			},
-			controller: NgbTooltip,
-			restrict: "A",
-		});
-	}
-=======
             this._getPositionTargetElement().attr('aria-describedby', this._ngbTooltipWindowId);
 
             if (this.container === 'body') {
@@ -398,5 +268,4 @@ export class NgbTooltip implements IController {
             restrict: "A"
         })
     }
->>>>>>> 76f55d60c8fa06527002871e449d0ec03877bf07
 }
