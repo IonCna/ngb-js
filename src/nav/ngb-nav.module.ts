@@ -1,57 +1,13 @@
-import angular, { type IScope, type ITranscludeFunction } from "angular";
-import { NgbNav } from "./ngb-nav.directive";
-import { NgbNavConfig } from "./ngb-nav-config.service";
-import { NgbNavContent } from "./ngb-nav-content.directive";
-import { NgbNavItem } from "./ngb-nav-item.directive";
-import { NgbNavItemRole } from "./ngb-nav-item-role.directive";
-import { NgbNavLink } from "./ngb-nav-link.directive";
-import { NgbNavLinkButton } from "./ngb-nav-link-button.directive";
-import { NgbNavOutlet } from "./ngb-nav-outlet.directive";
-import { NgbNavPane } from "./ngb-nav-pane.directive";
-
-export interface NgbNavContentContext {
-  $implicit: boolean;
-}
-
-export interface LinkItem {
-  el: JQLite;
-  id: any;
-  ctrl: NgbNavItem;
-}
-
-export interface NgbNavChangeEvent<T> {
-  activeId: T;
-  nextId: T;
-  preventDefault: () => void;
-}
-
-export const navMap = new WeakMap<NgbNav, NavState>();
-
-interface NavState {
-  contents: Map<any, TabMap>;
-  scope: IScope;
-  config: {
-    activeId: any;
-    animation: boolean;
-    destroyOnHide: boolean;
-    keyboard: boolean;
-    orientation: "vertical" | "horizontal";
-    roles: string | boolean;
-  };
-  events: {
-    activeIdChange?: ({ $event }: { $event: any }) => void;
-    hidden?: () => void;
-    navChange?: () => void;
-    shown?: () => void;
-  };
-}
-
-export type TabMap = {
-  toggleFn: (active: boolean) => void;
-  transcludeFn: ITranscludeFunction;
-  tabId: any;
-  el: JQLite;
-};
+import { NgbNav } from "@ngb/nav/ngb-nav.directive";
+import { NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
+import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
+import { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
+import { NgbNavItemRole } from "@ngb/nav/ngb-nav-item-role.directive";
+import { NgbNavLink } from "@ngb/nav/ngb-nav-link.directive";
+import { NgbNavLinkButton } from "@ngb/nav/ngb-nav-link-button.directive";
+import { NgbNavOutlet } from "@ngb/nav/ngb-nav-outlet.directive";
+import { NgbNavPane } from "@ngb/nav/ngb-nav-pane.directive";
+import angular from "angular";
 
 export const NgbNavModule = angular.module("ngb.nav", []);
 

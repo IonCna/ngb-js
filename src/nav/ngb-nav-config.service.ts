@@ -1,11 +1,18 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
 
+export interface NgbNavChangeEvent<T = any> {
+  nextId: T;
+  preventDefault: () => void;
+  activeId: T;
+}
+
 export class NgbNavConfig {
-  public _animation?: boolean;
+  private _animation?: boolean;
+
   public destroyOnHide = true;
-  public keyboard = true;
   public orientation: "vertical" | "horizontal" = "horizontal";
-  public roles!: unknown;
+  public roles: "tablist" | false = "tablist";
+  public keyboard: boolean | "changeWithArrows" = true;
 
   constructor(private ngbConfig: NgbConfig) {}
 

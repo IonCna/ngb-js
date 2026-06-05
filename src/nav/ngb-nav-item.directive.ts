@@ -1,74 +1,69 @@
-import { NgbNav } from "@ngb/nav/ngb-nav.directive";
-import type { IController, IDirective, IScope, ITranscludeFunction } from "angular";
+import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
+import type { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
+import { toNativeElement } from "@ngb/utils";
+import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import angular from "angular";
-import { NgbNavTabChangeEvent } from "./ngb-nav.events";
-import { NgbNavContent } from "./ngb-nav-content.directive";
-import { NgbNavLink } from "./ngb-nav-link.directive";
 
-let counter = 0;
+const isValidNavId = (id?: string): id is string => angular.isDefined(id) && id !== "";
+let navCounter = 0;
 
 export class NgbNavItem implements IController {
-  private ngbNavItem!: any;
-  private ngbNav!: NgbNav;
-  private parentScope!: IScope;
+  public ngbNav!: NgbNav;
+  public destroyOnHide?: boolean;
+  public disabled?: boolean;
+  public domId!: string;
+  public shown?: () => void;
+  public hidden?: () => void;
 
-  private content!: ITranscludeFunction;
-  private toggleFn!: (active: boolean) => void;
+  private _id?: string;
+  private content?: NgbNavContent;
 
-  constructor(private $element: JQLite) {}
+  constructor(private $element: IAugmentedJQuery) {}
 
   $onInit(): void {
-    void this.ngbNav;
-    this.ngbNavItem = this.ngbNavItem ?? counter++;
+    this.disabled = this.disabled ?? false;
+
+    if (!angular.isDefined(this.domId)) {
+      this.domId = `ngb-nav-${navCounter++}`;
+    }
   }
 
   $postLink(): void {
     this.$element.addClass("nav-item");
-    this.$element.attr("role", "presentation");
   }
 
-  public register(parentScope: IScope) {
-    this.parentScope = parentScope;
-
-    const { $transclude, toggle } = this.scan();
-    this.content = $transclude;
-    this.toggleFn = toggle;
-
-    return {
-      $transclude: this.content,
-      toggle: this.toggleFn,
-      el: this.$element,
-      id: this.ngbNavItem,
-    };
+  get active() {
+    return this.ngbNav.activeId === this.id;
   }
 
-  public emit() {
-    this.parentScope.$emit(NgbNavTabChangeEvent, this.ngbNavItem);
+  get id() {
+    return isValidNavId(this._id) ? this._id : this.domId;
   }
 
-  private scan() {
-    const buttonHost = this.$element[0].querySelector("[ngb-nav-link]");
-    const contentHost = this.$element[0].querySelector("[ngb-nav-content]");
+  get panelDomId() {
+    return `${this.domId}-panel`;
+  }
 
-    const button = angular.element(buttonHost ?? "<button></button>");
-    const content = angular.element(contentHost ?? "");
+  public isPanelInDom() {
+    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : this.ngbNav.destroyOnHide || this.active;
+  }
 
-    const btnCtrl = button.controller(NgbNavLink.$name) as NgbNavLink;
-    const contentCtrl = content.controller(NgbNavContent.$name) as NgbNavContent;
-    if (!btnCtrl || !contentCtrl) {
-      throw new Error(`[${NgbNavItem.$name}] requires both [${NgbNavLink.$name}] and [${NgbNavContent.$name}]`);
+  public isNgContainer() {
+    return toNativeElement(this.$element).nodeType === Node.COMMENT_NODE;
+  }
+
+  public register(content: NgbNavContent) {
+    if (this.content) {
+      throw new Error("only one content in item are allowed");
     }
 
-    const { toggle } = btnCtrl.register();
-    const { content: $transclude } = contentCtrl.register();
-
-    return { toggle, $transclude };
+    this.content = content;
   }
 
   //#region $angular
 
   static get $inject() {
-    return ["$element", "$scope"];
+    return ["$element"];
   }
 
   static get $name() {
@@ -78,12 +73,18 @@ export class NgbNavItem implements IController {
   static get $factory(): () => IDirective {
     return () => ({
       controller: NgbNavItem,
+      restrict: "A",
       bindToController: true,
       require: {
-        ngbNav: `^${NgbNav.$name}`,
+        ngbNav: "^ngbNav",
       },
       scope: {
-        ngbNavItem: "<",
+        destroyOnHide: "<?",
+        disabled: "<?",
+        domId: "@?",
+        _id: "@?ngbNavItem",
+        shown: "&",
+        hidden: "&?",
       },
     });
   }

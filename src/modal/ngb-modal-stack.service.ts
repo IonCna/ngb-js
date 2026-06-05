@@ -26,7 +26,7 @@ export class NgbModalStack {
   private _windowRefs: ContentRef<NgbModalWindow>[] = [];
   private _ariaHiddenValues: Map<Element, string | null> = new Map();
 
-  private _activeWindowCmptHasChanged?: IDeferred<void>;
+  private _activeWindowCmptHasChanged!: IDeferred<void>;
   private _activeInstances?: IDeferred<NgbModalRef[]>;
 
   constructor(
@@ -46,7 +46,7 @@ export class NgbModalStack {
       }
 
       const activeWindow = this._windowRefs[this._windowRefs.length - 1];
-      ngbFocusTrap(activeWindow.$element, this._activeWindowCmptHasChanged?.promise);
+      ngbFocusTrap(activeWindow.$element, this._activeWindowCmptHasChanged.promise);
       this._revertAriaHidden();
       this._setAriaHidden(activeWindow.$element);
     });
@@ -129,7 +129,9 @@ export class NgbModalStack {
   }
 
   dismissAll(reason?: any) {
-    this._modalRefs.forEach((ngbModalRef) => ngbModalRef.dismiss(reason));
+    this._modalRefs.forEach((ngbModalRef) => {
+      ngbModalRef.dismiss(reason);
+    });
   }
 
   hasOpenModals(): boolean {

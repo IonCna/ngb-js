@@ -1,10 +1,12 @@
+import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import type { IController, IDirective, ITranscludeFunction } from "angular";
 
 export class NgbNavContent implements IController {
-  constructor(private $transclude: ITranscludeFunction) {}
+  private item!: NgbNavItem;
+  constructor(public $transclude: ITranscludeFunction) {}
 
-  public register() {
-    return { content: this.$transclude };
+  $postLink(): void {
+    this.item.register(this);
   }
 
   //#region $angular
@@ -23,6 +25,9 @@ export class NgbNavContent implements IController {
       bindToController: true,
       transclude: true,
       restrict: "A",
+      require: {
+        item: "^ngbNavItem",
+      },
     });
   }
 

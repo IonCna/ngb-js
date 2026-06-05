@@ -4,6 +4,7 @@ import { NgbCarouselModule } from "@ngb/carousel/ngb-carousel.module";
 import { NgbCollapseModule } from "@ngb/collapse/ngb-collapse.module";
 import { NgbDropdownModule } from "@ngb/dropdown/ngb-dropdown.module";
 import { NgbModalModule } from "@ngb/modal/ngb-modal.module";
+import { NgbNavModule } from "@ngb/nav/ngb-nav.module";
 import { NgbConfig } from "@ngb/ngb-config.service";
 import { NgbContent } from "@ngb/ngb-content.directive";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
@@ -26,6 +27,7 @@ export const NgbModule = angular.module("ngb", [
   NgbModalModule.name,
   NgbDropdownModule.name,
   NgbToolTipModule.name,
+  NgbNavModule.name,
 ]);
 
 NgbModule.service(NgbConfig.$name, NgbConfig);

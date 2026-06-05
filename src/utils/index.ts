@@ -24,7 +24,7 @@ export function toNativeElement<T = HTMLElement>(element: IAugmentedJQuery) {
   return native as T;
 }
 
-export function isInteger(value: any): value is number {
+export function isInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && Math.floor(value) === value && angular.isNumber(value);
 }
 
@@ -45,11 +45,11 @@ export function closest(element: IAugmentedJQuery, selector?: string) {
   return target.closest(selector);
 }
 
-export function toInteger(value: any): number {
+export function toInteger(value: unknown): number {
   return parseInt(`${value}`, 10);
 }
 
-export function isNumber(value: any): value is number {
+export function isNumber(value: unknown): value is number {
   return !Number.isNaN(toInteger(value));
 }
 
@@ -84,4 +84,15 @@ export function getActiveElement(root: Document | ShadowRoot = document): Elemen
   }
 
   return activeEl.shadowRoot ? getActiveElement(activeEl.shadowRoot) : activeEl;
+}
+
+export function assertAttribute(element: IAugmentedJQuery, attrName: string, ...params: (string | undefined | null)[]) {
+  for (const attr of params) {
+    if (!attr) continue;
+
+    element.attr(attrName, attr);
+    return;
+  }
+
+  element.removeAttr(attrName);
 }

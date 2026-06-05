@@ -45,7 +45,7 @@ export class NgbModalRef<T = any> {
   }
 
   update(options: NgbModalUpdatableOptions): void {
-    this.windowRef.componentInstance.updateOptions(options);
+    this.windowRef.componentInstance?.updateOptions(options);
     if (this.backdropRef?.componentInstance) {
       this.backdropRef.componentInstance.updateOptions(options);
     }
@@ -91,7 +91,7 @@ export class NgbModalRef<T = any> {
   }
 
   get shown() {
-    return this.windowRef.componentInstance.shown;
+    return this.windowRef.componentInstance?.shown;
   }
 
   get componentInstance() {
@@ -99,10 +99,10 @@ export class NgbModalRef<T = any> {
   }
 
   private _removeModalElements() {
-    const windowTransition = this.windowRef.componentInstance.hide();
-    const backdropTransition = this.backdropRef?.componentInstance.hide() ?? this.$q.resolve();
+    const windowTransition = this.windowRef.componentInstance?.hide();
+    const backdropTransition = this.backdropRef?.componentInstance?.hide() ?? this.$q.resolve();
 
-    windowTransition.then(() => {
+    windowTransition?.then(() => {
       this.windowRef.$element.remove();
       this.windowRef.$scope?.$destroy();
 

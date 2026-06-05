@@ -1,49 +1,56 @@
-import type { IComponentController, IDirective, IScope } from "angular";
-import { NgbNavItem } from "./ngb-nav-item.directive";
+import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
+import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
+import { toNativeElement } from "@ngb/utils";
+import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
 
-let counter = 0;
-
-export class NgbNavLink implements IComponentController {
-  private ngbNavItem!: NgbNavItem;
-  private id!: string;
+export class NgbNavLink implements IController {
+  public ngbNavItem!: NgbNavItem;
+  public nativeElement!: HTMLElement;
+  private ngbNav!: NgbNav;
+  private itemWatcher?: () => void;
 
   constructor(
-    private $element: JQLite,
+    private $element: IAugmentedJQuery,
     private $scope: IScope,
   ) {}
 
-  $postLink(): void {
-    this.$element.addClass("nav-link");
-    this.$element.attr("type", "button");
-    this.$element.attr("role", "tab");
+  $onInit(): void {
+    this.itemWatcher = this.$scope.$watch(
+      () => this.ngbNavItem,
+      (nav) => {
+        this.$element.toggleClass("nav-item", nav.isNgContainer());
+        this.$element.toggleClass("active", nav.active);
+        this.$element.toggleClass("disabled", nav.disabled);
 
-    this.id = `ngb-nav-${counter++}`;
-    this.$element.attr("id", this.id);
-
-    this.$element.on("click", () =>
-      this.$scope.$evalAsync(() => {
-        this.ngbNavItem.emit();
-      }),
+        this.$element.attr("id", nav.domId);
+      },
     );
   }
 
+  get tabindex() {
+    if (this.ngbNav.keyboard === false) {
+      return this.ngbNavItem.disabled ? -1 : undefined;
+    }
+
+    if (this.ngbNav._navigatingWithKeyboard) {
+      return -1;
+    }
+
+    return this.ngbNavItem.disabled || !this.ngbNavItem.active ? -1 : undefined;
+  }
+
+  $postLink(): void {
+    this.$element.addClass("nav-link");
+
+    if (this.tabindex) {
+      this.$element.attr("tabindex", this.tabindex);
+    }
+
+    this.nativeElement = toNativeElement(this.$element);
+  }
+
   $onDestroy(): void {
-    this.$element.off("click");
-  }
-
-  public register() {
-    return { toggle: this.toggleActive.bind(this) };
-  }
-
-  private toggleActive(active: boolean) {
-    const ariaSelected = active ? "true" : "false";
-    const ariaControls = `${this.id}-panel`;
-
-    this.$element.toggleClass("active", active);
-    this.$element.attr("aria-selected", ariaSelected);
-    this.$element.attr("aria-controls", ariaControls);
-
-    this.$element.attr("aria-disabled", "false");
+    this.itemWatcher?.();
   }
 
   //#region $angular
@@ -60,13 +67,11 @@ export class NgbNavLink implements IComponentController {
     return () => ({
       controller: NgbNavLink,
       require: {
-        ngbNavItem: `^${NgbNavItem.$name}`,
+        ngbNavItem: "^ngbNavItem",
+        ngbNav: "^ngbNav",
       },
+      restrict: "A",
       bindToController: true,
-      scope: {
-        ngbNavOutlet: "<?",
-        paneRole: "<?",
-      },
     });
   }
 

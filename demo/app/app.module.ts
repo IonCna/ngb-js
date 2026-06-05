@@ -5,6 +5,7 @@ import { DemoCarouselModule } from "@demo/features/demo-carousel/demo-carousel.m
 import { DemoCollapseModule } from "@demo/features/demo-collapse/demo-collapse.module";
 import { DemoDropdownModule } from "@demo/features/demo-dropdown/demo-dropdown.module";
 import { DemoModalModule } from "@demo/features/demo-modal/demo-modal.module";
+import { DemoNavModule } from "@demo/features/demo-nav/demo-nav.module";
 import { DemoProgressbarModule } from "@demo/features/demo-progressbar/demo-progressbar.module";
 import { DemoToastModule } from "@demo/features/demo-toast/demo-toast.module";
 import { DemoTooltipModule } from "@demo/features/demo-tooltip/demo-tooltip.module";
@@ -19,6 +20,7 @@ export const AppModule = angular.module("ngb.demo", [
   DemoCollapseModule.name,
   DemoDropdownModule.name,
   DemoModalModule.name,
+  DemoNavModule.name,
   DemoProgressbarModule.name,
   DemoToastModule.name,
   DemoTooltipModule.name,
