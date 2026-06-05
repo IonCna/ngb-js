@@ -1,7 +1,8 @@
 import { toNativeElement } from "@ngb/utils";
 import { getTransitionDurationMs } from "@ngb/utils/transition";
-import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
+import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
+import { type Observable, EMPTY, endWith, filter, fromEvent, of, race, Subject, takeUntil, timer } from "rxjs";
 
 export type NgbTransitionStartFn<T = unknown> = (
   element: IAugmentedJQuery,
@@ -18,86 +19,81 @@ export interface NgbTransitionOptions<T> {
 }
 
 export interface NgbTransitionCtx<T> {
-  transition: IPromise<void>;
+  transition$: Subject<void>;
   complete: () => void;
   context: T;
 }
 
-const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<unknown>>();
+const noopFn = angular.noop;
 
 export const environment = {
   getTransitionTimerDelayMs: () => 5,
 };
 
+const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<unknown>>();
+
 export function ngbRunTransition<T>(
-  $q: IQService,
-  $timeout: ITimeoutService,
   element: IAugmentedJQuery,
   startFn: NgbTransitionStartFn<T>,
   options: NgbTransitionOptions<T>,
-): IPromise<void> {
+): Observable<void> {
   let context = options.context ?? <T>{};
   const nativeElement = toNativeElement(element);
 
   const running = runningTransitions.get(nativeElement);
 
-  const events = {
-    continue: () => $q.when(),
+  const cases = {
+    continue: () => EMPTY,
     stop: () => {
-      running?.complete();
+      running?.transition$.complete();
       context = angular.extend(running?.context, context);
       runningTransitions.delete(nativeElement);
     },
   };
 
   if (running) {
-    const actionFn = events[options.runningTransition];
-    actionFn();
+    cases[options.runningTransition]();
   }
 
-  const endFn = startFn(element, options.animation, context) || angular.noop;
+  const endFn = startFn(element, options.animation, context) || noopFn;
 
-  const transitionDurationMs = getTransitionDurationMs(nativeElement);
-
-  if (!options.animation || globalThis.getComputedStyle(nativeElement).transitionProperty === "none") {
+  if (!options.animation || window.getComputedStyle(nativeElement).transitionProperty === "none") {
     endFn();
-    return $q.when();
+    return of();
   }
 
-  const deferred = $q.defer<void>();
-  let finished = false;
-  let timePromise: IPromise<void> | undefined;
-
-  const done = () => {
-    if (finished) return;
-    finished = true;
-
-    element.off("transitionend", transitionEndHandler);
-
-    if (timePromise) {
-      $timeout.cancel(timePromise);
-    }
-
-    runningTransitions.delete(nativeElement);
-    endFn();
-    deferred.resolve();
-  };
-
-  const transitionEndHandler = (event: JQueryEventObject) => {
-    if (event.target !== nativeElement) return;
-    done();
-  };
+  const transition$ = new Subject<void>();
+  const finishTransition$ = new Subject<void>();
+  const stop$ = transition$.pipe(endWith(true));
 
   runningTransitions.set(nativeElement, {
-    transition: deferred.promise,
-    complete: done,
+    transition$,
+    complete: () => {
+      finishTransition$.next();
+      finishTransition$.complete();
+    },
     context,
   });
 
-  element.on("transitionend", transitionEndHandler);
-  timePromise = $timeout(done, transitionDurationMs + environment.getTransitionTimerDelayMs(), false);
+  const transitionDurationMs = getTransitionDurationMs(nativeElement);
 
-  return deferred.promise;
+  const transitionEnd$ = fromEvent(nativeElement, "transitionend").pipe(
+    takeUntil(stop$),
+    filter(({ target }) => target === nativeElement),
+  );
+
+  const timer$ = timer(transitionDurationMs + environment.getTransitionTimerDelayMs()).pipe(takeUntil(stop$));
+
+  race(timer$, transitionEnd$, finishTransition$)
+    .pipe(takeUntil(stop$))
+    .subscribe(() => {
+      runningTransitions.delete(nativeElement);
+      endFn();
+      transition$.next();
+      transition$.complete();
+    });
+
+  return transition$.asObservable();
 }
 
 export function ngbCompleteTransition(element: IAugmentedJQuery) {

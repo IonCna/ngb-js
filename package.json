@@ -25,6 +25,7 @@
   "type": "module",
   "peerDependencies": {
     "angular": "1.8.3",
-    "bootstrap": "^5.3.8"
+    "bootstrap": "^5.3.8",
+    "rxjs": "^7.8.2"
   }
 }

@@ -2,14 +2,13 @@ import type {
   IAugmentedJQuery,
   ICompileService,
   IDocumentService,
-  IPromise,
-  IQService,
   IRootScopeService,
   IScope,
   ITimeoutService,
   ITranscludeFunction,
 } from "angular";
 import angular from "angular";
+import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
 import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition, toNativeElement } from ".";
 
 function targetIsTranscludeFunction(target: unknown): target is ITranscludeFunction {
@@ -42,10 +41,10 @@ export interface IPopupService<T = any> {
     animation?: boolean,
   ): {
     windowRef: ContentRef<T>;
-    transition$: IPromise<void>;
+    transition$: Observable<void>;
   };
 
-  close(animation?: boolean): IPromise<void>;
+  close(animation?: boolean): Observable<void>;
 }
 
 const popupTransition: NgbTransitionStartFn = (element) => {
@@ -60,7 +59,6 @@ class PopupService<T> implements IPopupService<T> {
     private $document: IDocumentService,
     private $compile: ICompileService,
     private $timeout: ITimeoutService,
-    private $q: IQService,
     private $rootScope: IRootScopeService,
     private _componentType: string,
   ) {}
@@ -80,24 +78,25 @@ class PopupService<T> implements IPopupService<T> {
 
     const { $element } = this._windowRef!;
 
-    const nextRender = this.$q.defer();
+    const nextRenderSubject = new Subject<void>();
 
     this.$timeout(() => {
-      nextRender.resolve();
+      nextRenderSubject.next();
+      nextRenderSubject.complete();
     }, 0);
 
-    const transition$ = nextRender.promise.then(() =>
-      ngbRunTransition(
-        this.$q,
-        this.$timeout,
-        $element,
-        (element) => {
-          element.addClass("show");
-        },
-        {
-          animation,
-          runningTransition: "continue",
-        },
+    const transition$ = nextRenderSubject.pipe(
+      mergeMap(() =>
+        ngbRunTransition(
+          $element,
+          (element) => {
+            element.addClass("show");
+          },
+          {
+            animation,
+            runningTransition: "continue",
+          },
+        ),
       ),
     );
 
@@ -105,21 +104,23 @@ class PopupService<T> implements IPopupService<T> {
     return { windowRef: ref, transition$ };
   }
 
-  async close(animation = false) {
+  close(animation = false): Observable<void> {
     if (!this._windowRef) {
-      return this.$q.resolve();
+      return of(undefined);
     }
 
-    await ngbRunTransition(this.$q, this.$timeout, this._windowRef?.$element, popupTransition, {
+    return ngbRunTransition(this._windowRef.$element, popupTransition, {
       animation,
       runningTransition: "stop",
-    });
+    }).pipe(
+      tap(() => {
+        this._contentRef?.$scope?.$destroy();
+        this._contentRef = null;
 
-    this._contentRef?.$scope?.$destroy();
-    this._contentRef = null;
-
-    this._windowRef?.$scope?.$destroy();
-    this._windowRef = null;
+        this._windowRef?.$scope?.$destroy();
+        this._windowRef = null;
+      }),
+    );
   }
 
   private _getContentRef(content?: string | ITranscludeFunction, context?: any) {
@@ -147,16 +148,15 @@ export class PopupFactory {
     private $document: IDocumentService,
     private $compile: ICompileService,
     private $timeout: ITimeoutService,
-    private $q: IQService,
     private $rootScope: IRootScopeService,
   ) {}
 
   $create(_componentType: string) {
-    return new PopupService(this.$document, this.$compile, this.$timeout, this.$q, this.$rootScope, _componentType);
+    return new PopupService(this.$document, this.$compile, this.$timeout, this.$rootScope, _componentType);
   }
 
   static get $inject() {
-    return ["$document", "$compile", "$timeout", "$q", "$rootScope"];
+    return ["$document", "$compile", "$timeout", "$rootScope"];
   }
 
   static get $name() {

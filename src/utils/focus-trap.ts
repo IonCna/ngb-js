@@ -1,5 +1,4 @@
-import { toNativeElement } from "@ngb/utils";
-import type { IAugmentedJQuery, IPromise } from "angular";
+import { filter, fromEvent, map, takeUntil, type Observable, withLatestFrom } from "rxjs";
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = [
   "a[href]",
@@ -11,60 +10,53 @@ export const FOCUSABLE_ELEMENTS_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
 
-export function getFocusableBoundaryElements(element: IAugmentedJQuery) {
-  const el = toNativeElement(element);
-  const list = Array.from(el.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR) as NodeListOf<HTMLElement>).filter(
+export function getFocusableBoundaryElements(element: HTMLElement): HTMLElement[] {
+  const list: HTMLElement[] = Array.from(
+    element.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR) as NodeListOf<HTMLElement>,
+  ).filter(
     (el) => el.tabIndex !== -1,
   );
 
-  const [first] = list;
-  const last = list[list.length - 1];
-  return [first, last] as const;
+  return [list[0], list[list.length - 1]];
 }
 
-export function ngbFocusTrap(element: IAugmentedJQuery, stopFocusTrap: IPromise<void>, refocusOnClick = false) {
-  const nativeElement = toNativeElement(element);
-  let lastFocusedElement: HTMLElement | null = null;
+export const ngbFocusTrap = (
+  element: HTMLElement,
+  stopFocusTrap$: Observable<unknown>,
+  refocusOnClick = false,
+) => {
+  const lastFocusedElement$ = fromEvent<FocusEvent>(element, "focusin").pipe(
+    takeUntil(stopFocusTrap$),
+    map((event) => event.target),
+  );
 
-  const onFocus = (event: JQueryEventObject) => {
-    lastFocusedElement = event.target as HTMLElement;
-  };
+  fromEvent<KeyboardEvent>(element, "keydown")
+    .pipe(
+      takeUntil(stopFocusTrap$),
+      filter((event) => event.key === "Tab"),
+      withLatestFrom(lastFocusedElement$),
+    )
+    .subscribe(([tabEvent, focusedElement]) => {
+      const [first, last] = getFocusableBoundaryElements(element);
 
-  const onClick = () => {
-    lastFocusedElement?.focus();
-  };
+      if ((focusedElement === first || focusedElement === element) && tabEvent.shiftKey) {
+        last.focus();
+        tabEvent.preventDefault();
+      }
 
-  const onKeydown = (event: JQueryEventObject) => {
-    if (event.key !== "Tab") return;
-
-    const [first, last] = getFocusableBoundaryElements(element);
-
-    if (!first || !last) return;
-
-    const focusedElement = lastFocusedElement ?? event.target;
-    const isFirstOrFocused = focusedElement === first || focusedElement === nativeElement;
-
-    if (isFirstOrFocused && event.shiftKey) {
-      last.focus();
-      event.preventDefault();
-    }
-
-    if (focusedElement === last && !event.shiftKey) {
-      first.focus();
-      event.preventDefault();
-    }
-  };
-
-  element.on("focusin", onFocus);
-  element.on("keydown", onKeydown);
+      if (focusedElement === last && !tabEvent.shiftKey) {
+        first.focus();
+        tabEvent.preventDefault();
+      }
+    });
 
   if (refocusOnClick) {
-    element.on("click", onClick);
+    fromEvent(element, "click")
+      .pipe(
+        takeUntil(stopFocusTrap$),
+        withLatestFrom(lastFocusedElement$),
+        map((arr) => arr[1] as HTMLElement),
+      )
+      .subscribe((lastFocusedElement) => lastFocusedElement.focus());
   }
-
-  stopFocusTrap.then(null, null, () => {
-    element.off("focusin", onFocus);
-    element.off("click", onClick);
-    element.off("keydown", onKeydown);
-  });
-}
+};

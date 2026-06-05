@@ -5,22 +5,23 @@
     "": {
       "name": "ngb-js",
       "dependencies": {
-        "@popperjs/core": "latest",
-        "@types/node": "latest",
+        "@popperjs/core": "^2.11.8",
+        "@types/node": "^25.9.1",
       },
       "devDependencies": {
-        "@biomejs/biome": "latest",
-        "@types/angular": "latest",
-        "@types/angular-mocks": "latest",
-        "angular-mocks": "latest",
-        "esbuild": "latest",
-        "jsdom": "latest",
-        "typescript": "latest",
-        "vitest": "latest",
+        "@biomejs/biome": "^2.4.16",
+        "@types/angular": "^1.8.9",
+        "@types/angular-mocks": "^1.7.4",
+        "angular-mocks": "^1.8.3",
+        "esbuild": "^0.28.0",
+        "jsdom": "^29.1.1",
+        "typescript": "~6.0.3",
+        "vitest": "^4.1.8",
       },
       "peerDependencies": {
-        "angular": "latest",
-        "bootstrap": "latest",
+        "angular": "1.8.3",
+        "bootstrap": "^5.3.8",
+        "rxjs": "^7.8.2",
       },
     },
   },
@@ -286,6 +287,8 @@
     "require-from-string": ["require-from-string@2.0.2", "", {}, "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw=="],
 
     "rolldown": ["rolldown@1.0.3", "", { "dependencies": { "@oxc-project/types": "=0.133.0", "@rolldown/pluginutils": "^1.0.0" }, "optionalDependencies": { "@rolldown/binding-android-arm64": "1.0.3", "@rolldown/binding-darwin-arm64": "1.0.3", "@rolldown/binding-darwin-x64": "1.0.3", "@rolldown/binding-freebsd-x64": "1.0.3", "@rolldown/binding-linux-arm-gnueabihf": "1.0.3", "@rolldown/binding-linux-arm64-gnu": "1.0.3", "@rolldown/binding-linux-arm64-musl": "1.0.3", "@rolldown/binding-linux-ppc64-gnu": "1.0.3", "@rolldown/binding-linux-s390x-gnu": "1.0.3", "@rolldown/binding-linux-x64-gnu": "1.0.3", "@rolldown/binding-linux-x64-musl": "1.0.3", "@rolldown/binding-openharmony-arm64": "1.0.3", "@rolldown/binding-wasm32-wasi": "1.0.3", "@rolldown/binding-win32-arm64-msvc": "1.0.3", "@rolldown/binding-win32-x64-msvc": "1.0.3" }, "bin": { "rolldown": "./bin/cli.mjs" } }, "sha512-i00lAJ2ks1BYr7rjNjKC7BcqAS7nVfiT3QX1SI5aY+AFHblCmaUf9OE9dbdzDvW6dJxbi2ZCZiy9v3CcwOiX3g=="],
+
+    "rxjs": ["rxjs@7.8.2", "", { "dependencies": { "tslib": "^2.1.0" } }, "sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA=="],
 
     "saxes": ["saxes@6.0.0", "", { "dependencies": { "xmlchars": "^2.2.0" } }, "sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA=="],
 

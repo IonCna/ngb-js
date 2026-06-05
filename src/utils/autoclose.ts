@@ -1,24 +1,17 @@
 import { closest, toNativeElement } from "@ngb/utils";
-import angular, { type IAugmentedJQuery, type IDocumentService, type IPromise, type ITimeoutService } from "angular";
+import angular, { type IDocumentService, type ITimeoutService } from "angular";
+import { delay, filter, fromEvent, map, type Observable, race, takeUntil, tap, withLatestFrom } from "rxjs";
 
 export enum SOURCE {
   ESCAPE,
   CLICK,
 }
 
-const isContainedIn = (element: IAugmentedJQuery, array?: IAugmentedJQuery[]) => {
-  if (!array) return false;
-  const nativeTarget = toNativeElement(element);
+const isContainedIn = (element: HTMLElement, array?: HTMLElement[]) =>
+  array ? array.some((item) => item.contains(element)) : false;
 
-  return array.some((item) => {
-    const native = toNativeElement(item);
-    return native.contains(nativeTarget);
-  });
-};
-
-const matchesSelectorIfAny = (element: IAugmentedJQuery, selector?: string) => {
-  return !selector || closest(element, selector) != null;
-};
+const matchesSelectorIfAny = (element: HTMLElement, selector?: string) =>
+  !selector || closest(angular.element(element), selector) != null;
 
 const isMobile = (() => {
   const isIOS = () => {
@@ -46,82 +39,59 @@ export function ngbAutoClose(
   $timeout: ITimeoutService,
   $document: IDocumentService,
   type: boolean | "inside" | "outside",
-  closed: IPromise<void>,
+  closed$: Observable<unknown>,
   close: (source: SOURCE) => void,
-  insideElements: IAugmentedJQuery[],
-  ignoreElements?: IAugmentedJQuery[],
+  insideElements: HTMLElement[],
+  ignoreElements?: HTMLElement[],
   insideSelector?: string,
 ) {
   if (!type) return;
 
-  let isClosed = false;
-  let shouldCloseOnMouseUp = false;
-
-  const cleanup = () => {
-    $document.off("keydown", onKeydown);
-    $document.off("mousedown", onMouseDown);
-    $document.off("mouseup", onMouseUp);
-  };
-
-  const closeOnce = (source: SOURCE) => {
-    if (isClosed) return;
-
-    isClosed = true;
-    cleanup();
-    close(source);
-  };
-
-  const shouldCloseOnClick = (event: JQueryEventObject) => {
-    const target = event.target as Element | null;
-    if (!target) return false;
-
-    const $element = angular.element(target);
-
-    if (event.button === 2 || isContainedIn($element, ignoreElements)) {
-      return false;
-    }
-
-    if (type === "inside") {
-      return isContainedIn($element, insideElements) && matchesSelectorIfAny($element, insideSelector);
-    }
-
-    if (type === "outside") {
-      return !isContainedIn($element, insideElements);
-    }
-
-    return matchesSelectorIfAny($element, insideSelector) || !isContainedIn($element, insideElements);
-  };
-
-  const onKeydown = (event: JQueryEventObject) => {
-    if (event.key !== "Escape") return;
-
-    event.preventDefault();
-    void $timeout(() => closeOnce(SOURCE.ESCAPE));
-  };
-
-  const onMouseDown = (event: JQueryEventObject) => {
-    shouldCloseOnMouseUp = shouldCloseOnClick(event);
-  };
-
-  const onMouseUp = () => {
-    const shouldClose = shouldCloseOnMouseUp;
-    shouldCloseOnMouseUp = false;
-
-    if (!shouldClose) return;
-
-    void $timeout(() => closeOnce(SOURCE.CLICK), 0, false);
-  };
-
   wrapAsyncForMobile($timeout, () => {
-    if (isClosed) return;
+    const nativeDocument = toNativeElement<Document>($document);
 
-    $document.on("keydown", onKeydown);
-    $document.on("mousedown", onMouseDown);
-    $document.on("mouseup", onMouseUp);
+    const shouldCloseOnClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return false;
+
+      if (event.button === 2 || isContainedIn(target, ignoreElements)) {
+        return false;
+      }
+
+      if (type === "inside") {
+        return isContainedIn(target, insideElements) && matchesSelectorIfAny(target, insideSelector);
+      }
+
+      if (type === "outside") {
+        return !isContainedIn(target, insideElements);
+      }
+
+      return matchesSelectorIfAny(target, insideSelector) || !isContainedIn(target, insideElements);
+    };
+
+    const escapes$ = fromEvent<KeyboardEvent>(nativeDocument, "keydown").pipe(
+      takeUntil(closed$),
+      filter((event) => event.key === "Escape"),
+      tap((event) => event.preventDefault()),
+    );
+
+    // Pre-calculate this on mousedown, because DOM nodes may be detached on mouseup.
+    const mouseDowns$ = fromEvent<MouseEvent>(nativeDocument, "mousedown").pipe(
+      map(shouldCloseOnClick),
+      takeUntil(closed$),
+    );
+
+    const closeableClicks$ = fromEvent<MouseEvent>(nativeDocument, "mouseup").pipe(
+      withLatestFrom(mouseDowns$),
+      filter(([, shouldClose]) => shouldClose),
+      delay(0),
+      takeUntil(closed$),
+    );
+
+    race(escapes$.pipe(map(() => SOURCE.ESCAPE)), closeableClicks$.pipe(map(() => SOURCE.CLICK)))
+      .pipe(takeUntil(closed$))
+      .subscribe((source) => {
+        void $timeout(() => close(source));
+      });
   })();
-
-  closed.then(null, null, () => {
-    isClosed = true;
-    cleanup();
-  });
 }
