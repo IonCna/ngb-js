@@ -1,6 +1,7 @@
 import type { NgbAccordionCollapse } from "@ngb/accordion/ngb-accordion-collapse.directive";
 import { NgbCollapseConfig } from "@ngb/collapse/ngb-collapse-config.service";
 import { type INgbEvent, ngbCollapsingTransition, ngbRunTransition } from "@ngb/utils";
+import { DigestService } from "@ngb/utils/digest.service";
 import type { IAugmentedJQuery, IController, IDirective, ILogService } from "angular";
 
 export interface INgbCollapse {
@@ -22,6 +23,7 @@ export class NgbCollapse implements IController, INgbCollapse {
     private readonly $element: IAugmentedJQuery,
     private readonly ngbCollapseConfig: NgbCollapseConfig,
     private readonly $log: ILogService,
+    private readonly $digestService: DigestService,
   ) {}
 
   $onInit(): void {
@@ -70,7 +72,7 @@ export class NgbCollapse implements IController, INgbCollapse {
   }
 
   private _runTransition(collapsed: boolean, animation: boolean) {
-    return ngbRunTransition(this.$element, ngbCollapsingTransition, {
+    return ngbRunTransition(this.$digestService, this.$element, ngbCollapsingTransition, {
       animation,
       runningTransition: "stop",
       context: {
@@ -81,7 +83,7 @@ export class NgbCollapse implements IController, INgbCollapse {
   }
 
   static get $inject() {
-    return ["$element", NgbCollapseConfig.$name, "$log"];
+    return ["$element", NgbCollapseConfig.$name, "$log", DigestService.$name];
   }
 
   static get $factory(): () => IDirective {

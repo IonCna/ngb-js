@@ -1,9 +1,9 @@
+import { DigestService } from "@ngb/utils/digest.service";
 import type {
   IAugmentedJQuery,
   ICompileService,
   IRootScopeService,
   IScope,
-  ITimeoutService,
   ITranscludeFunction,
 } from "angular";
 import angular from "angular";
@@ -56,7 +56,7 @@ class PopupService<T> implements IPopupService<T> {
 
   constructor(
     private $compile: ICompileService,
-    private $timeout: ITimeoutService,
+    private $digestService: DigestService,
     private $rootScope: IRootScopeService,
     private _componentType: string,
   ) {}
@@ -78,14 +78,15 @@ class PopupService<T> implements IPopupService<T> {
 
     const nextRenderSubject = new Subject<void>();
 
-    this.$timeout(() => {
+    this.$digestService.runOutsideDigest(() => {
       nextRenderSubject.next();
       nextRenderSubject.complete();
-    }, 0);
+    });
 
     const transition$ = nextRenderSubject.pipe(
       mergeMap(() =>
         ngbRunTransition(
+          this.$digestService,
           $element,
           (element) => {
             element.addClass("show");
@@ -107,7 +108,7 @@ class PopupService<T> implements IPopupService<T> {
       return of(undefined);
     }
 
-    return ngbRunTransition(this._windowRef.$element, popupTransition, {
+    return ngbRunTransition(this.$digestService, this._windowRef.$element, popupTransition, {
       animation,
       runningTransition: "stop",
     }).pipe(
@@ -143,16 +144,16 @@ class PopupService<T> implements IPopupService<T> {
 export class PopupFactory {
   constructor(
     private $compile: ICompileService,
-    private $timeout: ITimeoutService,
+    private $digestService: DigestService,
     private $rootScope: IRootScopeService,
   ) {}
 
   $create<T = any>(_componentType: string) {
-    return new PopupService<T>(this.$compile, this.$timeout, this.$rootScope, _componentType);
+    return new PopupService<T>(this.$compile, this.$digestService, this.$rootScope, _componentType);
   }
 
   static get $inject() {
-    return ["$compile", "$timeout", "$rootScope"];
+    return ["$compile", DigestService.$name, "$rootScope"];
   }
 
   static get $name() {

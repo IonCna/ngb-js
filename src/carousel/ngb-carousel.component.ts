@@ -269,6 +269,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
 
       if (activeSlide) {
         const activeTransition = ngbRunTransition(
+          this.$digestService,
           this._getSlideElement(activeSlide.id),
           ngbCarouselTransitionOut,
           options,
@@ -292,7 +293,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
       this._activeId$.next(this.activeId);
       const nextSlide = this._getSlideById(this.activeId);
 
-      const transition = ngbRunTransition(this._getSlideElement(selectedSlide.id), ngbCarouselTransitionIn, options);
+      const transition = ngbRunTransition(this.$digestService, this._getSlideElement(selectedSlide.id), ngbCarouselTransitionIn, options);
 
       transition.subscribe(() =>
         nextSlide?.slid?.({

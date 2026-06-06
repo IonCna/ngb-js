@@ -7,8 +7,8 @@ export class DigestService {
     private $rootScope: IRootScopeService,
   ) {}
 
-  runOutsideDigest(fn: () => void = angular.noop) {
-    this.$timeout(fn, 0, false);
+  runOutsideDigest(fn: () => void = angular.noop, delay = 0) {
+    this.$timeout(fn, delay, false);
   }
 
   runInsideDigest(fn: () => void = angular.noop) {

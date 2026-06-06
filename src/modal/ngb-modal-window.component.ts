@@ -7,15 +7,9 @@ import {
   ngbModalWindowFadeOutTransition,
 } from "@ngb/modal/ngb-modal-window-transition";
 import { type NgbTransitionOptions, type NgbTransitionStartFn, ngbRunTransition, toNativeElement } from "@ngb/utils";
+import { DigestService } from "@ngb/utils/digest.service";
 import { getFocusableBoundaryElements } from "@ngb/utils/focus-trap";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  ILogService,
-  IScope,
-  ITimeoutService,
-} from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService, IScope } from "angular";
 import angular from "angular";
 import { filter, fromEvent, type Observable, Subject, switchMap, take, takeUntil, tap, zip } from "rxjs";
 
@@ -63,7 +57,7 @@ export class NgbModalWindow implements IComponentController {
   constructor(
     private $scope: IScope,
     private $element: IAugmentedJQuery,
-    private $timeout: ITimeoutService,
+    private $digestService: DigestService,
     private $log: ILogService,
   ) {}
 
@@ -85,7 +79,7 @@ export class NgbModalWindow implements IComponentController {
     if (!nativeDialog) throw new Error("modal-dialog element is not present in template!");
     this._dialogEl = angular.element(nativeDialog);
 
-    this.$timeout(() => this._show(), 0);
+    this.$digestService.runOutsideDigest(() => this._show());
   }
 
   $onChanges(): void {
@@ -133,11 +127,11 @@ export class NgbModalWindow implements IComponentController {
       runningTransition: "stop",
     };
 
-    const windowTransition = ngbRunTransition(this.$element, ngbModalWindowFadeOutTransition, context);
+    const windowTransition = ngbRunTransition(this.$digestService, this.$element, ngbModalWindowFadeOutTransition, context);
 
     if (!this._dialogEl) throw new Error("dialog element is undefined");
 
-    const dialogTransition = ngbRunTransition(this._dialogEl, noopTransition, context);
+    const dialogTransition = ngbRunTransition(this.$digestService, this._dialogEl, noopTransition, context);
 
     const transitions = zip(windowTransition, dialogTransition);
     transitions.subscribe(() => {
@@ -171,11 +165,11 @@ export class NgbModalWindow implements IComponentController {
       runningTransition: "continue",
     };
 
-    const windowTransition = ngbRunTransition(this.$element, ngbModalWindowFadeInTransition, context);
+    const windowTransition = ngbRunTransition(this.$digestService, this.$element, ngbModalWindowFadeInTransition, context);
 
     if (!this._dialogEl) throw new Error("dialog element is undefined");
 
-    const dialogTransition = ngbRunTransition(this._dialogEl, noopTransition, context);
+    const dialogTransition = ngbRunTransition(this.$digestService, this._dialogEl, noopTransition, context);
 
     zip(windowTransition, dialogTransition).subscribe(() => {
       this.shown.next();
@@ -275,13 +269,7 @@ export class NgbModalWindow implements IComponentController {
     const validElementToFocus = elWithFocus instanceof HTMLElement && body.contains(elWithFocus);
     const elementToFocus: HTMLElement = validElementToFocus ? elWithFocus : body;
 
-    this.$timeout(
-      () => {
-        elementToFocus.focus();
-      },
-      0,
-      false,
-    );
+    this.$digestService.runOutsideDigest(() => elementToFocus.focus());
 
     this._elWithFocus = null;
   }
@@ -289,7 +277,7 @@ export class NgbModalWindow implements IComponentController {
   private _bumpBackdrop() {
     if (this.backdrop !== "static") return;
 
-    ngbRunTransition(this.$element, ngbModalBumpBackdropTransition, {
+    ngbRunTransition(this.$digestService, this.$element, ngbModalBumpBackdropTransition, {
       animation: Boolean(this.animation),
       runningTransition: "continue",
     });
@@ -300,7 +288,7 @@ export class NgbModalWindow implements IComponentController {
   }
 
   static get $inject() {
-    return ["$scope", "$element", "$timeout", "$log"];
+    return ["$scope", "$element", DigestService.$name, "$log"];
   }
 
   static get $factory(): IComponentOptions {

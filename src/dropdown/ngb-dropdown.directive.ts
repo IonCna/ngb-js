@@ -2,6 +2,7 @@ import { type INgbDropdownAnchor, NgbDropdownConfig } from "@ngb/dropdown/ngb-dr
 import type { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
 import { FOCUSABLE_ELEMENTS_SELECTOR, getActiveElement, type INgbEvent, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
+import { DigestService } from "@ngb/utils/digest.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
@@ -13,7 +14,6 @@ import type {
   ILogService,
   IOnChangesObject,
   IScope,
-  ITimeoutService,
 } from "angular";
 import angular from "angular";
 import { fromEvent, Subject, take } from "rxjs";
@@ -44,9 +44,9 @@ export class NgbDropdown implements IController {
     private $config: NgbDropdownConfig,
     private $element: IAugmentedJQuery,
     private $ngbRTL: NgbRTL,
-    private $timeout: ITimeoutService,
     private $scope: IScope,
     private $log: ILogService,
+    private $digestService: DigestService,
   ) {}
 
   $onInit(): void {
@@ -68,16 +68,10 @@ export class NgbDropdown implements IController {
       this.display = native.closest(".navbar") ? "static" : "dynamic";
     }
 
-    this.$timeout(
-      () => {
-        this._applyPlacementClasses();
-
-        if (!this._open) return;
-        this._setCloseHandlers();
-      },
-      0,
-      false,
-    );
+    this.$digestService.runOutsideDigest(() => {
+      this._applyPlacementClasses();
+      if (this._open) this._setCloseHandlers();
+    });
   }
 
   registerMenu(menu: NgbDropdownMenu) {
@@ -166,13 +160,7 @@ export class NgbDropdown implements IController {
 
     this._applyPlacementClasses();
 
-    this.$timeout(
-      () => {
-        this._positionMenu();
-      },
-      0,
-      false,
-    );
+    this.$digestService.runOutsideDigest(() => this._positionMenu());
 
     this.$scope.$evalAsync();
   }
@@ -181,7 +169,7 @@ export class NgbDropdown implements IController {
     this._destroyCloseHandlers$.next();
 
     ngbAutoClose(
-      this.$timeout,
+      this.$digestService,
       this.autoClose,
       this._destroyCloseHandlers$,
       (source: SOURCE) => {
@@ -472,7 +460,7 @@ export class NgbDropdown implements IController {
   }
 
   static get $inject() {
-    return [NgbDropdownConfig.$name, "$element", NgbRTL.$name, "$timeout", "$scope", "$log"];
+    return [NgbDropdownConfig.$name, "$element", NgbRTL.$name, "$scope", "$log", DigestService.$name];
   }
 
   //#endregion

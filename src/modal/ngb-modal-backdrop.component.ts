@@ -4,6 +4,7 @@ import {
 } from "@ngb/modal/ngb-modal-backdrop-transition";
 import { NgbModalConfig, type NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { ngbRunTransition } from "@ngb/utils";
+import { DigestService } from "@ngb/utils/digest.service";
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
 import angular from "angular";
 import type { Observable } from "rxjs";
@@ -25,6 +26,7 @@ export class NgbModalBackdrop implements IComponentController {
     private $element: IAugmentedJQuery,
     private $scope: IScope,
     private $ngbModalConfig: NgbModalConfig,
+    private $digestService: DigestService,
   ) {}
 
   $postLink(): void {
@@ -34,7 +36,7 @@ export class NgbModalBackdrop implements IComponentController {
     this.$element.css({ "z-index": "1055" });
 
     this.$scope.$evalAsync(() =>
-      ngbRunTransition(this.$element, ngbModalBackdropFadeInTransition, {
+      ngbRunTransition(this.$digestService, this.$element, ngbModalBackdropFadeInTransition, {
         animation: this.animation ?? this.$ngbModalConfig.animation,
         runningTransition: "continue",
       }),
@@ -65,7 +67,7 @@ export class NgbModalBackdrop implements IComponentController {
   }
 
   hide(): Observable<void> {
-    return ngbRunTransition(this.$element, ngbModalBackdropFadeOutTransition, {
+    return ngbRunTransition(this.$digestService, this.$element, ngbModalBackdropFadeOutTransition, {
       animation: this.animation ?? this.$ngbModalConfig.animation,
       runningTransition: "stop",
     });
@@ -88,7 +90,7 @@ export class NgbModalBackdrop implements IComponentController {
   }
 
   static get $inject() {
-    return ["$element", "$scope", NgbModalConfig.$name];
+    return ["$element", "$scope", NgbModalConfig.$name, DigestService.$name];
   }
 
   static get $factory(): IComponentOptions {

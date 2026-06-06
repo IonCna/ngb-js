@@ -1,4 +1,5 @@
 import { toNativeElement } from "@ngb/utils";
+import { DigestService } from "@ngb/utils/digest.service";
 import { getTransitionDurationMs } from "@ngb/utils/transition";
 import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
@@ -33,6 +34,7 @@ export const environment = {
 const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<unknown>>();
 
 export function ngbRunTransition<T>(
+  digestService: DigestService,
   element: IAugmentedJQuery,
   startFn: NgbTransitionStartFn<T>,
   options: NgbTransitionOptions<T>,
@@ -87,10 +89,12 @@ export function ngbRunTransition<T>(
   race(timer$, transitionEnd$, finishTransition$)
     .pipe(takeUntil(stop$))
     .subscribe(() => {
-      runningTransitions.delete(nativeElement);
-      endFn();
-      transition$.next();
-      transition$.complete();
+      digestService.runInsideDigest(() => {
+        runningTransitions.delete(nativeElement);
+        endFn();
+        transition$.next();
+        transition$.complete();
+      });
     });
 
   return transition$.asObservable();

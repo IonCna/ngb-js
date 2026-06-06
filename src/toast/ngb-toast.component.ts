@@ -2,6 +2,7 @@ import template from "@ngb/toast/ngb-toast.component.html";
 import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
 import type { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
+import { DigestService } from "@ngb/utils/digest.service";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
 import type {
   IAttributes,
@@ -38,6 +39,7 @@ export class NgbToast implements IComponentController, INgbToast {
     private ngbToastConfig: NgbToastConfig,
     private $timeout: ITimeoutService,
     private $attrs: IAttributes,
+    private $digestService: DigestService,
   ) {}
 
   $onInit(): void {
@@ -73,7 +75,7 @@ export class NgbToast implements IComponentController, INgbToast {
   hide(): Observable<void> {
     this._clearTimeout();
 
-    const transition = ngbRunTransition(this.$element, ngbToastFadeOutTransition, {
+    const transition = ngbRunTransition(this.$digestService, this.$element, ngbToastFadeOutTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "stop",
     });
@@ -83,7 +85,7 @@ export class NgbToast implements IComponentController, INgbToast {
   }
 
   show(): Observable<void> {
-    const transition = ngbRunTransition(this.$element, ngbToastFadeInTransition, {
+    const transition = ngbRunTransition(this.$digestService, this.$element, ngbToastFadeInTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "continue",
     });
@@ -112,7 +114,7 @@ export class NgbToast implements IComponentController, INgbToast {
   }
 
   static get $inject() {
-    return ["$element", NgbToastConfig.$name, "$timeout", "$attrs"];
+    return ["$element", NgbToastConfig.$name, "$timeout", "$attrs", DigestService.$name];
   }
 
   static get $factory(): IComponentOptions {

@@ -1,5 +1,6 @@
 import { closest } from "@ngb/utils";
-import angular, { type ITimeoutService } from "angular";
+import type { DigestService } from "@ngb/utils/digest.service";
+import angular from "angular";
 import { delay, filter, fromEvent, map, type Observable, race, takeUntil, tap, withLatestFrom } from "rxjs";
 
 export enum SOURCE {
@@ -27,16 +28,16 @@ const isMobile = (() => {
   return typeof navigator !== "undefined" ? !!navigator.userAgent && (isIOS() || isAndroid()) : false;
 })();
 
-const wrapAsyncForMobile = ($timeout: ITimeoutService, fn: () => void): (() => void) => {
+const wrapAsyncForMobile = (digestService: DigestService, fn: () => void): (() => void) => {
   if (isMobile)
     return () => {
-      void $timeout(fn, 100, false);
+      digestService.runOutsideDigest(fn, 100);
     };
   return fn;
 };
 
 export function ngbAutoClose(
-  $timeout: ITimeoutService,
+  digestService: DigestService,
   type: boolean | "inside" | "outside",
   closed$: Observable<unknown>,
   close: (source: SOURCE) => void,
@@ -46,7 +47,7 @@ export function ngbAutoClose(
 ) {
   if (!type) return;
 
-  wrapAsyncForMobile($timeout, () => {
+  wrapAsyncForMobile(digestService, () => {
     const shouldCloseOnClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target) return false;
@@ -72,7 +73,6 @@ export function ngbAutoClose(
       tap((event) => event.preventDefault()),
     );
 
-    // Pre-calculate this on mousedown, because DOM nodes may be detached on mouseup.
     const mouseDowns$ = fromEvent<MouseEvent>(document, "mousedown").pipe(
       map(shouldCloseOnClick),
       takeUntil(closed$),
@@ -88,7 +88,7 @@ export function ngbAutoClose(
     race(escapes$.pipe(map(() => SOURCE.ESCAPE)), closeableClicks$.pipe(map(() => SOURCE.CLICK)))
       .pipe(takeUntil(closed$))
       .subscribe((source) => {
-        void $timeout(() => close(source));
+        digestService.runInsideDigest(() => close(source));
       });
   })();
 }
