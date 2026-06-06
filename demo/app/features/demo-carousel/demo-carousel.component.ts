@@ -1,5 +1,9 @@
 import template from "@demo/features/demo-carousel/demo-carousel.component.html";
-import type { IComponentController, IComponentOptions } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, ITimeoutService } from "angular";
+
+interface CarouselController {
+  select(slideId: string, source?: string): void;
+}
 
 export class DemoCarouselComponent implements IComponentController {
   public activeId = "slide-1";
@@ -13,6 +17,22 @@ export class DemoCarouselComponent implements IComponentController {
   public wrap = true;
   public paused = false;
   public lastEvent = "Ready";
+  private carousel?: CarouselController;
+
+  constructor(
+    private $element: IAugmentedJQuery,
+    private $timeout: ITimeoutService,
+  ) {}
+
+  $postLink(): void {
+    this.$timeout(
+      () => {
+        this.carousel = this.$element.find("ngb-carousel").controller("ngbCarousel") as CarouselController;
+      },
+      0,
+      false,
+    );
+  }
 
   get images() {
     return [944, 1011, 984].map((number) => `https://picsum.photos/id/${number}/900/500`);
@@ -29,6 +49,7 @@ export class DemoCarouselComponent implements IComponentController {
     direction: string;
     source: string;
   }) {
+    this.activeId = current;
     this.lastEvent = `Sliding ${prev} -> ${current} (${direction}, ${source})`;
   }
 
@@ -80,7 +101,7 @@ export class DemoCarouselComponent implements IComponentController {
   }
 
   public select(slideId: string) {
-    this.activeId = slideId;
+    this.carousel?.select(slideId, "indicator");
   }
 
   public setInterval(interval: number) {
@@ -98,5 +119,9 @@ export class DemoCarouselComponent implements IComponentController {
       controllerAs: "$",
       template,
     };
+  }
+
+  static get $inject() {
+    return ["$element", "$timeout"];
   }
 }

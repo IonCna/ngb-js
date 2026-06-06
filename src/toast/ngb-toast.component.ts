@@ -10,14 +10,14 @@ import type {
   IComponentOptions,
   IOnChangesObject,
   IPromise,
-  IQService,
   ITimeoutService,
   ITranscludeFunction,
 } from "angular";
+import type { Observable } from "rxjs";
 
 export interface INgbToast {
-  hide(): IPromise<void>;
-  show(): IPromise<void>;
+  hide(): Observable<void>;
+  show(): Observable<void>;
 }
 
 export class NgbToast implements IComponentController, INgbToast {
@@ -36,7 +36,6 @@ export class NgbToast implements IComponentController, INgbToast {
   constructor(
     private $element: IAugmentedJQuery,
     private ngbToastConfig: NgbToastConfig,
-    private $q: IQService,
     private $timeout: ITimeoutService,
     private $attrs: IAttributes,
   ) {}
@@ -71,31 +70,33 @@ export class NgbToast implements IComponentController, INgbToast {
     this.contentHeaderTpl = header.$transclude;
   }
 
-  hide(): IPromise<void> {
+  hide(): Observable<void> {
     this._clearTimeout();
 
-    const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbToastFadeOutTransition, {
+    const transition = ngbRunTransition(this.$element, ngbToastFadeOutTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "stop",
     });
 
-    transition.then(() => this.hidden?.());
+    transition.subscribe(() => this.hidden?.());
     return transition;
   }
 
-  show(): IPromise<void> {
-    const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbToastFadeInTransition, {
+  show(): Observable<void> {
+    const transition = ngbRunTransition(this.$element, ngbToastFadeInTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "continue",
     });
 
-    transition.then(() => this.shown?.());
+    transition.subscribe(() => this.shown?.());
     return transition;
   }
 
   private _init(): void {
     if (this.autohide && !this._timeoutID) {
-      this._timeoutID = this.$timeout(() => this.hide(), this.delay);
+      this._timeoutID = this.$timeout(() => {
+        this.hide();
+      }, this.delay);
     }
   }
 
@@ -111,7 +112,7 @@ export class NgbToast implements IComponentController, INgbToast {
   }
 
   static get $inject() {
-    return ["$element", NgbToastConfig.$name, "$q", "$timeout", "$attrs"];
+    return ["$element", NgbToastConfig.$name, "$timeout", "$attrs"];
   }
 
   static get $factory(): IComponentOptions {

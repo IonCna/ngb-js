@@ -1,21 +1,18 @@
 import type { NgbNavChangeEvent } from "@ngb/nav/ngb-nav-config.service";
-import { NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
 import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import type { NgbNavLink } from "@ngb/nav/ngb-nav-link.directive";
-import { type INgbEvent, toNativeElement } from "@ngb/utils";
+import { assertAttribute, type INgbEvent, toNativeElement } from "@ngb/utils";
 import type {
   IAttributes,
   IAugmentedJQuery,
   IController,
-  IDeferred,
   IDirective,
   IDocumentService,
   IOnChangesObject,
-  IPromise,
-  IQService,
   IScope,
 } from "angular";
-import angular from "angular";
+import angular, { isDefined } from "angular";
+import { Subject } from "rxjs";
 
 const isValidNavId = (id?: string | null): id is string => angular.isDefined(id) && id !== "";
 
@@ -25,44 +22,32 @@ export class NgbNav implements IController {
 
   public _navigatingWithKeyboard = false;
 
-  public activeId?: string;
+  public activeId!: string;
+  public activeIdChange?: (event: INgbEvent<string>) => void;
   public animation?: boolean;
   public destroyOnHide?: boolean;
   public orientation?: "vertical" | "horizontal";
   public roles?: false | "tablist";
   public keyboard?: boolean | "changeWithArrows";
-  public role?: string;
-
-  public activeIdChange?: (event: INgbEvent<string>) => void;
   public shown?: () => void;
   public hidden?: () => void;
+
+  public role?: string;
+
   public navChange?: (event: INgbEvent<NgbNavChangeEvent>) => void;
 
   private items: NgbNavItem[] = [];
   private links: NgbNavLink[] = [];
 
-  public navItemChange?: IPromise<NgbNavItem>;
-  private navItemDefer?: IDeferred<NgbNavItem>;
+  public navItemChange$ = new Subject<NgbNavItem | null>();
+  private itemsChange$ = new Subject<void>();
 
   constructor(
-    private $config: NgbNavConfig,
     private $document: IDocumentService,
     private $element: IAugmentedJQuery,
     private $attributes: IAttributes,
-    private $q: IQService,
     private $scope: IScope,
   ) {}
-
-  $onInit(): void {
-    this.animation = this.animation ?? this.$config.animation;
-    this.$attributes.$observe<string>("role", (role) => {
-      this.role = role;
-      this.refresh();
-    });
-
-    this.navItemDefer = this.$q.defer<NgbNavItem>();
-    this.navItemChange = this.navItemDefer.promise;
-  }
 
   $postLink(): void {
     this.$element.addClass("nav");
@@ -70,75 +55,58 @@ export class NgbNav implements IController {
     this.$element.on("keydown", this.onKeyDown.bind(this));
     this.$element.on("focusout", this.onFocusout.bind(this));
 
-    this.$scope.$evalAsync(() => {
-      if (!angular.isDefined(this.activeId)) {
-        const [first] = this.items;
-        const nextId = first ? first.id : null;
-
-        if (isValidNavId(nextId)) {
-          this._updateActiveId(nextId, false);
-        }
-      }
+    this.$attributes.$observe("role", (role?: string) => {
+      this.role = role;
+      assertAttribute(this.$element, "role", this.role ? this.role : this.roles ? "tablist" : undefined);
     });
 
-    this.$scope.$watchCollection(
-      () => this.items,
-      () => {
-        if (!this.activeId) return;
-        this._notifyItemChanged(this.activeId);
-      },
-    );
-  }
+    if (!isDefined(this.activeId)) {
+      const [first] = this.items;
+      const nextId = first ? first.id : null;
 
-  public select(id: string) {
-    this._updateActiveId(id, false);
+      if (isValidNavId(nextId)) {
+        this.$scope.$applyAsync(() => this._updateActiveId(nextId, false));
+      }
+    }
+
+    this.itemsChange$.subscribe(() => this._notifyItemChanged(this.activeId));
   }
 
   $onChanges(changes: IOnChangesObject): void {
-    this.refresh();
+    this.$element.toggleClass("flex-column", this.orientation === "vertical");
+    assertAttribute(
+      this.$element,
+      "aria-orientation",
+      this.orientation === "vertical" && this.roles === "tablist" ? "vertical" : undefined,
+    );
 
     if (changes.activeId && !changes.activeId.isFirstChange()) {
       this._notifyItemChanged(changes.activeId.currentValue);
     }
   }
 
-  private refresh() {
-    this.$element.toggleClass("flex-column", this.orientation === "vertical");
-
-    const isVertical = this.orientation === "vertical" && this.roles === "tablist";
-
-    if (isVertical) {
-      this.$element.attr("aria-orientation", "vertical");
-    } else this.$element.removeAttr("aria-orientation");
-
-    const role = this.role || (this.roles ? "tablist" : undefined);
-
-    if (role) this.$element.attr("role", role);
-    else this.$element.removeAttr("role");
-  }
-
   $onDestroy(): void {
+    this.navItemChange$.complete();
+    this.itemsChange$.complete();
+
     this.$element.off("keydown");
     this.$element.off("focusout");
-
-    this.items = [];
-    this.links = [];
   }
 
   public registerItems(item: NgbNavItem) {
     this.items.push(item);
-  }
-
-  public unregisterItem(item: NgbNavItem) {
-    this.items = this.items.filter((i) => i !== item);
+    this.itemsChange$.next();
   }
 
   public registerLinks(link: NgbNavLink) {
     this.links.push(link);
   }
 
-  public unregisterLink(link: NgbNavLink) {
-    this.links = this.links.filter((l) => l !== link);
+  public unregisterItem(item: NgbNavItem) {
+    const index = this.items.indexOf(item);
+    this.items.splice(index, 1);
+
+    this.itemsChange$.next();
   }
 
   public onKeyDown(event: JQueryEventObject) {
@@ -148,45 +116,34 @@ export class NgbNav implements IController {
 
     const enabledLinks = this.links.filter((link) => !link.ngbNavItem.disabled);
     const { length } = enabledLinks;
+
     let position = -1;
+    const doc = toNativeElement<Document>(this.$document);
 
     enabledLinks.forEach((link, index) => {
-      if (link.nativeElement === toNativeElement<Document>(this.$document).activeElement) {
+      if (link.nativeElement === doc.activeElement) {
         position = index;
       }
     });
 
-    const toStart = () => {
-      position = 0;
-    };
-
-    const toEnd = () => {
-      position = length - 1;
-    };
-
-    const toDecrease = () => {
-      position = (position - 1 + length) % length;
-    };
-
-    const toIncrease = () => {
-      position = (position + 1) % length;
-    };
-
-    const cases: Record<string, () => void> = {
-      ArrowUp: toDecrease,
-      ArrowLeft: toDecrease,
-      ArrowRight: toIncrease,
-      ArrowDown: toIncrease,
-      Home: toStart,
-      End: toEnd,
-    };
-
     if (!length) return;
 
-    const action = cases[event.key];
-    if (!action) return;
-
-    action();
+    switch (event.key) {
+      case "ArrowUp":
+      case "ArrowLeft":
+        position = (position - 1 + length) % length;
+        break;
+      case "ArrowRight":
+      case "ArrowDown":
+        position = (position + 1) % length;
+        break;
+      case "Home":
+        position = 0;
+        break;
+      case "End":
+        position = length - 1;
+        break;
+    }
 
     if (this.keyboard === "changeWithArrows") {
       this.select(enabledLinks[position].ngbNavItem.id);
@@ -198,20 +155,27 @@ export class NgbNav implements IController {
     event.preventDefault();
   }
 
+  public onFocusout({ target }: JQueryEventObject) {
+    const native = toNativeElement(this.$element);
+
+    if (!native.contains(target as HTMLElement)) {
+      this._navigatingWithKeyboard = false;
+    }
+  }
+
   public click(item: NgbNavItem) {
     if (!item.disabled) {
       this._updateActiveId(item.id);
     }
   }
 
-  public onFocusout(event: JQueryEventObject) {
-    if (!toNativeElement(this.$element).contains(event.relatedTarget as Node | null)) {
-      this._navigatingWithKeyboard = false;
-    }
+  public select(id: string) {
+    this._updateActiveId(id, false);
   }
 
   private _updateActiveId(nextId: string, emitNavChange = true) {
     if (this.activeId === nextId) return;
+
     let defaultPrevented = false;
 
     if (emitNavChange) {
@@ -234,7 +198,7 @@ export class NgbNav implements IController {
   }
 
   private _notifyItemChanged(nextItemId: string) {
-    this.navItemDefer?.notify(this._getItemById(nextItemId));
+    this.navItemChange$.next(this._getItemById(nextItemId));
   }
 
   private _getItemById(itemId: string): NgbNavItem | null {
@@ -248,7 +212,7 @@ export class NgbNav implements IController {
   }
 
   static get $inject() {
-    return [NgbNavConfig.$name, "$document", "$element", "$attrs", "$q", "$scope"];
+    return ["$document", "$element", "$attrs", "$scope"];
   }
 
   static get $factory(): () => IDirective {

@@ -14,6 +14,7 @@ import angular, {
   type IQService,
   type IRootScopeService,
 } from "angular";
+import { Subject, take } from "rxjs";
 
 type ModalContentScope = angular.IScope & {
   activeModal: NgbActiveModal;
@@ -26,7 +27,7 @@ export class NgbModalStack {
   private _windowRefs: ContentRef<NgbModalWindow>[] = [];
   private _ariaHiddenValues: Map<Element, string | null> = new Map();
 
-  private _activeWindowCmptHasChanged!: IDeferred<void>;
+  private _activeWindowCmptHasChanged = new Subject<void>();
   private _activeInstances?: IDeferred<NgbModalRef[]>;
 
   constructor(
@@ -37,16 +38,15 @@ export class NgbModalStack {
     private $q: IQService,
   ) {
     this._activeInstances = this.$q.defer();
-    this._activeWindowCmptHasChanged = this.$q.defer();
 
-    this._activeWindowCmptHasChanged.promise.then(null, null, () => {
+    this._activeWindowCmptHasChanged.subscribe(() => {
       if (!this._windowRefs.length) {
         this._revertAriaHidden();
         return;
       }
 
       const activeWindow = this._windowRefs[this._windowRefs.length - 1];
-      ngbFocusTrap(activeWindow.$element, this._activeWindowCmptHasChanged.promise);
+      ngbFocusTrap(toNativeElement(activeWindow.$element), this._activeWindowCmptHasChanged);
       this._revertAriaHidden();
       this._setAriaHidden(activeWindow.$element);
     });
@@ -93,7 +93,7 @@ export class NgbModalStack {
           this.$document.find("body").addClass("modal-open");
         }
 
-        ngbModalRef.hidden.then(() =>
+        ngbModalRef.hidden.pipe(take(1)).subscribe(() =>
           this.$q.resolve(true).then(() => {
             if (this._modalRefs.length) return;
             this.$document.find("body").removeClass("modal-open");
@@ -112,14 +112,14 @@ export class NgbModalStack {
 
   private _registerWindow(ngbWindow: ContentRef<NgbModalWindow>) {
     this._windowRefs.push(ngbWindow);
-    this._activeWindowCmptHasChanged?.notify();
+    this._activeWindowCmptHasChanged.next();
 
     ngbWindow.$scope?.$on("$destroy", () => {
       const index = this._windowRefs.indexOf(ngbWindow);
 
       if (index > -1) {
         this._windowRefs.splice(index, 1);
-        this._activeWindowCmptHasChanged?.notify();
+        this._activeWindowCmptHasChanged.next();
       }
     });
   }

@@ -1,7 +1,7 @@
 import type { NgbAccordionCollapse } from "@ngb/accordion/ngb-accordion-collapse.directive";
 import { NgbCollapseConfig } from "@ngb/collapse/ngb-collapse-config.service";
 import { type INgbEvent, ngbCollapsingTransition, ngbRunTransition } from "@ngb/utils";
-import type { IAugmentedJQuery, IController, IDirective, ILogService, IQService, ITimeoutService } from "angular";
+import type { IAugmentedJQuery, IController, IDirective, ILogService } from "angular";
 
 export interface INgbCollapse {
   toggle(open: boolean): void;
@@ -22,8 +22,6 @@ export class NgbCollapse implements IController, INgbCollapse {
     private readonly $element: IAugmentedJQuery,
     private readonly ngbCollapseConfig: NgbCollapseConfig,
     private readonly $log: ILogService,
-    private readonly $q: IQService,
-    private readonly $timeout: ITimeoutService,
   ) {}
 
   $onInit(): void {
@@ -59,7 +57,7 @@ export class NgbCollapse implements IController, INgbCollapse {
   }
 
   private _runTransitionWithEvents(collapsed: boolean, animation: boolean) {
-    this._runTransition(collapsed, animation).then(() => {
+    this._runTransition(collapsed, animation).subscribe(() => {
       if (collapsed) {
         this.hidden?.();
         this.$log.log("[ngb.collapse]: collapse was hidden");
@@ -72,7 +70,7 @@ export class NgbCollapse implements IController, INgbCollapse {
   }
 
   private _runTransition(collapsed: boolean, animation: boolean) {
-    return ngbRunTransition(this.$q, this.$timeout, this.$element, ngbCollapsingTransition, {
+    return ngbRunTransition(this.$element, ngbCollapsingTransition, {
       animation,
       runningTransition: "stop",
       context: {
@@ -83,7 +81,7 @@ export class NgbCollapse implements IController, INgbCollapse {
   }
 
   static get $inject() {
-    return ["$element", NgbCollapseConfig.$name, "$log", "$q", "$timeout"];
+    return ["$element", NgbCollapseConfig.$name, "$log"];
   }
 
   static get $factory(): () => IDirective {

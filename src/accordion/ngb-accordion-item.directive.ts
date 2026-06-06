@@ -1,6 +1,7 @@
 import type { NgbAccordion } from "@ngb/accordion/ngb-accordion.directive";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import angular from "angular";
+import type { Subscription } from "rxjs";
 import type { NgbAccordionCollapse } from "./ngb-accordion-collapse.directive";
 
 let accordionItemCounter = 0;
@@ -12,6 +13,8 @@ export class NgbAccordionItem implements IController {
 
   private _collapseAnimationRunning = false;
   private _collapse!: NgbAccordionCollapse;
+  private _collapseHiddenSubscription?: Subscription;
+  private _collapseShownSubscription?: Subscription;
   private _id!: string;
 
   public hidden?: () => void;
@@ -36,6 +39,8 @@ export class NgbAccordionItem implements IController {
 
   $onDestroy(): void {
     this._accordion.unregister(this);
+    this._collapseHiddenSubscription?.unsubscribe();
+    this._collapseShownSubscription?.unsubscribe();
   }
 
   set id(id: string) {
@@ -95,6 +100,8 @@ export class NgbAccordionItem implements IController {
 
   register(ngbAccordionCollapse: NgbAccordionCollapse) {
     this._collapse = ngbAccordionCollapse;
+    this._collapseHiddenSubscription = ngbAccordionCollapse.hidden$.subscribe(() => this.onCollapseHidden());
+    this._collapseShownSubscription = ngbAccordionCollapse.shown$.subscribe(() => this.onCollapseShown());
   }
 
   onCollapseHidden() {

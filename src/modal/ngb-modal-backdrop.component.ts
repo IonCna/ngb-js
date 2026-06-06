@@ -4,15 +4,9 @@ import {
 } from "@ngb/modal/ngb-modal-backdrop-transition";
 import { NgbModalConfig, type NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { ngbRunTransition } from "@ngb/utils";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  IQService,
-  IScope,
-  ITimeoutService,
-} from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
 import angular from "angular";
+import type { Observable } from "rxjs";
 
 const BACKDROP_ATTRIBUTES = [
   "animation",
@@ -31,8 +25,6 @@ export class NgbModalBackdrop implements IComponentController {
     private $element: IAugmentedJQuery,
     private $scope: IScope,
     private $ngbModalConfig: NgbModalConfig,
-    private $q: IQService,
-    private $timeout: ITimeoutService,
   ) {}
 
   $postLink(): void {
@@ -42,7 +34,7 @@ export class NgbModalBackdrop implements IComponentController {
     this.$element.css({ "z-index": "1055" });
 
     this.$scope.$evalAsync(() =>
-      ngbRunTransition(this.$q, this.$timeout, this.$element, ngbModalBackdropFadeInTransition, {
+      ngbRunTransition(this.$element, ngbModalBackdropFadeInTransition, {
         animation: this.animation ?? this.$ngbModalConfig.animation,
         runningTransition: "continue",
       }),
@@ -72,8 +64,8 @@ export class NgbModalBackdrop implements IComponentController {
     this._appliedBackdropClass = this.backdropClass;
   }
 
-  hide() {
-    return ngbRunTransition(this.$q, this.$timeout, this.$element, ngbModalBackdropFadeOutTransition, {
+  hide(): Observable<void> {
+    return ngbRunTransition(this.$element, ngbModalBackdropFadeOutTransition, {
       animation: this.animation ?? this.$ngbModalConfig.animation,
       runningTransition: "stop",
     });
@@ -96,7 +88,7 @@ export class NgbModalBackdrop implements IComponentController {
   }
 
   static get $inject() {
-    return ["$element", "$scope", NgbModalConfig.$name, "$q", "$timeout"];
+    return ["$element", "$scope", NgbModalConfig.$name];
   }
 
   static get $factory(): IComponentOptions {

@@ -15,11 +15,11 @@ import type {
   IComponentOptions,
   IIntervalService,
   IPromise,
-  IQService,
   IScope,
   ITimeoutService,
 } from "angular";
 import angular from "angular";
+import { type Observable, take, zip } from "rxjs";
 
 let carouselCounter = 0;
 
@@ -64,7 +64,6 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     private readonly $interval: IIntervalService,
     private readonly $timeout: ITimeoutService,
     private readonly $scope: IScope,
-    private readonly $q: IQService,
   ) {}
 
   $onInit(): void {
@@ -84,7 +83,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   $postLink() {
     this.$element.addClass("carousel slide d-block");
     this.$element.attr("tabIndex", 0);
-    this._container = this.$element.parent();
+    this._container = this.$element;
 
     this._scheduleActiveSlideSync();
 
@@ -240,8 +239,6 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     if (selectedSlide && selectedSlide.id !== this.activeId) {
       if (!this.activeId) throw new Error("[ngb-carousel]: ");
       this._transitionIds = [this.activeId, slideIdx];
-      const currentTransitionIds = this._transitionIds;
-
       this.slide?.({
         $event: {
           prev: this.activeId,
@@ -258,19 +255,17 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         context: { direction },
       };
 
-      const transitions: IPromise<void>[] = [];
+      const transitions: Observable<void>[] = [];
       const activeSlide = this._getSlideById(this.activeId);
 
       if (activeSlide) {
         const activeTransition = ngbRunTransition(
-          this.$q,
-          this.$timeout,
           this._getSlideElement(activeSlide.id),
           ngbCarouselTransitionOut,
           options,
         );
 
-        activeTransition.then(() =>
+        activeTransition.subscribe(() =>
           activeSlide.slid?.({
             $event: {
               direction,
@@ -287,15 +282,9 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
       this.activeId = selectedSlide.id;
       const nextSlide = this._getSlideById(this.activeId);
 
-      const transition = ngbRunTransition(
-        this.$q,
-        this.$timeout,
-        this._getSlideElement(selectedSlide.id),
-        ngbCarouselTransitionIn,
-        options,
-      );
+      const transition = ngbRunTransition(this._getSlideElement(selectedSlide.id), ngbCarouselTransitionIn, options);
 
-      transition.then(() =>
+      transition.subscribe(() =>
         nextSlide?.slid?.({
           $event: {
             isShown: true,
@@ -307,10 +296,10 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
 
       transitions.push(transition);
 
-      this.$q
-        .all(transitions)
-        .then(() => {
-          if (this._transitionIds !== currentTransitionIds) return;
+      zip(...transitions)
+        .pipe(take(1))
+        .subscribe(() => {
+          this._transitionIds = null;
 
           this.slid?.({
             $event: {
@@ -321,11 +310,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
               source,
             },
           });
-        })
-        .finally(() => {
-          if (this._transitionIds !== currentTransitionIds) return;
 
-          this._transitionIds = null;
           this._syncCycle();
         });
     }
@@ -401,7 +386,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   }
 
   static get $inject() {
-    return ["$element", NgbCarouselConfig.$name, "$interval", "$timeout", "$scope", "$q"];
+    return ["$element", NgbCarouselConfig.$name, "$interval", "$timeout", "$scope"];
   }
 }
 

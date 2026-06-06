@@ -1,6 +1,7 @@
 import { NgbNav } from "@ngb/nav/ngb-nav.directive";
 import { NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
 import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
+import { NgbNavCounterFactory } from "@ngb/nav/ngb-nav-counter.factory";
 import { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import { NgbNavItemRole } from "@ngb/nav/ngb-nav-item-role.directive";
 import { NgbNavLink } from "@ngb/nav/ngb-nav-link.directive";
@@ -11,6 +12,7 @@ import angular from "angular";
 
 export const NgbNavModule = angular.module("ngb.nav", []);
 
+NgbNavModule.factory(NgbNavCounterFactory.$name, NgbNavCounterFactory.$factory);
 NgbNavModule.directive(NgbNav.$name, NgbNav.$factory);
 NgbNavModule.service(NgbNavConfig.$name, NgbNavConfig);
 NgbNavModule.directive(NgbNavLinkButton.$name, NgbNavLinkButton.$factory);

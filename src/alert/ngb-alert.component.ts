@@ -2,18 +2,11 @@ import template from "@ngb/alert/ngb-alert.component.html";
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
 import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  ILogService,
-  IPromise,
-  IQService,
-  ITimeoutService,
-} from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService } from "angular";
+import type { Observable } from "rxjs";
 
 export interface INgbAlert {
-  close(): IPromise<void>;
+  close(): Observable<void>;
 }
 
 export class NgbAlert implements IComponentController, INgbAlert {
@@ -25,8 +18,6 @@ export class NgbAlert implements IComponentController, INgbAlert {
   constructor(
     private readonly $element: IAugmentedJQuery,
     private readonly ngbAlertConfig: NgbAlertConfig,
-    private readonly $q: IQService,
-    private readonly $timeout: ITimeoutService,
     private readonly $log: ILogService,
   ) {}
 
@@ -49,15 +40,18 @@ export class NgbAlert implements IComponentController, INgbAlert {
     this.$element.toggleClass("alert-dismissible", this.dismissible);
   }
 
-  async close() {
-    const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbAlertFadingTransition, {
+  close(): Observable<void> {
+    const transition = ngbRunTransition(this.$element, ngbAlertFadingTransition, {
       animation: this.animation ?? this.ngbAlertConfig.animation,
       runningTransition: "continue",
     });
 
-    await transition;
-    this.closed?.();
-    this.$log.info("[ngb.alert]: was closed");
+    transition.subscribe(() => {
+      this.closed?.();
+      this.$log.info("[ngb.alert]: was closed");
+    });
+
+    return transition;
   }
 
   static get $name() {
@@ -65,7 +59,7 @@ export class NgbAlert implements IComponentController, INgbAlert {
   }
 
   static get $inject() {
-    return ["$element", NgbAlertConfig.$name, "$q", "$timeout", "$log"];
+    return ["$element", NgbAlertConfig.$name, "$log"];
   }
 
   static get $factory(): IComponentOptions {

@@ -9,20 +9,15 @@ import type { Options, Placement } from "@popperjs/core";
 import type {
   IAugmentedJQuery,
   IController,
-  IDeferred,
   IDirective,
   IDocumentService,
   ILogService,
   IOnChangesObject,
-  IQService,
   IScope,
   ITimeoutService,
 } from "angular";
 import angular from "angular";
-
-function isValidElement(element: unknown): element is IAugmentedJQuery {
-  return angular.isElement(element);
-}
+import { fromEvent, Subject, take } from "rxjs";
 
 export class NgbDropdown implements IController {
   static ngAcceptInputType_autoClose: boolean | string;
@@ -33,7 +28,7 @@ export class NgbDropdown implements IController {
 
   private _menu!: NgbDropdownMenu;
   private _anchor!: INgbDropdownAnchor;
-  private _destroyCloseHandlers?: IDeferred<void>;
+  private _destroyCloseHandlers$ = new Subject<void>();
   private _unwatchOpenState?: () => void;
 
   private autoClose!: boolean | "inside" | "outside";
@@ -54,7 +49,6 @@ export class NgbDropdown implements IController {
     private $timeout: ITimeoutService,
     private $scope: IScope,
     private $log: ILogService,
-    private $q: IQService,
   ) {}
 
   $onInit(): void {
@@ -63,7 +57,6 @@ export class NgbDropdown implements IController {
     this.placement = this.placement ?? this.$config.placement;
     this.popperOptions = this.popperOptions ?? this.$config.popperOptions;
     this.container = this.container ?? this.$config.container;
-    this._destroyCloseHandlers = this.$q.defer();
 
     this._unwatchOpenState = this.$scope.$watch(
       () => this.isOpen(),
@@ -187,22 +180,21 @@ export class NgbDropdown implements IController {
   }
 
   private _setCloseHandlers() {
-    this._destroyCloseHandlers?.notify();
-    this._destroyCloseHandlers = this.$q.defer();
+    this._destroyCloseHandlers$.next();
 
     ngbAutoClose(
       this.$timeout,
       this.$document,
       this.autoClose,
-      this._destroyCloseHandlers?.promise,
+      this._destroyCloseHandlers$,
       (source: SOURCE) => {
         this.close();
         if (source === SOURCE.ESCAPE) {
           this._anchor?.nativeElement.focus();
         }
       },
-      this._menu ? [this._menu.$element] : [],
-      this._anchor ? [angular.element(this._anchor.nativeElement)] : [],
+      this._menu ? [this._menu.nativeElement] : [],
+      this._anchor ? [this._anchor.nativeElement] : [],
       ".dropdown-item,.dropdown-divider",
     );
   }
@@ -213,7 +205,7 @@ export class NgbDropdown implements IController {
     this._open = false;
     this._resetContainer();
     this._positioning?.destroy();
-    this._destroyCloseHandlers?.notify();
+    this._destroyCloseHandlers$.next();
     this.openChange?.({ $event: false });
 
     this.$scope.$evalAsync();
@@ -254,15 +246,11 @@ export class NgbDropdown implements IController {
 
     if (key === " " || key === "Enter") {
       if (itemElement == null) return;
-      if (!isValidElement(itemElement)) return;
 
       if (this.autoClose === true || this.autoClose === "inside") {
-        const onClick = () => {
-          itemElement.off("click", onClick);
-          this.close();
-        };
-
-        itemElement.on("click", onClick);
+        fromEvent(toNativeElement(itemElement), "click")
+          .pipe(take(1))
+          .subscribe(() => this.close());
       }
 
       return;
@@ -309,16 +297,13 @@ export class NgbDropdown implements IController {
       };
 
       const handleInlineTab = () => {
-        const $target = angular.element(target);
-        const onFocusOut = (focusEvent: JQueryEventObject) => {
-          $target.off("focusout", onFocusOut);
-          const relatedTarget =
-            focusEvent.relatedTarget ?? (focusEvent.originalEvent as FocusEvent | undefined)?.relatedTarget;
-          if (!toNativeElement(this.$element).contains(relatedTarget as HTMLElement)) {
-            this.close();
-          }
-        };
-        $target.on("focusout", onFocusOut);
+        fromEvent<FocusEvent>(target, "focusout")
+          .pipe(take(1))
+          .subscribe(({ relatedTarget }) => {
+            if (!toNativeElement(this.$element).contains(relatedTarget as HTMLElement)) {
+              this.close();
+            }
+          });
       };
 
       if (isFromAnchor) {
@@ -491,7 +476,7 @@ export class NgbDropdown implements IController {
   }
 
   static get $inject() {
-    return [NgbDropdownConfig.$name, "$document", "$element", NgbRTL.$name, "$timeout", "$scope", "$log", "$q"];
+    return [NgbDropdownConfig.$name, "$document", "$element", NgbRTL.$name, "$timeout", "$scope", "$log"];
   }
 
   //#endregion

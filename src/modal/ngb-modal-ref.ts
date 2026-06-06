@@ -2,8 +2,9 @@ import type { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
 import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import type { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
 import type { ContentRef } from "@ngb/utils/popup.service";
-import type { IDeferred, IPromise, IQService } from "angular";
+import type { IPromise, IQService } from "angular";
 import angular from "angular";
+import { of, Subject, takeUntil, zip } from "rxjs";
 
 export class NgbActiveModal {
   update(_options: NgbModalUpdatableOptions): void {}
@@ -17,9 +18,9 @@ export class NgbModalRef<T = any> {
 
   public result?: IPromise<any>;
 
-  private readonly _hidden!: IDeferred<void>;
-  private readonly _dismissed!: IDeferred<any>;
-  private readonly _closed!: IDeferred<any>;
+  private readonly _hidden = new Subject<void>();
+  private readonly _dismissed = new Subject<any>();
+  private readonly _closed = new Subject<any>();
 
   constructor(
     private readonly $q: IQService,
@@ -35,9 +36,6 @@ export class NgbModalRef<T = any> {
     this._resolve = deferred.resolve;
 
     deferred.promise.then(angular.noop, angular.noop);
-    this._closed = this.$q.defer();
-    this._dismissed = this.$q.defer();
-    this._hidden = this.$q.defer();
 
     windowRef.componentInstance?.onDismiss((reason: any) => {
       this.dismiss(reason);
@@ -67,31 +65,31 @@ export class NgbModalRef<T = any> {
 
   close(result?: any) {
     if (!this.windowRef) return;
-    this._closed.resolve(result);
+    this._closed.next(result);
     this._resolve?.(result);
     this._removeModalElements();
   }
 
   private _dismiss(reason?: any) {
-    this._dismissed.resolve(reason);
+    this._dismissed.next(reason);
     this._reject?.(reason);
     this._removeModalElements();
   }
 
   get closed() {
-    return this._closed.promise;
+    return this._closed.asObservable().pipe(takeUntil(this._hidden));
   }
 
   get dismissed() {
-    return this._dismissed.promise;
+    return this._dismissed.asObservable().pipe(takeUntil(this._hidden));
   }
 
   get hidden() {
-    return this._hidden.promise;
+    return this._hidden.asObservable();
   }
 
   get shown() {
-    return this.windowRef.componentInstance?.shown;
+    return this.windowRef.componentInstance?.shown.asObservable();
   }
 
   get componentInstance() {
@@ -100,9 +98,9 @@ export class NgbModalRef<T = any> {
 
   private _removeModalElements() {
     const windowTransition = this.windowRef.componentInstance?.hide();
-    const backdropTransition = this.backdropRef?.componentInstance?.hide() ?? this.$q.resolve();
+    const backdropTransition = this.backdropRef?.componentInstance?.hide() ?? of(undefined);
 
-    windowTransition?.then(() => {
+    windowTransition?.subscribe(() => {
       this.windowRef.$element.remove();
       this.windowRef.$scope?.$destroy();
 
@@ -111,15 +109,16 @@ export class NgbModalRef<T = any> {
       this.contentRef = <any>null;
     });
 
-    backdropTransition?.then(() => {
+    backdropTransition.subscribe(() => {
       if (!this.backdropRef) return;
       this.backdropRef.$element.remove();
       this.backdropRef.$scope?.$destroy();
       this.backdropRef = <any>null;
     });
 
-    this.$q.all([windowTransition, backdropTransition]).then(() => {
-      this._hidden.resolve();
+    zip(windowTransition ?? of(undefined), backdropTransition).subscribe(() => {
+      this._hidden.next();
+      this._hidden.complete();
     });
   }
 }

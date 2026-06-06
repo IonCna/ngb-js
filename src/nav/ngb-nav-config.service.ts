@@ -6,6 +6,10 @@ export interface NgbNavChangeEvent<T = any> {
   activeId: T;
 }
 
+export interface NgbNavContentContext {
+  $implicit: boolean;
+}
+
 export class NgbNavConfig {
   private _animation?: boolean;
 
