@@ -1,20 +1,30 @@
 import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
-import { toNativeElement } from "@ngb/utils";
-import angular, { isString, type IAugmentedJQuery, type IController, type IDirective } from "angular";
+import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component";
+import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
+import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import angular, { type IAugmentedJQuery, type IController, type IDirective, type ITranscludeFunction } from "angular";
 
 export class NgbTooltip implements IController {
   static ngAcceptInputType_autoClose: boolean | string;
   public positionTarget?: string;
   public animation!: boolean;
 
+  private _ngbTooltip?: string | ITranscludeFunction;
+  private _transitioning = false;
+  private _opening = true;
+  private popupService!: IPopupService<NgbTooltipWindow>;
+
   constructor(
     private _config: NgbTooltipConfig,
     private $element: IAugmentedJQuery,
+    private popupFactory: PopupFactory,
   ) {}
 
-  $onDestroy(): void {}
+  $onInit(): void {
+    this.popupService = this.popupFactory.$create<NgbTooltipWindow>(NgbTooltipWindow.$name);
+  }
 
-  public close(animation = this.animation) {}
+  $onDestroy(): void {}
 
   private _getPositionTargetElement() {
     const native = toNativeElement(this.$element);
@@ -24,13 +34,14 @@ export class NgbTooltip implements IController {
   }
 
   static get $inject() {
-    return [NgbTooltipConfig.$name, "$element"];
+    return [NgbTooltipConfig.$name, "$element", PopupFactory.$name];
   }
 
   static get $factory(): () => IDirective {
     return () => ({
       controller: NgbTooltip,
       bindToController: {
+        ngbTooltip: "<?",
         animation: "<?",
         autoClose: "<?",
         placement: "<?",

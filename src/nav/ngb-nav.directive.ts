@@ -23,11 +23,11 @@ export class NgbNav implements IController {
 
   public activeId!: string;
   public activeIdChange?: (event: INgbEvent<string>) => void;
-  public animation?: boolean;
-  public destroyOnHide?: boolean;
-  public orientation?: "vertical" | "horizontal";
-  public roles?: false | "tablist";
-  public keyboard?: boolean | "changeWithArrows";
+  public animation!: boolean;
+  public destroyOnHide!: boolean;
+  public orientation!: "vertical" | "horizontal";
+  public roles!: false | "tablist";
+  public keyboard!: boolean | "changeWithArrows";
   public shown?: (event: INgbEvent<unknown>) => void;
   public hidden?: (event: INgbEvent<unknown>) => void;
 

@@ -34,20 +34,20 @@ export interface INgbCarousel {
 
 export class NgbCarousel implements IComponentController, INgbCarousel {
   protected activeId?: string;
-  protected animation?: boolean;
-  protected interval?: number;
-  protected keyboard?: boolean;
-  protected pauseOnFocus?: boolean;
-  protected pauseOnHover?: boolean;
-  protected showNavigationArrows?: boolean;
-  protected showNavigationIndicators?: boolean;
-  protected wrap?: boolean;
+  protected animation!: boolean;
+  protected interval!: number;
+  protected keyboard!: boolean;
+  protected pauseOnFocus!: boolean;
+  protected pauseOnHover!: boolean;
+  protected showNavigationArrows!: boolean;
+  protected showNavigationIndicators!: boolean;
+  protected wrap!: boolean;
   protected NgbSlideEventSource = NgbSlideEventSource;
 
   protected slide?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
   protected slid?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
 
-  public id?: string;
+  public id!: string;
 
   private _transitionIds: [string, string] | null = null;
   private slides: NgbSlide[] = [];

@@ -147,8 +147,8 @@ export class PopupFactory {
     private $rootScope: IRootScopeService,
   ) {}
 
-  $create(_componentType: string) {
-    return new PopupService(this.$compile, this.$timeout, this.$rootScope, _componentType);
+  $create<T = any>(_componentType: string) {
+    return new PopupService<T>(this.$compile, this.$timeout, this.$rootScope, _componentType);
   }
 
   static get $inject() {

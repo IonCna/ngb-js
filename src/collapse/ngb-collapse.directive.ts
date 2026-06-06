@@ -8,8 +8,8 @@ export interface INgbCollapse {
 }
 
 export class NgbCollapse implements IController, INgbCollapse {
-  public animation?: boolean;
-  protected horizontal?: boolean;
+  public animation!: boolean;
+  protected horizontal!: boolean;
   protected hidden?: () => void;
   protected ngbCollapseChange?: ({ $event }: INgbEvent<boolean>) => void;
   protected shown?: () => void;

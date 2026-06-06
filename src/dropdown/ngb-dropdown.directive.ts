@@ -35,8 +35,8 @@ export class NgbDropdown implements IController {
   private _open = false;
   private placement!: PlacementArray;
   private popperOptions!: (options?: Partial<Options>) => Options;
-  private container?: null | "body";
-  private display?: "dynamic" | "static";
+  private container!: null | "body";
+  private display!: "dynamic" | "static";
 
   private openChange?: ({ $event }: INgbEvent<boolean>) => void;
 

@@ -10,9 +10,9 @@ export interface INgbAlert {
 }
 
 export class NgbAlert implements IComponentController, INgbAlert {
-  protected animation?: boolean;
-  protected dismissible?: boolean;
-  protected type?: string;
+  protected animation!: boolean;
+  protected dismissible!: boolean;
+  protected type!: string;
   protected closed?: () => void;
 
   constructor(

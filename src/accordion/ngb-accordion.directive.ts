@@ -17,9 +17,9 @@ export class NgbAccordion implements IController, INgbAccordion {
   private _anItemWasAlreadyExpandedDuringInitialization = false;
   private _items: NgbAccordionItem[] = [];
 
-  public animation?: boolean;
-  public closeOthers?: boolean;
-  public destroyOnHide?: boolean;
+  public animation!: boolean;
+  public closeOthers!: boolean;
+  public destroyOnHide!: boolean;
 
   public show?: ({ $event }: INgbEvent<string>) => void;
   public shown?: ({ $event }: INgbEvent<string>) => void;

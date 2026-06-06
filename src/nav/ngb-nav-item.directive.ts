@@ -10,7 +10,7 @@ let navCounter = 0;
 export class NgbNavItem implements IController {
   private _nav!: NgbNav;
   public destroyOnHide?: boolean;
-  public disabled?: boolean;
+  public disabled!: boolean;
   public domId!: string;
   public shown?: () => void;
   public hidden?: () => void;

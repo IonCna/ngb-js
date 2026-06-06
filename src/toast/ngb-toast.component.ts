@@ -21,11 +21,11 @@ export interface INgbToast {
 }
 
 export class NgbToast implements IComponentController, INgbToast {
-  protected animation?: boolean;
-  protected autohide?: boolean;
-  protected delay?: number;
+  protected animation!: boolean;
+  protected autohide!: boolean;
+  protected delay!: number;
   protected header?: string;
-  protected ariaLive?: string;
+  protected ariaLive!: string;
   protected contentHeaderTpl?: ITranscludeFunction | null = null;
 
   protected hidden?: () => void;
