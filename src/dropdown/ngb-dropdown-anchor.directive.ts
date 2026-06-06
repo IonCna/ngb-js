@@ -9,8 +9,8 @@ export class NgbDropdownAnchor implements IController {
   private unwatchOpenState?: () => void;
 
   constructor(
-    private readonly $element: JQLite,
-    private readonly $scope: IScope,
+    protected readonly $element: JQLite,
+    protected readonly $scope: IScope,
   ) {}
 
   $postLink(): void {

@@ -1,20 +1,19 @@
-import type { NgbDropdownButtonItem } from "@ngb/dropdown/ngb-dropdown-button-item.directive";
 import type { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
 import { toNativeElement } from "@ngb/utils";
-import type { IController, IDirective, ILogService } from "angular";
+import type { IController, IDirective, IScope } from "angular";
 
 export class NgbDropdownItem implements IController {
   static readonly ngAcceptInputType_disabled: boolean | "";
   private _disabled = false;
+  private unwatchDisabled?: () => void;
 
   public nativeElement!: HTMLElement;
   public ngbDropdownMenu!: NgbDropdownMenu;
-  public ngbDropdownButtonItem?: NgbDropdownButtonItem;
   public tabindex: string | number = 0;
 
   constructor(
     public $element: JQLite,
-    private readonly $log: ILogService,
+    private readonly $scope: IScope,
   ) {}
 
   set disabled(value: boolean) {
@@ -27,16 +26,16 @@ export class NgbDropdownItem implements IController {
 
   $postLink(): void {
     this.nativeElement = toNativeElement(this.$element);
-
-    if (this.nativeElement instanceof HTMLButtonElement && !this.ngbDropdownButtonItem) {
-      this.$log.warn(
-        `[ngb-dropdown]: ngbDropdownButtonItem is required when ngbDropdownItem is used on a button element.`,
-      );
-    }
-
     this.$element.addClass("dropdown-item");
     this.ngbDropdownMenu.register(this);
     this._applyHostBindings();
+
+    if (this.nativeElement instanceof HTMLButtonElement) {
+      this.unwatchDisabled = this.$scope.$watch(
+        () => this.disabled,
+        () => this.$element.attr("disabled", this.disabled ? "disabled" : null),
+      );
+    }
   }
 
   $onChanges(): void {
@@ -50,11 +49,11 @@ export class NgbDropdownItem implements IController {
     if (!needChange) return;
 
     this._disabled = Boolean(disabled);
-
     this._applyHostBindings();
   }
 
   $onDestroy(): void {
+    this.unwatchDisabled?.();
     this.ngbDropdownMenu.unregister(this);
   }
 
@@ -64,6 +63,7 @@ export class NgbDropdownItem implements IController {
   }
 
   //#region $angular
+
   static get $name() {
     return "ngbDropdownItem";
   }
@@ -71,12 +71,10 @@ export class NgbDropdownItem implements IController {
   static get $factory(): () => IDirective {
     return () => ({
       bindToController: {
-        // TODO: add system to watch ng-disabled compatible, disabled use vanilla and do not work here
         tabindex: "<?",
       },
       require: {
         ngbDropdownMenu: "^ngbDropdownMenu",
-        ngbDropdownButtonItem: "?ngbDropdownButtonItem",
       },
       controller: NgbDropdownItem,
       scope: true,
@@ -85,7 +83,8 @@ export class NgbDropdownItem implements IController {
   }
 
   static get $inject() {
-    return ["$element", "$log"];
+    return ["$element", "$scope"];
   }
+
   //#endregion
 }
