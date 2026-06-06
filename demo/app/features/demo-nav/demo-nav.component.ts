@@ -3,7 +3,10 @@ import type { NgbNavChangeEvent } from "@ngb/nav/ngb-nav-config.service";
 import type { IComponentController, IComponentOptions } from "angular";
 
 export class DemoNavComponent implements IComponentController {
-  public activeId: string = "home";
+  public activeId = "home";
+  public anchorActiveId = "alpha";
+  public btnActiveId = "one";
+
   public animation = false;
   public destroyOnHide = true;
   public orientation: "horizontal" | "vertical" = "horizontal";

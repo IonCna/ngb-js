@@ -8,7 +8,7 @@ const isValidNavId = (id?: string): id is string => angular.isDefined(id) && id 
 let navCounter = 0;
 
 export class NgbNavItem implements IController {
-  public ngbNav!: NgbNav;
+  private _nav!: NgbNav;
   public destroyOnHide?: boolean;
   public disabled?: boolean;
   public domId!: string;
@@ -16,7 +16,7 @@ export class NgbNavItem implements IController {
   public hidden?: () => void;
 
   private _id?: string;
-  private content?: NgbNavContent;
+  private _content?: NgbNavContent;
 
   constructor(private $element: IAugmentedJQuery) {}
 
@@ -30,10 +30,15 @@ export class NgbNavItem implements IController {
 
   $postLink(): void {
     this.$element.addClass("nav-item");
+    this._nav.registerItems(this);
+  }
+
+  $onDestroy(): void {
+    this._nav.unregisterItem(this);
   }
 
   get active() {
-    return this.ngbNav.activeId === this.id;
+    return this._nav.activeId === this.id;
   }
 
   get id() {
@@ -44,8 +49,12 @@ export class NgbNavItem implements IController {
     return `${this.domId}-panel`;
   }
 
+  get contentTpl(): NgbNavContent | undefined {
+    return this._content;
+  }
+
   public isPanelInDom() {
-    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : !this.ngbNav.destroyOnHide || this.active;
+    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : !this._nav.destroyOnHide || this.active;
   }
 
   public isNgContainer() {
@@ -53,11 +62,10 @@ export class NgbNavItem implements IController {
   }
 
   public register(content: NgbNavContent) {
-    if (this.content) {
+    if (this._content) {
       throw new Error("only one content in item are allowed");
     }
-
-    this.content = content;
+    this._content = content;
   }
 
   //#region $angular
@@ -76,14 +84,14 @@ export class NgbNavItem implements IController {
       restrict: "A",
       bindToController: true,
       require: {
-        ngbNav: "^ngbNav",
+        _nav: "^ngbNav",
       },
       scope: {
         destroyOnHide: "<?",
         disabled: "<?",
         domId: "@?",
         _id: "@?ngbNavItem",
-        shown: "&",
+        shown: "&?",
         hidden: "&?",
       },
     });

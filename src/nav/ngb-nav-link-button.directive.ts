@@ -1,7 +1,11 @@
-import type { IController, IDirective } from "angular";
+import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
+import type { IDirective } from "angular";
 
-export class NgbNavLinkButton implements IController {
-  $postLink(): void {}
+export class NgbNavLinkButton extends NgbNavLinkBase {
+  override $postLink(): void {
+    super.$postLink();
+    this._setupButton();
+  }
 
   //#region $angular
 
@@ -12,6 +16,11 @@ export class NgbNavLinkButton implements IController {
   static get $factory(): () => IDirective {
     return () => ({
       controller: NgbNavLinkButton,
+      require: {
+        ngbNavItem: "^ngbNavItem",
+        ngbNav: "^ngbNav",
+      },
+      restrict: "A",
       bindToController: true,
     });
   }

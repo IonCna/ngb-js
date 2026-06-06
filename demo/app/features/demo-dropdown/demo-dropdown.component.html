@@ -33,11 +33,11 @@
                 Actions
             </button>
             <div ngb-dropdown-menu>
-                <button type="button" ngb-dropdown-item ngb-dropdown-button-item>Profile</button>
-                <button type="button" ngb-dropdown-item ngb-dropdown-button-item >Settings</button>
-                <button type="button" ngb-dropdown-item ngb-dropdown-button-item ng-disabled="$.disabled">Disabled check</button>
+                <button type="button" ngb-dropdown-item>Profile</button>
+                <button type="button" ngb-dropdown-item>Settings</button>
+                <button type="button" ngb-dropdown-item ng-disabled="$.disabled">Disabled check</button>
                 <div class="dropdown-divider"></div>
-                <button type="button" ngb-dropdown-item ngb-dropdown-button-item>Sign out</button>
+                <button type="button" ngb-dropdown-item>Sign out</button>
             </div>
         </div>
 
@@ -46,13 +46,33 @@
                 Placement sample
             </button>
             <div ngb-dropdown-menu>
-                <button type="button" ngb-dropdown-item ngb-dropdown-button-item >Top preferred</button>
-                <button type="button" ngb-dropdown-item ngb-dropdown-button-item >Fallback bottom</button>
+                <button type="button" ngb-dropdown-item>Top preferred</button>
+                <button type="button" ngb-dropdown-item>Fallback bottom</button>
             </div>
         </div>
     </div>
 
-    <h3 class="h5 mb-2">Port task list</h3>
+    <h4 class="h5 mb-2 mt-4">ngbDropdownItem unificado — botones y links</h4>
+    <p class="text-muted small mb-2">
+        Un solo <code>ngb-dropdown-item</code> funciona en <code>&lt;button&gt;</code> y <code>&lt;a&gt;</code>.
+        El <code>disabled</code> nativo del botón se maneja internamente.
+    </p>
+    <div class="d-flex gap-3 flex-wrap align-items-start">
+        <div ngb-dropdown>
+            <button type="button" class="btn btn-secondary" ngb-dropdown-toggle>
+                Mixed items
+            </button>
+            <div ngb-dropdown-menu>
+                <button type="button" ngb-dropdown-item>Button item</button>
+                <button type="button" ngb-dropdown-item ng-disabled="$.disabled">Button disabled check</button>
+                <div class="dropdown-divider"></div>
+                <a href="#" ngb-dropdown-item>Link item</a>
+                <a href="#" ngb-dropdown-item ng-attr-disabled="{{$.disabled ? 'disabled' : undefined}}">Link disabled check</a>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="h5 mb-2 mt-4">Port task list</h3>
     <ul class="mb-0">
         <li>Wire menu, anchor, toggle and items through AngularJS require controllers.</li>
         <li>Make open, close and toggle update host, toggle and menu classes consistently.</li>

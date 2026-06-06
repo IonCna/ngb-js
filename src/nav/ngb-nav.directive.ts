@@ -1,6 +1,6 @@
-import type { NgbNavChangeEvent } from "@ngb/nav/ngb-nav-config.service";
+import { NgbNavConfig, type NgbNavChangeEvent } from "@ngb/nav/ngb-nav-config.service";
 import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
-import type { NgbNavLink } from "@ngb/nav/ngb-nav-link.directive";
+import type { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
 import { assertAttribute, type INgbEvent, toNativeElement } from "@ngb/utils";
 import type {
   IAttributes,
@@ -29,15 +29,15 @@ export class NgbNav implements IController {
   public orientation?: "vertical" | "horizontal";
   public roles?: false | "tablist";
   public keyboard?: boolean | "changeWithArrows";
-  public shown?: () => void;
-  public hidden?: () => void;
+  public shown?: (event: INgbEvent<unknown>) => void;
+  public hidden?: (event: INgbEvent<unknown>) => void;
 
   public role?: string;
 
   public navChange?: (event: INgbEvent<NgbNavChangeEvent>) => void;
 
-  private items: NgbNavItem[] = [];
-  private links: NgbNavLink[] = [];
+  public items: NgbNavItem[] = [];
+  private links: NgbNavLinkBase[] = [];
 
   public navItemChange$ = new Subject<NgbNavItem | null>();
   private itemsChange$ = new Subject<void>();
@@ -47,13 +47,25 @@ export class NgbNav implements IController {
     private $element: IAugmentedJQuery,
     private $attributes: IAttributes,
     private $scope: IScope,
+    private config: NgbNavConfig,
   ) {}
+
+  $onInit(): void {
+    this.animation ??= this.config.animation;
+    this.destroyOnHide ??= this.config.destroyOnHide;
+    this.keyboard ??= this.config.keyboard;
+    this.orientation ??= this.config.orientation;
+    this.roles ??= this.config.roles;
+  }
 
   $postLink(): void {
     this.$element.addClass("nav");
 
     this.$element.on("keydown", this.onKeyDown.bind(this));
     this.$element.on("focusout", this.onFocusout.bind(this));
+
+    const navRef = this.$attributes.navRef;
+    if (navRef) (this.$scope.$parent as unknown as Record<string, unknown>)[navRef] = this;
 
     this.$attributes.$observe("role", (role?: string) => {
       this.role = role;
@@ -98,8 +110,13 @@ export class NgbNav implements IController {
     this.itemsChange$.next();
   }
 
-  public registerLinks(link: NgbNavLink) {
+  public registerLinks(link: NgbNavLinkBase) {
     this.links.push(link);
+  }
+
+  public unregisterLink(link: NgbNavLinkBase) {
+    const index = this.links.indexOf(link);
+    if (index >= 0) this.links.splice(index, 1);
   }
 
   public unregisterItem(item: NgbNavItem) {
@@ -212,14 +229,14 @@ export class NgbNav implements IController {
   }
 
   static get $inject() {
-    return ["$document", "$element", "$attrs", "$scope"];
+    return ["$document", "$element", "$attrs", "$scope", NgbNavConfig.$name];
   }
 
   static get $factory(): () => IDirective {
     return () => ({
       restrict: "A",
       scope: {
-        activeId: "@?",
+        activeId: "=?",
         animation: "<?",
         destroyOnHide: "<?",
         keyboard: "<?",

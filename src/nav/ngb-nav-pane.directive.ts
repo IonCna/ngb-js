@@ -1,6 +1,7 @@
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
-import type { NgbNav } from "./ngb-nav.directive";
-import type { NgbNavItem } from "./ngb-nav-item.directive";
+import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
+import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
+import { assertAttribute } from "@ngb/utils";
+import type { IAttributes, IAugmentedJQuery, IController, IDirective } from "angular";
 
 export class NgbNavPane implements IController {
   item!: NgbNavItem;
@@ -8,23 +9,21 @@ export class NgbNavPane implements IController {
 
   constructor(
     public $element: IAugmentedJQuery,
-    private $scope: IScope,
+    private $attrs: IAttributes,
   ) {}
-
-  $onInit(): void {
-    this.$scope.$watch(
-      () => this.item.panelDomId,
-      (id) => {
-        this.$element.attr("id", id);
-      },
-    );
-  }
 
   $postLink(): void {
     this.$element.addClass("tab-pane");
-  }
+    if (this.nav.animation) this.$element.addClass("fade");
 
-  $onChanges(): void {}
+    this.$element.attr("id", this.item.panelDomId);
+    this.$element.attr("aria-labelledby", this.item.domId);
+    assertAttribute(this.$element, "role", this.$attrs["role"], this.nav.roles ? "tabpanel" : undefined);
+
+    if (this.item.contentTpl) {
+      this.item.contentTpl.$transclude((cloned) => this.$element.append(cloned));
+    }
+  }
 
   //#region $angular
 
@@ -33,7 +32,7 @@ export class NgbNavPane implements IController {
   }
 
   static get $inject() {
-    return ["$element", "$scope"];
+    return ["$element", "$attrs"];
   }
 
   static get $factory(): () => IDirective {

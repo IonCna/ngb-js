@@ -1,6 +1,7 @@
 <div class="container py-3">
     <h2 class="mb-3">Nav (Tabs) demo</h2>
 
+    <!-- Controls -->
     <div class="mb-3 d-flex gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-primary" ng-click="$.toggleAnimation()">
             Animation: {{ $.animation ? 'on' : 'off' }}
@@ -24,28 +25,83 @@
         <div ng-if="$.lastChange"><strong>Last navChange:</strong> {{ $.lastChange }}</div>
     </div>
 
+    <!-- Example 1: ngb-nav-link on <button> -->
+    <h5 class="mb-2">Button links <code>(ngb-nav-link on &lt;button&gt;)</code></h5>
     <div ng-class="{'d-flex align-items-start gap-3': $.orientation === 'vertical'}">
-        <ul ngb-nav active-id="$.activeId" animation="$.animation" destroy-on-hide="$.destroyOnHide"
-            orientation="$.orientation" nav-change="$.onNavChange($event)">
+        <ul ngb-nav nav-ref="mainNav" active-id="$.activeId" animation="$.animation"
+            destroy-on-hide="$.destroyOnHide" orientation="$.orientation"
+            nav-change="$.onNavChange($event)">
             <li ngb-nav-item="home">
                 <button type="button" ngb-nav-link>Home</button>
                 <div ngb-nav-content>
-                    <p>This is the <strong>Home</strong> tab content.</p>
+                    <p class="pt-2">This is the <strong>Home</strong> tab content.</p>
                 </div>
             </li>
             <li ngb-nav-item="profile">
                 <button type="button" ngb-nav-link>Profile</button>
                 <div ngb-nav-content>
-                    <p>This is the <strong>Profile</strong> tab content.</p>
+                    <p class="pt-2">This is the <strong>Profile</strong> tab content.</p>
                 </div>
             </li>
             <li ngb-nav-item="settings" disabled="$.settingsDisabled">
                 <button type="button" ngb-nav-link>Settings</button>
                 <div ngb-nav-content>
-                    <p>This is the <strong>Settings</strong> tab content.</p>
+                    <p class="pt-2">This is the <strong>Settings</strong> tab content.</p>
                 </div>
             </li>
         </ul>
-        <div ngb-nav-outlet></div>
+        <div ngb-nav-outlet="mainNav"></div>
     </div>
+
+    <hr class="my-4" />
+
+    <!-- Example 2: ngb-nav-link on <a> -->
+    <h5 class="mb-2">Anchor links <code>(ngb-nav-link on &lt;a&gt;)</code></h5>
+    <ul ngb-nav nav-ref="anchorNav" active-id="$.anchorActiveId" class="nav-tabs">
+        <li ngb-nav-item="alpha">
+            <a ngb-nav-link>Alpha</a>
+            <div ngb-nav-content>
+                <p class="pt-2">Content for <strong>Alpha</strong>.</p>
+            </div>
+        </li>
+        <li ngb-nav-item="beta">
+            <a ngb-nav-link>Beta</a>
+            <div ngb-nav-content>
+                <p class="pt-2">Content for <strong>Beta</strong>.</p>
+            </div>
+        </li>
+        <li ngb-nav-item="gamma">
+            <a ngb-nav-link>Gamma</a>
+            <div ngb-nav-content>
+                <p class="pt-2">Content for <strong>Gamma</strong>.</p>
+            </div>
+        </li>
+    </ul>
+    <div ngb-nav-outlet="anchorNav"></div>
+
+    <hr class="my-4" />
+
+    <!-- Example 3: ngb-nav-link-button directive -->
+    <h5 class="mb-2">Button directive <code>(ngb-nav-link-button)</code></h5>
+    <ul ngb-nav nav-ref="btnNav" active-id="$.btnActiveId" class="nav-pills">
+        <li ngb-nav-item="one">
+            <button type="button" ngb-nav-link-button>One</button>
+            <div ngb-nav-content>
+                <p class="pt-2">Content for <strong>One</strong>.</p>
+            </div>
+        </li>
+        <li ngb-nav-item="two">
+            <button type="button" ngb-nav-link-button>Two</button>
+            <div ngb-nav-content>
+                <p class="pt-2">Content for <strong>Two</strong>.</p>
+            </div>
+        </li>
+        <li ngb-nav-item="three" disabled="true">
+            <button type="button" ngb-nav-link-button>Three (disabled)</button>
+            <div ngb-nav-content>
+                <p class="pt-2">Content for <strong>Three</strong>.</p>
+            </div>
+        </li>
+    </ul>
+    <div ngb-nav-outlet="btnNav"></div>
 </div>
