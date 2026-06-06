@@ -75,7 +75,6 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   constructor(
     private readonly $element: IAugmentedJQuery,
     private readonly $ngbCarouselConfig: NgbCarouselConfig,
-    private readonly $scope: IScope,
     private readonly $digestService: DigestService,
   ) {}
 
@@ -404,7 +403,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   }
 
   static get $inject() {
-    return ["$element", NgbCarouselConfig.$name, "$scope", DigestService.$name];
+    return ["$element", NgbCarouselConfig.$name, DigestService.$name];
   }
 }
 
