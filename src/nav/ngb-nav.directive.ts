@@ -155,10 +155,10 @@ export class NgbNav implements IController {
     event.preventDefault();
   }
 
-  public onFocusout({ target }: JQueryEventObject) {
+  public onFocusout({ relatedTarget }: JQueryEventObject) {
     const native = toNativeElement(this.$element);
 
-    if (!native.contains(target as HTMLElement)) {
+    if (!native.contains(relatedTarget as HTMLElement)) {
       this._navigatingWithKeyboard = false;
     }
   }

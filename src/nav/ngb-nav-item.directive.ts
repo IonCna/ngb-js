@@ -45,7 +45,7 @@ export class NgbNavItem implements IController {
   }
 
   public isPanelInDom() {
-    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : this.ngbNav.destroyOnHide || this.active;
+    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : !this.ngbNav.destroyOnHide || this.active;
   }
 
   public isNgContainer() {
