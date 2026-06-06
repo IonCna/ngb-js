@@ -1,5 +1,6 @@
 import template from "@ngb/tooltip/ngb-tooltip-window.component.html";
 import type { IComponentController, IComponentOptions } from "angular";
+import angular from "angular";
 
 export class NgbTooltipWindow implements IComponentController {
   public id?: string;
@@ -17,6 +18,18 @@ export class NgbTooltipWindow implements IComponentController {
 
   $onChanges(): void {
     this.$element.toggleClass("fade", this.animation);
+
+    if (this.tooltipClass) {
+      this.$element.addClass(this.tooltipClass);
+    }
+
+    if (this.onMouseEnter || this.onMouseLeave) {
+      this.$element.off("mouseenter");
+      this.$element.off("mouseleave");
+
+      this.$element.on("mouseenter", this.onMouseEnter?.bind(this) ?? angular.noop);
+      this.$element.on("mouseleave", this.onMouseLeave?.bind(this) ?? angular.noop);
+    }
   }
 
   static get $inject() {

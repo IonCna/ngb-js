@@ -1,5 +1,5 @@
-import { closest, toNativeElement } from "@ngb/utils";
-import angular, { type IDocumentService, type ITimeoutService } from "angular";
+import { closest } from "@ngb/utils";
+import angular, { type ITimeoutService } from "angular";
 import { delay, filter, fromEvent, map, type Observable, race, takeUntil, tap, withLatestFrom } from "rxjs";
 
 export enum SOURCE {
@@ -37,7 +37,6 @@ const wrapAsyncForMobile = ($timeout: ITimeoutService, fn: () => void): (() => v
 
 export function ngbAutoClose(
   $timeout: ITimeoutService,
-  $document: IDocumentService,
   type: boolean | "inside" | "outside",
   closed$: Observable<unknown>,
   close: (source: SOURCE) => void,
@@ -48,8 +47,6 @@ export function ngbAutoClose(
   if (!type) return;
 
   wrapAsyncForMobile($timeout, () => {
-    const nativeDocument = toNativeElement<Document>($document);
-
     const shouldCloseOnClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target) return false;
@@ -69,19 +66,19 @@ export function ngbAutoClose(
       return matchesSelectorIfAny(target, insideSelector) || !isContainedIn(target, insideElements);
     };
 
-    const escapes$ = fromEvent<KeyboardEvent>(nativeDocument, "keydown").pipe(
+    const escapes$ = fromEvent<KeyboardEvent>(document, "keydown").pipe(
       takeUntil(closed$),
       filter((event) => event.key === "Escape"),
       tap((event) => event.preventDefault()),
     );
 
     // Pre-calculate this on mousedown, because DOM nodes may be detached on mouseup.
-    const mouseDowns$ = fromEvent<MouseEvent>(nativeDocument, "mousedown").pipe(
+    const mouseDowns$ = fromEvent<MouseEvent>(document, "mousedown").pipe(
       map(shouldCloseOnClick),
       takeUntil(closed$),
     );
 
-    const closeableClicks$ = fromEvent<MouseEvent>(nativeDocument, "mouseup").pipe(
+    const closeableClicks$ = fromEvent<MouseEvent>(document, "mouseup").pipe(
       withLatestFrom(mouseDowns$),
       filter(([, shouldClose]) => shouldClose),
       delay(0),

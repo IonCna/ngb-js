@@ -1,11 +1,8 @@
-import { toNativeElement } from "@ngb/utils";
-import type { IDocumentService } from "angular";
-
 export class NgbRTL {
-  private readonly _element!: HTMLElement;
+  private readonly _element: HTMLElement;
 
-  constructor($document: IDocumentService) {
-    this._element = toNativeElement<Document>($document).documentElement;
+  constructor() {
+    this._element = document.documentElement;
   }
 
   isRTL() {
@@ -14,7 +11,7 @@ export class NgbRTL {
   }
 
   static get $inject() {
-    return ["$document"];
+    return [];
   }
 
   static get $name() {

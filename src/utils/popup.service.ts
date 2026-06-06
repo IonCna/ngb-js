@@ -1,7 +1,6 @@
 import type {
   IAugmentedJQuery,
   ICompileService,
-  IDocumentService,
   IRootScopeService,
   IScope,
   ITimeoutService,
@@ -9,7 +8,7 @@ import type {
 } from "angular";
 import angular from "angular";
 import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
-import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition, toNativeElement } from ".";
+import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition } from ".";
 
 function targetIsTranscludeFunction(target: unknown): target is ITranscludeFunction {
   return Boolean(target && Object.hasOwn(target, "isSlotFilled"));
@@ -56,7 +55,6 @@ class PopupService<T> implements IPopupService<T> {
   private _contentRef: ContentRef<T> | null = null;
 
   constructor(
-    private $document: IDocumentService,
     private $compile: ICompileService,
     private $timeout: ITimeoutService,
     private $rootScope: IRootScopeService,
@@ -134,7 +132,6 @@ class PopupService<T> implements IPopupService<T> {
       return new ContentRef(compiled, scope);
     }
 
-    const document = toNativeElement<Document>(this.$document);
     const node = document.createTextNode(`${content}`);
 
     //@ts-expect-error
@@ -145,18 +142,17 @@ class PopupService<T> implements IPopupService<T> {
 
 export class PopupFactory {
   constructor(
-    private $document: IDocumentService,
     private $compile: ICompileService,
     private $timeout: ITimeoutService,
     private $rootScope: IRootScopeService,
   ) {}
 
   $create(_componentType: string) {
-    return new PopupService(this.$document, this.$compile, this.$timeout, this.$rootScope, _componentType);
+    return new PopupService(this.$compile, this.$timeout, this.$rootScope, _componentType);
   }
 
   static get $inject() {
-    return ["$document", "$compile", "$timeout", "$rootScope"];
+    return ["$compile", "$timeout", "$rootScope"];
   }
 
   static get $name() {

@@ -1,11 +1,11 @@
 import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
-import type { IAugmentedJQuery, IDocumentService, ITimeoutService } from "angular";
+import type { IAugmentedJQuery, ITimeoutService } from "angular";
 import angular from "angular";
 
-function getLiveElement($document: IDocumentService, lazyCreate = false): IAugmentedJQuery | null {
-  const [body]: HTMLBodyElement[] = Array.from($document.find("body"));
+function getLiveElement(lazyCreate = false): IAugmentedJQuery | null {
+  const body = document.body;
 
-  let element = angular.element(body.querySelector("#ngb-live")!);
+  let element = angular.element(body.querySelector("#ngb-live"));
 
   if (element == null && lazyCreate) {
     element = angular.element("<div></div>");
@@ -29,19 +29,18 @@ interface ILiveService {
 export class LiveService implements ILiveService {
   constructor(
     private readonly ariaLiveDelay: number,
-    private $document: IDocumentService,
     private $timeout: ITimeoutService,
   ) {}
 
   public onDestroy(): void {
-    const element = getLiveElement(this.$document);
+    const element = getLiveElement();
     if (!element) return;
 
     element.remove();
   }
 
   public say(message: string) {
-    const element = getLiveElement(this.$document, true);
+    const element = getLiveElement(true);
     const delay = this.ariaLiveDelay;
     if (!element) return;
 
@@ -61,6 +60,6 @@ export class LiveService implements ILiveService {
   }
 
   static get $inject() {
-    return [ARIA_LIVE_DELAY.$name, "$document", "$timeout"];
+    return [ARIA_LIVE_DELAY.$name, "$timeout"];
   }
 }

@@ -10,7 +10,6 @@ import angular, {
   type IAugmentedJQuery,
   type ICompileService,
   type IDeferred,
-  type IDocumentService,
   type IQService,
   type IRootScopeService,
 } from "angular";
@@ -31,7 +30,6 @@ export class NgbModalStack {
   private _activeInstances?: IDeferred<NgbModalRef[]>;
 
   constructor(
-    private $document: IDocumentService,
     private ngbScrollbar: NgbScrollbar,
     private $compile: ICompileService,
     private $rootScope: IRootScopeService,
@@ -90,13 +88,13 @@ export class NgbModalStack {
         this._registerWindow(windowRef);
 
         if (this._modalRefs.length === 1) {
-          this.$document.find("body").addClass("modal-open");
+          document.body.classList.add("modal-open");
         }
 
         ngbModalRef.hidden.pipe(take(1)).subscribe(() =>
           this.$q.resolve(true).then(() => {
             if (this._modalRefs.length) return;
-            this.$document.find("body").removeClass("modal-open");
+            document.body.classList.remove("modal-open");
 
             this._restoreScrollBar();
             this._revertAriaHidden();
@@ -155,13 +153,13 @@ export class NgbModalStack {
 
   private _resolveContainer(container?: IAugmentedJQuery | string): IAugmentedJQuery | undefined {
     if (angular.isString(container)) {
-      const native = toNativeElement(this.$document).querySelector(String(container));
+      const native = document.querySelector(String(container));
 
       if (!native) return undefined;
       return angular.element(native);
     }
 
-    return container ?? this.$document.find("body");
+    return container ?? angular.element(document.body);
   }
 
   private _attachBackdrop(container: IAugmentedJQuery) {
@@ -251,7 +249,7 @@ export class NgbModalStack {
   private _setAriaHidden(element: IAugmentedJQuery) {
     const node = toNativeElement(element);
     const parent = node.parentElement;
-    const body = toNativeElement<HTMLBodyElement>(this.$document.find("body"));
+    const body = document.body as HTMLBodyElement;
 
     if (parent && node !== body) {
       Array.from(parent.children).forEach((sibling) => {
@@ -298,6 +296,6 @@ export class NgbModalStack {
   }
 
   static get $inject() {
-    return ["$document", NgbScrollbar.$name, "$compile", "$rootScope", "$q"];
+    return [NgbScrollbar.$name, "$compile", "$rootScope", "$q"];
   }
 }

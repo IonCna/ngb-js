@@ -10,7 +10,6 @@ import type {
   IAugmentedJQuery,
   IController,
   IDirective,
-  IDocumentService,
   ILogService,
   IOnChangesObject,
   IScope,
@@ -43,7 +42,6 @@ export class NgbDropdown implements IController {
 
   constructor(
     private $config: NgbDropdownConfig,
-    private $document: IDocumentService,
     private $element: IAugmentedJQuery,
     private $ngbRTL: NgbRTL,
     private $timeout: ITimeoutService,
@@ -184,7 +182,6 @@ export class NgbDropdown implements IController {
 
     ngbAutoClose(
       this.$timeout,
-      this.$document,
       this.autoClose,
       this._destroyCloseHandlers$,
       (source: SOURCE) => {
@@ -232,13 +229,12 @@ export class NgbDropdown implements IController {
       for (let index = 0; index < itemElements.length; index++) {
         const item = itemElements[index];
         const native = toNativeElement(item);
-        const doc = toNativeElement<Document>(this.$document);
 
         if (native.contains(event.target as HTMLElement)) {
           itemElement = item;
         }
 
-        if (native === getActiveElement(doc)) {
+        if (native === getActiveElement()) {
           position = index;
         }
       }
@@ -400,7 +396,7 @@ export class NgbDropdown implements IController {
       });
 
       this._bodyContainer.append(this._menu.$element);
-      this.$document.find("body").append(this._bodyContainer);
+      angular.element(document.body).append(this._bodyContainer);
     }
 
     this._applyCustomDropdownClass(this.dropdownClass!);
@@ -476,7 +472,7 @@ export class NgbDropdown implements IController {
   }
 
   static get $inject() {
-    return [NgbDropdownConfig.$name, "$document", "$element", NgbRTL.$name, "$timeout", "$scope", "$log"];
+    return [NgbDropdownConfig.$name, "$element", NgbRTL.$name, "$timeout", "$scope", "$log"];
   }
 
   //#endregion

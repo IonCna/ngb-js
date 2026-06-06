@@ -12,7 +12,6 @@ import type {
   IAugmentedJQuery,
   IComponentController,
   IComponentOptions,
-  IDocumentService,
   ILogService,
   IScope,
   ITimeoutService,
@@ -65,13 +64,10 @@ export class NgbModalWindow implements IComponentController {
     private $scope: IScope,
     private $element: IAugmentedJQuery,
     private $timeout: ITimeoutService,
-    private $document: IDocumentService,
     private $log: ILogService,
   ) {}
 
   $onInit(): void {
-    const document = toNativeElement<Document>(this.$document);
-
     this._elWithFocus = document.activeElement;
   }
 
@@ -192,7 +188,6 @@ export class NgbModalWindow implements IComponentController {
 
   private _setFocus() {
     const native = toNativeElement(this.$element);
-    const document = toNativeElement<Document>(this.$document);
     if (!native.contains(document.activeElement)) {
       const autoFocusable = native.querySelector("[ngbAutofocus]") as HTMLElement;
       const [firstFocusable] = getFocusableBoundaryElements(native);
@@ -274,7 +269,7 @@ export class NgbModalWindow implements IComponentController {
   }
 
   private _restoreFocus() {
-    const body = toNativeElement<HTMLBodyElement>(this.$document.find("body"));
+    const body = document.body as HTMLBodyElement;
 
     const elWithFocus = this._elWithFocus;
     const validElementToFocus = elWithFocus instanceof HTMLElement && body.contains(elWithFocus);
@@ -305,7 +300,7 @@ export class NgbModalWindow implements IComponentController {
   }
 
   static get $inject() {
-    return ["$scope", "$element", "$timeout", "$document", "$log"];
+    return ["$scope", "$element", "$timeout", "$log"];
   }
 
   static get $factory(): IComponentOptions {

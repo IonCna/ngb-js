@@ -7,7 +7,6 @@ import type {
   IAugmentedJQuery,
   IController,
   IDirective,
-  IDocumentService,
   IOnChangesObject,
   IScope,
 } from "angular";
@@ -43,7 +42,6 @@ export class NgbNav implements IController {
   private itemsChange$ = new Subject<void>();
 
   constructor(
-    private $document: IDocumentService,
     private $element: IAugmentedJQuery,
     private $attributes: IAttributes,
     private $scope: IScope,
@@ -135,10 +133,8 @@ export class NgbNav implements IController {
     const { length } = enabledLinks;
 
     let position = -1;
-    const doc = toNativeElement<Document>(this.$document);
-
     enabledLinks.forEach((link, index) => {
-      if (link.nativeElement === doc.activeElement) {
+      if (link.nativeElement === document.activeElement) {
         position = index;
       }
     });
@@ -229,7 +225,7 @@ export class NgbNav implements IController {
   }
 
   static get $inject() {
-    return ["$document", "$element", "$attrs", "$scope", NgbNavConfig.$name];
+    return ["$element", "$attrs", "$scope", NgbNavConfig.$name];
   }
 
   static get $factory(): () => IDirective {
