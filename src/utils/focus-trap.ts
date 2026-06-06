@@ -13,18 +13,12 @@ export const FOCUSABLE_ELEMENTS_SELECTOR = [
 export function getFocusableBoundaryElements(element: HTMLElement): HTMLElement[] {
   const list: HTMLElement[] = Array.from(
     element.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR) as NodeListOf<HTMLElement>,
-  ).filter(
-    (el) => el.tabIndex !== -1,
-  );
+  ).filter((el) => el.tabIndex !== -1);
 
   return [list[0], list[list.length - 1]];
 }
 
-export const ngbFocusTrap = (
-  element: HTMLElement,
-  stopFocusTrap$: Observable<unknown>,
-  refocusOnClick = false,
-) => {
+export const ngbFocusTrap = (element: HTMLElement, stopFocusTrap$: Observable<unknown>, refocusOnClick = false) => {
   const lastFocusedElement$ = fromEvent<FocusEvent>(element, "focusin").pipe(
     takeUntil(stopFocusTrap$),
     map((event) => event.target),

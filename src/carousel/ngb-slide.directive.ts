@@ -20,6 +20,10 @@ export class NgbSlide implements IController {
     this.carousel.register(this);
   }
 
+  $onDestroy(): void {
+    this.carousel.unregister(this);
+  }
+
   static get $factory(): () => IDirective {
     return () => ({
       require: {

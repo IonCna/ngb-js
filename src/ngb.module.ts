@@ -15,6 +15,7 @@ import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
 import { LiveService } from "@ngb/utils/accessibility/live.service";
 import { PopupFactory } from "@ngb/utils/popup.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
+import { DigestService } from "@ngb/utils/digest.service";
 import angular from "angular";
 
 export const NgbModule = angular.module("ngb", [
@@ -34,6 +35,7 @@ NgbModule.service(NgbConfig.$name, NgbConfig);
 NgbModule.directive(NgbContent.$name, NgbContent.$factory);
 NgbModule.service(NgbScrollbar.$name, NgbScrollbar);
 NgbModule.factory(PopupFactory.$name, PopupFactory);
+NgbModule.service(DigestService.$name, DigestService);
 
 NgbModule.service(LiveService.$name, LiveService);
 NgbModule.service(NgbRTL.$name, NgbRTL);

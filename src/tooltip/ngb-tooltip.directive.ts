@@ -10,6 +10,8 @@ export class NgbTooltip implements IController {
   public animation!: boolean;
 
   private _ngbTooltip?: string | ITranscludeFunction;
+  private _windowRef: unknown;
+
   private _transitioning = false;
   private _opening = true;
   private popupService!: IPopupService<NgbTooltipWindow>;
@@ -24,6 +26,8 @@ export class NgbTooltip implements IController {
     this.popupService = this.popupFactory.$create<NgbTooltipWindow>(NgbTooltipWindow.$name);
   }
 
+  public open(context?: any) {}
+
   $onDestroy(): void {}
 
   private _getPositionTargetElement() {
@@ -31,6 +35,13 @@ export class NgbTooltip implements IController {
     const target = document.querySelector(this.positionTarget ?? "");
 
     return angular.element(target ?? native);
+  }
+
+  set ngbTooltip(value: string | ITranscludeFunction) {
+    this._ngbTooltip = value;
+
+    if (!value && this) {
+    }
   }
 
   static get $inject() {
