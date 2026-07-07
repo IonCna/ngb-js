@@ -4,6 +4,10 @@ ngb-tooltip-window {
 }
 
 ngb-tooltip-window .tooltip-inner {
+  pointer-events: none;
+}
+
+ngb-tooltip-window.show .tooltip-inner {
   pointer-events: auto;
 }
 

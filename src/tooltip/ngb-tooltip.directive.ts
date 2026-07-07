@@ -43,6 +43,7 @@ export class NgbTooltip implements IController {
   private _windowRef: ContentRef<NgbTooltipWindow> | null = null;
   private _positioning!: NgbPositioning;
   private _unlistenTriggers?: () => void;
+  private _unwatchPositioning?: () => void;
   private _destroyCloseHandlers$ = new Subject<void>();
 
   private _transitioning = false;
@@ -140,6 +141,7 @@ export class NgbTooltip implements IController {
       updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
     });
     Promise.resolve().then(() => this._positioning.update());
+    this._watchPositioning();
     this._setCloseHandlers();
 
     transition$.subscribe(() => {
@@ -169,6 +171,8 @@ export class NgbTooltip implements IController {
     this.popupService.close(animation).subscribe(() => {
       this._windowRef = null;
       this._positioning.destroy();
+      this._unwatchPositioning?.();
+      this._unwatchPositioning = undefined;
       if (this._transitioning) {
         this._transitioning = false;
         this.hidden?.();
@@ -230,8 +234,8 @@ export class NgbTooltip implements IController {
       () => this.isOpen(),
       () => this.open(),
       () => this.close(),
-      this.openDelay,
-      this.closeDelay,
+      +this.openDelay,
+      +this.closeDelay,
       this._mouseenterContent$,
       this._mouseleaveContent$,
     );
@@ -252,6 +256,15 @@ export class NgbTooltip implements IController {
       this._windowRef ? [toNativeElement(this._windowRef.$element)] : [],
       [toNativeElement(this.$element)],
     );
+  }
+
+  private _watchPositioning(): void {
+    this._unwatchPositioning?.();
+    this._unwatchPositioning = this.$scope.$watch(() => {
+      if (this._windowRef) {
+        this._positioning.update();
+      }
+    });
   }
 
   set ngbTooltip(value: string | ITranscludeFunction) {

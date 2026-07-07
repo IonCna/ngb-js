@@ -127,6 +127,35 @@ describe("ngbTooltip", () => {
     element.remove();
   });
 
+  it("opens the next tooltip when moving quickly between hosts", () => {
+    const scope = $rootScope.$new();
+    const elements = $compile(`
+            <div>
+                <button type="button" ngb-tooltip="'First tooltip'" open-delay="0" close-delay="0">First</button>
+                <button type="button" ngb-tooltip="'Second tooltip'" open-delay="0" close-delay="0">Second</button>
+            </div>
+        `)(scope);
+    angular.element(document.body).append(elements);
+    scope.$digest();
+
+    const [first, second] = Array.from(elements[0].querySelectorAll("button"));
+
+    first.dispatchEvent(new MouseEvent("mouseenter"));
+    scope.$digest();
+    $timeout.flush();
+
+    first.dispatchEvent(new MouseEvent("mouseleave"));
+    second.dispatchEvent(new MouseEvent("mouseenter"));
+    scope.$digest();
+    $timeout.flush();
+    scope.$digest();
+
+    const tooltipTexts = Array.from(document.body.querySelectorAll(".tooltip-inner")).map((tooltip) => tooltip.textContent);
+    expect(tooltipTexts).toContain("Second tooltip");
+    expect(document.body.querySelector(".tooltip.show .tooltip-inner")?.textContent).toContain("Second tooltip");
+    elements.remove();
+  });
+
   it("supports literal attribute values without expression bindings", () => {
     const scope = $rootScope.$new();
     const element = $compile(`
