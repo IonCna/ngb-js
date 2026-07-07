@@ -2,6 +2,7 @@ import { DigestService } from "@ngb/utils/digest.service";
 import type {
   IAugmentedJQuery,
   ICompileService,
+  IOnChangesObject,
   IRootScopeService,
   IScope,
   ITranscludeFunction,
@@ -22,14 +23,21 @@ export class ContentRef<T = any> {
   ) {}
 
   public setInput(key: string, value?: unknown) {
-    const isFn = angular.isFunction(value);
-    this.$scope?.$evalAsync(() => {
-      if (!this.componentInstance) {
-        throw new Error("can not set on componentInstance because is undefined");
-      }
+    if (!this.componentInstance) {
+      throw new Error("can not set on componentInstance because is undefined");
+    }
 
-      (this.componentInstance as any)[key] = isFn ? value?.() : value;
-    });
+    const instance = this.componentInstance as any;
+    const previousValue = instance[key];
+    instance[key] = value;
+    instance.$onChanges?.({
+      [key]: {
+        currentValue: value,
+        previousValue,
+        isFirstChange: () => previousValue === undefined,
+      },
+    } satisfies IOnChangesObject);
+    this.$scope?.$evalAsync();
   }
 }
 
@@ -67,7 +75,10 @@ class PopupService<T> implements IPopupService<T> {
       const component = camelToKebabCase(this._componentType);
 
       const scope = this.$rootScope.$new();
-      const linkFn = this.$compile(`<${component}></${component}>`);
+      const host = angular.element(`<${component}></${component}>`);
+      host.append(this._contentRef.$element);
+
+      const linkFn = this.$compile(host);
       const compiled = linkFn(scope);
       const instance = compiled.controller(this._componentType);
 

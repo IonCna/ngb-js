@@ -61,6 +61,7 @@ describe("ngbTooltip", () => {
     scope.$digest();
 
     expect((ctrl as { isOpen: () => boolean }).isOpen()).toBe(true);
+    expect(document.body.querySelector(".tooltip-inner")?.textContent).toContain("Tooltip text");
 
     ctrl.close();
     scope.$digest();
@@ -91,6 +92,38 @@ describe("ngbTooltip", () => {
     scope.$digest();
 
     expect(document.body.querySelector(".tooltip")).toBeNull();
+    element.remove();
+  });
+
+  it("reopens when hovering again during the closing transition", () => {
+    const scope = $rootScope.$new();
+    const element = $compile(`
+            <button
+                type="button"
+                ngb-tooltip="'Fast tooltip'"
+                open-delay="0"
+                close-delay="0">
+                Fast
+            </button>
+        `)(scope);
+    angular.element(document.body).append(element);
+    scope.$digest();
+
+    const ctrl = element.controller("ngbTooltip") as { isOpen: () => boolean };
+    const button = element[0];
+
+    button.dispatchEvent(new MouseEvent("mouseenter"));
+    scope.$digest();
+    $timeout.flush();
+
+    button.dispatchEvent(new MouseEvent("mouseleave"));
+    button.dispatchEvent(new MouseEvent("mouseenter"));
+    scope.$digest();
+    $timeout.flush();
+    scope.$digest();
+
+    expect(ctrl.isOpen()).toBe(true);
+    expect(document.body.querySelector(".tooltip-inner")?.textContent).toContain("Fast tooltip");
     element.remove();
   });
 

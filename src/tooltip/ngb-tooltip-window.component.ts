@@ -1,5 +1,5 @@
 import template from "@ngb/tooltip/ngb-tooltip-window.component.html";
-import type { IComponentController, IComponentOptions } from "angular";
+import type { IComponentController, IComponentOptions, IOnChangesObject } from "angular";
 import angular from "angular";
 
 export class NgbTooltipWindow implements IComponentController {
@@ -13,11 +13,22 @@ export class NgbTooltipWindow implements IComponentController {
 
   $postLink(): void {
     this.$element.attr("role", "tooltip");
-    this.id = this.$element.attr("id");
+    this.$element.addClass("tooltip");
   }
 
-  $onChanges(): void {
+  $onChanges(changes?: IOnChangesObject): void {
+    if (this.id) {
+      this.$element.attr("id", this.id);
+    } else {
+      this.$element.removeAttr("id");
+    }
+
     this.$element.toggleClass("fade", this.animation);
+
+    const previousTooltipClass = changes?.tooltipClass?.previousValue;
+    if (typeof previousTooltipClass === "string" && previousTooltipClass) {
+      this.$element.removeClass(previousTooltipClass);
+    }
 
     if (this.tooltipClass) {
       this.$element.addClass(this.tooltipClass);
@@ -43,6 +54,7 @@ export class NgbTooltipWindow implements IComponentController {
       transclude: true,
       bindings: {
         animation: "<?",
+        id: "<?",
         tooltipClass: "@?",
         onMouseEnter: "&?",
         onMouseLeave: "&?",

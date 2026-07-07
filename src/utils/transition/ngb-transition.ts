@@ -44,24 +44,21 @@ export function ngbRunTransition<T>(
 
   const running = runningTransitions.get(nativeElement);
 
-  const cases = {
-    continue: () => EMPTY,
-    stop: () => {
-      running?.transition$.complete();
-      context = angular.extend(running?.context, context);
-      runningTransitions.delete(nativeElement);
-    },
-  };
-
   if (running) {
-    cases[options.runningTransition]();
+    if (options.runningTransition === "continue") {
+      return EMPTY;
+    }
+
+    running.transition$.complete();
+    context = angular.extend(running.context, context);
+    runningTransitions.delete(nativeElement);
   }
 
   const endFn = startFn(element, options.animation, context) || noopFn;
 
   if (!options.animation || window.getComputedStyle(nativeElement).transitionProperty === "none") {
     endFn();
-    return of();
+    return of(undefined);
   }
 
   const transition$ = new Subject<void>();
@@ -89,12 +86,11 @@ export function ngbRunTransition<T>(
   race(timer$, transitionEnd$, finishTransition$)
     .pipe(takeUntil(stop$))
     .subscribe(() => {
-      digestService.runInsideDigest(() => {
-        runningTransitions.delete(nativeElement);
-        endFn();
-        transition$.next();
-        transition$.complete();
-      });
+      runningTransitions.delete(nativeElement);
+      endFn();
+      transition$.next();
+      transition$.complete();
+      digestService.runInsideDigest();
     });
 
   return transition$.asObservable();
