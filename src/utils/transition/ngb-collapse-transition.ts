@@ -70,6 +70,6 @@ export function ngbCollapsingTransition(element: IAugmentedJQuery, animation: bo
   return () => {
     setInitialClasses();
     element.removeClass("collapsing");
-    element.css({ dimension: "" });
+    element.css({ [context.dimension]: "" });
   };
 }
