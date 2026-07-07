@@ -10,6 +10,7 @@ import { NgbConfig } from "@ngb/ngb-config.service";
 import { NgbContent } from "@ngb/ngb-content.directive";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbProgressbarModule } from "@ngb/progressbar/ngb-progressbar.module";
+import { NgbScrollSpyModule } from "@ngb/scrollspy/ngb-scrollspy.module";
 import { NgbToastModule } from "@ngb/toast/ngb-toast.module";
 import { NgbToolTipModule } from "@ngb/tooltip/ngb-tooltip.module";
 import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
@@ -31,6 +32,7 @@ export const NgbModule = angular.module("ngb", [
   NgbToolTipModule.name,
   NgbNavModule.name,
   NgbOffcanvasModule.name,
+  NgbScrollSpyModule.name,
 ]);
 
 NgbModule.service(NgbConfig.$name, NgbConfig);

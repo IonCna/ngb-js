@@ -6,6 +6,7 @@ export * from "@ngb/dropdown";
 export * from "@ngb/modal";
 export * from "@ngb/offcanvas";
 export * from "@ngb/progressbar";
+export * from "@ngb/scrollspy";
 export * from "@ngb/toast";
 export * from "@ngb/tooltip";
 

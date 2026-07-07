@@ -8,6 +8,7 @@ import { DemoModalModule } from "@demo/features/demo-modal/demo-modal.module";
 import { DemoNavModule } from "@demo/features/demo-nav/demo-nav.module";
 import { DemoOffcanvasModule } from "@demo/features/demo-offcanvas/demo-offcanvas.module";
 import { DemoProgressbarModule } from "@demo/features/demo-progressbar/demo-progressbar.module";
+import { DemoScrollSpyModule } from "@demo/features/demo-scrollspy/demo-scrollspy.module";
 import { DemoToastModule } from "@demo/features/demo-toast/demo-toast.module";
 import { DemoTooltipModule } from "@demo/features/demo-tooltip/demo-tooltip.module";
 import { NgbModule } from "@ngb/ngb.module";
@@ -24,6 +25,7 @@ export const AppModule = angular.module("ngb.demo", [
   DemoNavModule.name,
   DemoOffcanvasModule.name,
   DemoProgressbarModule.name,
+  DemoScrollSpyModule.name,
   DemoToastModule.name,
   DemoTooltipModule.name,
 ]);

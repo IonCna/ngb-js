@@ -10,7 +10,7 @@ import {
 import type { NgbSlide } from "@ngb/carousel/ngb-slide.directive";
 import { type INgbEvent, type NgbTransitionOptions, ngbRunTransition, toNativeElement } from "@ngb/utils";
 import { DigestService } from "@ngb/utils/digest.service";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject } from "angular";
 import angular from "angular";
 import {
   BehaviorSubject,
@@ -76,7 +76,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     private readonly $element: IAugmentedJQuery,
     private readonly $ngbCarouselConfig: NgbCarouselConfig,
     private readonly $digestService: DigestService,
-  ) {}
+  ) { }
 
   $onInit(): void {
     this.animation = this.animation ?? this.$ngbCarouselConfig.animation;

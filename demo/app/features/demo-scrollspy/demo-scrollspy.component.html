@@ -1,0 +1,74 @@
+<div
+  class="border rounded p-3"
+  style="height: 320px"
+  ngb-scroll-spy
+  root-margin="0px 0px -45%"
+  active-change="$.onActiveChange($event)"
+>
+  <div class="row g-3">
+    <div class="col-md-3">
+      <nav class="list-group position-sticky top-0" ngb-scroll-spy-menu>
+        <button type="button" class="list-group-item list-group-item-action" ngb-scroll-spy-item="overview">
+          Overview
+        </button>
+        <button type="button" class="list-group-item list-group-item-action" ngb-scroll-spy-item="setup">
+          Setup
+        </button>
+        <button type="button" class="list-group-item list-group-item-action" ngb-scroll-spy-item="usage">
+          Usage
+        </button>
+        <button type="button" class="list-group-item list-group-item-action" ngb-scroll-spy-item="api">
+          API
+        </button>
+      </nav>
+
+      <div class="small text-body-secondary mt-2">Active: {{$.active || "none"}}</div>
+    </div>
+
+    <div class="col-md-9">
+      <section class="pb-5 mb-4" ngb-scroll-spy-fragment="overview">
+        <h3 class="h6">Overview</h3>
+        <p>
+          Scrollspy tracks the visible fragment inside a scrolling container and keeps related menu items in sync.
+        </p>
+        <p>
+          This demo uses the root directive, a menu directive, four menu items, and four fragments in the same scroll
+          container.
+        </p>
+      </section>
+
+      <section class="pb-5 mb-4" ngb-scroll-spy-fragment="setup">
+        <h3 class="h6">Setup</h3>
+        <p>
+          Each content section receives a unique fragment id. The menu buttons point to those ids with
+          <code>ngb-scroll-spy-item</code>.
+        </p>
+        <p>
+          Clicking a menu item scrolls the container to the matching fragment.
+        </p>
+      </section>
+
+      <section class="pb-5 mb-4" ngb-scroll-spy-fragment="usage">
+        <h3 class="h6">Usage</h3>
+        <p>
+          The active class is applied automatically to the current item, so Bootstrap list groups show the selected
+          section without extra demo code.
+        </p>
+        <p>
+          The directive also emits <code>active-change</code> so the component can display the active id.
+        </p>
+      </section>
+
+      <section class="pb-5" ngb-scroll-spy-fragment="api">
+        <h3 class="h6">API</h3>
+        <p>
+          The service accepts root margin, threshold, scroll behavior, and a custom process function for advanced
+          matching.
+        </p>
+        <p class="mb-5">
+          This last paragraph gives the container enough space to verify the final active section.
+        </p>
+      </section>
+    </div>
+  </div>
+</div>
