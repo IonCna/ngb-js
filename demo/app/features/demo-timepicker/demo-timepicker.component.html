@@ -1,0 +1,71 @@
+<p class="text-muted">
+    These examples expose the bindings currently available while the component is under development.
+</p>
+
+<h5 class="mb-3">Basic timepicker</h5>
+<div class="border rounded p-3 mb-4">
+    <ngb-timepicker></ngb-timepicker>
+</div>
+
+<h5 class="mb-3">Meridian and seconds</h5>
+<div class="border rounded p-3 mb-4">
+    <ngb-timepicker meridian="true" seconds="true"></ngb-timepicker>
+</div>
+
+<h5 class="mb-3">Custom steps</h5>
+<div class="border rounded p-3 mb-4">
+    <ngb-timepicker
+        hour-step="2"
+        minute-step="15"
+        second-step="10"
+        seconds="true">
+    </ngb-timepicker>
+    <div class="small text-muted mt-2">Hour: 2 · Minute: 15 · Second: 10</div>
+</div>
+
+<h5 class="mb-3">Without spinners</h5>
+<div class="border rounded p-3 mb-4">
+    <ngb-timepicker spinners="false"></ngb-timepicker>
+</div>
+
+<h5 class="mb-3">Read-only inputs</h5>
+<div class="border rounded p-3 mb-4">
+    <ngb-timepicker readonly-inputs="true"></ngb-timepicker>
+</div>
+
+<h5 class="mb-3">Sizes</h5>
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="small text-muted mb-2">Small</div>
+        <div class="border rounded p-3">
+            <ngb-timepicker size="'small'"></ngb-timepicker>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="small text-muted mb-2">Medium</div>
+        <div class="border rounded p-3">
+            <ngb-timepicker size="'medium'"></ngb-timepicker>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="small text-muted mb-2">Large</div>
+        <div class="border rounded p-3">
+            <ngb-timepicker size="'large'"></ngb-timepicker>
+        </div>
+    </div>
+</div>
+
+<h5 class="mb-3">Disabled state</h5>
+<div class="d-flex align-items-center gap-3 mb-3">
+    <button class="btn btn-sm btn-outline-secondary" type="button" ng-click="$.toggleDisabled()">
+        {{ $.disabled ? 'Enable' : 'Disable' }} timepicker
+    </button>
+    <span class="small text-muted">ng-disabled: <strong>{{ $.disabled }}</strong></span>
+</div>
+<div class="border rounded p-3">
+    <ngb-timepicker
+        meridian="true"
+        seconds="true"
+        ng-disabled="$.disabled">
+    </ngb-timepicker>
+</div>

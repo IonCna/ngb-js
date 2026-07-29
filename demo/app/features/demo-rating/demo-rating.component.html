@@ -1,0 +1,61 @@
+<h5 class="mb-3">Basic rating</h5>
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+    <ngb-rating rate="$.basicRate" rate-change="$.setBasicRate($event)"></ngb-rating>
+    <span class="text-muted">Selected: <strong>{{ $.basicRate }}</strong> out of 10</span>
+    <button class="btn btn-sm btn-outline-secondary" type="button" ng-click="$.setBasicRate(0)">Clear</button>
+</div>
+<p class="small text-muted mb-4">
+    Click a star or focus the rating and use the arrow, Home, and End keys.
+</p>
+
+<h5 class="mb-3">Custom maximum</h5>
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+    <ngb-rating
+        rate="$.customMaxRate"
+        rate-change="$.setCustomMaxRate($event)"
+        max="5">
+    </ngb-rating>
+    <span class="text-muted">Selected: <strong>{{ $.customMaxRate }}</strong> out of 5</span>
+</div>
+
+<h5 class="mb-3">States</h5>
+<div class="row g-4 mb-4">
+    <div class="col-sm-6">
+        <div class="small text-muted mb-1">Read-only</div>
+        <ngb-rating rate="$.readonlyRate" max="5" readonly="true"></ngb-rating>
+    </div>
+    <div class="col-sm-6">
+        <div class="small text-muted mb-1">Disabled</div>
+        <ngb-rating
+            rate="$.disabledRate"
+            max="5"
+            disabled="true">
+        </ngb-rating>
+    </div>
+</div>
+
+<h5 class="mb-3">Resettable</h5>
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+    <ngb-rating
+        rate="$.resettableRate"
+        rate-change="$.setResettableRate($event)"
+        max="5"
+        resettable="true">
+    </ngb-rating>
+    <span class="text-muted">
+        Selected: <strong>{{ $.resettableRate }}</strong>.
+        Click the selected star again to reset.
+    </span>
+</div>
+
+<h5 class="mb-3">Hover events</h5>
+<div class="d-flex flex-wrap align-items-center gap-3">
+    <ngb-rating
+        rate="$.hoverRate"
+        rate-change="$.setHoverRate($event)"
+        max="5"
+        hover="$.showHover($event)"
+        leave="$.clearHover()">
+    </ngb-rating>
+    <span class="text-muted">{{ $.hoverMessage }}</span>
+</div>
