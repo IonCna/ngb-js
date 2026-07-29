@@ -10,6 +10,7 @@ import { NgbConfig } from "@ngb/ngb-config.service";
 import { NgbContent } from "@ngb/ngb-content.directive";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbProgressbarModule } from "@ngb/progressbar/ngb-progressbar.module";
+import { NgbRatingModule } from "@ngb/rating/ngb-rating.module";
 import { NgbScrollSpyModule } from "@ngb/scrollspy/ngb-scrollspy.module";
 import { NgbToastModule } from "@ngb/toast/ngb-toast.module";
 import { NgbToolTipModule } from "@ngb/tooltip/ngb-tooltip.module";
@@ -33,6 +34,7 @@ export const NgbModule = angular.module("ngb", [
   NgbNavModule.name,
   NgbOffcanvasModule.name,
   NgbScrollSpyModule.name,
+  NgbRatingModule.name,
 ]);
 
 NgbModule.service(NgbConfig.$name, NgbConfig);

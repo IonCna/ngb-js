@@ -76,7 +76,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     private readonly $element: IAugmentedJQuery,
     private readonly $ngbCarouselConfig: NgbCarouselConfig,
     private readonly $digestService: DigestService,
-  ) { }
+  ) {}
 
   $onInit(): void {
     this.animation = this.animation ?? this.$ngbCarouselConfig.animation;
@@ -293,7 +293,12 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
       this._activeId$.next(this.activeId);
       const nextSlide = this._getSlideById(this.activeId);
 
-      const transition = ngbRunTransition(this.$digestService, this._getSlideElement(selectedSlide.id), ngbCarouselTransitionIn, options);
+      const transition = ngbRunTransition(
+        this.$digestService,
+        this._getSlideElement(selectedSlide.id),
+        ngbCarouselTransitionIn,
+        options,
+      );
 
       transition.subscribe(() =>
         nextSlide?.slid?.({

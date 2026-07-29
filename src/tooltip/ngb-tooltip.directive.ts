@@ -119,7 +119,11 @@ export class NgbTooltip implements IController {
       return;
     }
 
-    const { windowRef, transition$ } = this.popupService.open(this._ngbTooltip, context ?? this.tooltipContext, this.animation);
+    const { windowRef, transition$ } = this.popupService.open(
+      this._ngbTooltip,
+      context ?? this.tooltipContext,
+      this.animation,
+    );
     this._opening = true;
     this._transitioning = true;
     this._windowRef = windowRef;

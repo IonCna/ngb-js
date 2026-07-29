@@ -7,14 +7,7 @@ import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/u
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options, Placement } from "@popperjs/core";
-import type {
-  IAugmentedJQuery,
-  IController,
-  IDirective,
-  ILogService,
-  IOnChangesObject,
-  IScope,
-} from "angular";
+import type { IAugmentedJQuery, IController, IDirective, ILogService, IOnChangesObject, IScope } from "angular";
 import angular from "angular";
 import { fromEvent, Subject, take } from "rxjs";
 

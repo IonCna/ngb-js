@@ -73,10 +73,7 @@ export function ngbAutoClose(
       tap((event) => event.preventDefault()),
     );
 
-    const mouseDowns$ = fromEvent<MouseEvent>(document, "mousedown").pipe(
-      map(shouldCloseOnClick),
-      takeUntil(closed$),
-    );
+    const mouseDowns$ = fromEvent<MouseEvent>(document, "mousedown").pipe(map(shouldCloseOnClick), takeUntil(closed$));
 
     const closeableClicks$ = fromEvent<MouseEvent>(document, "mouseup").pipe(
       withLatestFrom(mouseDowns$),

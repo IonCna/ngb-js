@@ -1,0 +1,7 @@
+<span ng-repeat="star in $.contexts track by $index">
+    <span class="visually-hidden">({{ $index < $.nextRate ? '*' : ' ' }})</span>
+    <span
+        ng-mouseenter="$.enter($index + 1)"
+        ng-click="$.handleClick($index + 1)"
+        ng-style="{ cursor: $.isInteractive() ? 'pointer' : 'default' }">{{ star.fill === 100 ? '★' : '☆' }}</span>
+</span>

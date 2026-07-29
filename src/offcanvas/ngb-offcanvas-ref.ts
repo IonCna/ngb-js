@@ -6,114 +6,114 @@ import angular from "angular";
 import { of, Subject, takeUntil, zip } from "rxjs";
 
 export class NgbActiveOffcanvas {
-    close(_result?: any): void {}
-    dismiss(_reason?: any): void {}
+  close(_result?: any): void {}
+  dismiss(_reason?: any): void {}
 }
 
 export class NgbOffcanvasRef {
-    private readonly _resolve?: (result?: any) => void;
-    private readonly _reject?: (reason?: any) => void;
+  private readonly _resolve?: (result?: any) => void;
+  private readonly _reject?: (reason?: any) => void;
 
-    public result?: IPromise<any>;
+  public result?: IPromise<any>;
 
-    private readonly _hidden = new Subject<void>();
-    private readonly _dismissed = new Subject<any>();
-    private readonly _closed = new Subject<any>();
+  private readonly _hidden = new Subject<void>();
+  private readonly _dismissed = new Subject<any>();
+  private readonly _closed = new Subject<any>();
 
-    constructor(
-        private readonly $q: IQService,
-        private panelRef: ContentRef<NgbOffcanvasPanel>,
-        private contentRef: ContentRef,
-        private backdropRef?: ContentRef<NgbOffcanvasBackdrop>,
-        private readonly _beforeDismiss?: () => boolean | Promise<boolean>,
-    ) {
-        const deferred = this.$q.defer();
+  constructor(
+    private readonly $q: IQService,
+    private panelRef: ContentRef<NgbOffcanvasPanel>,
+    private contentRef: ContentRef,
+    private backdropRef?: ContentRef<NgbOffcanvasBackdrop>,
+    private readonly _beforeDismiss?: () => boolean | Promise<boolean>,
+  ) {
+    const deferred = this.$q.defer();
 
-        this.result = deferred.promise;
-        this._reject = deferred.reject;
-        this._resolve = deferred.resolve;
+    this.result = deferred.promise;
+    this._reject = deferred.reject;
+    this._resolve = deferred.resolve;
 
-        deferred.promise.then(angular.noop, angular.noop);
+    deferred.promise.then(angular.noop, angular.noop);
 
-        if (this.panelRef.componentInstance) {
-            this.panelRef.componentInstance.onDismiss = ({ $event }) => this.dismiss($event);
-        }
-
-        if (this.backdropRef?.componentInstance) {
-            this.backdropRef.componentInstance.onDismiss = ({ $event }) => this.dismiss($event);
-        }
+    if (this.panelRef.componentInstance) {
+      this.panelRef.componentInstance.onDismiss = ({ $event }) => this.dismiss($event);
     }
 
-    dismiss(reason?: any) {
-        if (!this.panelRef) return;
-        if (!this._beforeDismiss) {
-            this._dismiss(reason);
-            return;
-        }
+    if (this.backdropRef?.componentInstance) {
+      this.backdropRef.componentInstance.onDismiss = ({ $event }) => this.dismiss($event);
+    }
+  }
 
-        const dismiss = this._beforeDismiss();
-
-        this.$q.when(dismiss).then((result) => {
-            if (result !== false) this._dismiss(reason);
-        }, angular.noop);
+  dismiss(reason?: any) {
+    if (!this.panelRef) return;
+    if (!this._beforeDismiss) {
+      this._dismiss(reason);
+      return;
     }
 
-    close(result?: any) {
-        if (!this.panelRef) return;
-        this._closed.next(result);
-        this._resolve?.(result);
-        this._removeOffcanvasElements();
-    }
+    const dismiss = this._beforeDismiss();
 
-    private _dismiss(reason?: any) {
-        this._dismissed.next(reason);
-        this._reject?.(reason);
-        this._removeOffcanvasElements();
-    }
+    this.$q.when(dismiss).then((result) => {
+      if (result !== false) this._dismiss(reason);
+    }, angular.noop);
+  }
 
-    get closed() {
-        return this._closed.asObservable().pipe(takeUntil(this._hidden));
-    }
+  close(result?: any) {
+    if (!this.panelRef) return;
+    this._closed.next(result);
+    this._resolve?.(result);
+    this._removeOffcanvasElements();
+  }
 
-    get dismissed() {
-        return this._dismissed.asObservable().pipe(takeUntil(this._hidden));
-    }
+  private _dismiss(reason?: any) {
+    this._dismissed.next(reason);
+    this._reject?.(reason);
+    this._removeOffcanvasElements();
+  }
 
-    get hidden() {
-        return this._hidden.asObservable();
-    }
+  get closed() {
+    return this._closed.asObservable().pipe(takeUntil(this._hidden));
+  }
 
-    get shown() {
-        return this.panelRef.componentInstance?.shown.asObservable();
-    }
+  get dismissed() {
+    return this._dismissed.asObservable().pipe(takeUntil(this._hidden));
+  }
 
-    get componentInstance() {
-        return this.contentRef.componentInstance;
-    }
+  get hidden() {
+    return this._hidden.asObservable();
+  }
 
-    private _removeOffcanvasElements() {
-        const panelTransition = this.panelRef.componentInstance?.hide();
-        const backdropTransition = this.backdropRef?.componentInstance?.hide() ?? of(undefined);
+  get shown() {
+    return this.panelRef.componentInstance?.shown.asObservable();
+  }
 
-        panelTransition?.subscribe(() => {
-            this.panelRef.$element.remove();
-            this.panelRef.$scope?.$destroy();
+  get componentInstance() {
+    return this.contentRef.componentInstance;
+  }
 
-            this.contentRef.$scope?.$destroy();
-            this.panelRef = <any>null;
-            this.contentRef = <any>null;
-        });
+  private _removeOffcanvasElements() {
+    const panelTransition = this.panelRef.componentInstance?.hide();
+    const backdropTransition = this.backdropRef?.componentInstance?.hide() ?? of(undefined);
 
-        backdropTransition.subscribe(() => {
-            if (!this.backdropRef) return;
-            this.backdropRef.$element.remove();
-            this.backdropRef.$scope?.$destroy();
-            this.backdropRef = <any>null;
-        });
+    panelTransition?.subscribe(() => {
+      this.panelRef.$element.remove();
+      this.panelRef.$scope?.$destroy();
 
-        zip(panelTransition ?? of(undefined), backdropTransition).subscribe(() => {
-            this._hidden.next();
-            this._hidden.complete();
-        });
-    }
+      this.contentRef.$scope?.$destroy();
+      this.panelRef = <any>null;
+      this.contentRef = <any>null;
+    });
+
+    backdropTransition.subscribe(() => {
+      if (!this.backdropRef) return;
+      this.backdropRef.$element.remove();
+      this.backdropRef.$scope?.$destroy();
+      this.backdropRef = <any>null;
+    });
+
+    zip(panelTransition ?? of(undefined), backdropTransition).subscribe(() => {
+      this._hidden.next();
+      this._hidden.complete();
+    });
+  }
 }

@@ -188,7 +188,11 @@ export function ngbPositioning(ngbRTL: NgbRTL): NgbPositioning {
         const updatePopperOptions = positioningOption.updatePopperOptions || noMod;
         const popperOptions = updatePopperOptions(getPopperOptions(positioningOption, ngbRTL));
 
-        popperInstance = createPopperLite(positioningOption.hostElement, positioningOption.targetElement, popperOptions);
+        popperInstance = createPopperLite(
+          positioningOption.hostElement,
+          positioningOption.targetElement,
+          popperOptions,
+        );
       }
     },
     update() {

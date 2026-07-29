@@ -2,14 +2,7 @@ import { NgbNavConfig, type NgbNavChangeEvent } from "@ngb/nav/ngb-nav-config.se
 import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import type { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
 import { assertAttribute, type INgbEvent, toNativeElement } from "@ngb/utils";
-import type {
-  IAttributes,
-  IAugmentedJQuery,
-  IController,
-  IDirective,
-  IOnChangesObject,
-  IScope,
-} from "angular";
+import type { IAttributes, IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope } from "angular";
 import angular, { isDefined } from "angular";
 import { Subject } from "rxjs";
 

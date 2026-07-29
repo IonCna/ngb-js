@@ -127,7 +127,12 @@ export class NgbModalWindow implements IComponentController {
       runningTransition: "stop",
     };
 
-    const windowTransition = ngbRunTransition(this.$digestService, this.$element, ngbModalWindowFadeOutTransition, context);
+    const windowTransition = ngbRunTransition(
+      this.$digestService,
+      this.$element,
+      ngbModalWindowFadeOutTransition,
+      context,
+    );
 
     if (!this._dialogEl) throw new Error("dialog element is undefined");
 
@@ -165,7 +170,12 @@ export class NgbModalWindow implements IComponentController {
       runningTransition: "continue",
     };
 
-    const windowTransition = ngbRunTransition(this.$digestService, this.$element, ngbModalWindowFadeInTransition, context);
+    const windowTransition = ngbRunTransition(
+      this.$digestService,
+      this.$element,
+      ngbModalWindowFadeInTransition,
+      context,
+    );
 
     if (!this._dialogEl) throw new Error("dialog element is undefined");
 

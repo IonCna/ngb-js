@@ -2,10 +2,10 @@ import type { NgbScrollSpyProcessChanges } from "@ngb/scrollspy/scrollspy.servic
 import { defaultProcessChanges } from "@ngb/scrollspy/scrollspy.utils";
 
 export class NgbScrollSpyConfig {
-    scrollBehavior: "auto" | "smooth" = "smooth";
-    processChanges: NgbScrollSpyProcessChanges = defaultProcessChanges;
+  scrollBehavior: "auto" | "smooth" = "smooth";
+  processChanges: NgbScrollSpyProcessChanges = defaultProcessChanges;
 
-    static get $name() {
-        return "ngb.scrollspy.config.service";
-    }
+  static get $name() {
+    return "ngb.scrollspy.config.service";
+  }
 }

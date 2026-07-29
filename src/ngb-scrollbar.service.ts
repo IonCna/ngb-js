@@ -3,9 +3,7 @@ import type { IWindowService } from "angular";
 export type ScrollbarReverter = () => void;
 
 export class NgbScrollbar {
-  constructor(
-    private readonly $window: IWindowService,
-  ) {}
+  constructor(private readonly $window: IWindowService) {}
 
   hide(): ScrollbarReverter {
     const scrollbarWidth = Math.abs(this.$window.innerWidth - document.documentElement.clientWidth);

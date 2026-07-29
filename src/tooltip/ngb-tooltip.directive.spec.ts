@@ -150,7 +150,9 @@ describe("ngbTooltip", () => {
     $timeout.flush();
     scope.$digest();
 
-    const tooltipTexts = Array.from(document.body.querySelectorAll(".tooltip-inner")).map((tooltip) => tooltip.textContent);
+    const tooltipTexts = Array.from(document.body.querySelectorAll(".tooltip-inner")).map(
+      (tooltip) => tooltip.textContent,
+    );
     expect(tooltipTexts).toContain("Second tooltip");
     expect(document.body.querySelector(".tooltip.show .tooltip-inner")?.textContent).toContain("Second tooltip");
     elements.remove();
