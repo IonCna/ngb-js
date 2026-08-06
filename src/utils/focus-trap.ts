@@ -1,3 +1,4 @@
+import type { NgZone } from "ngjs-core";
 import { filter, fromEvent, map, takeUntil, type Observable, withLatestFrom } from "rxjs";
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = [
@@ -18,39 +19,46 @@ export function getFocusableBoundaryElements(element: HTMLElement): HTMLElement[
   return [list[0], list[list.length - 1]];
 }
 
-export const ngbFocusTrap = (element: HTMLElement, stopFocusTrap$: Observable<unknown>, refocusOnClick = false) => {
-  const lastFocusedElement$ = fromEvent<FocusEvent>(element, "focusin").pipe(
-    takeUntil(stopFocusTrap$),
-    map((event) => event.target),
-  );
-
-  fromEvent<KeyboardEvent>(element, "keydown")
-    .pipe(
+export const ngbFocusTrap = (
+  ngZone: NgZone,
+  element: HTMLElement,
+  stopFocusTrap$: Observable<unknown>,
+  refocusOnClick = false,
+) => {
+  ngZone.runOutsideAngular(() => {
+    const lastFocusedElement$ = fromEvent<FocusEvent>(element, "focusin").pipe(
       takeUntil(stopFocusTrap$),
-      filter((event) => event.key === "Tab"),
-      withLatestFrom(lastFocusedElement$),
-    )
-    .subscribe(([tabEvent, focusedElement]) => {
-      const [first, last] = getFocusableBoundaryElements(element);
+      map((event) => event.target),
+    );
 
-      if ((focusedElement === first || focusedElement === element) && tabEvent.shiftKey) {
-        last.focus();
-        tabEvent.preventDefault();
-      }
-
-      if (focusedElement === last && !tabEvent.shiftKey) {
-        first.focus();
-        tabEvent.preventDefault();
-      }
-    });
-
-  if (refocusOnClick) {
-    fromEvent(element, "click")
+    fromEvent<KeyboardEvent>(element, "keydown")
       .pipe(
         takeUntil(stopFocusTrap$),
+        filter((event) => event.key === "Tab"),
         withLatestFrom(lastFocusedElement$),
-        map((arr) => arr[1] as HTMLElement),
       )
-      .subscribe((lastFocusedElement) => lastFocusedElement.focus());
-  }
+      .subscribe(([tabEvent, focusedElement]) => {
+        const [first, last] = getFocusableBoundaryElements(element);
+
+        if ((focusedElement === first || focusedElement === element) && tabEvent.shiftKey) {
+          last.focus();
+          tabEvent.preventDefault();
+        }
+
+        if (focusedElement === last && !tabEvent.shiftKey) {
+          first.focus();
+          tabEvent.preventDefault();
+        }
+      });
+
+    if (refocusOnClick) {
+      fromEvent(element, "click")
+        .pipe(
+          takeUntil(stopFocusTrap$),
+          withLatestFrom(lastFocusedElement$),
+          map((arr) => arr[1] as HTMLElement),
+        )
+        .subscribe((lastFocusedElement) => lastFocusedElement.focus());
+    }
+  });
 };

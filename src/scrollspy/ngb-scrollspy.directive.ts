@@ -5,8 +5,8 @@ import {
   type NgbScrollSpyProcessChanges,
   type NgbScrollToOptions,
 } from "@ngb/scrollspy/scrollspy.service";
-import { DigestService } from "@ngb/utils/digest.service";
 import type { IAugmentedJQuery, IController, IDirective, IOnChangesObject } from "angular";
+import { ChangeDetectorRef, NgZone } from "ngjs-core";
 import type { Observable, Subscription } from "rxjs";
 
 export class NgbScrollSpy implements IController {
@@ -25,9 +25,10 @@ export class NgbScrollSpy implements IController {
   constructor(
     private $element: IAugmentedJQuery,
     $config: NgbScrollSpyConfig,
-    $digestService: DigestService,
+    private _changeDetector: ChangeDetectorRef,
+    _ngZone: NgZone,
   ) {
-    this._service = new NgbScrollSpyService($config, $digestService);
+    this._service = new NgbScrollSpyService($config, this._changeDetector, _ngZone);
   }
 
   set active(fragment: string) {
@@ -62,6 +63,7 @@ export class NgbScrollSpy implements IController {
       rootMargin: this.rootMargin,
       threshold: this.threshold,
       scrollBehavior: this.scrollBehavior,
+      changeDetectorRef: this._changeDetector,
       ...(this._initialFragment && { initialFragment: this._initialFragment }),
     });
 
@@ -129,7 +131,7 @@ export class NgbScrollSpy implements IController {
   }
 
   static get $inject() {
-    return ["$element", NgbScrollSpyConfig.$name, DigestService.$name];
+    return ["$element", NgbScrollSpyConfig.$name, ChangeDetectorRef.$name, NgZone.$name];
   }
 
   //#endregion

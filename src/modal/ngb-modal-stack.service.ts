@@ -14,7 +14,7 @@ import angular, {
   type IRootScopeService,
 } from "angular";
 import { Subject, take } from "rxjs";
-import { TemplateRef } from "ngjs-core";
+import { NgZone, TemplateRef } from "ngjs-core";
 
 type ModalContentScope = angular.IScope & {
   activeModal: NgbActiveModal;
@@ -32,6 +32,7 @@ export class NgbModalStack {
 
   constructor(
     private ngbScrollbar: NgbScrollbar,
+    private _ngZone: NgZone,
     private $compile: ICompileService,
     private $rootScope: IRootScopeService,
     private $q: IQService,
@@ -45,7 +46,7 @@ export class NgbModalStack {
       }
 
       const activeWindow = this._windowRefs[this._windowRefs.length - 1];
-      ngbFocusTrap(toNativeElement(activeWindow.$element), this._activeWindowCmptHasChanged);
+      ngbFocusTrap(this._ngZone, toNativeElement(activeWindow.$element), this._activeWindowCmptHasChanged);
       this._revertAriaHidden();
       this._setAriaHidden(activeWindow.$element);
     });
@@ -308,6 +309,6 @@ export class NgbModalStack {
   }
 
   static get $inject() {
-    return [NgbScrollbar.$name, "$compile", "$rootScope", "$q"];
+    return [NgbScrollbar.$name, NgZone.$name, "$compile", "$rootScope", "$q"];
   }
 }

@@ -14,7 +14,7 @@ import angular, {
   type IRootScopeService,
 } from "angular";
 import { finalize, Subject } from "rxjs";
-import { TemplateRef } from "ngjs-core";
+import { NgZone, TemplateRef } from "ngjs-core";
 
 type OffcanvasContentScope = angular.IScope & {
   activeOffcanvas: NgbActiveOffcanvas;
@@ -31,13 +31,14 @@ export class NgbOffcanvasStack {
 
   constructor(
     private ngbScrollbar: NgbScrollbar,
+    private _ngZone: NgZone,
     private $compile: ICompileService,
     private $rootScope: IRootScopeService,
     private $q: IQService,
   ) {
     this._activePanelCmptHasChanged.subscribe(() => {
       if (this._panelRef) {
-        ngbFocusTrap(toNativeElement(this._panelRef.$element), this._activePanelCmptHasChanged);
+        ngbFocusTrap(this._ngZone, toNativeElement(this._panelRef.$element), this._activePanelCmptHasChanged);
       }
     });
   }
@@ -257,6 +258,6 @@ export class NgbOffcanvasStack {
   }
 
   static get $inject() {
-    return [NgbScrollbar.$name, "$compile", "$rootScope", "$q"];
+    return [NgbScrollbar.$name, NgZone.$name, "$compile", "$rootScope", "$q"];
   }
 }

@@ -2,7 +2,6 @@ import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
 import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component";
 import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
-import { DigestService } from "@ngb/utils/digest.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { type ContentRef, type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
@@ -18,7 +17,7 @@ import angular, {
   type IScope,
   type ITimeoutService,
 } from "angular";
-import type { TemplateRef } from "ngjs-core";
+import { ChangeDetectorRef, NgZone, type TemplateRef } from "ngjs-core";
 import { Subject } from "rxjs";
 
 let nextId = 0;
@@ -59,7 +58,8 @@ export class NgbTooltip implements IController {
     private $ngbRTL: NgbRTL,
     private $timeout: ITimeoutService,
     private $scope: IScope,
-    private $digestService: DigestService,
+    private _ngZone: NgZone,
+    private _changeDetector: ChangeDetectorRef,
     private $attrs: IAttributes,
   ) {}
 
@@ -115,7 +115,7 @@ export class NgbTooltip implements IController {
     }
 
     if (this._windowRef || this.disableTooltip || !this._ngbTooltip) {
-      this.$scope.$evalAsync();
+      this._changeDetector.markForCheck();
       return;
     }
 
@@ -156,7 +156,7 @@ export class NgbTooltip implements IController {
       }
     });
 
-    this.$scope.$evalAsync();
+    this._changeDetector.markForCheck();
   }
 
   public close(animation = this.animation): void {
@@ -181,9 +181,8 @@ export class NgbTooltip implements IController {
         this._transitioning = false;
         this.hidden?.();
       }
+      this._changeDetector.markForCheck();
     });
-
-    this.$scope.$evalAsync();
   }
 
   public toggle(): void {
@@ -248,7 +247,7 @@ export class NgbTooltip implements IController {
   private _setCloseHandlers(): void {
     this._destroyCloseHandlers$.next();
     ngbAutoClose(
-      this.$digestService,
+      this._ngZone,
       this.autoClose,
       this._destroyCloseHandlers$,
       (source: SOURCE) => {
@@ -287,7 +286,8 @@ export class NgbTooltip implements IController {
       NgbRTL.$name,
       "$timeout",
       "$scope",
-      DigestService.$name,
+      NgZone.$name,
+      ChangeDetectorRef.$name,
       "$attrs",
     ];
   }

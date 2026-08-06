@@ -2,7 +2,6 @@ import template from "@ngb/toast/ngb-toast.component.html";
 import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
 import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
-import { DigestService } from "@ngb/utils/digest.service";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
 import type {
   IAttributes,
@@ -13,7 +12,7 @@ import type {
   IPromise,
   ITimeoutService,
 } from "angular";
-import { ContentChild, TemplateRef, ViewChild } from "ngjs-core";
+import { ContentChild, NgZone, TemplateRef, ViewChild } from "ngjs-core";
 import type { Observable } from "rxjs";
 
 export interface INgbToast {
@@ -44,7 +43,7 @@ export class NgbToast implements IComponentController, INgbToast {
     private ngbToastConfig: NgbToastConfig,
     private $timeout: ITimeoutService,
     private $attrs: IAttributes,
-    private $digestService: DigestService,
+    private _ngZone: NgZone,
   ) {}
 
   $onInit(): void {
@@ -76,7 +75,7 @@ export class NgbToast implements IComponentController, INgbToast {
   hide(): Observable<void> {
     this._clearTimeout();
 
-    const transition = ngbRunTransition(this.$digestService, this.$element, ngbToastFadeOutTransition, {
+    const transition = ngbRunTransition(this._ngZone, this.$element, ngbToastFadeOutTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "stop",
     });
@@ -86,7 +85,7 @@ export class NgbToast implements IComponentController, INgbToast {
   }
 
   show(): Observable<void> {
-    const transition = ngbRunTransition(this.$digestService, this.$element, ngbToastFadeInTransition, {
+    const transition = ngbRunTransition(this._ngZone, this.$element, ngbToastFadeInTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "continue",
     });
@@ -115,7 +114,7 @@ export class NgbToast implements IComponentController, INgbToast {
   }
 
   static get $inject() {
-    return ["$element", NgbToastConfig.$name, "$timeout", "$attrs", DigestService.$name];
+    return ["$element", NgbToastConfig.$name, "$timeout", "$attrs", NgZone.$name];
   }
 
   static get $factory(): IComponentOptions {

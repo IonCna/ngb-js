@@ -2,8 +2,8 @@ import template from "@ngb/alert/ngb-alert.component.html";
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
 import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
-import { DigestService } from "@ngb/utils/digest.service";
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService } from "angular";
+import { NgZone } from "ngjs-core";
 import type { Observable } from "rxjs";
 
 export interface INgbAlert {
@@ -20,7 +20,7 @@ export class NgbAlert implements IComponentController, INgbAlert {
     private readonly $element: IAugmentedJQuery,
     private readonly ngbAlertConfig: NgbAlertConfig,
     private readonly $log: ILogService,
-    private readonly $digestService: DigestService,
+    private readonly _ngZone: NgZone,
   ) {}
 
   $onInit(): void {
@@ -43,7 +43,7 @@ export class NgbAlert implements IComponentController, INgbAlert {
   }
 
   close(): Observable<void> {
-    const transition = ngbRunTransition(this.$digestService, this.$element, ngbAlertFadingTransition, {
+    const transition = ngbRunTransition(this._ngZone, this.$element, ngbAlertFadingTransition, {
       animation: this.animation ?? this.ngbAlertConfig.animation,
       runningTransition: "continue",
     });
@@ -61,7 +61,7 @@ export class NgbAlert implements IComponentController, INgbAlert {
   }
 
   static get $inject() {
-    return ["$element", NgbAlertConfig.$name, "$log", DigestService.$name];
+    return ["$element", NgbAlertConfig.$name, "$log", NgZone.$name];
   }
 
   static get $factory(): IComponentOptions {

@@ -3,10 +3,10 @@ import { NgbOffcanvasBackdrop } from "@ngb/offcanvas/ngb-offcanvas-backdrop.comp
 import { NgbOffcanvasConfig } from "@ngb/offcanvas/ngb-offcanvas-config.service";
 import { NgbOffcanvasStack } from "@ngb/offcanvas/ngb-offcanvas-stack.service";
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
-import angular from "angular";
+import angular, {type IModule} from "angular";
 import { CommonModule } from "ngjs-core";
 
-export const NgbOffcanvasModule = angular.module("ngb.offcanvas", [CommonModule.name]);
+export const NgbOffcanvasModule: IModule = angular.module("ngb.offcanvas", [CommonModule.name]);
 NgbOffcanvasModule.service(NgbOffcanvas.$name, NgbOffcanvas);
 NgbOffcanvasModule.service(NgbOffcanvasStack.$name, NgbOffcanvasStack);
 NgbOffcanvasModule.service(NgbOffcanvasConfig.$name, NgbOffcanvasConfig);

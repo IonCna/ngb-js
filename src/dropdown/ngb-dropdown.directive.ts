@@ -4,14 +4,13 @@ import type { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive"
 import { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
 import { FOCUSABLE_ELEMENTS_SELECTOR, getActiveElement, type INgbEvent, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
-import { DigestService } from "@ngb/utils/digest.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options, Placement } from "@popperjs/core";
 import type { IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope } from "angular";
 import angular from "angular";
-import { ContentChild, type QueryList } from "ngjs-core";
+import { ChangeDetectorRef, ContentChild, NgZone, type QueryList } from "ngjs-core";
 import { fromEvent, Subject, take } from "rxjs";
 
 export class NgbDropdown implements IController {
@@ -49,7 +48,8 @@ export class NgbDropdown implements IController {
     private $element: IAugmentedJQuery,
     private $ngbRTL: NgbRTL,
     private $scope: IScope,
-    private $digestService: DigestService,
+    private _ngZone: NgZone,
+    private _changeDetector: ChangeDetectorRef,
   ) {}
 
   $onInit(): void {
@@ -71,12 +71,14 @@ export class NgbDropdown implements IController {
       this.display = native.closest(".navbar") ? "static" : "dynamic";
     }
 
-    this.$digestService.runOutsideDigest(() => {
-      this._applyPlacementClasses();
-      if (this._open) {
-        this._applyContainer(this.container);
-        this._setCloseHandlers();
-      }
+    this._ngZone.runOutsideAngular(() => {
+      queueMicrotask(() => {
+        this._applyPlacementClasses();
+        if (this._open) {
+          this._applyContainer(this.container);
+          this._setCloseHandlers();
+        }
+      });
     });
   }
 
@@ -122,7 +124,7 @@ export class NgbDropdown implements IController {
 
   public open(): void {
     if (this._open) {
-      this.$scope.$evalAsync();
+      this._changeDetector.markForCheck();
       return;
     }
 
@@ -137,7 +139,7 @@ export class NgbDropdown implements IController {
     this._anchor.nativeElement.focus();
 
     if (this.display !== "dynamic") {
-      this.$scope.$evalAsync();
+      this._changeDetector.markForCheck();
       return;
     }
 
@@ -152,9 +154,9 @@ export class NgbDropdown implements IController {
 
     this._applyPlacementClasses();
 
-    this.$digestService.runOutsideDigest(() => this._positionMenu());
+    this._ngZone.runOutsideAngular(() => queueMicrotask(() => this._positionMenu()));
 
-    this.$scope.$evalAsync();
+    this._changeDetector.markForCheck();
   }
 
   private _setCloseHandlers() {
@@ -163,7 +165,7 @@ export class NgbDropdown implements IController {
     const anchorElement = this._anchor?.nativeElement;
 
     ngbAutoClose(
-      this.$digestService,
+      this._ngZone,
       this.autoClose,
       this._destroyCloseHandlers$,
       (source: SOURCE) => {
@@ -187,7 +189,7 @@ export class NgbDropdown implements IController {
     this._destroyCloseHandlers$.next();
     this.openChange?.({ $event: false });
 
-    this.$scope.$evalAsync();
+    this._changeDetector.markForCheck();
   }
 
   public toggle() {
@@ -456,7 +458,14 @@ export class NgbDropdown implements IController {
   }
 
   static get $inject() {
-    return [NgbDropdownConfig.$name, "$element", NgbRTL.$name, "$scope", DigestService.$name];
+    return [
+      NgbDropdownConfig.$name,
+      "$element",
+      NgbRTL.$name,
+      "$scope",
+      NgZone.$name,
+      ChangeDetectorRef.$name,
+    ];
   }
 
   //#endregion

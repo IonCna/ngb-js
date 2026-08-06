@@ -1,4 +1,3 @@
-import { DigestService } from "@ngb/utils/digest.service";
 import type {
   IAugmentedJQuery,
   ICompileService,
@@ -7,7 +6,7 @@ import type {
   IScope,
 } from "angular";
 import angular from "angular";
-import { type EmbeddedViewRef, TemplateRef } from "ngjs-core";
+import { type EmbeddedViewRef, NgZone, TemplateRef } from "ngjs-core";
 import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
 import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition } from ".";
 
@@ -68,7 +67,7 @@ class PopupService<T> implements IPopupService<T> {
 
   constructor(
     private $compile: ICompileService,
-    private $digestService: DigestService,
+    private _ngZone: NgZone,
     private $rootScope: IRootScopeService,
     private _componentType: string,
   ) {}
@@ -94,15 +93,17 @@ class PopupService<T> implements IPopupService<T> {
 
     const nextRenderSubject = new Subject<void>();
 
-    this.$digestService.runOutsideDigest(() => {
-      nextRenderSubject.next();
-      nextRenderSubject.complete();
+    this._ngZone.runOutsideAngular(() => {
+      queueMicrotask(() => {
+        nextRenderSubject.next();
+        nextRenderSubject.complete();
+      });
     });
 
     const transition$ = nextRenderSubject.pipe(
       mergeMap(() =>
         ngbRunTransition(
-          this.$digestService,
+          this._ngZone,
           $element,
           (element) => {
             element.addClass("show");
@@ -124,7 +125,7 @@ class PopupService<T> implements IPopupService<T> {
       return of(undefined);
     }
 
-    return ngbRunTransition(this.$digestService, this._windowRef.$element, popupTransition, {
+    return ngbRunTransition(this._ngZone, this._windowRef.$element, popupTransition, {
       animation,
       runningTransition: "stop",
     }).pipe(
@@ -157,16 +158,16 @@ class PopupService<T> implements IPopupService<T> {
 export class PopupFactory {
   constructor(
     private $compile: ICompileService,
-    private $digestService: DigestService,
+    private _ngZone: NgZone,
     private $rootScope: IRootScopeService,
   ) {}
 
   $create<T = any>(_componentType: string) {
-    return new PopupService<T>(this.$compile, this.$digestService, this.$rootScope, _componentType);
+    return new PopupService<T>(this.$compile, this._ngZone, this.$rootScope, _componentType);
   }
 
   static get $inject() {
-    return ["$compile", DigestService.$name, "$rootScope"];
+    return ["$compile", NgZone.$name, "$rootScope"];
   }
 
   static get $name() {

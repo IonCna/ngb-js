@@ -1,7 +1,7 @@
 import { ngbAutoClose } from "@ngb/utils/autoclose";
-import type { DigestService } from "@ngb/utils/digest.service";
 import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
+import type { NgZone } from "ngjs-core";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { NgbModule } from "../ngb.module";
@@ -89,12 +89,12 @@ describe("ngbDropdown", () => {
 
   it("ignores containment entries whose native element is not linked yet", () => {
     const closed = new Subject<void>();
-    const digestService = {
-      runOutsideDigest: (callback: () => void) => callback(),
-      runInsideDigest: (callback: () => void) => callback(),
-    } as DigestService;
+    const ngZone = {
+      runOutsideAngular: (callback: () => void) => callback(),
+      run: (callback: () => void) => callback(),
+    } as unknown as NgZone;
 
-    ngbAutoClose(digestService, true, closed, () => void 0, [undefined], [undefined]);
+    ngbAutoClose(ngZone, true, closed, () => void 0, [undefined], [undefined]);
 
     expect(() => document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))).not.toThrow();
     closed.next();

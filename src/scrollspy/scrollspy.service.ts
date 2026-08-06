@@ -1,8 +1,8 @@
 import { NgbScrollSpyConfig } from "@ngb/scrollspy/ngb-scrollspy-config.service";
 import { toFragmentElement } from "@ngb/scrollspy/scrollspy.utils";
-import { DigestService } from "@ngb/utils/digest.service";
 import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
+import { ChangeDetectorRef, NgZone } from "ngjs-core";
 import { distinctUntilChanged, type Observable, Subject, type Subscription } from "rxjs";
 
 const MATCH_THRESHOLD = 3;
@@ -20,6 +20,9 @@ export type NgbScrollSpyProcessChanges = (
 ) => void;
 
 export interface NgbScrollSpyOptions {
+  /** Change detector to notify when the active fragment changes. */
+  changeDetectorRef?: ChangeDetectorRef;
+
   /**
    * An optional initial fragment to scroll to when the service starts.
    */
@@ -90,15 +93,18 @@ export class NgbScrollSpyService {
   private _active = "";
 
   private _scrollBehavior: "auto" | "smooth";
+  private _changeDetectorRef: ChangeDetectorRef;
 
   constructor(
     private $config: NgbScrollSpyConfig,
-    private $digestService: DigestService,
+    private _diChangeDetectorRef: ChangeDetectorRef,
+    private _ngZone: NgZone,
   ) {
     this._scrollBehavior = this.$config.scrollBehavior;
+    this._changeDetectorRef = this._diChangeDetectorRef;
     this._activeSubscription = this._distinctActive$.subscribe((active) => {
       this._active = active;
-      this.$digestService.runInsideDigest();
+      this._changeDetectorRef.markForCheck();
     });
   }
 
@@ -122,7 +128,9 @@ export class NgbScrollSpyService {
   start(options?: NgbScrollSpyOptions) {
     this._cleanup();
 
-    const { root, rootMargin, scrollBehavior, threshold, fragments, processChanges } = { ...options };
+    const { root, rootMargin, scrollBehavior, threshold, fragments, changeDetectorRef, processChanges } = {
+      ...options,
+    };
     const rootElement = toFragmentElement(document.documentElement, root ?? document.documentElement);
 
     if (!rootElement) {
@@ -130,6 +138,7 @@ export class NgbScrollSpyService {
     }
 
     this._containerElement = angular.element(rootElement);
+    this._changeDetectorRef = changeDetectorRef ?? this._diChangeDetectorRef;
     this._scrollBehavior = scrollBehavior ?? this.$config.scrollBehavior;
     const processChangesFn = processChanges ?? this.$config.processChanges;
 
@@ -197,7 +206,7 @@ export class NgbScrollSpyService {
 
     // we should update the active section only after scrolling is finished
     // and there is no clean way to do it at the moment
-    this.$digestService.runOutsideDigest(() => {
+    this._ngZone.runOutsideAngular(() => {
       const updateActiveWhenScrollingIsFinished = () => {
         const sameOffsetAsLastTime = lastOffset === containerElement.scrollTop;
 
@@ -214,7 +223,7 @@ export class NgbScrollSpyService {
           return;
         }
 
-        this._active$.next(fragmentElement.id);
+        this._ngZone.run(() => this._active$.next(fragmentElement.id));
       };
 
       requestAnimationFrame(updateActiveWhenScrollingIsFinished);
@@ -276,6 +285,7 @@ export class NgbScrollSpyService {
   private _cleanup() {
     this._fragments.clear();
     this._observer?.disconnect();
+    this._changeDetectorRef = this._diChangeDetectorRef;
     this._scrollBehavior = this.$config.scrollBehavior;
     this._observer = null;
     this._containerElement = null;
@@ -286,6 +296,6 @@ export class NgbScrollSpyService {
   }
 
   static get $inject() {
-    return [NgbScrollSpyConfig.$name, DigestService.$name];
+    return [NgbScrollSpyConfig.$name, ChangeDetectorRef.$name, NgZone.$name];
   }
 }

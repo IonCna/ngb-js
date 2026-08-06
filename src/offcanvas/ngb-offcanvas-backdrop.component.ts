@@ -1,7 +1,7 @@
 import { ngbRunTransition } from "@ngb/utils";
-import { DigestService } from "@ngb/utils/digest.service";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import angular from "angular";
+import { NgZone } from "ngjs-core";
 import { defaultIfEmpty } from "rxjs";
 import { ngbOffcanvasFadeInTransition, ngbOffcanvasFadeOutTransition } from "@ngb/offcanvas/ngb-offcanvas-transition";
 import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
@@ -25,15 +25,18 @@ export class NgbOffcanvasBackdrop implements IComponentController {
 
   constructor(
     private $element: IAugmentedJQuery,
-    private $scope: IScope,
-    private digestService: DigestService,
+    private _ngZone: NgZone,
   ) {}
 
   $postLink(): void {
-    ngbRunTransition(this.digestService, this.$element, ngbOffcanvasFadeInTransition, {
-      animation: this.animation ?? true,
-      runningTransition: "continue",
-    });
+    this._ngZone.runOutsideAngular(() =>
+      queueMicrotask(() =>
+        ngbRunTransition(this._ngZone, this.$element, ngbOffcanvasFadeInTransition, {
+          animation: this.animation ?? true,
+          runningTransition: "continue",
+        }),
+      ),
+    );
 
     this.$element.addClass("offcanvas-backdrop");
 
@@ -68,7 +71,7 @@ export class NgbOffcanvasBackdrop implements IComponentController {
   }
 
   hide() {
-    return ngbRunTransition(this.digestService, this.$element, ngbOffcanvasFadeOutTransition, {
+    return ngbRunTransition(this._ngZone, this.$element, ngbOffcanvasFadeOutTransition, {
       animation: this.animation ?? true,
       runningTransition: "stop",
     }).pipe(defaultIfEmpty(undefined));
@@ -82,13 +85,14 @@ export class NgbOffcanvasBackdrop implements IComponentController {
   updateOptions(options: NgbOffcanvasUpdatableOptions) {
     const source: BackdropOptions = options;
 
-    this.$scope.$evalAsync(() =>
+    this._ngZone.run(() => {
       BACKDROP_ATTRIBUTES.forEach((attr) => {
         if (angular.isDefined(source[attr])) {
           Object.assign(this, { [attr]: source[attr] });
         }
-      }),
-    );
+      });
+      this.$onChanges();
+    });
   }
 
   static get $name() {
@@ -96,7 +100,7 @@ export class NgbOffcanvasBackdrop implements IComponentController {
   }
 
   static get $inject() {
-    return ["$element", "$scope", DigestService.$name];
+    return ["$element", NgZone.$name];
   }
 
   static get $factory(): IComponentOptions {

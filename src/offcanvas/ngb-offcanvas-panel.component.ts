@@ -5,10 +5,10 @@ import {
   ngbOffcanvasPanelShowTransition,
 } from "@ngb/offcanvas/ngb-offcanvas-panel-transition";
 import { assertAttribute, type NgbTransitionOptions, ngbRunTransition, toNativeElement } from "@ngb/utils";
-import { DigestService } from "@ngb/utils/digest.service";
 import { getFocusableBoundaryElements } from "@ngb/utils/focus-trap";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import angular from "angular";
+import { NgZone } from "ngjs-core";
 import { defaultIfEmpty, filter, fromEvent, type Observable, Subject, takeUntil } from "rxjs";
 
 const PANEL_ATTRIBUTES = [
@@ -43,8 +43,7 @@ export class NgbOffcanvasPanel implements IComponentController {
 
   constructor(
     private $element: IAugmentedJQuery,
-    private $scope: IScope,
-    private $digestService: DigestService,
+    private _ngZone: NgZone,
   ) {}
 
   $onInit(): void {
@@ -57,7 +56,7 @@ export class NgbOffcanvasPanel implements IComponentController {
     this.$element.attr("tabindex", "-1");
     this.$element.attr("aria-modal", "true");
 
-    this.$digestService.runOutsideDigest(() => this._show());
+    this._ngZone.runOutsideAngular(() => queueMicrotask(() => this._show()));
   }
 
   $onChanges(): void {
@@ -100,7 +99,7 @@ export class NgbOffcanvasPanel implements IComponentController {
   updateOptions(options: NgbOffcanvasUpdatableOptions) {
     const source: PanelOptions = options;
 
-    this.$scope.$evalAsync(() => {
+    this._ngZone.run(() => {
       PANEL_ATTRIBUTES.forEach((option) => {
         if (angular.isDefined(source[option])) {
           Object.assign(this, { [option]: source[option] });
@@ -115,7 +114,7 @@ export class NgbOffcanvasPanel implements IComponentController {
     const context: NgbTransitionOptions<unknown> = { animation: Boolean(this.animation), runningTransition: "stop" };
 
     const offcanvasTransition = ngbRunTransition(
-      this.$digestService,
+      this._ngZone,
       this.$element,
       ngbOffcanvasPanelHideTransition,
       context,
@@ -139,7 +138,7 @@ export class NgbOffcanvasPanel implements IComponentController {
     };
 
     const offcanvasTransition = ngbRunTransition(
-      this.$digestService,
+      this._ngZone,
       this.$element,
       ngbOffcanvasPanelShowTransition,
       context,
@@ -166,7 +165,7 @@ export class NgbOffcanvasPanel implements IComponentController {
         if (this.keyboard) {
           requestAnimationFrame(() => {
             if (!event.defaultPrevented) {
-              this.$scope.$evalAsync(() => this.dismiss(OffcanvasDismissReasons.ESC));
+              this._ngZone.run(() => this.dismiss(OffcanvasDismissReasons.ESC));
             }
           });
         }
@@ -195,7 +194,7 @@ export class NgbOffcanvasPanel implements IComponentController {
     const validElementToFocus = elWithFocus instanceof HTMLElement && body.contains(elWithFocus);
     const elementToFocus: HTMLElement = validElementToFocus ? elWithFocus : body;
 
-    this.$digestService.runOutsideDigest(() => elementToFocus.focus());
+    this._ngZone.runOutsideAngular(() => setTimeout(() => elementToFocus.focus()));
 
     this._elWithFocus = null;
   }
@@ -205,7 +204,7 @@ export class NgbOffcanvasPanel implements IComponentController {
   }
 
   static get $inject() {
-    return ["$element", "$scope", DigestService.$name];
+    return ["$element", NgZone.$name];
   }
 
   static get $factory(): IComponentOptions {

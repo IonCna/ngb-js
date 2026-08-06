@@ -3,7 +3,6 @@ import template from "@ngb/timepicker/ngb-timepicker.component.html";
 // import { NgbTime } from "@ngb/timepicker/ngb-time"
 // import { isInteger } from "@ngb/utils";
 // import { NgbTimepickerConfig } from "@ngb/timepicker/ngb-timepicker-config.service";
-// import  {DigestService} from "@ngb/utils/digest.service.ts";
 
 export class NgbTimepicker implements IComponentController {
   constructor(private $element: IAugmentedJQuery) {}

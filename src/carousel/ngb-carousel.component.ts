@@ -15,10 +15,9 @@ import {
   ngbRunTransition,
   toNativeElement,
 } from "@ngb/utils";
-import { DigestService } from "@ngb/utils/digest.service";
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
 import angular from "angular";
-import { ContentChildren, QueryList, TemplateRef } from "ngjs-core";
+import { ChangeDetectorRef, ContentChildren, NgZone, QueryList, TemplateRef } from "ngjs-core";
 import {
   BehaviorSubject,
   combineLatest,
@@ -93,7 +92,8 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     private readonly $element: IAugmentedJQuery,
     private readonly $scope: IPostDigestScope,
     private readonly $ngbCarouselConfig: NgbCarouselConfig,
-    private readonly $digestService: DigestService,
+    private readonly _ngZone: NgZone,
+    private readonly _changeDetector: ChangeDetectorRef,
   ) {}
 
   $onInit(): void {
@@ -174,8 +174,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         takeUntil(this._destroy$),
       )
       .subscribe(() => {
-        this.next(NgbSlideEventSource.TIMER);
-        this.$digestService.runInsideDigest();
+        this._ngZone.run(() => this.next(NgbSlideEventSource.TIMER));
       });
 
     this._slides$.pipe(skip(1), takeUntil(this._destroy$)).subscribe(() => {
@@ -301,7 +300,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
 
       if (activeSlide) {
         const activeTransition = ngbRunTransition(
-          this.$digestService,
+          this._ngZone,
           this._getSlideElement(activeSlide.id),
           ngbCarouselTransitionOut,
           options,
@@ -326,7 +325,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
       const nextSlide = this._getSlideById(this.activeId);
 
       const transition = ngbRunTransition(
-        this.$digestService,
+        this._ngZone,
         this._getSlideElement(selectedSlide.id),
         ngbCarouselTransitionIn,
         options,
@@ -361,7 +360,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
         });
     }
 
-    this.$digestService.runInsideDigest();
+    this._changeDetector.markForCheck();
   }
 
   private _getSlideEventDirection(
@@ -438,7 +437,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   }
 
   static get $inject() {
-    return ["$element", "$scope", NgbCarouselConfig.$name, DigestService.$name];
+    return ["$element", "$scope", NgbCarouselConfig.$name, NgZone.$name, ChangeDetectorRef.$name];
   }
 }
 

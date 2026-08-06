@@ -1,5 +1,7 @@
 import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
+import type { NgZone } from "ngjs-core";
+import { Observable, type OperatorFunction } from "rxjs";
 
 export { FOCUSABLE_ELEMENTS_SELECTOR } from "@ngb/utils/focus-trap";
 export type { INgbEvent } from "@ngb/utils/transition";
@@ -13,6 +15,17 @@ export {
 
 export function reflow(element: IAugmentedJQuery) {
   return (toNativeElement(element) || document.body).getBoundingClientRect();
+}
+
+export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
+  return (source) =>
+    new Observable((observer) => {
+      const next = (value: T) => zone.run(() => observer.next(value));
+      const error = (reason: unknown) => zone.run(() => observer.error(reason));
+      const complete = () => zone.run(() => observer.complete());
+
+      return source.subscribe({ next, error, complete });
+    });
 }
 
 export function getValueInRange(value: number, max: number, min = 0): number {

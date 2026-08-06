@@ -7,11 +7,10 @@ import {
   ngbModalWindowFadeOutTransition,
 } from "@ngb/modal/ngb-modal-window-transition";
 import { type NgbTransitionOptions, type NgbTransitionStartFn, ngbRunTransition, toNativeElement } from "@ngb/utils";
-import { DigestService } from "@ngb/utils/digest.service";
 import { getFocusableBoundaryElements } from "@ngb/utils/focus-trap";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService, IScope } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService } from "angular";
 import angular from "angular";
-import { ElementRef, ViewChild } from "ngjs-core";
+import { ChangeDetectorRef, ElementRef, NgZone, ViewChild } from "ngjs-core";
 import { filter, fromEvent, type Observable, Subject, switchMap, take, takeUntil, tap, zip } from "rxjs";
 
 const WINDOW_ATTRIBUTES = [
@@ -61,9 +60,9 @@ export class NgbModalWindow implements IComponentController {
   private _appliedWindowClass?: string;
 
   constructor(
-    private $scope: IScope,
     private $element: IAugmentedJQuery,
-    private $digestService: DigestService,
+    private _ngZone: NgZone,
+    private _cdRef: ChangeDetectorRef,
     private $log: ILogService,
   ) {}
 
@@ -80,7 +79,7 @@ export class NgbModalWindow implements IComponentController {
     this.$element.attr("tabindex", -1);
     this.$element.attr("aria-modal", "true");
 
-    this.$digestService.runOutsideDigest(() => this._show());
+    this._ngZone.runOutsideAngular(() => queueMicrotask(() => this._show()));
   }
 
   $onChanges(): void {
@@ -129,7 +128,7 @@ export class NgbModalWindow implements IComponentController {
     };
 
     const windowTransition = ngbRunTransition(
-      this.$digestService,
+      this._ngZone,
       this.$element,
       ngbModalWindowFadeOutTransition,
       context,
@@ -137,7 +136,7 @@ export class NgbModalWindow implements IComponentController {
 
     if (!this._dialogEl) throw new Error("dialog element is undefined");
 
-    const dialogTransition = ngbRunTransition(this.$digestService, this._dialogEl, noopTransition, context);
+    const dialogTransition = ngbRunTransition(this._ngZone, this._dialogEl, noopTransition, context);
 
     const transitions = zip(windowTransition, dialogTransition);
     transitions.subscribe(() => {
@@ -154,7 +153,7 @@ export class NgbModalWindow implements IComponentController {
   public updateOptions(options: NgbModalUpdatableOptions) {
     const source: WindowOptions = options;
 
-    this.$scope.$evalAsync(() => {
+    this._ngZone.run(() => {
       WINDOW_ATTRIBUTES.forEach((option) => {
         if (angular.isDefined(source[option])) {
           Object.assign(this, { [option]: source[option] });
@@ -162,6 +161,7 @@ export class NgbModalWindow implements IComponentController {
       });
 
       this.$onChanges();
+      this._cdRef.markForCheck();
     });
   }
 
@@ -172,7 +172,7 @@ export class NgbModalWindow implements IComponentController {
     };
 
     const windowTransition = ngbRunTransition(
-      this.$digestService,
+      this._ngZone,
       this.$element,
       ngbModalWindowFadeInTransition,
       context,
@@ -180,7 +180,7 @@ export class NgbModalWindow implements IComponentController {
 
     if (!this._dialogEl) throw new Error("dialog element is undefined");
 
-    const dialogTransition = ngbRunTransition(this.$digestService, this._dialogEl, noopTransition, context);
+    const dialogTransition = ngbRunTransition(this._ngZone, this._dialogEl, noopTransition, context);
 
     zip(windowTransition, dialogTransition).subscribe(() => {
       this.shown.next();
@@ -220,7 +220,7 @@ export class NgbModalWindow implements IComponentController {
         if (this.keyboard) {
           requestAnimationFrame(() => {
             if (!event.defaultPrevented) {
-              this.$scope.$evalAsync(() => {
+              this._ngZone.run(() => {
                 this.dismiss(ModalDismissReasons.ESC);
               });
             }
@@ -259,7 +259,7 @@ export class NgbModalWindow implements IComponentController {
           }
 
           if (this.backdrop === true && !preventClose) {
-            this.$scope.$evalAsync(() => {
+            this._ngZone.run(() => {
               this.dismiss(ModalDismissReasons.BACKDROP_CLICK);
             });
           }
@@ -280,7 +280,7 @@ export class NgbModalWindow implements IComponentController {
     const validElementToFocus = elWithFocus instanceof HTMLElement && body.contains(elWithFocus);
     const elementToFocus: HTMLElement = validElementToFocus ? elWithFocus : body;
 
-    this.$digestService.runOutsideDigest(() => elementToFocus.focus());
+    this._ngZone.runOutsideAngular(() => setTimeout(() => elementToFocus.focus()));
 
     this._elWithFocus = null;
   }
@@ -288,7 +288,7 @@ export class NgbModalWindow implements IComponentController {
   private _bumpBackdrop() {
     if (this.backdrop !== "static") return;
 
-    ngbRunTransition(this.$digestService, this.$element, ngbModalBumpBackdropTransition, {
+    ngbRunTransition(this._ngZone, this.$element, ngbModalBumpBackdropTransition, {
       animation: Boolean(this.animation),
       runningTransition: "continue",
     });
@@ -299,7 +299,7 @@ export class NgbModalWindow implements IComponentController {
   }
 
   static get $inject() {
-    return ["$scope", "$element", DigestService.$name, "$log"];
+    return ["$element", NgZone.$name, ChangeDetectorRef.$name, "$log"];
   }
 
   static get $factory(): IComponentOptions {

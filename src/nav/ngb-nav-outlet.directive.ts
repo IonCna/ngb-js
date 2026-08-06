@@ -3,9 +3,8 @@ import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import { NgbNavPane } from "@ngb/nav/ngb-nav-pane.directive";
 import { ngbNavFadeInTransition, ngbNavFadeOutTransition } from "@ngb/nav/ngb-nav-transition";
 import { type NgbTransitionOptions, ngbRunTransition } from "@ngb/utils";
-import { DigestService } from "@ngb/utils/digest.service";
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
-import { type QueryList, ViewChildren } from "ngjs-core";
+import type { IAugmentedJQuery, IController, IDirective } from "angular";
+import { ChangeDetectorRef, NgZone, type QueryList, ViewChildren } from "ngjs-core";
 import type { Subscription } from "rxjs";
 
 export class NgbNavOutlet implements IController {
@@ -22,8 +21,8 @@ export class NgbNavOutlet implements IController {
 
   constructor(
     private $element: IAugmentedJQuery,
-    private $scope: IScope,
-    private $digestService: DigestService,
+    private _changeDetector: ChangeDetectorRef,
+    private _ngZone: NgZone,
   ) {}
 
   isPanelTransitioning(item: NgbNavItem): boolean {
@@ -38,7 +37,8 @@ export class NgbNavOutlet implements IController {
       if (this._activePane?.item === nextItem) return;
 
       this._pendingItem = nextItem;
-      this.$scope.$evalAsync(() => this._startPendingTransition());
+      this._changeDetector.detectChanges();
+      this._startPendingTransition();
     });
   }
 
@@ -67,14 +67,14 @@ export class NgbNavOutlet implements IController {
       runningTransition: "stop",
     };
 
-    ngbRunTransition(this.$digestService, previousPane.$element, ngbNavFadeOutTransition, options).subscribe(() => {
+    ngbRunTransition(this._ngZone, previousPane.$element, ngbNavFadeOutTransition, options).subscribe(() => {
       const previousItem = previousPane.item;
       this._activePane = this._getPaneForItem(nextItem);
       this._pendingItem = undefined;
 
       if (this._activePane) {
         this._activePane.$element.addClass("active");
-        ngbRunTransition(this.$digestService, this._activePane.$element, ngbNavFadeInTransition, options).subscribe(
+        ngbRunTransition(this._ngZone, this._activePane.$element, ngbNavFadeInTransition, options).subscribe(
           () => {
             nextItem?.shown?.();
             if (nextItem) this.nav.shown?.({ $event: nextItem.id });
@@ -84,7 +84,7 @@ export class NgbNavOutlet implements IController {
 
       previousItem.hidden?.();
       this.nav.hidden?.({ $event: previousItem.id });
-      this.$digestService.runInsideDigest();
+      this._changeDetector.markForCheck();
     });
   }
 
@@ -104,7 +104,7 @@ export class NgbNavOutlet implements IController {
   }
 
   static get $inject() {
-    return ["$element", "$scope", DigestService.$name];
+    return ["$element", ChangeDetectorRef.$name, NgZone.$name];
   }
 
   static get $factory(): () => IDirective {
