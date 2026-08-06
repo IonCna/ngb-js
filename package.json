@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@types/node": "^25.9.1"
+    "@types/node": "^25.9.1",
+    "ngjs-core": "link:ngjs-core"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
