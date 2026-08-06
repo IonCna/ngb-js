@@ -23,7 +23,7 @@ export class NgbRating implements IComponentController {
 
   public starTemplate?: TemplateRef<StarTemplateContext>;
 
-  @ContentChild(TemplateRef)
+  @ContentChild(TemplateRef, { static: false })
   public starTemplateFromContent?: TemplateRef<StarTemplateContext>;
 
   @ViewChild("defaultStar", { read: TemplateRef, static: true })
@@ -78,6 +78,10 @@ export class NgbRating implements IComponentController {
 
   get max(): number {
     return this._max ?? this.ngbRatingConfig.max;
+  }
+
+  public ariaValueText(current: number, max: number): string {
+    return `${current} out of ${max}`;
   }
 
   isInteractive(): boolean {
@@ -143,7 +147,7 @@ export class NgbRating implements IComponentController {
     this.$element.attr("tabindex", this.disabled ? "-1" : `${this.tabindex ?? this.ngbRatingConfig.tabindex}`);
     this.$element.attr("aria-valuemax", `${this.max}`);
     this.$element.attr("aria-valuenow", `${this.nextRate}`);
-    this.$element.attr("aria-valuetext", `${this.nextRate} out of ${this.max}`);
+    this.$element.attr("aria-valuetext", this.ariaValueText(this.nextRate, this.max));
 
     if (this.readonly && !this.disabled) this.$element.attr("aria-readonly", "true");
     else this.$element.removeAttr("aria-readonly");
@@ -182,6 +186,7 @@ export class NgbRating implements IComponentController {
         resettable: "<?",
         starTemplate: "<?",
         tabindex: "<?",
+        ariaValueText: "<?",
         hover: "&?",
         leave: "&?",
       },

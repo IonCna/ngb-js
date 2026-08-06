@@ -1,2 +1,39 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "../src/tooltip/tooltip.css";
+
+.rating-custom-star {
+  padding-right: 0.1rem;
+  color: #b0c4de;
+  font-size: 1.5rem;
+}
+
+.rating-custom-star.filled {
+  color: #1e90ff;
+}
+
+.rating-custom-star.low {
+  color: #deb0b0;
+}
+
+.rating-custom-star.filled.low {
+  color: #ff1e1e;
+}
+
+.rating-heart {
+  position: relative;
+  display: inline-block;
+  padding-right: 0.1rem;
+  color: #d3d3d3;
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.rating-heart-filled {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  overflow: hidden;
+  color: red;
+  white-space: nowrap;
+}

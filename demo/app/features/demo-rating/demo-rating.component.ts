@@ -8,6 +8,8 @@ export class DemoRatingComponent {
   disabledRate = 2;
   resettableRate = 3;
   hoverRate = 0;
+  templateRate = 6;
+  decimalRate = 3.14;
   hoverMessage = "Move the pointer over the stars";
 
   setBasicRate(rate: number): void {
@@ -25,6 +27,16 @@ export class DemoRatingComponent {
   setHoverRate(rate: number): void {
     this.hoverRate = rate;
   }
+
+  setTemplateRate(rate: number): void {
+    this.templateRate = rate;
+  }
+
+  setDecimalRate(rate: number): void {
+    this.decimalRate = rate;
+  }
+
+  readonly heartAriaValueText = (current: number, max: number): string => `${current} out of ${max} hearts`;
 
   showHover(rate: number): void {
     this.hoverMessage = `Previewing ${rate} out of 5`;

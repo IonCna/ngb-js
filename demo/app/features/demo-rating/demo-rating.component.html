@@ -59,3 +59,45 @@
     </ngb-rating>
     <span class="text-muted">{{ $.hoverMessage }}</span>
 </div>
+
+<hr class="my-4">
+
+<h5 class="mb-3">Custom template as child content</h5>
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+    <ngb-rating
+        rate="$.templateRate"
+        rate-change="$.setTemplateRate($event)">
+        <ng-template let-fill="fill" let-index="index">
+            <span
+                class="rating-custom-star"
+                ng-class="{ filled: fill === 100, low: index < 3 }">
+                {{ fill === 100 ? '&#9733;' : '&#9734;' }}
+            </span>
+        </ng-template>
+    </ngb-rating>
+    <span class="text-muted">Selected: <strong>{{ $.templateRate }}</strong> out of 10</span>
+</div>
+
+<h5 class="mb-3">Custom decimal template via input</h5>
+<ng-template ng-ref="$.heartTemplate" let-fill="fill">
+    <span class="rating-heart">
+        &#9829;
+        <span
+            ng-if="fill > 0"
+            class="rating-heart-filled"
+            ng-style="{ width: fill + '%' }">&#9829;</span>
+    </span>
+</ng-template>
+<div class="d-flex flex-wrap align-items-center gap-3">
+    <ngb-rating
+        rate="$.decimalRate"
+        rate-change="$.setDecimalRate($event)"
+        max="5"
+        readonly="true"
+        star-template="$.heartTemplate"
+        aria-value-text="$.heartAriaValueText">
+    </ngb-rating>
+    <span class="text-muted">Selected: <strong>{{ $.decimalRate }}</strong> out of 5 hearts</span>
+    <button class="btn btn-sm btn-outline-primary" type="button" ng-click="$.setDecimalRate(1.35)">1.35</button>
+    <button class="btn btn-sm btn-outline-primary" type="button" ng-click="$.setDecimalRate(4.72)">4.72</button>
+</div>
