@@ -24,11 +24,9 @@ export class NgbNavLinkBase implements IController {
     this.nativeElement = toNativeElement(this.$element);
     this._updateDom();
     this._sub = this.ngbNav.navItemChange$.subscribe(() => this._updateDom());
-    this.ngbNav.registerLinks(this);
   }
 
   $onDestroy(): void {
-    this.ngbNav.unregisterLink(this);
     this._sub?.unsubscribe();
     this._unwatchDisabled?.();
     if (this._clickHandler) this.$element.off("click", this._clickHandler);

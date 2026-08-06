@@ -16,7 +16,6 @@ export class NgbDropdownAnchor implements IController {
   $postLink(): void {
     this.nativeElement = toNativeElement(this.$element);
     this.$element.addClass("dropdown-toggle");
-    this.dropdown.registerAnchor(this);
 
     this.unwatchOpenState = this.$scope.$watch(
       () => this.dropdown.isOpen(),

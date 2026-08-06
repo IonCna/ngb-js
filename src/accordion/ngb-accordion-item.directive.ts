@@ -1,8 +1,10 @@
 import type { NgbAccordion } from "@ngb/accordion/ngb-accordion.directive";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import angular from "angular";
+import { ContentChild } from "ngjs-core";
 import type { Subscription } from "rxjs";
-import type { NgbAccordionCollapse } from "./ngb-accordion-collapse.directive";
+import { NgbAccordionBody } from "./ngb-accordion-body.directive";
+import { NgbAccordionCollapse } from "./ngb-accordion-collapse.directive";
 
 let accordionItemCounter = 0;
 
@@ -12,7 +14,6 @@ export class NgbAccordionItem implements IController {
   private _destroyOnHide: boolean | undefined;
 
   private _collapseAnimationRunning = false;
-  private _collapse!: NgbAccordionCollapse;
   private _collapseHiddenSubscription?: Subscription;
   private _collapseShownSubscription?: Subscription;
   private _id!: string;
@@ -24,21 +25,31 @@ export class NgbAccordionItem implements IController {
 
   public disabled = false;
 
-  constructor(private readonly $element: IAugmentedJQuery) {}
+  @ContentChild(NgbAccordionCollapse, { static: true })
+  private _collapse!: NgbAccordionCollapse;
 
-  $onInit(): void {
-    this._accordion.register(this);
-  }
+  @ContentChild(NgbAccordionBody, { static: true })
+  private _body?: NgbAccordionBody;
+
+  constructor(private readonly $element: IAugmentedJQuery) {}
 
   $postLink(): void {
     this._id = this._id ?? `ngb-accordion-item-${accordionItemCounter++}`;
 
     this.$element.attr("id", this._id);
     this.$element.addClass("accordion-item");
+
+    const { ngbCollapse } = this._collapse;
+
+    ngbCollapse.animation = false;
+    ngbCollapse.collapsed = this.collapsed;
+    ngbCollapse.animation = this._accordion.animation;
+
+    this._collapseHiddenSubscription = ngbCollapse.hidden.subscribe(() => this.onCollapseHidden());
+    this._collapseShownSubscription = ngbCollapse.shown.subscribe(() => this.onCollapseShown());
   }
 
   $onDestroy(): void {
-    this._accordion.unregister(this);
     this._collapseHiddenSubscription?.unsubscribe();
     this._collapseShownSubscription?.unsubscribe();
   }
@@ -58,7 +69,7 @@ export class NgbAccordionItem implements IController {
       : Boolean(this._destroyOnHide);
   }
 
-  set collapsed(collapsed: boolean | undefined) {
+  set collapsed(collapsed: boolean) {
     if (collapsed === undefined) return;
 
     if (!this._accordion) {
@@ -98,12 +109,6 @@ export class NgbAccordionItem implements IController {
     this.collapsed = !this.collapsed;
   }
 
-  register(ngbAccordionCollapse: NgbAccordionCollapse) {
-    this._collapse = ngbAccordionCollapse;
-    this._collapseHiddenSubscription = ngbAccordionCollapse.hidden$.subscribe(() => this.onCollapseHidden());
-    this._collapseShownSubscription = ngbAccordionCollapse.shown$.subscribe(() => this.onCollapseShown());
-  }
-
   onCollapseHidden() {
     this._collapseAnimationRunning = false;
     this.hidden?.();
@@ -124,21 +129,15 @@ export class NgbAccordionItem implements IController {
     }
 
     this._collapsed = false;
-
-    // need if the accordion is used inside a component having OnPush change detection strategy
-    //this._cd.markForCheck();
-
-    // we need force CD to get template into DOM before starting animation to calculate its height correctly
-    // this will synchronously put the item body into DOM, because `this._collapsed` was flipped to `false`
-    //this._cd.detectChanges();
+    this._body?.detectChanges();
 
     // firing events before starting animations
     this.show?.();
     this._accordion.show?.({ $event: this.id });
 
     // we also need to make sure 'animation' flag is up-to- date
-    this._collapse._collapse.animation = this._accordion.animation;
-    this._collapse._collapse.collapsed = false;
+    this._collapse.ngbCollapse.animation = this._accordion.animation;
+    this._collapse.ngbCollapse.collapsed = false;
   }
 
   collapse() {
@@ -154,8 +153,8 @@ export class NgbAccordionItem implements IController {
     this._accordion.hide?.({ $event: this.id });
 
     // we also need to make sure 'animation' flag is up-to- date
-    this._collapse._collapse.animation = this._accordion.animation;
-    this._collapse._collapse.collapsed = true;
+    this._collapse.ngbCollapse.animation = this._accordion.animation;
+    this._collapse.ngbCollapse.collapsed = true;
   }
 
   static get $inject() {
@@ -174,6 +173,8 @@ export class NgbAccordionItem implements IController {
         _accordion: "^ngbAccordion",
       },
       restrict: "A",
+      transclude: true,
+      template: "<ng-content></ng-content>",
       scope: {
         collapsed: "<?",
         destroyOnHide: "<?",

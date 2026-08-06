@@ -1,36 +1,14 @@
 import template from "@ngb/accordion/ngb-accordion-collapse.directive.html";
 import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
-import type { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
+import { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
 import type { IController, IDirective } from "angular";
-import { Subject } from "rxjs";
+import { ViewChild } from "ngjs-core";
 
 export class NgbAccordionCollapse implements IController {
-  protected item!: NgbAccordionItem;
+  item!: NgbAccordionItem;
 
-  _collapse!: NgbCollapse;
-  hidden$ = new Subject<void>();
-  shown$ = new Subject<void>();
-
-  $postLink(): void {
-    this.item.register(this);
-  }
-
-  register(collapse: NgbCollapse) {
-    this._collapse = collapse;
-  }
-
-  hidden() {
-    this.hidden$.next();
-  }
-
-  shown() {
-    this.shown$.next();
-  }
-
-  $onDestroy(): void {
-    this.hidden$.complete();
-    this.shown$.complete();
-  }
+  @ViewChild(NgbCollapse, { static: true })
+  ngbCollapse!: NgbCollapse;
 
   static get $name() {
     return "ngbAccordionCollapse";

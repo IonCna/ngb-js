@@ -7,11 +7,18 @@ import {
   ngbCarouselTransitionOut,
 } from "@ngb/carousel/ngb-carousel-transition";
 
-import type { NgbSlide } from "@ngb/carousel/ngb-slide.directive";
-import { type INgbEvent, type NgbTransitionOptions, ngbRunTransition, toNativeElement } from "@ngb/utils";
+import { NgbSlide } from "@ngb/carousel/ngb-slide.directive";
+import {
+  type INgbEvent,
+  type NgbTransitionOptions,
+  ngbCompleteTransition,
+  ngbRunTransition,
+  toNativeElement,
+} from "@ngb/utils";
 import { DigestService } from "@ngb/utils/digest.service";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
 import angular from "angular";
+import { ContentChildren, QueryList, TemplateRef } from "ngjs-core";
 import {
   BehaviorSubject,
   combineLatest,
@@ -30,6 +37,10 @@ import {
 
 let carouselCounter = 0;
 
+interface IPostDigestScope extends IScope {
+  $$postDigest(callback: () => void): void;
+}
+
 export interface INgbCarousel {
   select(slideId: string, source: NgbSlideEventSource): void;
   prev(source: unknown): void;
@@ -40,25 +51,31 @@ export interface INgbCarousel {
 }
 
 export class NgbCarousel implements IComponentController, INgbCarousel {
-  protected activeId?: string;
-  protected animation!: boolean;
-  protected interval!: number;
-  protected keyboard!: boolean;
-  protected pauseOnFocus!: boolean;
-  protected pauseOnHover!: boolean;
-  protected showNavigationArrows!: boolean;
-  protected showNavigationIndicators!: boolean;
-  protected wrap!: boolean;
-  protected NgbSlideEventSource = NgbSlideEventSource;
+  public activeId?: string;
+  public animation!: boolean;
+  public interval!: number;
+  public keyboard!: boolean;
+  public pauseOnFocus!: boolean;
+  public pauseOnHover!: boolean;
+  public showNavigationArrows!: boolean;
+  public showNavigationIndicators!: boolean;
+  public wrap!: boolean;
+  public readonly NgbSlideEventSource = NgbSlideEventSource;
 
-  protected slide?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
-  protected slid?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
+  public slide?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
+  public slid?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
 
   public id!: string;
 
-  private _transitionIds: [string, string] | null = null;
-  private slides: NgbSlide[] = [];
+  @ContentChildren(NgbSlide)
+  private contentSlides!: QueryList<NgbSlide>;
 
+  @ContentChildren(NgbSlide, { read: TemplateRef })
+  private slideTemplates!: QueryList<TemplateRef<unknown>>;
+
+  public readonly slides = new QueryList<NgbSlide>();
+
+  private _transitionIds: [string, string] | null = null;
   private _container?: IAugmentedJQuery;
 
   private _interval$ = new BehaviorSubject(0);
@@ -69,11 +86,12 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   private _pause$ = new BehaviorSubject(false);
   private _wrap$ = new BehaviorSubject(false);
   private _activeId$ = new BehaviorSubject<string>("");
-  private _slides$ = new BehaviorSubject<NgbSlide[]>([]);
+  private _slides$ = new BehaviorSubject<readonly NgbSlide[]>([]);
   private _destroy$ = new Subject<void>();
 
   constructor(
     private readonly $element: IAugmentedJQuery,
+    private readonly $scope: IPostDigestScope,
     private readonly $ngbCarouselConfig: NgbCarouselConfig,
     private readonly $digestService: DigestService,
   ) {}
@@ -92,6 +110,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     this._pauseOnHover$.next(this.pauseOnHover);
     this._pauseOnFocus$.next(this.pauseOnFocus);
     this._wrap$.next(this.wrap);
+    this._activeId$.next(this.activeId ?? "");
 
     this.id = `ngb-carousel-${carouselCounter++}`;
   }
@@ -104,23 +123,25 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   }
 
   $postLink() {
-    this.$element.addClass("carousel slide d-block");
-    this.$element.attr("tabIndex", 0);
+    this.$element.addClass("carousel slide");
+    this.$element.css("display", "block");
+    this.$element.attr("tabindex", 0);
     this._container = this.$element;
 
-    if (this.keyboard)
-      this.$element.on("keydown", (event) => {
-        const keys: Record<string, () => void> = {
-          ArrowRight: () => this.arrowRight(),
-          ArrowLeft: () => this.arrowLeft(),
-        };
+    this.$element.on("keydown", (event) => {
+      if (!this.keyboard) return;
 
-        const arrowTo = keys[event.key];
-        if (!arrowTo) return;
+      const keys: Record<string, () => void> = {
+        ArrowRight: () => this.arrowRight(),
+        ArrowLeft: () => this.arrowLeft(),
+      };
 
-        event.preventDefault();
-        arrowTo();
-      });
+      const arrowTo = keys[event.key];
+      if (!arrowTo) return;
+
+      event.preventDefault();
+      arrowTo();
+    });
 
     this.$element.on("mouseenter", () => this._mouseHover$.next(true));
     this.$element.on("mouseleave", () => this._mouseHover$.next(false));
@@ -158,17 +179,26 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
       });
 
     this._slides$.pipe(skip(1), takeUntil(this._destroy$)).subscribe(() => {
+      this._transitionIds?.forEach((id) => {
+        ngbCompleteTransition(this._getSlideElement(id));
+      });
       this._transitionIds = null;
-      this.$digestService.runOutsideDigest(() => this._syncActiveSlideClass());
+      this.$scope.$$postDigest(() => this._syncActiveSlideClass());
     });
 
-    this.$digestService.runOutsideDigest(() => this._syncActiveSlideClass());
+    this._syncSlides();
+    this.contentSlides.changes.pipe(takeUntil(this._destroy$)).subscribe(() => this._syncSlides());
+    this.slides.changes.pipe(takeUntil(this._destroy$)).subscribe((slides) => {
+      this._slides$.next(slides.toArray());
+    });
+    this._slides$.next(this.slides.toArray());
+
+    this.$scope.$$postDigest(() => this._syncActiveSlideClass());
   }
 
   $doCheck(): void {
     const activeSlide = this._getSlideById(this.activeId);
-    const [first] = this.slides;
-    const newActiveId = activeSlide ? activeSlide.id : this.slides.length ? first.id : "";
+    const newActiveId = activeSlide ? activeSlide.id : (this.slides.first?.id ?? "");
 
     if (newActiveId !== this.activeId) {
       this.activeId = newActiveId;
@@ -185,6 +215,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
 
     this._destroy$.next();
     this._destroy$.complete();
+    this.slides.destroy();
   }
 
   focus(): void {
@@ -200,16 +231,6 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   arrowRight() {
     this.focus();
     this.next(NgbSlideEventSource.ARROW_RIGHT);
-  }
-
-  register(slide: NgbSlide) {
-    this.slides = [...this.slides, slide];
-    this._slides$.next(this.slides);
-  }
-
-  unregister(slide: NgbSlide) {
-    this.slides = this.slides.filter((s) => s !== slide);
-    this._slides$.next(this.slides);
   }
 
   prev(source?: NgbSlideEventSource) {
@@ -232,11 +253,22 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     this._pause$.next(true);
   }
 
+  getSlideTemplate(index: number): TemplateRef<unknown> | undefined {
+    const slide = this.slides.get(index);
+    const contentIndex = slide ? this.contentSlides.toArray().indexOf(slide) : -1;
+    return contentIndex >= 0 ? this.slideTemplates.get(contentIndex) : undefined;
+  }
+
+  private _syncSlides(): void {
+    this.slides.reset(this.contentSlides.filter((slide) => slide.carousel === this));
+    this.slides.notifyOnChanges();
+  }
+
   private _syncActiveSlideClass() {
     if (this._transitionIds || !this.activeId) return;
 
     for (const slide of this.slides) {
-      this._getSlideElement(slide.id).toggleClass("active", slide.id === this.activeId);
+      this._findSlideElement(slide.id)?.toggleClass("active", slide.id === this.activeId);
     }
   }
 
@@ -343,34 +375,31 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   }
 
   private _getNextSlide(currentSlideId: string | undefined): string {
+    const slides = this.slides.toArray();
     const currentSlideIdx = this._getSlideIdxById(currentSlideId);
-    const isLastSlide = currentSlideIdx === this.slides.length - 1;
+    const isLastSlide = currentSlideIdx === slides.length - 1;
 
-    return isLastSlide
-      ? this.wrap
-        ? this.slides[0].id
-        : this.slides[this.slides.length - 1].id
-      : this.slides[currentSlideIdx + 1].id;
+    return isLastSlide ? (this.wrap ? slides[0].id : slides[slides.length - 1].id) : slides[currentSlideIdx + 1].id;
   }
 
   private _getPrevSlide(currentSlideId: string | undefined): string {
+    const slides = this.slides.toArray();
     const currentSlideIdx = this._getSlideIdxById(currentSlideId);
     const isFirstSlide = currentSlideIdx === 0;
 
-    return isFirstSlide
-      ? this.wrap
-        ? this.slides[this.slides.length - 1].id
-        : this.slides[0].id
-      : this.slides[currentSlideIdx - 1].id;
+    return isFirstSlide ? (this.wrap ? slides[slides.length - 1].id : slides[0].id) : slides[currentSlideIdx - 1].id;
   }
 
   private _getSlideElement(slideId: string) {
-    if (!this._container) throw new Error("");
+    const element = this._findSlideElement(slideId);
+    if (!element) throw new Error("[ngb-carousel]: ngb-slide id not found");
+    return element;
+  }
 
-    const el = toNativeElement(this._container).querySelector(`#slide-${slideId}`);
-    if (!el) throw new Error("[ngb-carousel]: ngb-slide id not found");
-
-    return angular.element(el);
+  private _findSlideElement(slideId: string): IAugmentedJQuery | null {
+    if (!this._container) return null;
+    const element = toNativeElement(this._container).querySelector(`#slide-${slideId}`);
+    return element ? angular.element(element) : null;
   }
 
   private _getSlideById(slideId?: string): NgbSlide | null {
@@ -379,7 +408,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
 
   private _getSlideIdxById(slideId: string | undefined): number {
     const slide = this._getSlideById(slideId);
-    return slide != null ? this.slides.indexOf(slide) : -1;
+    return slide != null ? this.slides.toArray().indexOf(slide) : -1;
   }
 
   static get $name() {
@@ -409,7 +438,7 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
   }
 
   static get $inject() {
-    return ["$element", NgbCarouselConfig.$name, DigestService.$name];
+    return ["$element", "$scope", NgbCarouselConfig.$name, DigestService.$name];
   }
 }
 

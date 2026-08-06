@@ -1,9 +1,9 @@
 import { toNativeElement } from "@ngb/utils";
-import { DigestService } from "@ngb/utils/digest.service";
+import type { DigestService } from "@ngb/utils/digest.service";
 import { getTransitionDurationMs } from "@ngb/utils/transition";
 import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
-import { type Observable, EMPTY, endWith, filter, fromEvent, of, race, Subject, takeUntil, timer } from "rxjs";
+import { EMPTY, endWith, filter, fromEvent, type Observable, of, race, Subject, takeUntil, timer } from "rxjs";
 
 export type NgbTransitionStartFn<T = unknown> = (
   element: IAugmentedJQuery,

@@ -3,8 +3,9 @@ import { NgbProgressbarConfig } from "@ngb/progressbar/ngb-progressbar-config.se
 import { NgbProgressbarPercentFilter } from "@ngb/progressbar/ngb-progressbar-percent.filter";
 import { NgbProgressbarStacked } from "@ngb/progressbar/ngb-progressbar-stacked.component";
 import angular from "angular";
+import { CommonModule } from "ngjs-core";
 
-export const NgbProgressbarModule = angular.module("ngb.progressbar", []);
+export const NgbProgressbarModule = angular.module("ngb.progressbar", [CommonModule.name]);
 NgbProgressbarModule.service(NgbProgressbarConfig.$name, NgbProgressbarConfig);
 NgbProgressbarModule.component(NgbProgressbar.$name, NgbProgressbar.$factory);
 NgbProgressbarModule.component(NgbProgressbarStacked.$name, NgbProgressbarStacked.$factory);

@@ -1,16 +1,16 @@
 import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import {ContentChild, EmbeddedViewRef, TemplateRef, ViewChild, ViewContainerRef} from "ngjs-core";
+import { ContentChild, type EmbeddedViewRef, TemplateRef, ViewChild, ViewContainerRef } from "ngjs-core";
 
 export class NgbAccordionBody implements IController {
   protected item!: NgbAccordionItem;
-  private _viewRef: EmbeddedViewRef<any> | null = null;
+  private _viewRef: EmbeddedViewRef<unknown> | null = null;
 
   @ViewChild("container", { read: ViewContainerRef, static: true })
-  private _vcr!: ViewContainerRef
+  private _vcr!: ViewContainerRef;
 
   @ContentChild(TemplateRef, { static: true })
-  private _bodyTpl!: TemplateRef<any>;
+  private _bodyTpl!: TemplateRef<unknown>;
 
   constructor(private readonly $element: IAugmentedJQuery) {}
 
@@ -19,29 +19,33 @@ export class NgbAccordionBody implements IController {
   }
 
   $doCheck() {
-    if(!this._bodyTpl) return
+    this.detectChanges();
+  }
 
-    if(this.item._shouldBeInDOM) {
-      this._createViewIfNotExists()
+  detectChanges() {
+    if (!this._bodyTpl) return;
+
+    if (this.item._shouldBeInDOM) {
+      this._createViewIfNotExists();
       return;
     }
 
-    this._destroyViewIfExists()
+    this._destroyViewIfExists();
   }
 
   $onDestroy() {
-    this._destroyViewIfExists()
+    this._destroyViewIfExists();
   }
 
   private _destroyViewIfExists() {
-    this._viewRef?.destroy()
-    this._viewRef = null
+    this._viewRef?.destroy();
+    this._viewRef = null;
   }
 
   private _createViewIfNotExists() {
-    if(this._viewRef) return
+    if (this._viewRef) return;
 
-    this._viewRef = this._vcr.createEmbeddedView(this._bodyTpl)
+    this._viewRef = this._vcr.createEmbeddedView(this._bodyTpl);
     this._viewRef.detectChanges();
   }
 

@@ -1,7 +1,8 @@
 import type { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
-import type { NgbScrollSpyItem } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
+import { NgbScrollSpyItem } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
 import { NgbScrollSpyService, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
 import type { IController, IDirective } from "angular";
+import { ContentChildren, type QueryList } from "ngjs-core";
 import type { Observable, Subscription } from "rxjs";
 
 export class NgbScrollSpyMenu implements IController {
@@ -9,6 +10,10 @@ export class NgbScrollSpyMenu implements IController {
   private _map = new Map<string, NgbScrollSpyItem>();
   private _lastActiveItem: NgbScrollSpyItem | null = null;
   private _activeSubscription?: Subscription;
+  private _itemsSubscription?: Subscription;
+
+  @ContentChildren(NgbScrollSpyItem, { descendants: true })
+  private _items!: QueryList<NgbScrollSpyItem>;
 
   public scrollSpy?: NgbScrollSpy;
   public parentScrollSpy?: NgbScrollSpy;
@@ -20,6 +25,8 @@ export class NgbScrollSpyMenu implements IController {
   }
 
   $postLink(): void {
+    this._rebuildMap();
+    this._itemsSubscription = this._items.changes.subscribe(() => this._rebuildMap());
     this._activeSubscription = this._scrollSpyRef.active$.subscribe((activeId: string) => {
       this._lastActiveItem?._deactivate();
 
@@ -36,6 +43,7 @@ export class NgbScrollSpyMenu implements IController {
 
   $onDestroy(): void {
     this._activeSubscription?.unsubscribe();
+    this._itemsSubscription?.unsubscribe();
     this._map.clear();
     this._lastActiveItem = null;
   }
@@ -56,16 +64,9 @@ export class NgbScrollSpyMenu implements IController {
     return this._map.get(id);
   }
 
-  register(item: NgbScrollSpyItem): void {
-    this._map.set(item.fragment, item);
-  }
-
-  unregister(item: NgbScrollSpyItem): void {
-    if (this._map.get(item.fragment) !== item) {
-      return;
-    }
-
-    this._map.delete(item.fragment);
+  private _rebuildMap(): void {
+    this._map.clear();
+    for (const item of this._items) this._map.set(item.fragment, item);
   }
 
   //#region $angular
@@ -85,6 +86,8 @@ export class NgbScrollSpyMenu implements IController {
       },
       scope: true,
       restrict: "A",
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 

@@ -31,8 +31,6 @@ export class NgbScrollSpyItem implements IController {
   }
 
   $postLink(): void {
-    this.scrollSpyMenu?.register(this);
-
     // if it is not a part of a bigger menu, it should handle activation itself
     if (!this.scrollSpyMenu) {
       this._activeSubscription = this._scrollSpyAPI.active$.subscribe((active: string) => {
@@ -60,7 +58,6 @@ export class NgbScrollSpyItem implements IController {
     }
 
     this._activeSubscription?.unsubscribe();
-    this.scrollSpyMenu?.unregister(this);
   }
 
   /**

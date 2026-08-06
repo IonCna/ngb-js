@@ -97,9 +97,9 @@ export class NgbOffcanvasRef {
 
     panelTransition?.subscribe(() => {
       this.panelRef.$element.remove();
-      this.panelRef.$scope?.$destroy();
+      this.panelRef.destroy();
 
-      this.contentRef.$scope?.$destroy();
+      this.contentRef.destroy();
       this.panelRef = <any>null;
       this.contentRef = <any>null;
     });
@@ -107,7 +107,7 @@ export class NgbOffcanvasRef {
     backdropTransition.subscribe(() => {
       if (!this.backdropRef) return;
       this.backdropRef.$element.remove();
-      this.backdropRef.$scope?.$destroy();
+      this.backdropRef.destroy();
       this.backdropRef = <any>null;
     });
 

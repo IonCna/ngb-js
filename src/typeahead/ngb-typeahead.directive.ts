@@ -1,5 +1,7 @@
 import type { NgbTypeaheadSelectItemEvent } from "@ngb/typeahead/ngb-typeahead-select-item-event.model";
+import type { ResultTemplateContext } from "@ngb/typeahead/ngb-result-template-context.model";
 import type { IController, IDirective } from "angular";
+import type { TemplateRef } from "ngjs-core";
 
 export class NgbTypeahead implements IController {
   protected autocomplete?: string;
@@ -12,13 +14,13 @@ export class NgbTypeahead implements IController {
   protected popperOptions?: unknown;
   protected popupClass?: string;
   protected resultFormatter?: (item: any) => string;
-  protected resultTemplate?: HTMLTemplateElement;
+  protected resultTemplate?: TemplateRef<ResultTemplateContext>;
   protected selectOnExact?: boolean;
   protected showHint?: boolean;
   protected selectItem?: NgbTypeaheadSelectItemEvent;
 
   static get $name() {
-    return "";
+    return "ngbTypeahead";
   }
 
   static get $factory(): () => IDirective {

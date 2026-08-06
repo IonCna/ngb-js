@@ -51,7 +51,6 @@ export class NgbTooltipWindow implements IComponentController {
     return {
       controller: NgbTooltipWindow,
       controllerAs: "$",
-      transclude: true,
       bindings: {
         animation: "<?",
         id: "<?",

@@ -1,79 +1,100 @@
 import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
 import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
-import type { IAugmentedJQuery, ICompileService, IController, IDirective, IScope } from "angular";
+import { NgbNavPane } from "@ngb/nav/ngb-nav-pane.directive";
+import { ngbNavFadeInTransition, ngbNavFadeOutTransition } from "@ngb/nav/ngb-nav-transition";
+import { type NgbTransitionOptions, ngbRunTransition } from "@ngb/utils";
+import { DigestService } from "@ngb/utils/digest.service";
+import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
+import { type QueryList, ViewChildren } from "ngjs-core";
 import type { Subscription } from "rxjs";
-
-interface NgbNavPaneScope extends IScope {
-  item: NgbNavItem;
-  nav: NgbNav;
-}
 
 export class NgbNavOutlet implements IController {
   nav!: NgbNav;
   paneRole?: string;
 
-  private _sub?: Subscription;
-  private _activeItem: NgbNavItem | null = null;
-  private _panes = new Map<NgbNavItem, { el: IAugmentedJQuery; scope: NgbNavPaneScope }>();
+  @ViewChildren(NgbNavPane)
+  private _panes!: QueryList<NgbNavPane>;
+
+  private _navSubscription?: Subscription;
+  private _panesSubscription?: Subscription;
+  private _activePane: NgbNavPane | null = null;
+  private _pendingItem: NgbNavItem | null | undefined;
 
   constructor(
     private $element: IAugmentedJQuery,
-    private $compile: ICompileService,
     private $scope: IScope,
+    private $digestService: DigestService,
   ) {}
 
-  isPanelTransitioning(_item: NgbNavItem): boolean {
-    return false;
+  isPanelTransitioning(item: NgbNavItem): boolean {
+    return this._activePane?.item === item && this._pendingItem !== undefined;
   }
 
   $postLink(): void {
     this.$element.addClass("tab-content");
-    this._update();
-    this._activeItem = this.nav.items.find((i) => i.active) ?? null;
-    this._sub = this.nav.navItemChange$.subscribe((nextItem) => {
-      const prevItem = this._activeItem;
-      this._update();
-      if (prevItem !== nextItem) {
-        if (prevItem) {
-          prevItem.hidden?.();
-          this.nav.hidden?.({ $event: prevItem.id });
-        }
-        if (nextItem) {
-          nextItem.shown?.();
-          this.nav.shown?.({ $event: nextItem.id });
-        }
-        this._activeItem = nextItem;
-      }
+    this._updateActivePane();
+    this._panesSubscription = this._panes.changes.subscribe(() => this._startPendingTransition());
+    this._navSubscription = this.nav.navItemChange$.subscribe((nextItem) => {
+      if (this._activePane?.item === nextItem) return;
+
+      this._pendingItem = nextItem;
+      this.$scope.$evalAsync(() => this._startPendingTransition());
     });
   }
 
   $onDestroy(): void {
-    this._sub?.unsubscribe();
-    for (const { scope } of this._panes.values()) scope.$destroy();
-    this._panes.clear();
+    this._navSubscription?.unsubscribe();
+    this._panesSubscription?.unsubscribe();
   }
 
-  private _update(): void {
-    for (const item of this.nav.items) {
-      if ((item.isPanelInDom() || this.isPanelTransitioning(item)) && !this._panes.has(item)) {
-        const scope = this.$scope.$new() as NgbNavPaneScope;
-        scope.item = item;
-        scope.nav = this.nav;
-        const el = this.$compile('<div ngb-nav-pane item="item" nav="nav"></div>')(scope);
-        this.$element.append(el);
-        this._panes.set(item, { el, scope });
-      }
+  private _startPendingTransition(): void {
+    if (this._pendingItem === undefined) return;
+
+    const nextItem = this._pendingItem;
+    const nextPane = this._getPaneForItem(nextItem);
+    if (nextItem && !nextPane) return;
+
+    const previousPane = this._activePane;
+    if (!previousPane) {
+      this._activePane = nextPane;
+      this._activePane?.$element.addClass("active show");
+      this._pendingItem = undefined;
+      return;
     }
 
-    for (const [item, { el, scope }] of this._panes) {
-      if (!item.isPanelInDom() && !this.isPanelTransitioning(item)) {
-        el.remove();
-        scope.$destroy();
-        this._panes.delete(item);
-      } else {
-        el.toggleClass("active show", item.active);
+    const options: NgbTransitionOptions<undefined> = {
+      animation: this.nav.animation,
+      runningTransition: "stop",
+    };
+
+    ngbRunTransition(this.$digestService, previousPane.$element, ngbNavFadeOutTransition, options).subscribe(() => {
+      const previousItem = previousPane.item;
+      this._activePane = this._getPaneForItem(nextItem);
+      this._pendingItem = undefined;
+
+      if (this._activePane) {
+        this._activePane.$element.addClass("active");
+        ngbRunTransition(this.$digestService, this._activePane.$element, ngbNavFadeInTransition, options).subscribe(
+          () => {
+            nextItem?.shown?.();
+            if (nextItem) this.nav.shown?.({ $event: nextItem.id });
+          },
+        );
       }
-    }
+
+      previousItem.hidden?.();
+      this.nav.hidden?.({ $event: previousItem.id });
+      this.$digestService.runInsideDigest();
+    });
+  }
+
+  private _updateActivePane(): void {
+    this._activePane = this._getPaneForItem(this.nav.items.find((item) => item.active) ?? null);
+    this._activePane?.$element.addClass("active show");
+  }
+
+  private _getPaneForItem(item: NgbNavItem | null): NgbNavPane | null {
+    return this._panes.find((pane) => pane.item === item) ?? null;
   }
 
   //#region $angular
@@ -83,7 +104,7 @@ export class NgbNavOutlet implements IController {
   }
 
   static get $inject() {
-    return ["$element", "$compile", "$scope"];
+    return ["$element", "$scope", DigestService.$name];
   }
 
   static get $factory(): () => IDirective {
@@ -94,7 +115,18 @@ export class NgbNavOutlet implements IController {
         nav: "<ngbNavOutlet",
       },
       restrict: "A",
+      controllerAs: "$",
       scope: true,
+      template: `
+        <div
+          ng-repeat="item in $.nav.items.toArray() track by item.domId"
+          ng-if="item.isPanelInDom() || $.isPanelTransitioning(item)"
+          ngb-nav-pane
+          item="item"
+          nav="$.nav"
+          role="$.paneRole">
+        </div>
+      `,
     });
   }
 

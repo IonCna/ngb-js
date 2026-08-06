@@ -2,8 +2,9 @@ import template from "@ngb/rating/ngb-rating.component.html";
 import { NgbRatingConfig } from "@ngb/rating/ngb-rating-config.service";
 import { getValueInRange } from "@ngb/utils";
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
+import { ContentChild, TemplateRef, ViewChild } from "ngjs-core";
 
-interface NgbStarContext {
+export interface StarTemplateContext {
   fill: number;
   index: number;
 }
@@ -20,7 +21,15 @@ export class NgbRating implements IComponentController {
   protected hover?: (locals: { $event: number }) => void;
   protected leave?: (locals: { $event: number }) => void;
 
-  protected contexts: NgbStarContext[] = [];
+  public starTemplate?: TemplateRef<StarTemplateContext>;
+
+  @ContentChild(TemplateRef)
+  public starTemplateFromContent?: TemplateRef<StarTemplateContext>;
+
+  @ViewChild("defaultStar", { read: TemplateRef, static: true })
+  public defaultStarTemplate!: TemplateRef<StarTemplateContext>;
+
+  protected contexts: StarTemplateContext[] = [];
   protected nextRate!: number;
 
   constructor(
@@ -123,9 +132,10 @@ export class NgbRating implements IComponentController {
 
   private _updateState(nextValue: number): void {
     this.nextRate = nextValue;
-    this.contexts.forEach((context, index) => {
-      context.fill = Math.round(getValueInRange(nextValue - index, 1, 0) * 100);
-    });
+    this.contexts = this.contexts.map((context, index) => ({
+      ...context,
+      fill: Math.round(getValueInRange(nextValue - index, 1, 0) * 100),
+    }));
     this._render();
   }
 
@@ -170,12 +180,14 @@ export class NgbRating implements IComponentController {
         rateChange: "&?",
         readonly: "<?",
         resettable: "<?",
+        starTemplate: "<?",
         tabindex: "<?",
         hover: "&?",
         leave: "&?",
       },
       controller: NgbRating,
       controllerAs: "$",
+      transclude: true,
       template,
     };
   }

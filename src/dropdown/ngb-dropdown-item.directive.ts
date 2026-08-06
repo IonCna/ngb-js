@@ -1,4 +1,3 @@
-import type { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
 import { toNativeElement } from "@ngb/utils";
 import type { IController, IDirective, IScope } from "angular";
 
@@ -8,7 +7,6 @@ export class NgbDropdownItem implements IController {
   private unwatchDisabled?: () => void;
 
   public nativeElement!: HTMLElement;
-  public ngbDropdownMenu!: NgbDropdownMenu;
   public tabindex: string | number = 0;
 
   constructor(
@@ -27,7 +25,6 @@ export class NgbDropdownItem implements IController {
   $postLink(): void {
     this.nativeElement = toNativeElement(this.$element);
     this.$element.addClass("dropdown-item");
-    this.ngbDropdownMenu.register(this);
     this._applyHostBindings();
 
     if (this.nativeElement instanceof HTMLButtonElement) {
@@ -54,7 +51,6 @@ export class NgbDropdownItem implements IController {
 
   $onDestroy(): void {
     this.unwatchDisabled?.();
-    this.ngbDropdownMenu.unregister(this);
   }
 
   private _applyHostBindings() {
@@ -71,10 +67,8 @@ export class NgbDropdownItem implements IController {
   static get $factory(): () => IDirective {
     return () => ({
       bindToController: {
+        disabled: "<?",
         tabindex: "<?",
-      },
-      require: {
-        ngbDropdownMenu: "^ngbDropdownMenu",
       },
       controller: NgbDropdownItem,
       scope: true,

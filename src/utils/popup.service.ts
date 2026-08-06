@@ -5,21 +5,18 @@ import type {
   IOnChangesObject,
   IRootScopeService,
   IScope,
-  ITranscludeFunction,
 } from "angular";
 import angular from "angular";
+import { type EmbeddedViewRef, TemplateRef } from "ngjs-core";
 import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
 import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition } from ".";
-
-function targetIsTranscludeFunction(target: unknown): target is ITranscludeFunction {
-  return Boolean(target && Object.hasOwn(target, "isSlotFilled"));
-}
 
 export class ContentRef<T = any> {
   constructor(
     public $element: IAugmentedJQuery,
     public $scope?: IScope,
     public componentInstance?: T,
+    private embeddedViewRef?: EmbeddedViewRef<any>,
   ) {}
 
   public setInput(key: string, value?: unknown) {
@@ -39,11 +36,18 @@ export class ContentRef<T = any> {
     } satisfies IOnChangesObject);
     this.$scope?.$evalAsync();
   }
+
+  public destroy(): void {
+    this.embeddedViewRef?.destroy();
+    this.embeddedViewRef = undefined;
+    this.$scope?.$destroy();
+    this.$scope = undefined;
+  }
 }
 
 export interface IPopupService<T = any> {
   open(
-    content?: string | ITranscludeFunction,
+    content?: string | TemplateRef<any>,
     context?: any,
     animation?: boolean,
   ): {
@@ -69,18 +73,19 @@ class PopupService<T> implements IPopupService<T> {
     private _componentType: string,
   ) {}
 
-  open(content?: string | ITranscludeFunction, context?: any, animation = false) {
+  open(content?: string | TemplateRef<any>, context?: any, animation = false) {
     if (!this._windowRef) {
       this._contentRef = this._getContentRef(content, context);
       const component = camelToKebabCase(this._componentType);
 
       const scope = this.$rootScope.$new();
       const host = angular.element(`<${component}></${component}>`);
-      host.append(this._contentRef.$element);
 
       const linkFn = this.$compile(host);
       const compiled = linkFn(scope);
       const instance = compiled.controller(this._componentType);
+      const contentHost = compiled[0].querySelector?.("[ngb-popup-content]");
+      angular.element(contentHost ?? compiled).append(this._contentRef.$element);
 
       this._windowRef = new ContentRef<T>(compiled, scope, instance);
     }
@@ -124,7 +129,7 @@ class PopupService<T> implements IPopupService<T> {
       runningTransition: "stop",
     }).pipe(
       tap(() => {
-        this._contentRef?.$scope?.$destroy();
+        this._contentRef?.destroy();
         this._contentRef = null;
 
         this._windowRef?.$scope?.$destroy();
@@ -133,15 +138,12 @@ class PopupService<T> implements IPopupService<T> {
     );
   }
 
-  private _getContentRef(content?: string | ITranscludeFunction, context?: any) {
+  private _getContentRef(content?: string | TemplateRef<any>, context?: any) {
     if (!content) return new ContentRef(angular.element([]));
 
-    if (targetIsTranscludeFunction(content)) {
-      const scope = this.$rootScope.$new();
-      angular.extend(scope, context);
-
-      const compiled = content(scope, angular.noop);
-      return new ContentRef(compiled, scope);
+    if (content instanceof TemplateRef) {
+      const viewRef = content.createEmbeddedView(context ?? {});
+      return new ContentRef(angular.element(viewRef.rootNodes as any), undefined, undefined, viewRef);
     }
 
     const node = document.createTextNode(`${content}`);

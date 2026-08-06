@@ -7,7 +7,6 @@ import { NgbModalModule } from "@ngb/modal/ngb-modal.module";
 import { NgbNavModule } from "@ngb/nav/ngb-nav.module";
 import { NgbOffcanvasModule } from "@ngb/offcanvas/ngb-offcanvas.module";
 import { NgbConfig } from "@ngb/ngb-config.service";
-import { NgbContent } from "@ngb/ngb-content.directive";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbProgressbarModule } from "@ngb/progressbar/ngb-progressbar.module";
 import { NgbRatingModule } from "@ngb/rating/ngb-rating.module";
@@ -20,9 +19,9 @@ import { PopupFactory } from "@ngb/utils/popup.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { DigestService } from "@ngb/utils/digest.service";
 import { CoreModule, CommonModule } from "ngjs-core"
-import angular from "angular";
+import angular, {type IModule} from "angular";
 
-export const NgbModule = angular.module("ngb", [
+export const NgbModule: IModule = angular.module("ngb", [
   CommonModule.name,
   CoreModule.name,
   NgbAlertModule.name,
@@ -41,7 +40,6 @@ export const NgbModule = angular.module("ngb", [
 ]);
 
 NgbModule.service(NgbConfig.$name, NgbConfig);
-NgbModule.directive(NgbContent.$name, NgbContent.$factory);
 NgbModule.service(NgbScrollbar.$name, NgbScrollbar);
 NgbModule.factory(PopupFactory.$name, PopupFactory);
 NgbModule.service(DigestService.$name, DigestService);

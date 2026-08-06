@@ -1,7 +1,8 @@
 import { NgbAccordionConfig } from "@ngb/accordion/ngb-accordion-config.service";
-import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
+import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import type { INgbEvent } from "@ngb/utils";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
+import { ContentChildren, type QueryList } from "ngjs-core";
 
 export interface INgbAccordion {
   toggle(itemId: string): void;
@@ -15,7 +16,9 @@ export interface INgbAccordion {
 
 export class NgbAccordion implements IController, INgbAccordion {
   private _anItemWasAlreadyExpandedDuringInitialization = false;
-  private _items: NgbAccordionItem[] = [];
+
+  @ContentChildren(NgbAccordionItem, { descendants: false })
+  private _items!: QueryList<NgbAccordionItem>;
 
   public animation!: boolean;
   public closeOthers!: boolean;
@@ -38,16 +41,6 @@ export class NgbAccordion implements IController, INgbAccordion {
     this.destroyOnHide = this.destroyOnHide ?? this.ngbAccordionConfig.destroyOnHide;
   }
 
-  register(item: NgbAccordionItem) {
-    if (!this._items.includes(item)) {
-      this._items = [...this._items, item];
-    }
-  }
-
-  unregister(item: NgbAccordionItem) {
-    this._items = this._items.filter((registeredItem) => registeredItem !== item);
-  }
-
   $postLink(): void {
     this.$element.addClass("accordion");
   }
@@ -61,7 +54,6 @@ export class NgbAccordion implements IController, INgbAccordion {
   }
 
   public expandAll() {
-    if (!this._items) return;
     if (!this.closeOthers) {
       this._items.forEach((item) => {
         item.expand();
@@ -72,8 +64,7 @@ export class NgbAccordion implements IController, INgbAccordion {
     const item = this._items.find((item) => !item.collapsed);
 
     if (!item) {
-      const [first] = this._items;
-      first.expand();
+      this._items.first?.expand();
     }
   }
 
@@ -95,7 +86,7 @@ export class NgbAccordion implements IController, INgbAccordion {
   public _ensureCanExpand(toExpand: NgbAccordionItem) {
     if (!this.closeOthers) return true;
 
-    if (!this._items) {
+    if (this._items.length === 0) {
       if (!this._anItemWasAlreadyExpandedDuringInitialization) {
         this._anItemWasAlreadyExpandedDuringInitialization = true;
         return true;
@@ -121,6 +112,8 @@ export class NgbAccordion implements IController, INgbAccordion {
       bindToController: true,
       controller: NgbAccordion,
       restrict: "A",
+      transclude: true,
+      template: "<ng-content></ng-content>",
       scope: {
         animation: "<?",
         closeOthers: "<?",

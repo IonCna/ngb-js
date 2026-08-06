@@ -14,6 +14,7 @@ import angular, {
   type IRootScopeService,
 } from "angular";
 import { finalize, Subject } from "rxjs";
+import { TemplateRef } from "ngjs-core";
 
 type OffcanvasContentScope = angular.IScope & {
   activeOffcanvas: NgbActiveOffcanvas;
@@ -188,6 +189,17 @@ export class NgbOffcanvasStack {
 
   private _getContentRef<T>(content: any, activeOffcanvas: NgbActiveOffcanvas, options: NgbOffcanvasOptions) {
     const deferred = this.$q.defer<ContentRef<T>>();
+
+    if (content instanceof TemplateRef) {
+      const viewRef = content.createEmbeddedView({
+        $implicit: activeOffcanvas,
+        close: (result?: any) => activeOffcanvas.close(result),
+        dismiss: (reason?: any) => activeOffcanvas.dismiss(reason),
+      });
+      deferred.resolve(new ContentRef<T>(angular.element(viewRef.rootNodes as any), undefined, undefined, viewRef));
+      return deferred.promise;
+    }
+
     const scope = this.$rootScope.$new(true) as OffcanvasContentScope;
     const componentName = camelToKebabCase(content);
     const attrs = this._buildBindingsAttrs(options);

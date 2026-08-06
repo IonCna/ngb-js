@@ -11,6 +11,7 @@ import { DigestService } from "@ngb/utils/digest.service";
 import { getFocusableBoundaryElements } from "@ngb/utils/focus-trap";
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService, IScope } from "angular";
 import angular from "angular";
+import { ElementRef, ViewChild } from "ngjs-core";
 import { filter, fromEvent, type Observable, Subject, switchMap, take, takeUntil, tap, zip } from "rxjs";
 
 const WINDOW_ATTRIBUTES = [
@@ -47,7 +48,12 @@ export class NgbModalWindow implements IComponentController {
   public modalDialogClass?: string;
 
   private _elWithFocus: Element | null = null;
-  private _dialogEl?: IAugmentedJQuery;
+  @ViewChild("dialog", { read: ElementRef, static: true })
+  private _dialogRef!: ElementRef<HTMLElement>;
+
+  private get _dialogEl(): IAugmentedJQuery {
+    return angular.element(this._dialogRef.nativeElement);
+  }
   private _closed$ = new Subject<void>();
   public shown = new Subject<void>();
   public hidden = new Subject<void>();
@@ -73,11 +79,6 @@ export class NgbModalWindow implements IComponentController {
     this.$element.addClass("modal d-block");
     this.$element.attr("tabindex", -1);
     this.$element.attr("aria-modal", "true");
-
-    const nativeDialog = toNativeElement(this.$element).querySelector(".modal-dialog");
-
-    if (!nativeDialog) throw new Error("modal-dialog element is not present in template!");
-    this._dialogEl = angular.element(nativeDialog);
 
     this.$digestService.runOutsideDigest(() => this._show());
   }
@@ -305,6 +306,7 @@ export class NgbModalWindow implements IComponentController {
     return {
       controller: NgbModalWindow,
       controllerAs: "$",
+      transclude: true,
       template,
       bindings: {
         animation: "<?",

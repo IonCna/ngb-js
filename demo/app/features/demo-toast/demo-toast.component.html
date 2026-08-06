@@ -28,10 +28,12 @@
         </ngb-toast>
 
         <ngb-toast ng-if="$.showToast" animation="$.animation" autohide="false">
-            <div class="me-auto" ngb-toast-header>
-                <strong>Custom header</strong>
-                <small>now</small>
-            </div>
+            <ng-template ngb-toast-header>
+                <div class="me-auto">
+                    <strong>Custom header</strong>
+                    <small>now</small>
+                </div>
+            </ng-template>
             This toast projects a custom header with <code>ngb-toast-header</code>.
         </ngb-toast>
     </div>

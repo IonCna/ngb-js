@@ -14,6 +14,7 @@ import angular, {
   type IRootScopeService,
 } from "angular";
 import { Subject, take } from "rxjs";
+import { TemplateRef } from "ngjs-core";
 
 type ModalContentScope = angular.IScope & {
   activeModal: NgbActiveModal;
@@ -189,11 +190,10 @@ export class NgbModalStack {
     const linkFn = this.$compile(`<ngb-modal-window></ngb-modal-window>`);
 
     const compiled = linkFn(scope);
-    const modalDialog = toNativeElement(compiled).querySelector(".modal-dialog");
+    const modalContent = toNativeElement(compiled).querySelector(".modal-content");
 
-    if (modalDialog) {
-      content.addClass("modal-content");
-      angular.element(modalDialog).append(content);
+    if (modalContent) {
+      angular.element(modalContent).append(content);
     }
 
     container.append(compiled);
@@ -213,6 +213,18 @@ export class NgbModalStack {
 
   private _getContentRef<T>(content: any, activeModal: NgbActiveModal, options: NgbModalOptions) {
     const deferred = this.$q.defer<ContentRef<T>>();
+
+    if (content instanceof TemplateRef) {
+      const viewRef = content.createEmbeddedView({
+        $implicit: activeModal,
+        close: (result?: any) => activeModal.close(result),
+        dismiss: (reason?: any) => activeModal.dismiss(reason),
+      });
+      const nodes = angular.element(viewRef.rootNodes as any);
+      deferred.resolve(new ContentRef<T>(nodes, undefined, undefined, viewRef));
+      return deferred.promise;
+    }
+
     const scope = this.$rootScope.$new(true) as ModalContentScope;
     const componentName = camelToKebabCase(content);
     const attrs = this._buildBindingsAttrs(options);
@@ -224,7 +236,7 @@ export class NgbModalStack {
     const compiled = linkFn(scope);
 
     if (options.scrollable) {
-      compiled.addClass("d-flex flex-column overflow-hidden");
+      compiled.addClass("component-host-scrollable d-flex flex-column overflow-hidden");
     }
 
     const watcher = this.$rootScope.$watch(

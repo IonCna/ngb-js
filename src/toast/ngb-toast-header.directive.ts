@@ -1,15 +1,6 @@
-import type { NgbToast } from "@ngb/toast/ngb-toast.component";
-import type { IController, IDirective, ITranscludeFunction } from "angular";
+import type { IDirective } from "angular";
 
-export class NgbToastHeader implements IController {
-  private ngbToast!: NgbToast;
-
-  constructor(public readonly $transclude: ITranscludeFunction) {}
-
-  $onInit(): void {
-    this.ngbToast.register(this);
-  }
-
+export class NgbToastHeader {
   static get $name() {
     return "ngbToastHeader";
   }
@@ -17,16 +8,8 @@ export class NgbToastHeader implements IController {
   static get $factory(): () => IDirective {
     return () => ({
       bindToController: true,
-      controllerAs: "$",
-      transclude: "element",
-      require: {
-        ngbToast: "^ngbToast",
-      },
       controller: NgbToastHeader,
+      restrict: "A",
     });
-  }
-
-  static get $inject() {
-    return ["$transclude"];
   }
 }

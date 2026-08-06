@@ -102,9 +102,9 @@ export class NgbModalRef<T = any> {
 
     windowTransition?.subscribe(() => {
       this.windowRef.$element.remove();
-      this.windowRef.$scope?.$destroy();
+      this.windowRef.destroy();
 
-      this.contentRef.$scope?.$destroy();
+      this.contentRef.destroy();
       this.windowRef = <any>null;
       this.contentRef = <any>null;
     });
@@ -112,7 +112,7 @@ export class NgbModalRef<T = any> {
     backdropTransition.subscribe(() => {
       if (!this.backdropRef) return;
       this.backdropRef.$element.remove();
-      this.backdropRef.$scope?.$destroy();
+      this.backdropRef.destroy();
       this.backdropRef = <any>null;
     });
 

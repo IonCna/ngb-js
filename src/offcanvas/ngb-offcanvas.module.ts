@@ -4,8 +4,9 @@ import { NgbOffcanvasConfig } from "@ngb/offcanvas/ngb-offcanvas-config.service"
 import { NgbOffcanvasStack } from "@ngb/offcanvas/ngb-offcanvas-stack.service";
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
 import angular from "angular";
+import { CommonModule } from "ngjs-core";
 
-export const NgbOffcanvasModule = angular.module("ngb.offcanvas", []);
+export const NgbOffcanvasModule = angular.module("ngb.offcanvas", [CommonModule.name]);
 NgbOffcanvasModule.service(NgbOffcanvas.$name, NgbOffcanvas);
 NgbOffcanvasModule.service(NgbOffcanvasStack.$name, NgbOffcanvasStack);
 NgbOffcanvasModule.service(NgbOffcanvasConfig.$name, NgbOffcanvasConfig);

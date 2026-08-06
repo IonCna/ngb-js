@@ -1,8 +1,9 @@
 import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
-import type { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
+import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
 import { toNativeElement } from "@ngb/utils";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import angular from "angular";
+import { ContentChild, TemplateRef } from "ngjs-core";
 
 const isValidNavId = (id?: string): id is string => angular.isDefined(id) && id !== "";
 let navCounter = 0;
@@ -16,7 +17,8 @@ export class NgbNavItem implements IController {
   public hidden?: () => void;
 
   private _id?: string;
-  private _content?: NgbNavContent;
+  @ContentChild(NgbNavContent, { descendants: false, read: TemplateRef })
+  public contentTpl?: TemplateRef<{ $implicit: boolean }>;
 
   constructor(private $element: IAugmentedJQuery) {}
 
@@ -30,11 +32,6 @@ export class NgbNavItem implements IController {
 
   $postLink(): void {
     this.$element.addClass("nav-item");
-    this._nav.registerItems(this);
-  }
-
-  $onDestroy(): void {
-    this._nav.unregisterItem(this);
   }
 
   get active() {
@@ -49,23 +46,12 @@ export class NgbNavItem implements IController {
     return `${this.domId}-panel`;
   }
 
-  get contentTpl(): NgbNavContent | undefined {
-    return this._content;
-  }
-
   public isPanelInDom() {
     return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : !this._nav.destroyOnHide || this.active;
   }
 
   public isNgContainer() {
     return toNativeElement(this.$element).nodeType === Node.COMMENT_NODE;
-  }
-
-  public register(content: NgbNavContent) {
-    if (this._content) {
-      throw new Error("only one content in item are allowed");
-    }
-    this._content = content;
   }
 
   //#region $angular
@@ -94,6 +80,8 @@ export class NgbNavItem implements IController {
         shown: "&?",
         hidden: "&?",
       },
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 

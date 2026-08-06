@@ -17,8 +17,8 @@ import angular, {
   type IOnChangesObject,
   type IScope,
   type ITimeoutService,
-  type ITranscludeFunction,
 } from "angular";
+import type { TemplateRef } from "ngjs-core";
 import { Subject } from "rxjs";
 
 let nextId = 0;
@@ -38,7 +38,7 @@ export class NgbTooltip implements IController {
   public openDelay!: number;
   public closeDelay!: number;
 
-  private _ngbTooltip?: string | ITranscludeFunction;
+  private _ngbTooltip?: string | TemplateRef<any>;
   private _ngbTooltipWindowId = `ngb-tooltip-${nextId++}`;
   private _windowRef: ContentRef<NgbTooltipWindow> | null = null;
   private _positioning!: NgbPositioning;
@@ -271,7 +271,7 @@ export class NgbTooltip implements IController {
     });
   }
 
-  set ngbTooltip(value: string | ITranscludeFunction) {
+  set ngbTooltip(value: string | TemplateRef<any>) {
     this._ngbTooltip = value;
 
     if (!value && this.isOpen()) {

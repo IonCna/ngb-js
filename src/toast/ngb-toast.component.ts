@@ -1,6 +1,6 @@
 import template from "@ngb/toast/ngb-toast.component.html";
 import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
-import type { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
+import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
 import { DigestService } from "@ngb/utils/digest.service";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
@@ -12,8 +12,8 @@ import type {
   IOnChangesObject,
   IPromise,
   ITimeoutService,
-  ITranscludeFunction,
 } from "angular";
+import { ContentChild, TemplateRef, ViewChild } from "ngjs-core";
 import type { Observable } from "rxjs";
 
 export interface INgbToast {
@@ -27,7 +27,12 @@ export class NgbToast implements IComponentController, INgbToast {
   protected delay!: number;
   protected header?: string;
   protected ariaLive!: string;
-  protected contentHeaderTpl?: ITranscludeFunction | null = null;
+
+  @ContentChild(NgbToastHeader, { read: TemplateRef, static: true })
+  protected contentHeaderTpl?: TemplateRef<unknown> | null = null;
+
+  @ViewChild("headerTpl", { read: TemplateRef, static: true })
+  protected headerTpl!: TemplateRef<unknown>;
 
   protected hidden?: () => void;
   protected shown?: () => void;
@@ -66,10 +71,6 @@ export class NgbToast implements IComponentController, INgbToast {
       this._clearTimeout();
       this._init();
     }
-  }
-
-  register(header: NgbToastHeader): void {
-    this.contentHeaderTpl = header.$transclude;
   }
 
   hide(): Observable<void> {

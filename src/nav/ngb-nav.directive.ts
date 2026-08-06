@@ -1,10 +1,11 @@
-import { NgbNavConfig, type NgbNavChangeEvent } from "@ngb/nav/ngb-nav-config.service";
-import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
-import type { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
+import { type NgbNavChangeEvent, NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
+import { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
+import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
 import { assertAttribute, type INgbEvent, toNativeElement } from "@ngb/utils";
 import type { IAttributes, IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope } from "angular";
 import angular, { isDefined } from "angular";
-import { Subject } from "rxjs";
+import { ContentChildren, type QueryList } from "ngjs-core";
+import { Subject, type Subscription } from "rxjs";
 
 const isValidNavId = (id?: string | null): id is string => angular.isDefined(id) && id !== "";
 
@@ -28,11 +29,14 @@ export class NgbNav implements IController {
 
   public navChange?: (event: INgbEvent<NgbNavChangeEvent>) => void;
 
-  public items: NgbNavItem[] = [];
-  private links: NgbNavLinkBase[] = [];
+  @ContentChildren(NgbNavItem)
+  public items!: QueryList<NgbNavItem>;
+
+  @ContentChildren(NgbNavLinkBase)
+  private links!: QueryList<NgbNavLinkBase>;
 
   public navItemChange$ = new Subject<NgbNavItem | null>();
-  private itemsChange$ = new Subject<void>();
+  private itemsSubscription?: Subscription;
 
   constructor(
     private $element: IAugmentedJQuery,
@@ -55,24 +59,22 @@ export class NgbNav implements IController {
     this.$element.on("keydown", this.onKeyDown.bind(this));
     this.$element.on("focusout", this.onFocusout.bind(this));
 
-    const navRef = this.$attributes.navRef;
-    if (navRef) (this.$scope.$parent as unknown as Record<string, unknown>)[navRef] = this;
-
-    this.$attributes.$observe("role", (role?: string) => {
+    const applyRole = (role?: string) => {
       this.role = role;
       assertAttribute(this.$element, "role", this.role ? this.role : this.roles ? "tablist" : undefined);
-    });
+    };
+    this.$attributes.$observe("role", applyRole);
+    applyRole(this.$attributes.role);
 
     if (!isDefined(this.activeId)) {
-      const [first] = this.items;
-      const nextId = first ? first.id : null;
+      const nextId = this.items.first?.id ?? null;
 
       if (isValidNavId(nextId)) {
         this.$scope.$applyAsync(() => this._updateActiveId(nextId, false));
       }
     }
 
-    this.itemsChange$.subscribe(() => this._notifyItemChanged(this.activeId));
+    this.itemsSubscription = this.items.changes.subscribe(() => this._notifyItemChanged(this.activeId));
   }
 
   $onChanges(changes: IOnChangesObject): void {
@@ -89,32 +91,11 @@ export class NgbNav implements IController {
   }
 
   $onDestroy(): void {
+    this.itemsSubscription?.unsubscribe();
     this.navItemChange$.complete();
-    this.itemsChange$.complete();
 
     this.$element.off("keydown");
     this.$element.off("focusout");
-  }
-
-  public registerItems(item: NgbNavItem) {
-    this.items.push(item);
-    this.itemsChange$.next();
-  }
-
-  public registerLinks(link: NgbNavLinkBase) {
-    this.links.push(link);
-  }
-
-  public unregisterLink(link: NgbNavLinkBase) {
-    const index = this.links.indexOf(link);
-    if (index >= 0) this.links.splice(index, 1);
-  }
-
-  public unregisterItem(item: NgbNavItem) {
-    const index = this.items.indexOf(item);
-    this.items.splice(index, 1);
-
-    this.itemsChange$.next();
   }
 
   public onKeyDown(event: JQueryEventObject) {
@@ -238,6 +219,8 @@ export class NgbNav implements IController {
       },
       bindToController: true,
       controller: NgbNav,
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 

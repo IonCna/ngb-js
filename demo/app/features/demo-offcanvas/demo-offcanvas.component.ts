@@ -1,6 +1,7 @@
 import template from "@demo/features/demo-offcanvas/demo-offcanvas.component.html";
-import type { NgbOffcanvas } from "@ngb";
+import type { NgbOffcanvas, NgbOffcanvasRef } from "@ngb";
 import type { IComponentController, IComponentOptions } from "angular";
+import type { TemplateRef } from "ngjs-core";
 
 const POSITIONS: Array<"start" | "end" | "top" | "bottom"> = ["start", "end", "top", "bottom"];
 const BACKDROPS: Array<boolean | "static"> = [true, false, "static"];
@@ -8,6 +9,8 @@ const BACKDROPS: Array<boolean | "static"> = [true, false, "static"];
 export class DemoOffcanvasComponent implements IComponentController {
   public lastResult = "—";
   public lastDismissed = "—";
+  public templateMessage = "This panel was rendered from an ngjs-core TemplateRef.";
+  public template?: TemplateRef<unknown>;
   public animation = true;
   public backdrop: boolean | "static" = true;
   public keyboard = true;
@@ -28,12 +31,21 @@ export class DemoOffcanvasComponent implements IComponentController {
 
   public async open() {
     const offcanvasRef = await this.ngbOffcanvas.open("ngbDemoOffcanvasContent", this.buildOptions());
+    this.observe(offcanvasRef);
+  }
 
+  public async openTemplate() {
+    if (!this.template) return;
+    const offcanvasRef = await this.ngbOffcanvas.open(this.template, this.buildOptions());
+    this.observe(offcanvasRef);
+  }
+
+  private observe(offcanvasRef: NgbOffcanvasRef) {
     offcanvasRef.result?.then(
-      (result: any) => {
+      (result: unknown) => {
         this.lastResult = String(result);
       },
-      (reason: any) => {
+      (reason: unknown) => {
         this.lastDismissed = String(reason);
       },
     );

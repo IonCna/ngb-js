@@ -8,8 +8,10 @@ export enum SOURCE {
   CLICK,
 }
 
-const isContainedIn = (element: HTMLElement, array?: HTMLElement[]) =>
-  array ? array.some((item) => item.contains(element)) : false;
+type ContainmentElement = HTMLElement | null | undefined;
+
+const isContainedIn = (element: HTMLElement, array?: ContainmentElement[]) =>
+  array ? array.some((item) => item?.contains(element) ?? false) : false;
 
 const matchesSelectorIfAny = (element: HTMLElement, selector?: string) =>
   !selector || closest(angular.element(element), selector) != null;
@@ -41,8 +43,8 @@ export function ngbAutoClose(
   type: boolean | "inside" | "outside",
   closed$: Observable<unknown>,
   close: (source: SOURCE) => void,
-  insideElements: HTMLElement[],
-  ignoreElements?: HTMLElement[],
+  insideElements: ContainmentElement[],
+  ignoreElements?: ContainmentElement[],
   insideSelector?: string,
 ) {
   if (!type) return;

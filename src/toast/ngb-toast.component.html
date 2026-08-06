@@ -1,7 +1,12 @@
+<ng-template ng-ref="headerTpl">
+    <strong class="me-auto">{{ $.header }}</strong>
+</ng-template>
+
 <div ng-if="$.contentHeaderTpl || $.header" class="toast-header">
-    <ngb-content ng-if="$.contentHeaderTpl" $render="$.contentHeaderTpl"></ngb-content>
-    <strong ng-if="!$.contentHeaderTpl && $.header" class="me-auto">{{ $.header }}</strong>
+    <ng-container ng-template-outlet="$.contentHeaderTpl || $.headerTpl"></ng-container>
     <button type="button" class="btn-close" aria-label="Close" ng-click="$.hide()"></button>
 </div>
 
-<div class="toast-body" ng-transclude></div>
+<div class="toast-body">
+    <ng-content></ng-content>
+</div>

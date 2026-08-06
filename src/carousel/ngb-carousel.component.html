@@ -1,23 +1,23 @@
 <div class="carousel-indicators" ng-class="{ 'visually-hidden': !$.showNavigationIndicators }" role="tablist">
-    <button title="indicator {{ $index }}" ng-repeat="$slide in $.slides track by $index" type="button" data-bs-target
+    <button title="indicator {{ $index }}" ng-repeat="$slide in $.slides.toArray() track by $index" type="button" data-bs-target
         ng-class="{ 'active': $slide.id === $.activeId }" role="tab" ng-attr-aria-labelledby="slide-{{ $slide.id }}"
         ng-attr-aria-controls="slide-{{ $slide.id }}" ng-attr-aria-selected="{{ $slide.id === $.activeId }}"
         ng-click="$.focus(); $.select($slide.id, $.NgbSlideEventSource.INDICATOR)"></button>
 </div>
 
 <div class="carousel-inner">
-    <div ng-repeat="$slide in $.slides track by $index" ng-init="$count = $.slides.length" class="carousel-item"
+    <div ng-repeat="$slide in $.slides.toArray() track by $index" ng-init="$count = $.slides.length" class="carousel-item"
         ng-attr-id="slide-{{ $slide.id }}" role="tabpanel">
         <span class="visually-hidden">
             Slide {{ $index + 1 }} of {{ $count }}
         </span>
 
-        <ngb-content $render="$slide.$transclude"></ngb-content>
+        <ng-container ng-template-outlet="$.getSlideTemplate($index)"></ng-container>
     </div>
 </div>
 
 <button ng-if="$.showNavigationArrows" class="carousel-control-prev" type="button"
-    ng-attr-aria-labelledby="{{ $.id }}-prev" ng-click="$.arrowLeft()">
+    ng-attr-aria-labelledby="{{ $.id }}-previous" ng-click="$.arrowLeft()">
     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
     <span class="visually-hidden" ng-attr-id="{{ $.id }}-previous">Previous</span>
 </button>
@@ -28,4 +28,4 @@
     <span class="visually-hidden" ng-attr-id="{{ $.id }}-next">Next</span>
 </button>
 
-<ng-transclude></ng-transclude>
+<ng-content></ng-content>

@@ -1,11 +1,11 @@
 import template from "@demo/features/demo-modal/demo-modal-update-options-content.component.html";
-import type { NgbActiveModal } from "@ngb";
+import type { NgbActiveModal, NgbModalUpdatableOptions } from "@ngb";
 import type { IComponentController, IComponentOptions } from "angular";
 
 export class DemoModalUpdateOptionsContentComponent implements IComponentController {
   public ngbActiveModal!: NgbActiveModal;
   public centered = false;
-  public size = "";
+  public size?: NgbModalUpdatableOptions["size"];
   public fullscreen = false;
   public windowClass = "";
   public modalDialogClass = "";
@@ -16,7 +16,7 @@ export class DemoModalUpdateOptionsContentComponent implements IComponentControl
   }
 
   public cycleSize() {
-    const sizes = ["", "sm", "lg", "xl"];
+    const sizes: Array<NgbModalUpdatableOptions["size"]> = [undefined, "sm", "lg", "xl"];
     const index = sizes.indexOf(this.size);
 
     this.size = sizes[(index + 1) % sizes.length];

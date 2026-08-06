@@ -25,6 +25,9 @@
         <button type="button" class="btn btn-primary" ng-click="$.open()">
             Open offcanvas
         </button>
+        <button type="button" class="btn btn-primary" ng-click="$.openTemplate()">
+            Open TemplateRef offcanvas
+        </button>
         <button type="button" class="btn btn-danger" ng-click="$.dismiss()">
             Dismiss
         </button>
@@ -36,4 +39,19 @@
         <div><strong>Last result:</strong> {{ $.lastResult }}</div>
         <div><strong>Last dismissed:</strong> {{ $.lastDismissed }}</div>
     </div>
+
+    <ng-template ng-ref="$.template" let-close="close" let-dismiss="dismiss">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">TemplateRef offcanvas</h5>
+            <button type="button" class="btn-close" aria-label="Close" ng-click="dismiss('template header close')"></button>
+        </div>
+        <div class="offcanvas-body">
+            <p>{{ $.templateMessage }}</p>
+            <p class="text-muted">Change position, backdrop and scroll options before opening it again.</p>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary" ng-click="dismiss('template cancel')">Dismiss</button>
+                <button type="button" class="btn btn-primary" ng-click="close('template offcanvas result')">Close with result</button>
+            </div>
+        </div>
+    </ng-template>
 </div>

@@ -29,7 +29,7 @@ describe("ngbAlert", () => {
         `)(scope);
     scope.$digest();
 
-    const alert = angular.element(element[0].querySelector(".alert") as Element);
+    const alert = element;
     expect(alert.length).toBe(1);
 
     expect(alert.hasClass("show")).toBe(true);
@@ -37,12 +37,12 @@ describe("ngbAlert", () => {
     expect(alert.hasClass("alert-dismissible")).toBe(true);
     expect(alert.attr("role")).toBe("alert");
 
-    const button = angular.element(element[0].querySelector(".btn-close") as Element);
+    const button = angular.element((element[0] as HTMLElement).querySelector(".btn-close") as Element);
     expect(button.length).toBe(1);
     button.triggerHandler("click");
     scope.$digest();
 
-    expect(element.hasClass("d-none")).toBe(true);
+    expect(element.hasClass("show")).toBe(false);
     expect(onClosed).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,10 +1,6 @@
 import type { NgbTransitionStartFn } from "@ngb/utils";
 import type { IAugmentedJQuery } from "angular";
 
-export const ngbAlertFadingTransition: NgbTransitionStartFn = (element: IAugmentedJQuery, animation: boolean) => {
-  if (!animation) {
-    element.addClass("opacity-0");
-  }
-
+export const ngbAlertFadingTransition: NgbTransitionStartFn = (element: IAugmentedJQuery) => {
   element.removeClass("show");
 };

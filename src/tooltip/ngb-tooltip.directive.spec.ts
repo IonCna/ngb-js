@@ -95,6 +95,35 @@ describe("ngbTooltip", () => {
     element.remove();
   });
 
+  it("renders a TemplateRef with the provided tooltip context", () => {
+    const scope = $rootScope.$new();
+    const host = $compile(`
+      <div>
+        <ng-template ng-ref="tooltipTpl" let-name="name">
+          <strong class="template-tooltip">Hello {{ name }}</strong>
+        </ng-template>
+        <button
+          type="button"
+          ngb-tooltip="tooltipTpl"
+          tooltip-context="{ name: 'ngjs-core' }"
+          animation="false">
+          Open template
+        </button>
+      </div>
+    `)(scope);
+    angular.element(document.body).append(host);
+    scope.$digest();
+
+    const button = angular.element(host[0].querySelector("button") as Element);
+    const tooltip = button.controller("ngbTooltip") as { open: (context?: { name: string }) => void };
+    tooltip.open({ name: "ngjs-core" });
+    scope.$digest();
+    $timeout.flush();
+    scope.$digest();
+
+    expect(document.body.querySelector(".template-tooltip")?.textContent).toContain("Hello ngjs-core");
+  });
+
   it("reopens when hovering again during the closing transition", () => {
     const scope = $rootScope.$new();
     const element = $compile(`
