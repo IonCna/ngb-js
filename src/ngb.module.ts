@@ -19,9 +19,12 @@ import { LiveService } from "@ngb/utils/accessibility/live.service";
 import { PopupFactory } from "@ngb/utils/popup.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { DigestService } from "@ngb/utils/digest.service";
+import { CoreModule, CommonModule } from "ngjs-core"
 import angular from "angular";
 
 export const NgbModule = angular.module("ngb", [
+  CommonModule.name,
+  CoreModule.name,
   NgbAlertModule.name,
   NgbProgressbarModule.name,
   NgbCollapseModule.name,
