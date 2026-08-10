@@ -1,0 +1,18 @@
+<ng-template ng-ref="rt" let-result="result" let-term="term" let-formatter="formatter">
+    <ngb-highlight result="formatter(result)" term="term"></ngb-highlight>
+</ng-template>
+
+<button
+        type="button"
+        class="dropdown-item"
+        role="option"
+        ng-attr-id="{{ $.id + '-' + $index }}"
+        ng-class="{ active: $index === $.activeIdx }"
+        ng-mouseenter="$.markActive($index)"
+        ng-click="$.select(result)"
+        ng-repeat="result in $.results track by $index">
+    <ng-container
+            ng-template-outlet="$.resultTemplate || rt"
+            ng-template-outlet-context="{ result: result, term: $.term, formatter: $.formatter }"
+    ></ng-container>
+</button>

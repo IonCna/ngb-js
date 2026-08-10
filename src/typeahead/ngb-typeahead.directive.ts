@@ -23,8 +23,8 @@ export class NgbTypeahead implements IController {
     return "ngbTypeahead";
   }
 
-  static get $factory(): () => IDirective {
-    return () => ({
+  static get $factory(): IDirective {
+    return {
       scope: {
         autocomplete: "<?",
         container: "<?",
@@ -43,6 +43,6 @@ export class NgbTypeahead implements IController {
       },
       bindToController: true,
       controller: NgbTypeahead,
-    });
+    };
   }
 }

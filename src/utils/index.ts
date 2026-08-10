@@ -41,12 +41,24 @@ export function isInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && Math.floor(value) === value && angular.isNumber(value);
 }
 
+export function toString(value: any): string {
+  return value !== undefined && value !== null ? `${value}` : '';
+}
+
 export function padNumber(value: number) {
   if (isNumber(value)) {
     return `0${value}`.slice(-2);
   }
 
   return "";
+}
+
+export function regExpEscape(text: string) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+export function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 export function closest(element: IAugmentedJQuery, selector?: string) {
