@@ -1,7 +1,177 @@
-<fieldset>
+<fieldset ng-disabled="$.disabled" ng-class="{ disabled: $.disabled }">
     <div class="d-flex align-items-center">
-        <div class="d-flex align-items-center flex-column">
+        <div class="d-flex flex-column align-items-center">
+            <button
+                ng-if="$.spinners"
+                ng-click="$.changeHour($.hourStep)"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
+                class="btn btn-link px-2 py-0 lh-1"
+                tabindex="-1"
+                type="button">
+                <span
+                    class="chevron ngb-tp-chevron"
+                    style="border-style: solid; border-width: 0.29em 0.29em 0 0; display: inline-block; height: 0.69em; left: 0.05em; position: relative; top: 0.15em; transform: rotate(-45deg); vertical-align: middle; width: 0.69em;"
+                    aria-hidden="true">
+                </span>
+                <span class="visually-hidden">Increment hours</span>
+            </button>
 
+            <input
+                ng-model="$.hourInput"
+                ng-model-options="{ updateOn: 'change' }"
+                ng-change="$.updateHour($.hourInput)"
+                ng-blur="$.handleBlur()"
+                ng-keydown="$event.key === 'ArrowUp' && $.changeHour($.hourStep); $event.key === 'ArrowDown' && $.changeHour(-$.hourStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
+                ng-readonly="$.readonlyInputs"
+                ng-disabled="$.disabled"
+                ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
+                class="form-control text-center w-auto px-1"
+                type="text"
+                size="2"
+                maxlength="2"
+                inputmode="numeric"
+                placeholder="HH"
+                aria-label="Hours">
+
+            <button
+                ng-if="$.spinners"
+                ng-click="$.changeHour(-$.hourStep)"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
+                class="btn btn-link px-2 py-0 lh-1"
+                tabindex="-1"
+                type="button">
+                <span
+                    class="chevron ngb-tp-chevron bottom"
+                    style="border-style: solid; border-width: 0.29em 0.29em 0 0; display: inline-block; height: 0.69em; left: 0.05em; position: relative; top: -0.3em; transform: rotate(135deg); vertical-align: middle; width: 0.69em;"
+                    aria-hidden="true">
+                </span>
+                <span class="visually-hidden">Decrement hours</span>
+            </button>
+        </div>
+
+        <div class="mx-1 fw-bold" aria-hidden="true">:</div>
+
+        <div class="d-flex flex-column align-items-center">
+            <button
+                ng-if="$.spinners"
+                ng-click="$.changeMinute($.minuteStep)"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
+                class="btn btn-link px-2 py-0 lh-1"
+                tabindex="-1"
+                type="button">
+                <span
+                    class="chevron ngb-tp-chevron"
+                    style="border-style: solid; border-width: 0.29em 0.29em 0 0; display: inline-block; height: 0.69em; left: 0.05em; position: relative; top: 0.15em; transform: rotate(-45deg); vertical-align: middle; width: 0.69em;"
+                    aria-hidden="true">
+                </span>
+                <span class="visually-hidden">Increment minutes</span>
+            </button>
+
+            <input
+                ng-model="$.minuteInput"
+                ng-model-options="{ updateOn: 'change' }"
+                ng-change="$.updateMinute($.minuteInput)"
+                ng-blur="$.handleBlur()"
+                ng-keydown="$event.key === 'ArrowUp' && $.changeMinute($.minuteStep); $event.key === 'ArrowDown' && $.changeMinute(-$.minuteStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
+                ng-readonly="$.readonlyInputs"
+                ng-disabled="$.disabled"
+                ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
+                class="form-control text-center w-auto px-1"
+                type="text"
+                size="2"
+                maxlength="2"
+                inputmode="numeric"
+                placeholder="MM"
+                aria-label="Minutes">
+
+            <button
+                ng-if="$.spinners"
+                ng-click="$.changeMinute(-$.minuteStep)"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
+                class="btn btn-link px-2 py-0 lh-1"
+                tabindex="-1"
+                type="button">
+                <span
+                    class="chevron ngb-tp-chevron bottom"
+                    style="border-style: solid; border-width: 0.29em 0.29em 0 0; display: inline-block; height: 0.69em; left: 0.05em; position: relative; top: -0.3em; transform: rotate(135deg); vertical-align: middle; width: 0.69em;"
+                    aria-hidden="true">
+                </span>
+                <span class="visually-hidden">Decrement minutes</span>
+            </button>
+        </div>
+
+        <div ng-if="$.seconds" class="d-flex align-items-center">
+            <div class="mx-1 fw-bold" aria-hidden="true">:</div>
+
+            <div class="d-flex flex-column align-items-center">
+                <button
+                    ng-if="$.spinners"
+                    ng-click="$.changeSecond($.secondStep)"
+                    ng-disabled="$.disabled"
+                    ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
+                    class="btn btn-link px-2 py-0 lh-1"
+                    tabindex="-1"
+                    type="button">
+                    <span
+                        class="chevron ngb-tp-chevron"
+                        style="border-style: solid; border-width: 0.29em 0.29em 0 0; display: inline-block; height: 0.69em; left: 0.05em; position: relative; top: 0.15em; transform: rotate(-45deg); vertical-align: middle; width: 0.69em;"
+                        aria-hidden="true">
+                    </span>
+                    <span class="visually-hidden">Increment seconds</span>
+                </button>
+
+                <input
+                    ng-model="$.secondInput"
+                    ng-model-options="{ updateOn: 'change' }"
+                    ng-change="$.updateSecond($.secondInput)"
+                    ng-blur="$.handleBlur()"
+                    ng-keydown="$event.key === 'ArrowUp' && $.changeSecond($.secondStep); $event.key === 'ArrowDown' && $.changeSecond(-$.secondStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
+                    ng-readonly="$.readonlyInputs"
+                    ng-disabled="$.disabled"
+                    ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
+                    class="form-control text-center w-auto px-1"
+                    type="text"
+                    size="2"
+                    maxlength="2"
+                    inputmode="numeric"
+                    placeholder="SS"
+                    aria-label="Seconds">
+
+                <button
+                    ng-if="$.spinners"
+                    ng-click="$.changeSecond(-$.secondStep)"
+                    ng-disabled="$.disabled"
+                    ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
+                    class="btn btn-link px-2 py-0 lh-1"
+                    tabindex="-1"
+                    type="button">
+                    <span
+                        class="chevron ngb-tp-chevron bottom"
+                        style="border-style: solid; border-width: 0.29em 0.29em 0 0; display: inline-block; height: 0.69em; left: 0.05em; position: relative; top: -0.3em; transform: rotate(135deg); vertical-align: middle; width: 0.69em;"
+                        aria-hidden="true">
+                    </span>
+                    <span class="visually-hidden">Decrement seconds</span>
+                </button>
+            </div>
+        </div>
+
+        <div ng-if="$.meridian" class="ms-2">
+            <button
+                ng-click="$.toggleMeridian()"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
+                class="btn btn-outline-primary"
+                type="button">
+                {{
+                    $.model && $.model.hour >= 12
+                        ? $.i18n.getAfternoonPeriod()
+                        : $.i18n.getMorningPeriod()
+                }}
+            </button>
         </div>
     </div>
 </fieldset>

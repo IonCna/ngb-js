@@ -10,6 +10,7 @@ export * from "@ngb/rating";
 export * from "@ngb/scrollspy";
 export * from "@ngb/toast";
 export * from "@ngb/tooltip";
+export * from "@ngb/timepicker"
 
 export * from "@ngb/nav";
 

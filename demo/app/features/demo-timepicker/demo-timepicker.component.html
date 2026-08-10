@@ -1,36 +1,84 @@
 <p class="text-muted">
-    These examples expose the bindings currently available while the component is under development.
+    AngularJS equivalents of the current ng-bootstrap timepicker API examples.
 </p>
 
 <h5 class="mb-3">Basic timepicker</h5>
 <div class="border rounded p-3 mb-4">
-    <ngb-timepicker></ngb-timepicker>
+    <ngb-timepicker ng-model="$.basicTime"></ngb-timepicker>
+    <div class="small text-muted mt-2">{{ $.basicTime | json }}</div>
 </div>
 
 <h5 class="mb-3">Meridian and seconds</h5>
 <div class="border rounded p-3 mb-4">
-    <ngb-timepicker meridian="true" seconds="true"></ngb-timepicker>
+    <ngb-timepicker
+        ng-model="$.meridianTime"
+        meridian="$.meridian"
+        seconds="$.seconds">
+    </ngb-timepicker>
+
+    <div class="d-flex gap-2 mt-3">
+        <button
+            class="btn btn-sm"
+            ng-class="$.meridian ? 'btn-outline-success' : 'btn-outline-danger'"
+            ng-click="$.meridian = !$.meridian"
+            type="button">
+            Meridian - {{ $.meridian ? 'ON' : 'OFF' }}
+        </button>
+        <button
+            class="btn btn-sm"
+            ng-class="$.seconds ? 'btn-outline-success' : 'btn-outline-danger'"
+            ng-click="$.seconds = !$.seconds"
+            type="button">
+            Seconds - {{ $.seconds ? 'ON' : 'OFF' }}
+        </button>
+    </div>
+    <div class="small text-muted mt-2">{{ $.meridianTime | json }}</div>
 </div>
 
 <h5 class="mb-3">Custom steps</h5>
 <div class="border rounded p-3 mb-4">
     <ngb-timepicker
-        hour-step="2"
-        minute-step="15"
-        second-step="10"
+        ng-model="$.stepsTime"
+        hour-step="$.hourStep"
+        minute-step="$.minuteStep"
+        second-step="$.secondStep"
         seconds="true">
     </ngb-timepicker>
-    <div class="small text-muted mt-2">Hour: 2 · Minute: 15 · Second: 10</div>
+
+    <div class="row g-2 mt-2">
+        <label class="col-md-4">
+            <span class="form-label small">Hour step</span>
+            <input class="form-control form-control-sm" type="number" ng-model="$.hourStep">
+        </label>
+        <label class="col-md-4">
+            <span class="form-label small">Minute step</span>
+            <input class="form-control form-control-sm" type="number" ng-model="$.minuteStep">
+        </label>
+        <label class="col-md-4">
+            <span class="form-label small">Second step</span>
+            <input class="form-control form-control-sm" type="number" ng-model="$.secondStep">
+        </label>
+    </div>
+    <div class="small text-muted mt-2">{{ $.stepsTime | json }}</div>
 </div>
 
-<h5 class="mb-3">Without spinners</h5>
+<h5 class="mb-3">Spinners</h5>
 <div class="border rounded p-3 mb-4">
-    <ngb-timepicker spinners="false"></ngb-timepicker>
+    <ngb-timepicker ng-model="$.spinnersTime" spinners="$.spinners"></ngb-timepicker>
+    <button
+        class="btn btn-sm mt-3"
+        ng-class="$.spinners ? 'btn-outline-success' : 'btn-outline-danger'"
+        ng-click="$.spinners = !$.spinners"
+        type="button">
+        Spinners - {{ $.spinners ? 'ON' : 'OFF' }}
+    </button>
+    <div class="small text-muted mt-2">{{ $.spinnersTime | json }}</div>
 </div>
 
 <h5 class="mb-3">Read-only inputs</h5>
 <div class="border rounded p-3 mb-4">
-    <ngb-timepicker readonly-inputs="true"></ngb-timepicker>
+    <ngb-timepicker ng-model="$.readonlyTime" readonly-inputs="true"></ngb-timepicker>
+    <div class="small text-muted mt-2">{{ $.readonlyTime | json }}</div>
 </div>
 
 <h5 class="mb-3">Sizes</h5>
@@ -38,19 +86,22 @@
     <div class="col-md-4">
         <div class="small text-muted mb-2">Small</div>
         <div class="border rounded p-3">
-            <ngb-timepicker size="'small'"></ngb-timepicker>
+            <ngb-timepicker ng-model="$.smallTime" size="'small'"></ngb-timepicker>
+            <div class="small text-muted mt-2">{{ $.smallTime | json }}</div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="small text-muted mb-2">Medium</div>
         <div class="border rounded p-3">
-            <ngb-timepicker size="'medium'"></ngb-timepicker>
+            <ngb-timepicker ng-model="$.mediumTime" size="'medium'"></ngb-timepicker>
+            <div class="small text-muted mt-2">{{ $.mediumTime | json }}</div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="small text-muted mb-2">Large</div>
         <div class="border rounded p-3">
-            <ngb-timepicker size="'large'"></ngb-timepicker>
+            <ngb-timepicker ng-model="$.largeTime" size="'large'"></ngb-timepicker>
+            <div class="small text-muted mt-2">{{ $.largeTime | json }}</div>
         </div>
     </div>
 </div>
@@ -64,8 +115,10 @@
 </div>
 <div class="border rounded p-3">
     <ngb-timepicker
+        ng-model="$.disabledTime"
         meridian="true"
         seconds="true"
         ng-disabled="$.disabled">
     </ngb-timepicker>
+    <div class="small text-muted mt-2">{{ $.disabledTime | json }}</div>
 </div>

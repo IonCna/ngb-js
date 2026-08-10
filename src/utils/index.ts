@@ -42,7 +42,7 @@ export function isInteger(value: unknown): value is number {
 }
 
 export function padNumber(value: number) {
-  if (angular.isNumber(value)) {
+  if (isNumber(value)) {
     return `0${value}`.slice(-2);
   }
 

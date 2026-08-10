@@ -1,5 +1,4 @@
-import { toInteger } from "@ngb/utils";
-import { isNumber } from "angular";
+import { toInteger, isNumber } from "@ngb/utils";
 
 export class NgbTime {
   hour: number;
@@ -16,7 +15,7 @@ export class NgbTime {
     this.updateHour((isNaN(this.hour) ? 0 : this.hour) + step);
   }
 
-  private updateHour(hour: number) {
+  public updateHour(hour: number) {
     if (isNumber(hour)) {
       this.hour = (hour < 0 ? 24 + hour : hour) % 24;
       return;
@@ -29,7 +28,7 @@ export class NgbTime {
     this.updateMinute((isNaN(this.minute) ? 0 : this.minute) + step);
   }
 
-  private updateMinute(minute: number) {
+  public updateMinute(minute: number) {
     if (isNumber(minute)) {
       this.minute = minute % 60 < 0 ? 60 + (minute % 60) : minute % 60;
       this.changeHour(Math.floor(minute / 60));
@@ -43,7 +42,7 @@ export class NgbTime {
     this.updateSecond((isNaN(this.second) ? 0 : this.second) + step);
   }
 
-  private updateSecond(second: number) {
+  public updateSecond(second: number) {
     if (isNumber(second)) {
       this.second = second < 0 ? 60 + (second % 60) : second % 60;
       this.changeMinute(Math.floor(second / 60));
