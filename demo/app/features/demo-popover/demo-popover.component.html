@@ -1,0 +1,94 @@
+<div class="row g-4">
+  <div class="col-lg-6">
+    <h5 class="mb-2">Popover básico</h5>
+    <p class="small text-muted">Haz clic para abrirlo y vuelve a hacer clic para cerrarlo.</p>
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      ngb-popover="'Contenido del popover'"
+      popover-title="'Título'">
+      Abrir popover
+    </button>
+  </div>
+
+  <div class="col-lg-6">
+    <h5 class="mb-2">Placements</h5>
+    <p class="small text-muted">Cada instancia solicita una posición diferente.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-outline-secondary" type="button" ngb-popover="'Arriba'" placement="'top'">Top</button>
+      <button class="btn btn-outline-secondary" type="button" ngb-popover="'Abajo'" placement="'bottom'">
+        Bottom
+      </button>
+      <button class="btn btn-outline-secondary" type="button" ngb-popover="'Inicio'" placement="'start'">
+        Start
+      </button>
+      <button class="btn btn-outline-secondary" type="button" ngb-popover="'Final'" placement="'end'">End</button>
+    </div>
+  </div>
+</div>
+
+<hr class="my-4" />
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <h5 class="mb-2">Triggers y delays</h5>
+    <p class="small text-muted">Mantén el puntero sobre el botón para mostrar el contenido.</p>
+    <button
+      class="btn btn-outline-success"
+      type="button"
+      ngb-popover="'Se abrió con hover'"
+      popover-title="'Hover'"
+      triggers="'hover'"
+      open-delay="300"
+      close-delay="300">
+      Hover con delay
+    </button>
+  </div>
+
+  <div class="col-lg-6">
+    <h5 class="mb-2">Template y contexto</h5>
+    <p class="small text-muted">El título y el contenido reciben el mismo contexto.</p>
+
+    <ng-template ng-ref="$.titleTemplate" let-name="name">
+      Perfil de {{ name }}
+    </ng-template>
+    <ng-template ng-ref="$.contentTemplate" let-name="name">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-primary">{{ name.charAt(0) }}</span>
+        <span>Contenido creado desde un <code>TemplateRef</code>.</span>
+      </div>
+    </ng-template>
+
+    <button
+      class="btn btn-outline-dark"
+      type="button"
+      ngb-popover="$.contentTemplate"
+      popover-title="$.titleTemplate"
+      popover-context="$.templateContext">
+      Abrir template
+    </button>
+  </div>
+</div>
+
+<hr class="my-4" />
+
+<h5 class="mb-2">Control manual y eventos</h5>
+<p class="small text-muted">Usa la referencia pública de la directiva para abrir, cerrar o alternar el popover.</p>
+<div class="d-flex flex-wrap align-items-center gap-2">
+  <button
+    class="btn btn-primary"
+    type="button"
+    ngb-popover="'Popover controlado manualmente'"
+    popover-title="'Manual'"
+    triggers="'manual'"
+    shown="$.onShown()"
+    hidden="$.onHidden()"
+    ng-ref="$.manualPopover"
+    ng-ref-read="ngbPopover">
+    Elemento objetivo
+  </button>
+  <button class="btn btn-outline-primary" type="button" ng-click="$.manualPopover.open()">Abrir</button>
+  <button class="btn btn-outline-primary" type="button" ng-click="$.manualPopover.close()">Cerrar</button>
+  <button class="btn btn-outline-primary" type="button" ng-click="$.manualPopover.toggle()">Alternar</button>
+  <span class="ms-2 text-muted">Último evento: <strong>{{ $.lastEvent }}</strong></span>
+</div>

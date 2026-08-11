@@ -8,6 +8,7 @@ import { NgbNavModule } from "@ngb/nav/ngb-nav.module";
 import { NgbConfig } from "@ngb/ngb-config.service";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbOffcanvasModule } from "@ngb/offcanvas/ngb-offcanvas.module";
+import { NgbPopoverModule } from "@ngb/popover/ngb-popover.module";
 import { NgbProgressbarModule } from "@ngb/progressbar/ngb-progressbar.module";
 import { NgbRatingModule } from "@ngb/rating/ngb-rating.module";
 import { NgbScrollSpyModule } from "@ngb/scrollspy/ngb-scrollspy.module";
@@ -33,6 +34,7 @@ export const NgbModule: IModule = angular.module("ngb", [
   NgbToolTipModule.name,
   NgbNavModule.name,
   NgbOffcanvasModule.name,
+  NgbPopoverModule.name,
   NgbScrollSpyModule.name,
   NgbRatingModule.name,
   NgbTimepickerModule.name,

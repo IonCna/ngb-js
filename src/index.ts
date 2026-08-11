@@ -8,6 +8,7 @@ export * from "@ngb/nav";
 export { NgbModule } from "@ngb/ngb.module";
 export { NgbConfig } from "@ngb/ngb-config.service";
 export * from "@ngb/offcanvas";
+export * from "@ngb/popover";
 export * from "@ngb/progressbar";
 export * from "@ngb/rating";
 export * from "@ngb/scrollspy";
