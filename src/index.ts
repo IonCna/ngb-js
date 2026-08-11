@@ -4,15 +4,14 @@ export * from "@ngb/carousel";
 export * from "@ngb/collapse";
 export * from "@ngb/dropdown";
 export * from "@ngb/modal";
+export * from "@ngb/nav";
+export { NgbModule } from "@ngb/ngb.module";
+export { NgbConfig } from "@ngb/ngb-config.service";
 export * from "@ngb/offcanvas";
 export * from "@ngb/progressbar";
 export * from "@ngb/rating";
 export * from "@ngb/scrollspy";
+export * from "@ngb/timepicker";
 export * from "@ngb/toast";
 export * from "@ngb/tooltip";
-export * from "@ngb/timepicker"
-
-export * from "@ngb/nav";
-
-export { NgbModule } from "@ngb/ngb.module";
-export { NgbConfig } from "@ngb/ngb-config.service";
+export * from "@ngb/typeahead";

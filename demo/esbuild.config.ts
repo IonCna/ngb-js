@@ -4,6 +4,7 @@ import * as esbuild from "esbuild";
 
 const angularEntry = fileURLToPath(new URL("../node_modules/angular/index.js", import.meta.url));
 const rxjsEntry = fileURLToPath(new URL("../node_modules/rxjs/dist/esm/index.js", import.meta.url));
+const demoRoot = fileURLToPath(new URL(".", import.meta.url));
 
 const htmlLoader: esbuild.Plugin = {
   name: "html-loader",
@@ -16,14 +17,17 @@ const htmlLoader: esbuild.Plugin = {
 };
 
 const ctx = await esbuild.context({
-  entryPoints: ["demo/main.ts", "demo/style.css"],
-  outdir: "demo/dist",
+  entryPoints: [
+    fileURLToPath(new URL("./main.ts", import.meta.url)),
+    fileURLToPath(new URL("./style.css", import.meta.url)),
+  ],
+  outdir: fileURLToPath(new URL("./dist", import.meta.url)),
   bundle: true,
   alias: {
     angular: angularEntry,
     rxjs: rxjsEntry,
   },
-  tsconfig: "demo/tsconfig.json",
+  tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
   plugins: [htmlLoader],
   sourcemap: true,
 });
@@ -31,7 +35,7 @@ const ctx = await esbuild.context({
 await ctx.watch();
 
 const { hosts, port } = await ctx.serve({
-  servedir: "demo",
+  servedir: demoRoot,
 });
 
 console.log(`http://${hosts[0]}:${port}`);

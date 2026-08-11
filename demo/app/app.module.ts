@@ -13,6 +13,7 @@ import { DemoScrollSpyModule } from "@demo/features/demo-scrollspy/demo-scrollsp
 import { DemoTimepickerModule } from "@demo/features/demo-timepicker/demo-timepicker.module";
 import { DemoToastModule } from "@demo/features/demo-toast/demo-toast.module";
 import { DemoTooltipModule } from "@demo/features/demo-tooltip/demo-tooltip.module";
+import { DemoTypeaheadModule } from "@demo/features/demo-typeahead/demo-typeahead.module";
 import { NgbModule } from "@ngb/ngb.module";
 import angular from "angular";
 
@@ -32,6 +33,7 @@ export const AppModule = angular.module("ngb.demo", [
   DemoToastModule.name,
   DemoTimepickerModule.name,
   DemoTooltipModule.name,
+  DemoTypeaheadModule.name,
 ]);
 
 AppModule.component(AppComponent.$name, AppComponent.$factory);
