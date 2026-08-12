@@ -16,3 +16,4 @@ export * from "@ngb/timepicker";
 export * from "@ngb/toast";
 export * from "@ngb/tooltip";
 export * from "@ngb/typeahead";
+export * from "@ngb/pagination";
