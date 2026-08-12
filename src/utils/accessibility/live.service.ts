@@ -5,7 +5,7 @@ import angular from "angular";
 function getLiveElement(lazyCreate = false): IAugmentedJQuery | null {
   const body = document.body;
 
-  let element = angular.element(body.querySelector("#ngb-live"));
+  let element = angular.element(body.querySelector("#ngb-live")!);
 
   if (element == null && lazyCreate) {
     element = angular.element("<div></div>");

@@ -1,16 +1,16 @@
 import {type IAugmentedJQuery, type IComponentController, type IComponentOptions} from "angular";
 import {ContentChild, NgDisabled} from "ngjs-core";
-import {NgbPaginationEllipsis} from "@ngb/pagination/ngb-pagination-ellipsis.directive.ts";
-import {NgbPaginationFirst} from "@ngb/pagination/ngb-pagination-first.directive.ts";
-import {NgbPaginationLast} from "@ngb/pagination/ngb-pagination-last.directive.ts";
-import {NgbPaginationNext} from "@ngb/pagination/ngb-pagination-next.directive.ts";
-import {NgbPaginationNumber} from "@ngb/pagination/ngb-pagination-number.directive.ts";
-import {NgbPaginationPrevious} from "@ngb/pagination/ngb-pagination-previous.directive.ts";
-import {NgbPaginationPages} from "@ngb/pagination/ngb-pagination-pages.directive.ts";
+import {NgbPaginationEllipsis} from "@ngb/pagination/ngb-pagination-ellipsis.directive";
+import {NgbPaginationFirst} from "@ngb/pagination/ngb-pagination-first.directive";
+import {NgbPaginationLast} from "@ngb/pagination/ngb-pagination-last.directive";
+import {NgbPaginationNext} from "@ngb/pagination/ngb-pagination-next.directive";
+import {NgbPaginationNumber} from "@ngb/pagination/ngb-pagination-number.directive";
+import {NgbPaginationPrevious} from "@ngb/pagination/ngb-pagination-previous.directive";
+import {NgbPaginationPages} from "@ngb/pagination/ngb-pagination-pages.directive";
 import {getValueInRange, isNumber} from "@ngb/utils";
 
 import template from "@ngb/pagination/ngb-pagination.component.html"
-import {NgbPaginationConfig} from "@ngb/pagination/ngb-pagination-config.service.ts";
+import {NgbPaginationConfig} from "@ngb/pagination/ngb-pagination-config.service";
 
 export class NgbPagination implements IComponentController {
     public pageCount = 0
@@ -18,12 +18,12 @@ export class NgbPagination implements IComponentController {
 
     ngDisabled?: NgDisabled
 
-    boundaryLinks?: unknown
-    directionLinks?: unknown
-    ellipses?: unknown
-    rotate?: unknown
+    boundaryLinks?: boolean
+    directionLinks?: boolean
+    ellipses?: boolean
+    rotate?: boolean
     maxSize!: number
-    size?: unknown
+    size?: string | null
     pageSize!: number
 
     page!: number
