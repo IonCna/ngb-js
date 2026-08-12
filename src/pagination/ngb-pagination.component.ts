@@ -1,5 +1,5 @@
 import {type IAugmentedJQuery, type IComponentController, type IComponentOptions} from "angular";
-import {ContentChild} from "ngjs-core";
+import {ContentChild, NgDisabled} from "ngjs-core";
 import {NgbPaginationEllipsis} from "@ngb/pagination/ngb-pagination-ellipsis.directive.ts";
 import {NgbPaginationFirst} from "@ngb/pagination/ngb-pagination-first.directive.ts";
 import {NgbPaginationLast} from "@ngb/pagination/ngb-pagination-last.directive.ts";
@@ -16,7 +16,8 @@ export class NgbPagination implements IComponentController {
     public pageCount = 0
     public pages: number[] = []
 
-    disabled!: boolean
+    ngDisabled?: NgDisabled
+
     boundaryLinks?: unknown
     directionLinks?: unknown
     ellipses?: unknown
@@ -57,7 +58,6 @@ export class NgbPagination implements IComponentController {
     ) {}
 
     $onInit() {
-        this.disabled = this.disabled ?? this._config.disabled;
         this.boundaryLinks = this.boundaryLinks ?? this._config.boundaryLinks;
         this.directionLinks = this.directionLinks ?? this._config.directionLinks;
         this.ellipses = this.ellipses ?? this._config.ellipses;
@@ -73,6 +73,10 @@ export class NgbPagination implements IComponentController {
     $postLink() {
         this.$element.attr("role", "navigation")
     }
+
+    isDisabled(): boolean {
+        return this.ngDisabled?.disabled ?? this._config.disabled;
+    }
     
     hasPrevious() {
         return this.page > 1
@@ -83,11 +87,11 @@ export class NgbPagination implements IComponentController {
     }
 
     nextDisabled(): boolean {
-        return !this.hasNext() || this.disabled;
+        return !this.hasNext() || this.isDisabled();
     }
 
     previousDisabled(): boolean {
-        return !this.hasPrevious() || this.disabled;
+        return !this.hasPrevious() || this.isDisabled();
     }
 
     selectPage(pageNumber: number): void {

@@ -2,7 +2,7 @@ import template from "@ngb/rating/ngb-rating.component.html";
 import { NgbRatingConfig } from "@ngb/rating/ngb-rating-config.service";
 import { getValueInRange } from "@ngb/utils";
 import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
-import { ContentChild, TemplateRef, ViewChild } from "ngjs-core";
+import { ContentChild, NgDisabled, TemplateRef, ViewChild } from "ngjs-core";
 
 export interface StarTemplateContext {
   fill: number;
@@ -10,7 +10,7 @@ export interface StarTemplateContext {
 }
 
 export class NgbRating implements IComponentController {
-  protected disabled!: boolean;
+  protected ngDisabled?: NgDisabled;
   protected _max?: number;
   protected rate!: number;
   protected readonly!: boolean;
@@ -31,6 +31,7 @@ export class NgbRating implements IComponentController {
 
   protected contexts: StarTemplateContext[] = [];
   protected nextRate!: number;
+  private removeDisabledListener?: () => void;
 
   constructor(
     private readonly $element: IAugmentedJQuery,
@@ -39,7 +40,6 @@ export class NgbRating implements IComponentController {
   ) {}
 
   $onInit(): void {
-    this.disabled = this.disabled ?? false;
     this.readonly = this.readonly ?? this.ngbRatingConfig.readonly;
     this.resettable = this.resettable ?? this.ngbRatingConfig.resettable;
     this.tabindex = this.tabindex ?? this.ngbRatingConfig.tabindex;
@@ -57,12 +57,15 @@ export class NgbRating implements IComponentController {
     this.$element.on("blur", () => this.$scope.$evalAsync());
     this.$element.on("keydown", (event) => this.$scope.$evalAsync(() => this._handleKeyDown(event)));
     this.$element.on("mouseleave", () => this.$scope.$evalAsync(() => this.reset()));
+    this.removeDisabledListener = this.ngDisabled?.onChange(() => this._render());
+    this._render();
   }
 
   $onDestroy(): void {
     this.$element.off("blur");
     this.$element.off("keydown");
     this.$element.off("mouseleave");
+    this.removeDisabledListener?.();
   }
 
   $onChanges(changes: IOnChangesObject): void {
@@ -85,7 +88,11 @@ export class NgbRating implements IComponentController {
   }
 
   isInteractive(): boolean {
-    return !this.readonly && !this.disabled;
+    return !this.readonly && !this.isDisabled();
+  }
+
+  isDisabled(): boolean {
+    return this.ngDisabled?.disabled ?? false;
   }
 
   enter(value: number): void {
@@ -144,15 +151,15 @@ export class NgbRating implements IComponentController {
   }
 
   private _render(): void {
-    this.$element.attr("tabindex", this.disabled ? "-1" : `${this.tabindex ?? this.ngbRatingConfig.tabindex}`);
+    this.$element.attr("tabindex", this.isDisabled() ? "-1" : `${this.tabindex ?? this.ngbRatingConfig.tabindex}`);
     this.$element.attr("aria-valuemax", `${this.max}`);
     this.$element.attr("aria-valuenow", `${this.nextRate}`);
     this.$element.attr("aria-valuetext", this.ariaValueText(this.nextRate, this.max));
 
-    if (this.readonly && !this.disabled) this.$element.attr("aria-readonly", "true");
+    if (this.readonly && !this.isDisabled()) this.$element.attr("aria-readonly", "true");
     else this.$element.removeAttr("aria-readonly");
 
-    if (this.disabled) this.$element.attr("aria-disabled", "true");
+    if (this.isDisabled()) this.$element.attr("aria-disabled", "true");
     else this.$element.removeAttr("aria-disabled");
   }
 
@@ -178,7 +185,6 @@ export class NgbRating implements IComponentController {
   static get $factory(): IComponentOptions {
     return {
       bindings: {
-        disabled: "<?",
         max: "<?",
         rate: "<?",
         rateChange: "&?",
@@ -192,6 +198,9 @@ export class NgbRating implements IComponentController {
       },
       controller: NgbRating,
       controllerAs: "$",
+      require: {
+        ngDisabled: "?ngDisabled",
+      },
       transclude: true,
       template,
     };

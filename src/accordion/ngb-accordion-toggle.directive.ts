@@ -17,7 +17,7 @@ export class NgbAccordionToggle implements IController {
     this.$element.attr("id", this.item.toggleId);
     this.$element.attr("aria-controls", this.item.collapseId);
 
-    const watchers = [() => this.item.collapsed, () => this.item.collapseId, () => this.item.disabled];
+    const watchers = [() => this.item.collapsed, () => this.item.collapseId, () => this.item.isDisabled()];
 
     this.stateWatcher = this.$scope.$watchGroup(watchers, (value) => {
       const [collapsed, collapseId] = value;
@@ -29,7 +29,7 @@ export class NgbAccordionToggle implements IController {
 
     this.clickHandler = () => {
       this.$scope.$evalAsync(() => {
-        if (this.item.disabled) return;
+        if (this.item.isDisabled()) return;
         this.accordion.toggle(this.item.id);
       });
     };

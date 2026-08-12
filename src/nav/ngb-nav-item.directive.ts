@@ -3,7 +3,7 @@ import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
 import { toNativeElement } from "@ngb/utils";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import angular from "angular";
-import { ContentChild, TemplateRef } from "ngjs-core";
+import { ContentChild, NgDisabled, TemplateRef } from "ngjs-core";
 
 const isValidNavId = (id?: string): id is string => angular.isDefined(id) && id !== "";
 let navCounter = 0;
@@ -11,7 +11,7 @@ let navCounter = 0;
 export class NgbNavItem implements IController {
   private _nav!: NgbNav;
   public destroyOnHide?: boolean;
-  public disabled!: boolean;
+  public ngDisabled?: NgDisabled;
   public domId!: string;
   public shown?: () => void;
   public hidden?: () => void;
@@ -23,8 +23,6 @@ export class NgbNavItem implements IController {
   constructor(private $element: IAugmentedJQuery) {}
 
   $onInit(): void {
-    this.disabled = this.disabled ?? false;
-
     if (!angular.isDefined(this.domId)) {
       this.domId = `ngb-nav-${navCounter++}`;
     }
@@ -44,6 +42,10 @@ export class NgbNavItem implements IController {
 
   get panelDomId() {
     return `${this.domId}-panel`;
+  }
+
+  public isDisabled(): boolean {
+    return this.ngDisabled?.disabled ?? false;
   }
 
   public isPanelInDom() {
@@ -71,10 +73,10 @@ export class NgbNavItem implements IController {
       bindToController: true,
       require: {
         _nav: "^ngbNav",
+        ngDisabled: "?ngDisabled",
       },
       scope: {
         destroyOnHide: "<?",
-        disabled: "<?",
         domId: "@?",
         _id: "@?ngbNavItem",
         shown: "&?",

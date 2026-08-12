@@ -1,7 +1,7 @@
 import type { NgbAccordion } from "@ngb/accordion/ngb-accordion.directive";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import angular from "angular";
-import { ContentChild } from "ngjs-core";
+import { ContentChild, NgDisabled } from "ngjs-core";
 import type { Subscription } from "rxjs";
 import { NgbAccordionBody } from "./ngb-accordion-body.directive";
 import { NgbAccordionCollapse } from "./ngb-accordion-collapse.directive";
@@ -23,7 +23,7 @@ export class NgbAccordionItem implements IController {
   public show?: () => void;
   public shown?: () => void;
 
-  public disabled = false;
+  public ngDisabled?: NgDisabled;
 
   @ContentChild(NgbAccordionCollapse, { static: true })
   private _collapse!: NgbAccordionCollapse;
@@ -105,6 +105,10 @@ export class NgbAccordionItem implements IController {
     return !this.collapsed || this._collapseAnimationRunning || !this.destroyOnHide;
   }
 
+  isDisabled(): boolean {
+    return this.ngDisabled?.disabled ?? false;
+  }
+
   toggle() {
     this.collapsed = !this.collapsed;
   }
@@ -171,6 +175,7 @@ export class NgbAccordionItem implements IController {
       controller: NgbAccordionItem,
       require: {
         _accordion: "^ngbAccordion",
+        ngDisabled: "?ngDisabled",
       },
       restrict: "A",
       transclude: true,
@@ -178,7 +183,6 @@ export class NgbAccordionItem implements IController {
       scope: {
         collapsed: "<?",
         destroyOnHide: "<?",
-        disabled: "<?",
         id: "<?ngbAccordionItem",
         hidden: "&?",
         hide: "&?",

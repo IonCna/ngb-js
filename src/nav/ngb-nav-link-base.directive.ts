@@ -24,6 +24,10 @@ export class NgbNavLinkBase implements IController {
     this.nativeElement = toNativeElement(this.$element);
     this._updateDom();
     this._sub = this.ngbNav.navItemChange$.subscribe(() => this._updateDom());
+    this._unwatchDisabled = this.$scope.$watch(
+      () => this.ngbNavItem.isDisabled(),
+      () => this._updateDom(),
+    );
   }
 
   $onDestroy(): void {
@@ -34,20 +38,16 @@ export class NgbNavLinkBase implements IController {
 
   get tabindex(): number | undefined {
     if (this.ngbNav.keyboard === false) {
-      return this.ngbNavItem.disabled ? -1 : undefined;
+      return this.ngbNavItem.isDisabled() ? -1 : undefined;
     }
     if (this.ngbNav._navigatingWithKeyboard) {
       return -1;
     }
-    return this.ngbNavItem.disabled || !this.ngbNavItem.active ? -1 : undefined;
+    return this.ngbNavItem.isDisabled() || !this.ngbNavItem.active ? -1 : undefined;
   }
 
   protected _setupButton(): void {
     this.$element.attr("type", "button");
-    this._unwatchDisabled = this.$scope.$watch(
-      () => this.ngbNavItem.disabled,
-      () => this.$element.prop("disabled", !!this.ngbNavItem.disabled),
-    );
     this._clickHandler = () => this.$scope.$evalAsync(() => this.ngbNav.click(this.ngbNavItem));
     this.$element.on("click", this._clickHandler);
   }
@@ -60,12 +60,15 @@ export class NgbNavLinkBase implements IController {
     this.$element.attr("id", item.domId);
     this.$element.toggleClass("nav-item", item.isNgContainer());
     this.$element.toggleClass("active", !!item.active);
-    this.$element.toggleClass("disabled", !!item.disabled);
+    this.$element.toggleClass("disabled", item.isDisabled());
+    if (this.nativeElement instanceof HTMLButtonElement) {
+      this.$element.prop("disabled", item.isDisabled());
+    }
 
     assertAttribute(this.$element, "tabindex", this.tabindex?.toString());
     assertAttribute(this.$element, "aria-controls", item.isPanelInDom() ? item.panelDomId : undefined);
     assertAttribute(this.$element, "aria-selected", String(item.active));
-    assertAttribute(this.$element, "aria-disabled", item.disabled ? "true" : undefined);
+    assertAttribute(this.$element, "aria-disabled", item.isDisabled() ? "true" : undefined);
     assertAttribute(this.$element, "role", role, nav.roles ? "tab" : undefined);
   }
 

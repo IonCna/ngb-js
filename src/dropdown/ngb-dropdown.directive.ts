@@ -327,7 +327,7 @@ export class NgbDropdown implements IController {
 
   private _getMenuElements(): IAugmentedJQuery[] {
     if (!this._menu) return [];
-    return this._menu.menuItems.filter(({ disabled }) => !disabled).map(({ $element }) => $element);
+    return this._menu.menuItems.filter((item) => !item.isDisabled()).map(({ $element }) => $element);
   }
 
   private _positionMenu() {

@@ -56,7 +56,7 @@
     <li
             ng-repeat="pageNumber in ($.tplPages ? [] : $.pages) track by $index"
             class="page-item"
-            ng-class="{ 'active': pageNumber === $.page, 'disabled': $.isEllipsis(pageNumber) || $.disabled }">
+            ng-class="{ 'active': pageNumber === $.page, 'disabled': $.isEllipsis(pageNumber) || $.isDisabled() }">
         <a ng-if="$.isEllipsis(pageNumber)" class="page-link" tabindex="-1" aria-disabled="true">
             <ng-template
                     ng-template-outlet="($.tplEllipsis && $.tplEllipsis.templateRef) || ellipsis"
@@ -69,12 +69,12 @@
                 class="page-link"
                 href
                 ng-click="$.selectPage(pageNumber); $event.preventDefault()"
-                ng-attr-tabindex="$.disabled ? '-1' : null"
-                ng-attr-aria-disabled="$.disabled ? 'true' : null"
+                ng-attr-tabindex="$.isDisabled() ? '-1' : null"
+                ng-attr-aria-disabled="$.isDisabled() ? 'true' : null"
                 ng-attr-aria-current="pageNumber === $.page ? 'page' : null">
             <ng-template
                     ng-template-outlet="($.tplNumber && $.tplNumber.templateRef) || defaultNumber"
-                    ng-template-outlet-context="{ disabled: $.disabled, $implicit: pageNumber, currentPage: $.page }">
+                    ng-template-outlet-context="{ disabled: $.isDisabled(), $implicit: pageNumber, currentPage: $.page }">
             </ng-template>
         </a>
     </li>
@@ -82,7 +82,7 @@
     <ng-template
             ng-if="$.tplPages"
             ng-template-outlet="$.tplPages.templateRef"
-            ng-template-outlet-context="{ $implicit: $.page, pages: $.pages, disabled: $.disabled }">
+            ng-template-outlet-context="{ $implicit: $.page, pages: $.pages, disabled: $.isDisabled() }">
     </ng-template>
 
     <li ng-if="$.directionLinks" class="page-item" ng-class="{ 'disabled': $.nextDisabled() }">

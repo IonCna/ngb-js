@@ -33,6 +33,24 @@
     </div>
 </div>
 
+<h5 class="mb-3">Disabled pagination</h5>
+<div class="border rounded p-3 mb-4">
+    <p>Pagination control can be disabled:</p>
+    <ngb-pagination
+        collection-size="70"
+        page="$.disabledPage"
+        page-change="$.setDisabledPage($event)"
+        ng-disabled="$.isDisabled">
+    </ngb-pagination>
+
+    <button
+        class="btn btn-sm btn-outline-primary mt-2"
+        type="button"
+        ng-click="$.toggleDisabled()">
+        Toggle disabled
+    </button>
+</div>
+
 <h5 class="mb-3">Boundary links</h5>
 <div class="border rounded p-3 mb-4">
     <ngb-pagination

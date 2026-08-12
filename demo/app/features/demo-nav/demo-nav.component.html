@@ -43,7 +43,7 @@
                     <p class="pt-2">This is the <strong>Profile</strong> tab content.</p>
                 </ng-template>
             </li>
-            <li ngb-nav-item="settings" disabled="$.settingsDisabled">
+            <li ngb-nav-item="settings" ng-disabled="$.settingsDisabled">
                 <button type="button" ngb-nav-link>Settings</button>
                 <ng-template ngb-nav-content>
                     <p class="pt-2">This is the <strong>Settings</strong> tab content.</p>
@@ -96,7 +96,7 @@
                 <p class="pt-2">Content for <strong>Two</strong>.</p>
             </ng-template>
         </li>
-        <li ngb-nav-item="three" disabled="true">
+        <li ngb-nav-item="three" ng-disabled="true">
             <button type="button" ngb-nav-link-button>Three (disabled)</button>
             <ng-template ngb-nav-content>
                 <p class="pt-2">Content for <strong>Three</strong>.</p>

@@ -3,7 +3,7 @@ import template from "@ngb/timepicker/ngb-timepicker.component.html";
 import {NgbTime} from "@ngb/timepicker/ngb-time.ts";
 import {isInteger, isNumber, padNumber, toInteger} from "@ngb/utils";
 import {NgbTimepickerConfig} from "@ngb/timepicker/ngb-timepicker-config.service";
-import {ChangeDetectorRef} from "ngjs-core";
+import {ChangeDetectorRef, NgDisabled} from "ngjs-core";
 import {NgbTimeAdapter} from "@ngb/timepicker/ngb-timepicker-adapter.service.ts";
 import {NgbTimepickerI18n} from "@ngb/timepicker/ngb-timepicker-i18n";
 // import { NgbTime } from "@ngb/timepicker/ngb-time"
@@ -14,7 +14,8 @@ const FILTER_REGEX = /[^0-9]/g;
 export class NgbTimepicker implements IComponentController {
   static ngAcceptInputType_size: string
 
-  disabled!: boolean
+  ngDisabled?: NgDisabled
+  private formsDisabled?: boolean
   model?: NgbTime;
 
   private _hourStep!: number
@@ -73,7 +74,6 @@ export class NgbTimepicker implements IComponentController {
     this.hourStep = this.hourStep ?? this._config.hourStep
     this.minuteStep = this.minuteStep ?? this._config.minuteStep
     this.secondStep = this.secondStep ?? this._config.secondStep
-    this.disabled = this.disabled ?? this._config.disabled
     this.readonlyInputs = this.readonlyInputs ?? this._config.readonlyInputs
     this.size = this.size ?? this._config.size
 
@@ -124,7 +124,11 @@ export class NgbTimepicker implements IComponentController {
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
+    this.formsDisabled = isDisabled;
+  }
+
+  isDisabled(): boolean {
+    return this.ngDisabled?.disabled ?? this.formsDisabled ?? this._config.disabled;
   }
 
   changeHour(step: number) {
@@ -260,9 +264,9 @@ export class NgbTimepicker implements IComponentController {
       controllerAs: "$",
       require: {
         ngModelCtrl: "?ngModel",
+        ngDisabled: "?ngDisabled",
       },
       bindings: {
-        disabled: "<?ngDisabled",
         meridian: "<?",
         spinners: "<?",
         seconds: "<?",

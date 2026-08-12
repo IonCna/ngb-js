@@ -19,7 +19,7 @@ export class NgbAccordionButton implements IController {
     this.$element.addClass("accordion-button");
 
     this.disableWatcher = this.$scope.$watch(
-      () => this.item.disabled,
+      () => this.item.isDisabled(),
       (value) => {
         this.$element.prop("disabled", !!value);
       },
@@ -35,7 +35,7 @@ export class NgbAccordionButton implements IController {
 
     this.clickHandler = () =>
       this.$scope.$evalAsync(() => {
-        if (this.item.disabled) return;
+        if (this.item.isDisabled()) return;
         this.accordion.toggle(this.item.id);
       });
 

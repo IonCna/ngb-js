@@ -20,15 +20,16 @@ describe("ngbDropdown", () => {
   });
 
   it("collects menu items and their disabled state from projected content", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { opened: boolean };
+    const scope = $rootScope.$new() as IRootScopeService & { opened: boolean; itemDisabled: boolean };
     scope.opened = true;
+    scope.itemDisabled = true;
 
     const element = $compile(`
             <div ngb-dropdown open="opened" auto-close="'inside'" animation="false">
                 <button type="button" ngb-dropdown-toggle>toggle</button>
                 <div ngb-dropdown-menu>
                     <button type="button" class="enabled" ngb-dropdown-item>enabled</button>
-                    <button type="button" class="disabled-item" ngb-dropdown-item disabled="true">disabled</button>
+                    <button type="button" class="disabled-item" ngb-dropdown-item ng-disabled="itemDisabled">disabled</button>
                 </div>
             </div>
         `)(scope);
@@ -41,7 +42,12 @@ describe("ngbDropdown", () => {
 
     expect(menu.hasClass("show")).toBe(true);
     expect(dropdown.menuItems).toHaveLength(2);
-    expect(dropdown.menuItems.map(({ disabled }) => disabled)).toEqual([false, true]);
+    expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, true]);
+
+    scope.itemDisabled = false;
+    scope.$digest();
+    expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, false]);
+    expect(angular.element(root.querySelector(".disabled-item") as Element).hasClass("disabled")).toBe(false);
 
     dropdown.close();
     scope.$digest();

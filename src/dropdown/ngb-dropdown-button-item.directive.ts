@@ -1,24 +1,18 @@
 import type { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
-import type { IController, IDirective, IScope } from "angular";
+import type { IController, IDirective } from "angular";
 
 export class NgbDropdownButtonItem implements IController {
   public item!: NgbDropdownItem;
   private unwatchDisabled?: () => void;
 
-  constructor(
-    private readonly $element: JQLite,
-    private readonly $scope: IScope,
-  ) {}
+  constructor(private readonly $element: JQLite) {}
 
   $onChanges(): void {
     this._applyHostBindings();
   }
 
   $postLink(): void {
-    this.unwatchDisabled = this.$scope.$watch(
-      () => this.item.disabled,
-      () => this._applyHostBindings(),
-    );
+    this.unwatchDisabled = this.item.onDisabledChange(() => this._applyHostBindings());
     this._applyHostBindings();
   }
 
@@ -27,7 +21,7 @@ export class NgbDropdownButtonItem implements IController {
   }
 
   private _applyHostBindings() {
-    this.$element.attr("disabled", this.item.disabled ? "disabled" : null);
+    this.$element.attr("disabled", this.item.isDisabled() ? "disabled" : null);
   }
 
   static get $name() {
@@ -46,6 +40,6 @@ export class NgbDropdownButtonItem implements IController {
   }
 
   static get $inject() {
-    return ["$element", "$scope"];
+    return ["$element"];
   }
 }

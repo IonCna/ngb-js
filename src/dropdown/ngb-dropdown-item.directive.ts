@@ -1,25 +1,22 @@
 import { toNativeElement } from "@ngb/utils";
-import type { IController, IDirective, IScope } from "angular";
+import type { IController, IDirective } from "angular";
+import { NgDisabled } from "ngjs-core";
 
 export class NgbDropdownItem implements IController {
-  static readonly ngAcceptInputType_disabled: boolean | "";
-  private _disabled = false;
-  private unwatchDisabled?: () => void;
+  public ngDisabled?: NgDisabled;
+  private removeDisabledListener?: () => void;
 
   public nativeElement!: HTMLElement;
   public tabindex: string | number = 0;
 
-  constructor(
-    public $element: JQLite,
-    private readonly $scope: IScope,
-  ) {}
+  constructor(public $element: JQLite) {}
 
-  set disabled(value: boolean) {
-    this._disabled = <any>value === "" || value === true;
+  isDisabled(): boolean {
+    return this.ngDisabled?.disabled ?? false;
   }
 
-  get disabled() {
-    return this._disabled;
+  onDisabledChange(callback: (disabled: boolean) => void): () => void {
+    return this.ngDisabled?.onChange(callback) ?? (() => undefined);
   }
 
   $postLink(): void {
@@ -27,35 +24,20 @@ export class NgbDropdownItem implements IController {
     this.$element.addClass("dropdown-item");
     this._applyHostBindings();
 
-    if (this.nativeElement instanceof HTMLButtonElement) {
-      this.unwatchDisabled = this.$scope.$watch(
-        () => this.disabled,
-        () => this.$element.attr("disabled", this.disabled ? "disabled" : null),
-      );
-    }
+    this.removeDisabledListener = this.onDisabledChange(() => this._applyHostBindings());
   }
 
   $onChanges(): void {
     this._applyHostBindings();
   }
 
-  $doCheck(): void {
-    const disabled = this.$element.attr("disabled");
-    const needChange = Boolean(disabled) !== this._disabled;
-
-    if (!needChange) return;
-
-    this._disabled = Boolean(disabled);
-    this._applyHostBindings();
-  }
-
   $onDestroy(): void {
-    this.unwatchDisabled?.();
+    this.removeDisabledListener?.();
   }
 
   private _applyHostBindings() {
-    this.$element.toggleClass("disabled", this.disabled);
-    this.$element.attr("tabIndex", this.disabled ? -1 : this.tabindex);
+    this.$element.toggleClass("disabled", this.isDisabled());
+    this.$element.attr("tabIndex", this.isDisabled() ? -1 : this.tabindex);
   }
 
   //#region $angular
@@ -67,17 +49,19 @@ export class NgbDropdownItem implements IController {
   static get $factory(): () => IDirective {
     return () => ({
       bindToController: {
-        disabled: "<?",
         tabindex: "<?",
       },
       controller: NgbDropdownItem,
+      require: {
+        ngDisabled: "?ngDisabled",
+      },
       scope: true,
       restrict: "A",
     });
   }
 
   static get $inject() {
-    return ["$element", "$scope"];
+    return ["$element"];
   }
 
   //#endregion

@@ -59,9 +59,10 @@ describe("ngbRating", () => {
   });
 
   it("does not change the rate when disabled", () => {
-    const scope = $rootScope.$new();
+    const scope = $rootScope.$new() as IRootScopeService & { disabled: boolean };
+    scope.disabled = true;
 
-    const element = $compile(`<ngb-rating rate="2" max="5" disabled="true"></ngb-rating>`)(scope);
+    const element = $compile(`<ngb-rating rate="2" max="5" ng-disabled="disabled"></ngb-rating>`)(scope);
     scope.$digest();
 
     const fourthStar = element[0].querySelectorAll(":scope > span")[3].querySelector("span:last-child") as HTMLElement;
@@ -70,6 +71,10 @@ describe("ngbRating", () => {
 
     expect(element.attr("aria-valuenow")).toBe("2");
     expect(element.attr("aria-disabled")).toBe("true");
+
+    scope.disabled = false;
+    scope.$digest();
+    expect(element.attr("aria-disabled")).toBeUndefined();
   });
 
   it("renders a projected star TemplateRef with its outlet context", () => {

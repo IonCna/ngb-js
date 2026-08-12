@@ -15,6 +15,8 @@ export class DemoPaginationComponent {
   smallPage = 2;
   largePage = 2;
   pageSize = 10;
+  disabledPage = 1;
+  isDisabled = true;
 
   setBasicPage(page: number): void {
     this.basicPage = page;
@@ -39,6 +41,14 @@ export class DemoPaginationComponent {
 
   setLargePage(page: number): void {
     this.largePage = page;
+  }
+
+  setDisabledPage(page: number): void {
+    this.disabledPage = page;
+  }
+
+  toggleDisabled(): void {
+    this.isDisabled = !this.isDisabled;
   }
 
   static get $name() {

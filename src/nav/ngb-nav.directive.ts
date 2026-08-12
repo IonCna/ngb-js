@@ -103,7 +103,7 @@ export class NgbNav implements IController {
       return;
     }
 
-    const enabledLinks = this.links.filter((link) => !link.ngbNavItem.disabled);
+    const enabledLinks = this.links.filter((link) => !link.ngbNavItem.isDisabled());
     const { length } = enabledLinks;
 
     let position = -1;
@@ -151,7 +151,7 @@ export class NgbNav implements IController {
   }
 
   public click(item: NgbNavItem) {
-    if (!item.disabled) {
+    if (!item.isDisabled()) {
       this._updateActiveId(item.id);
     }
   }
