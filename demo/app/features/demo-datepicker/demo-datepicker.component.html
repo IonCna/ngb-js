@@ -1,0 +1,34 @@
+<ng-template ng-ref="customDay" let-date="date" let-selected="selected" let-disabled="disabled">
+  <span class="d-block rounded text-center" ng-class="{ 'bg-primary text-white': selected, 'text-muted': disabled }">
+    {{ date.day }}
+  </span>
+</ng-template>
+
+<div class="row g-4">
+  <div class="col-auto">
+    <p class="mb-2">Inline con template personalizado y fines de semana deshabilitados</p>
+    <ngb-datepicker
+      ng-model="$.inlineDate"
+      day-template="$.customDay"
+      min-date="$.minDate"
+      max-date="$.maxDate"
+      mark-disabled="$.markWeekend">
+    </ngb-datepicker>
+  </div>
+
+  <div class="col-sm-5">
+    <label class="form-label" for="datepicker-popup-demo">Popup</label>
+    <div class="input-group">
+      <input
+        id="datepicker-popup-demo"
+        class="form-control"
+        ng-model="$.popupDate"
+        ngb-datepicker
+        ng-focus="$datepicker.open()"
+        min-date="$.minDate"
+        max-date="$.maxDate">
+      <button class="btn btn-outline-secondary" type="button" ng-click="$datepicker.toggle()">Calendar</button>
+    </div>
+    <small class="text-muted">{{ $.popupDate | json }}</small>
+  </div>
+</div>

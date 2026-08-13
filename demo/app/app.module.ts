@@ -4,6 +4,7 @@ import { DemoAlertModule } from "@demo/features/demo-alert/demo-alert.module";
 import { DemoCarouselModule } from "@demo/features/demo-carousel/demo-carousel.module";
 import { DemoCollapseModule } from "@demo/features/demo-collapse/demo-collapse.module";
 import { DemoDropdownModule } from "@demo/features/demo-dropdown/demo-dropdown.module";
+import { DemoDatepickerModule } from "@demo/features/demo-datepicker/demo-datepicker.module";
 import { DemoModalModule } from "@demo/features/demo-modal/demo-modal.module";
 import { DemoNavModule } from "@demo/features/demo-nav/demo-nav.module";
 import { DemoOffcanvasModule } from "@demo/features/demo-offcanvas/demo-offcanvas.module";
@@ -26,6 +27,7 @@ export const AppModule = angular.module("ngb.demo", [
   DemoCarouselModule.name,
   DemoCollapseModule.name,
   DemoDropdownModule.name,
+  DemoDatepickerModule.name,
   DemoModalModule.name,
   DemoNavModule.name,
   DemoOffcanvasModule.name,

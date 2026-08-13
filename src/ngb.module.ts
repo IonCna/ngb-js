@@ -15,6 +15,7 @@ import { NgbToastModule } from "@ngb/toast/ngb-toast.module";
 import { NgbToolTipModule } from "@ngb/tooltip/ngb-tooltip.module";
 import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
 import { NgbPaginationModule } from "@ngb/pagination/ngb-pagination.module";
+import { NgbDatepickerModule } from "@ngb/datepicker/ngb-datepicker.module";
 
 import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
 
@@ -44,6 +45,7 @@ export const NgbModule: IModule = angular.module("ngb", [
   NgbTimepickerModule.name,
   NgbTypeaheadModule.name,
   NgbPaginationModule.name,
+  NgbDatepickerModule.name,
 ]);
 
 NgbModule.service(NgbConfig.$name, NgbConfig);

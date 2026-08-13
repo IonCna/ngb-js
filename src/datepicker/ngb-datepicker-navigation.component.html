@@ -1,0 +1,68 @@
+<div class="ngb-dp-arrow ngb-dp-arrow-prev d-flex flex-grow-1 p-0 m-0" style="width: 2rem; height: 2rem">
+  <button
+    type="button"
+    class="btn btn-link ngb-dp-arrow-btn z-1 py-0 px-1 mx-2 my-0 bg-transparent border-0"
+    ng-click="$.onClickPrev($event)"
+    ng-disabled="$.prevDisabled"
+    i18n-aria-label="@@ngb.datepicker.previous-month"
+    aria-label="Previous month"
+    i18n-title="@@ngb.datepicker.previous-month"
+    title="Previous month">
+    <span
+      class="ngb-dp-navigation-chevron d-inline-block"
+      style="width: .75em; height: .75em; margin-right: .15em; margin-left: .25em; border-style: solid; border-width: .2em .2em 0 0; transform: rotate(-135deg)">
+    </span>
+  </button>
+</div>
+
+<ngb-datepicker-navigation-select
+  ng-if="$.showSelect"
+  class="ngb-dp-navigation-select d-flex flex-grow-1"
+  style="flex-basis: 9rem"
+  date="$.date"
+  i18n="$.i18n"
+  disabled="$.disabled"
+  months="$.selectBoxes.months"
+  years="$.selectBoxes.years"
+  select="$.select({ $event: $event })">
+</ngb-datepicker-navigation-select>
+
+<ng-container ng-if="!$.showSelect">
+  <ng-container ng-repeat="month in $.months track by $index">
+    <div ng-if="$index > 0" class="ngb-dp-arrow d-flex flex-grow-1 p-0 m-0" style="width: 2rem; height: 2rem"></div>
+    <div
+      class="ngb-dp-month-name fs-5 text-center"
+      ng-class="{ 'text-muted': $.disabled }"
+      style="height: 2rem; line-height: 2rem">
+      {{ $.i18n.getMonthLabel(month.firstDate) }}
+    </div>
+    <div
+      ng-if="$index !== $.months.length - 1"
+      class="ngb-dp-arrow d-flex flex-grow-1 p-0 m-0"
+      style="width: 2rem; height: 2rem">
+    </div>
+  </ng-container>
+</ng-container>
+
+<div class="visually-hidden" aria-live="polite">
+  <span ng-repeat="month in $.months track by $index">{{ $.i18n.getMonthLabel(month.firstDate) }}</span>
+</div>
+
+<div
+  class="ngb-dp-arrow ngb-dp-arrow-next d-flex flex-grow-1 justify-content-end p-0 m-0"
+  style="width: 2rem; height: 2rem">
+  <button
+    type="button"
+    class="btn btn-link ngb-dp-arrow-btn z-1 py-0 px-1 mx-2 my-0 bg-transparent border-0"
+    ng-click="$.onClickNext($event)"
+    ng-disabled="$.nextDisabled"
+    i18n-aria-label="@@ngb.datepicker.next-month"
+    aria-label="Next month"
+    i18n-title="@@ngb.datepicker.next-month"
+    title="Next month">
+    <span
+      class="ngb-dp-navigation-chevron d-inline-block"
+      style="width: .75em; height: .75em; margin-right: .25em; margin-left: .15em; border-style: solid; border-width: .2em .2em 0 0; transform: rotate(45deg)">
+    </span>
+  </button>
+</div>
