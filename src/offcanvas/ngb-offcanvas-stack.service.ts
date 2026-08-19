@@ -204,6 +204,7 @@ export class NgbOffcanvasStack {
     const scope = this.$rootScope.$new(true) as OffcanvasContentScope;
     const componentName = camelToKebabCase(content);
     const attrs = this._buildBindingsAttrs(options);
+    
     const linkFn = this.$compile(
       `<${componentName} ${attrs} ngb-active-offcanvas="activeOffcanvas"></${componentName}>`,
     );
@@ -227,8 +228,8 @@ export class NgbOffcanvasStack {
   }
 
   private _buildBindingsAttrs(options: NgbOffcanvasOptions) {
-    return Object.keys(options.bindings || {})
-      .map((key) => `${camelToKebabCase(key)}="${key}"`)
+    return Object.entries(options.bindings || {})
+      .map(([key, value]) => `${camelToKebabCase(key)}="${value}"`)
       .join(" ");
   }
 
