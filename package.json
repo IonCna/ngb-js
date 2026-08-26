@@ -1,6 +1,7 @@
 {
   "name": "ngb-js",
   "version": "0.0.0",
+  "license": "MIT",
   "main": "./dist/ngb-js.cjs",
   "module": "./dist/ngb-js.js",
   "types": "./dist/types/index.d.ts",
@@ -13,7 +14,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "dependencies": {
     "@popperjs/core": "^2.11.8",

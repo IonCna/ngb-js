@@ -1,7 +1,15 @@
 import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
-import type { IDirective } from "angular";
+import type { IAttributes, IAugmentedJQuery, IDirective, IScope } from "angular";
 
 export class NgbNavLink extends NgbNavLinkBase {
+  constructor(
+    $element: IAugmentedJQuery,
+    public $attrs: IAttributes,
+    $scope: IScope
+  ) {
+    super($element, $attrs, $scope)
+  }
+
   override $postLink(): void {
     super.$postLink();
 
@@ -9,20 +17,37 @@ export class NgbNavLink extends NgbNavLinkBase {
 
     if (tag === "button") {
       this._setupButton();
-    } else if (tag === "a") {
-      this.$element.attr("href", "");
-      this._clickHandler = (event) => {
-        event.preventDefault();
-        this.$scope.$evalAsync(() => this.ngbNav.click(this.ngbNavItem));
-      };
-      this.$element.on("click", this._clickHandler);
+      return
     }
+
+    if (tag !== "a") {
+      return
+    }
+
+    const hasAttrs = Object.hasOwn(this.$attrs.$attr, "uiSref")
+
+    if(!hasAttrs) {
+      this.$element.attr("href", "");
+    }
+
+    this._clickHandler = (event) => {
+      if(!hasAttrs) {
+        event.preventDefault();
+      }
+
+      this.$scope.$evalAsync(() => this.ngbNav.click(this.ngbNavItem));
+    };
+    this.$element.on("click", this._clickHandler);
   }
 
   //#region $angular
 
   static get $name() {
     return "ngbNavLink";
+  }
+
+  static get $inject() {
+    return ["$element", "$attrs", "$scope"]
   }
 
   static get $factory(): () => IDirective {
