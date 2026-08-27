@@ -233,9 +233,6 @@ export class NgbTypeahead implements IController {
     if (this.container === "body") {
       popupElement.style.zIndex = "1055";
       document.body.appendChild(popupElement);
-    } else {
-      const inputElement = this._nativeElement;
-      inputElement.parentNode?.insertBefore(popupElement, inputElement.nextSibling);
     }
 
     this._renderHostState();

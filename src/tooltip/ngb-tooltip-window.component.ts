@@ -58,6 +58,7 @@ export class NgbTooltipWindow implements IComponentController {
         onMouseEnter: "&?",
         onMouseLeave: "&?",
       },
+      transclude: true,
       template,
     };
   }

@@ -1,5 +1,5 @@
-import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 import type { NgbOffcanvasUpdatableOptions } from "@ngb/offcanvas/ngb-offcanvas-config.service";
+import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 import {
   ngbOffcanvasPanelHideTransition,
   ngbOffcanvasPanelShowTransition,
@@ -220,7 +220,8 @@ export class NgbOffcanvasPanel implements IComponentController {
       },
       controller: NgbOffcanvasPanel,
       controllerAs: "$",
-      template: "",
+      transclude: true,
+      template: "<ng-content></ng-content>",
     };
   }
 }

@@ -65,8 +65,6 @@ describe("ngbTooltip", () => {
 
     ctrl.close();
     scope.$digest();
-    $timeout.flush();
-    scope.$digest();
 
     expect((ctrl as { isOpen: () => boolean }).isOpen()).toBe(false);
     element.remove();

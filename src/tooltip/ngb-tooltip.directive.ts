@@ -144,15 +144,20 @@ export class NgbTooltip implements IController {
     toNativeElement(this._getPositionTargetElement()).setAttribute("aria-describedby", this._ngbTooltipWindowId);
 
     this._applyContainer();
-    this._positioning.createPopper({
-      hostElement: toNativeElement(this._getPositionTargetElement()),
-      targetElement: this._windowRef.location.nativeElement,
-      placement: this.placement,
-      baseClass: "bs-tooltip",
-      updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
+    windowRef.changeDetectorRef.detectChanges();
+    this._changeDetector.markForCheck();
+
+    this._ngZone.runOutsideAngular(() => {
+      this._positioning.createPopper({
+        hostElement: toNativeElement(this._getPositionTargetElement()),
+        targetElement: this._windowRef!.location.nativeElement,
+        placement: this.placement,
+        baseClass: "bs-tooltip",
+        updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
+      });
+      Promise.resolve().then(() => this._positioning.update());
+      this._watchPositioning();
     });
-    Promise.resolve().then(() => this._positioning.update());
-    this._watchPositioning();
     this._setCloseHandlers();
 
     transition$.subscribe(() => {
@@ -162,8 +167,6 @@ export class NgbTooltip implements IController {
         this.shown?.();
       }
     });
-
-    this._changeDetector.markForCheck();
   }
 
   public close(animation = this.animation): void {
@@ -218,6 +221,8 @@ export class NgbTooltip implements IController {
   }
 
   private _applyContainer(): void {
+    if (!this.container) return;
+
     const container = this._getContainerElement();
     container.append(angular.element(this._windowRef!.location.nativeElement));
   }

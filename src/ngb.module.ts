@@ -16,7 +16,7 @@ import { NgbRatingModule } from "@ngb/rating/ngb-rating.module";
 import { NgbScrollSpyModule } from "@ngb/scrollspy/ngb-scrollspy.module";
 import { NgbTimepickerModule } from "@ngb/timepicker/ngb-timepicker.module";
 import { NgbToastModule } from "@ngb/toast/ngb-toast.module";
-import { NgbToolTipModule } from "@ngb/tooltip/ngb-tooltip.module";
+import { NgbTooltipModule } from "@ngb/tooltip/ngb-tooltip.module";
 import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
 import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
 import { LiveService } from "@ngb/utils/accessibility/live.service";
@@ -33,7 +33,7 @@ export const NgbModule: IModule = angular.module("ngb", [
   NgbAccordionModule.name,
   NgbModalModule.name,
   NgbDropdownModule.name,
-  NgbToolTipModule.name,
+  NgbTooltipModule.name,
   NgbNavModule.name,
   NgbOffcanvasModule.name,
   NgbPopoverModule.name,

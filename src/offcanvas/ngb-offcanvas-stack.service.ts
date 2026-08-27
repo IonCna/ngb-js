@@ -154,6 +154,7 @@ export class NgbOffcanvasStack {
         close: (result?: any) => activeOffcanvas.close(result),
         dismiss: (reason?: any) => activeOffcanvas.dismiss(reason),
       });
+      this._applicationRef.attachView(viewRef);
       deferred.resolve(new ContentRef<T>([viewRef.rootNodes], viewRef));
       return deferred.promise;
     }

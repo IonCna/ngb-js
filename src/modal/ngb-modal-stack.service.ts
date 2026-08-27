@@ -177,6 +177,7 @@ export class NgbModalStack {
         close: (result?: any) => activeModal.close(result),
         dismiss: (reason?: any) => activeModal.dismiss(reason),
       });
+      this._applicationRef.attachView(viewRef);
       deferred.resolve(new ContentRef<T>([viewRef.rootNodes], viewRef));
       return deferred.promise;
     }

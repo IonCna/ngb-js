@@ -101,8 +101,6 @@ export class NgbPopover implements IController {
       const popupElement = windowRef.location.nativeElement;
       if (this.container === "body") {
         document.body.appendChild(popupElement);
-      } else {
-        this._nativeElement.parentNode?.insertBefore(popupElement, this._nativeElement.nextSibling);
       }
 
       windowRef.changeDetectorRef.detectChanges();
@@ -138,13 +136,11 @@ export class NgbPopover implements IController {
       ngbCompleteTransition(angular.element(this._windowRef.location.nativeElement));
     }
 
-    const windowRef = this._windowRef;
-    if (windowRef) {
+    if (this._windowRef) {
       this._getPositionTargetElement().removeAttribute("aria-describedby");
       this._opening = false;
       this._transitioning = true;
       this._popupService.close(animation).subscribe(() => {
-        angular.element(windowRef.location.nativeElement).remove();
         this._windowRef = null;
         this._positioning.destroy();
         this._afterRenderRef?.();

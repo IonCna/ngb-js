@@ -76,6 +76,7 @@ export class NgbPopoverWindow implements IComponentController {
       },
       controller: NgbPopoverWindow,
       controllerAs: "$",
+      transclude: true,
       template,
     };
   }

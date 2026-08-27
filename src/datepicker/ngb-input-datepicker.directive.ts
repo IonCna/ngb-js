@@ -300,7 +300,6 @@ export class NgbInputDatepicker implements IController {
 
     const popupElement = windowRef.location.nativeElement;
     if (this.container === "body") document.body.appendChild(popupElement);
-    else this._nativeElement.parentNode?.insertBefore(popupElement, this._nativeElement.nextSibling);
 
     this._elementWithFocus = document.activeElement as HTMLElement | null;
     ngbFocusTrap(this._ngZone, popupElement, this._closed$, true);
