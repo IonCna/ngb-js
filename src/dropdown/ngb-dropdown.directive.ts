@@ -442,7 +442,6 @@ export class NgbDropdown implements IController {
       scope: true,
       bindToController: {
         autoClose: "<?",
-        animation: "<?",
         container: "@?",
         display: "<?",
         dropdownClass: "<?",

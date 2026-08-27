@@ -12,8 +12,6 @@ import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition } from ".
 
 export class ContentRef<T = any> {
   constructor(
-    public $element: IAugmentedJQuery,
-    public $scope?: IScope,
     public componentInstance?: T,
     private embeddedViewRef?: EmbeddedViewRef<any>,
   ) {}
@@ -39,8 +37,6 @@ export class ContentRef<T = any> {
   public destroy(): void {
     this.embeddedViewRef?.destroy();
     this.embeddedViewRef = undefined;
-    this.$scope?.$destroy();
-    this.$scope = undefined;
   }
 }
 
@@ -133,7 +129,7 @@ class PopupService<T> implements IPopupService<T> {
         this._contentRef?.destroy();
         this._contentRef = null;
 
-        this._windowRef?.$scope?.$destroy();
+        this._windowRef?.destroy()
         this._windowRef = null;
       }),
     );
