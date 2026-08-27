@@ -5,7 +5,7 @@ import { NgbDatepicker } from "@ngb/datepicker/ngb-datepicker.component.ts";
 import { NgbDatepickerModule } from "@ngb/datepicker/ngb-datepicker.module.ts";
 import { NgbInputDatepicker } from "@ngb/datepicker/ngb-input-datepicker.directive.ts";
 import { NgbModule } from "@ngb/ngb.module.ts";
-import type { ICompileService, IRootScopeService } from "angular";
+import type { ICompileService, IPromise, IRootScopeService } from "angular";
 import angular from "angular";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -20,6 +20,25 @@ describe("NgbDatepickerModule", () => {
       $rootScope = _$rootScope_;
     });
   });
+
+  async function settle(promise: IPromise<void>): Promise<void> {
+    let settled = false;
+    let rejected: unknown;
+    promise.then(
+      () => {
+        settled = true;
+      },
+      (error) => {
+        rejected = error;
+      },
+    );
+    for (let index = 0; index < 20; index++) {
+      $rootScope.$digest();
+      await Promise.resolve();
+    }
+    if (rejected) throw rejected;
+    if (!settled) throw new Error("Datepicker opening did not settle");
+  }
 
   it("renders an inline datepicker and binds ngModel", () => {
     const scope = $rootScope.$new() as IRootScopeService & { date: NgbDateStruct };
@@ -43,7 +62,9 @@ describe("NgbDatepickerModule", () => {
     scope.$digest();
 
     const datepicker = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
-    datepicker.open();
+    const opening = datepicker.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
 
     expect(datepicker.isOpen()).toBe(true);
@@ -98,7 +119,9 @@ describe("NgbDatepickerModule", () => {
     scope.$digest();
 
     const input = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
-    input.open();
+    const opening = input.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
 
     const popups = document.querySelectorAll("ngb-datepicker.dropdown-menu");
@@ -229,7 +252,9 @@ describe("NgbDatepickerModule", () => {
 
     const input = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
     expect(input.disabled).toBe(true);
-    input.open();
+    const opening = input.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
     expect(input.isOpen()).toBe(true);
     expect(input.disabled).toBe(true);

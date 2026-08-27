@@ -1,6 +1,6 @@
 import { NgbPopover } from "@ngb/popover/ngb-popover.directive";
 import { NgbPopoverModule } from "@ngb/popover/ngb-popover.module";
-import type { ICompileService, IRootScopeService } from "angular";
+import type { ICompileService, IPromise, IRootScopeService } from "angular";
 import angular from "angular";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -20,7 +20,26 @@ describe("ngbPopover", () => {
     document.body.innerHTML = "";
   });
 
-  it("opens and closes with content and title", () => {
+  async function settle(promise: IPromise<void>): Promise<void> {
+    let settled = false;
+    let rejected: unknown;
+    promise.then(
+      () => {
+        settled = true;
+      },
+      (error) => {
+        rejected = error;
+      },
+    );
+    for (let index = 0; index < 20; index++) {
+      $rootScope.$digest();
+      await Promise.resolve();
+    }
+    if (rejected) throw rejected;
+    if (!settled) throw new Error("Popover opening did not settle");
+  }
+
+  it("opens and closes with content and title", async () => {
     const scope = $rootScope.$new();
     const element = $compile(`
       <button
@@ -36,7 +55,9 @@ describe("ngbPopover", () => {
     scope.$digest();
 
     const popover = element.controller(NgbPopover.$name) as NgbPopover;
-    popover.open();
+    const opening = popover.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
 
     expect(popover.isOpen()).toBe(true);
@@ -52,7 +73,7 @@ describe("ngbPopover", () => {
     expect(document.body.querySelector(".popover")).toBeNull();
   });
 
-  it("uses an independent popup instance for each directive", () => {
+  it("uses an independent popup instance for each directive", async () => {
     const scope = $rootScope.$new();
     const host = $compile(`
       <div>
@@ -67,8 +88,11 @@ describe("ngbPopover", () => {
     const first = angular.element(buttons[0]).controller(NgbPopover.$name) as NgbPopover;
     const second = angular.element(buttons[1]).controller(NgbPopover.$name) as NgbPopover;
 
-    first.open();
-    second.open();
+    const firstOpening = first.open();
+    const secondOpening = second.open();
+    scope.$digest();
+    await settle(firstOpening);
+    await settle(secondOpening);
     scope.$digest();
 
     expect(document.body.querySelectorAll(".popover")).toHaveLength(2);
@@ -82,7 +106,7 @@ describe("ngbPopover", () => {
     expect(document.body.querySelector(".popover-body")?.textContent).toContain("Second");
   });
 
-  it("opens when only a title is provided", () => {
+  it("opens when only a title is provided", async () => {
     const scope = $rootScope.$new();
     const element = $compile(`
       <button type="button" ngb-popover popover-title="'Title only'" triggers="'manual'" animation="false">
@@ -93,14 +117,16 @@ describe("ngbPopover", () => {
     scope.$digest();
 
     const popover = element.controller(NgbPopover.$name) as NgbPopover;
-    popover.open();
+    const opening = popover.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
 
     expect(popover.isOpen()).toBe(true);
     expect(document.body.querySelector(".popover-header")?.textContent?.trim()).toBe("Title only");
   });
 
-  it("renders content and title templates with context", () => {
+  it("renders content and title templates with context", async () => {
     const scope = $rootScope.$new();
     const host = $compile(`
       <div>
@@ -126,14 +152,16 @@ describe("ngbPopover", () => {
 
     const button = angular.element(host[0].querySelector("button") as Element);
     const popover = button.controller(NgbPopover.$name) as NgbPopover;
-    popover.open();
+    const opening = popover.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
 
     expect(document.body.querySelector(".template-content")?.textContent).toContain("Hello Ada");
     expect(document.body.querySelector(".template-title")?.textContent).toContain("Profile for Ada");
   });
 
-  it("does not open when disabled", () => {
+  it("does not open when disabled", async () => {
     const scope = $rootScope.$new();
     const element = $compile(`
       <button type="button" ngb-popover="'Hidden'" disable-popover="true" triggers="'manual'">
@@ -144,7 +172,9 @@ describe("ngbPopover", () => {
     scope.$digest();
 
     const popover = element.controller(NgbPopover.$name) as NgbPopover;
-    popover.open();
+    const opening = popover.open();
+    scope.$digest();
+    await settle(opening);
 
     expect(popover.isOpen()).toBe(false);
   });

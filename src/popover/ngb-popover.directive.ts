@@ -8,7 +8,16 @@ import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { listenToTriggers } from "@ngb/utils/triggers";
 import type { Options } from "@popperjs/core";
-import type { IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope, ITimeoutService } from "angular";
+import type {
+  IAugmentedJQuery,
+  IController,
+  IDirective,
+  IOnChangesObject,
+  IPromise,
+  IQService,
+  IScope,
+  ITimeoutService,
+} from "angular";
 import angular from "angular";
 import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef, ViewContainerRef } from "ngjs-core";
 import { Subject } from "rxjs";
@@ -39,6 +48,7 @@ export class NgbPopover implements IController {
   private _nativeElement: HTMLElement;
   private _ngbPopoverWindowId = `ngb-popover-${nextId++}`;
   private readonly _popupService: PopupService<NgbPopoverWindow>;
+  private readonly $q: IQService;
   private _windowRef: ComponentRef<NgbPopoverWindow> | null = null;
   private _unregisterListenersFn?: () => void;
   private _positioning!: NgbPositioning;
@@ -62,6 +72,7 @@ export class NgbPopover implements IController {
     private readonly _ngZone: NgZone,
     private readonly _changeDetector: ChangeDetectorRef,
   ) {
+    this.$q = $injector.get<IQService>("$q");
     this._nativeElement = toNativeElement(this.$element);
     this._popupService = new PopupService<NgbPopoverWindow>(
       NgbPopoverWindow.$name,
@@ -71,22 +82,25 @@ export class NgbPopover implements IController {
     );
   }
 
-  public open(context?: any): void {
+  public open(context?: any): IPromise<void> {
     if (!this._opening && this._transitioning && this._windowRef) {
       this._transitioning = false;
       ngbCompleteTransition(angular.element(this._windowRef.location.nativeElement));
     }
 
-    if (!this._windowRef && !this._isDisabled()) {
-      const templateContext = context ?? this.popoverContext;
-      const { windowRef, transition$ } = this._popupService.open(
+    if (this._windowRef || this._isDisabled()) return this.$q.resolve();
+
+    const templateContext = context ?? this.popoverContext;
+    return this._popupService
+      .open(
         this.ngbPopover as string | TemplateRef<any>,
         templateContext,
         this.animation,
-      );
-      this._opening = true;
-      this._transitioning = true;
-      this._windowRef = windowRef;
+      )
+      .then(({ windowRef, transition$ }) => {
+        this._opening = true;
+        this._transitioning = true;
+        this._windowRef = windowRef;
 
       windowRef.setInput("animation", this.animation);
       windowRef.setInput("title", this.popoverTitle);
@@ -106,7 +120,7 @@ export class NgbPopover implements IController {
       windowRef.changeDetectorRef.detectChanges();
       this._changeDetector.markForCheck();
 
-      this._ngZone.runOutsideAngular(() => {
+        this._ngZone.runOutsideAngular(() => {
         this._positioning.createPopper({
           hostElement: this._getPositionTargetElement(),
           targetElement: popupElement,
@@ -115,19 +129,19 @@ export class NgbPopover implements IController {
           updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 8])(options)),
         });
 
-        Promise.resolve().then(() => this._positioning.update());
+        this.$timeout(() => this._positioning.update(), 0, false);
         this._afterRenderRef = this.$scope.$watch(() => this._positioning.update());
       });
 
       ngbAutoClose(this._ngZone, this.autoClose, this._hidden$, () => this.close(), [popupElement]);
 
-      transition$.subscribe(() => {
-        if (this._transitioning) {
-          this._transitioning = false;
-          this.shown?.();
-        }
+        transition$.subscribe(() => {
+          if (this._transitioning) {
+            this._transitioning = false;
+            this.shown?.();
+          }
+        });
       });
-    }
   }
 
   public close(animation = this.animation): void {

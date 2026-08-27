@@ -1,4 +1,4 @@
-import type { ITimeoutService } from "angular";
+import type { IPromise, IQService, ITimeoutService } from "angular";
 import angular from "angular";
 import {
   ApplicationRef,
@@ -27,6 +27,7 @@ export class PopupService<T> {
   private _windowRef: ComponentRef<T> | null = null;
   private _contentRef: ContentRef | null = null;
   private readonly _applicationRef: ApplicationRef;
+  private readonly $q: IQService;
   private readonly $timeout: ITimeoutService;
 
   constructor(
@@ -36,19 +37,31 @@ export class PopupService<T> {
     private _ngZone: NgZone,
   ) {
     this._applicationRef = this._injector.get<ApplicationRef>(ApplicationRef.$name);
+    this.$q = this._injector.get<IQService>("$q");
     this.$timeout = this._injector.get<ITimeoutService>("$timeout");
   }
 
-  open(content?: string | TemplateRef<any>, context?: any, animation = false) {
-    if (!this._windowRef) {
-      this._contentRef = this._getContentRef(content, context);
-      this._windowRef = this._viewContainerRef.createComponent<T>(this._componentType, {
+  open(
+    content?: string | TemplateRef<any>,
+    context?: any,
+    animation = false,
+  ): IPromise<{ windowRef: ComponentRef<T>; transition$: Observable<void> }> {
+    if (this._windowRef) return this.$q.resolve(this._createOpenResult(this._windowRef, animation));
+
+    this._contentRef = this._getContentRef(content, context);
+    return this._viewContainerRef
+      .createComponent<T>(this._componentType, {
         injector: this._injector,
         projectableNodes: this._contentRef.nodes,
+      })
+      .then((windowRef) => {
+        this._windowRef = windowRef;
+        return this._createOpenResult(windowRef, animation);
       });
-    }
+  }
 
-    const nativeElement = this._windowRef.location.nativeElement;
+  private _createOpenResult(windowRef: ComponentRef<T>, animation: boolean) {
+    const nativeElement = windowRef.location.nativeElement;
     const $element = angular.element(nativeElement);
 
     const nextRenderSubject = new Subject<void>();
@@ -80,7 +93,7 @@ export class PopupService<T> {
       ),
     );
 
-    return { windowRef: this._windowRef, transition$ };
+    return { windowRef, transition$ };
   }
 
   close(animation = false): Observable<void> {

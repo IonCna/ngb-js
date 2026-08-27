@@ -6,7 +6,7 @@ import { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanva
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
 import angular, { type IAugmentedJQuery, type IPromise, type IQService } from "angular";
-import { ApplicationRef, type ComponentRef, NgZone, TemplateRef } from "ngjs-core";
+import { ApplicationRef, type ComponentRef, createComponent, NgZone, TemplateRef } from "ngjs-core";
 import { finalize, Subject } from "rxjs";
 
 export class NgbOffcanvasStack {
@@ -30,8 +30,7 @@ export class NgbOffcanvasStack {
     });
   }
 
-  async open<T = any>(content: any, options: NgbOffcanvasOptions): Promise<NgbOffcanvasRef> {
-    const offcanvas = this.$q.defer<NgbOffcanvasRef>();
+  open<T = any>(content: any, options: NgbOffcanvasOptions): IPromise<NgbOffcanvasRef> {
     const container = this._resolveContainer(options.container);
 
     if (!container) {
@@ -43,42 +42,36 @@ export class NgbOffcanvasStack {
     }
 
     const activeOffcanvas = new NgbActiveOffcanvas();
-    const contentRef = this._getContentRef<T>(content, activeOffcanvas, options);
+    return this.$q
+      .all({
+        backdropRef:
+          options.backdrop !== false
+            ? this._attachBackdrop(container)
+            : this.$q.resolve<ComponentRef<NgbOffcanvasBackdrop> | undefined>(undefined),
+        contentRef: this._getContentRef<T>(content, activeOffcanvas, options),
+      })
+      .then(({ backdropRef, contentRef }) =>
+        this._attachPanelComponent(container, contentRef).then((panelRef) => {
+          const ngbOffcanvasRef = new NgbOffcanvasRef(
+            this.$q,
+            panelRef,
+            contentRef,
+            backdropRef,
+            options.beforeDismiss,
+          );
 
-    const backdropRef = options.backdrop !== false ? this._attachBackdrop(container) : undefined;
+          activeOffcanvas.close = (result: any) => ngbOffcanvasRef.close(result);
+          activeOffcanvas.dismiss = (reason: any) => ngbOffcanvasRef.dismiss(reason);
 
-    await this.$q.all([backdropRef, contentRef]).then(([backdropRef, contentRef]) => {
-      const panelRef = this._attachPanelComponent(container, contentRef);
-
-      return panelRef.then((panelRef) => {
-        const ngbOffcanvasRef = new NgbOffcanvasRef(this.$q, panelRef, contentRef, backdropRef, options.beforeDismiss);
-
-        activeOffcanvas.close = (result: any) => {
-          ngbOffcanvasRef.close(result);
-        };
-
-        activeOffcanvas.dismiss = (reason: any) => {
-          ngbOffcanvasRef.dismiss(reason);
-        };
-
-        if (panelRef.instance) {
           this._applyPanelOptions(panelRef.instance, options);
-        }
+          if (backdropRef) this._applyBackdropOptions(backdropRef.instance, options);
 
-        if (backdropRef?.instance) {
-          this._applyBackdropOptions(backdropRef.instance, options);
-        }
-
-        this._registerOffcanvasRef(ngbOffcanvasRef);
-        this._registerPanelRef(panelRef);
-
-        ngbOffcanvasRef.hidden.pipe(finalize(() => this._restoreScrollBar())).subscribe();
-
-        offcanvas.resolve(ngbOffcanvasRef);
-      });
-    });
-
-    return offcanvas.promise;
+          this._registerOffcanvasRef(ngbOffcanvasRef);
+          this._registerPanelRef(panelRef);
+          ngbOffcanvasRef.hidden.pipe(finalize(() => this._restoreScrollBar())).subscribe();
+          return ngbOffcanvasRef;
+        }),
+      );
   }
 
   get activeInstance() {
@@ -120,20 +113,22 @@ export class NgbOffcanvasStack {
   }
 
   private _attachBackdrop(container: IAugmentedJQuery): IPromise<ComponentRef<NgbOffcanvasBackdrop>> {
-    const ref = this._createRootComponent<NgbOffcanvasBackdrop>(NgbOffcanvasBackdrop.$name);
-    container.append(angular.element(ref.location.nativeElement));
-    return this.$q.resolve(ref);
+    return this._createRootComponent<NgbOffcanvasBackdrop>(NgbOffcanvasBackdrop.$name).then((ref) => {
+      container.append(angular.element(ref.location.nativeElement));
+      return ref;
+    });
   }
 
   private _attachPanelComponent(
     container: IAugmentedJQuery,
     contentRef: ContentRef,
   ): IPromise<ComponentRef<NgbOffcanvasPanel>> {
-    const ref = this._createRootComponent<NgbOffcanvasPanel>(NgbOffcanvasPanel.$name, {
+    return this._createRootComponent<NgbOffcanvasPanel>(NgbOffcanvasPanel.$name, {
       projectableNodes: contentRef.nodes,
+    }).then((ref) => {
+      container.append(angular.element(ref.location.nativeElement));
+      return ref;
     });
-    container.append(angular.element(ref.location.nativeElement));
-    return this.$q.resolve(ref);
   }
 
   private _applyPanelOptions(panelInstance: NgbOffcanvasPanel, options: NgbOffcanvasOptions): void {
@@ -145,9 +140,11 @@ export class NgbOffcanvasStack {
     backdropInstance.static = options.backdrop === "static";
   }
 
-  private _getContentRef<T>(content: any, activeOffcanvas: NgbActiveOffcanvas, options: NgbOffcanvasOptions) {
-    const deferred = this.$q.defer<ContentRef<T>>();
-
+  private _getContentRef<T>(
+    content: any,
+    activeOffcanvas: NgbActiveOffcanvas,
+    options: NgbOffcanvasOptions,
+  ): IPromise<ContentRef<T>> {
     if (content instanceof TemplateRef) {
       const viewRef = content.createEmbeddedView({
         $implicit: activeOffcanvas,
@@ -155,30 +152,33 @@ export class NgbOffcanvasStack {
         dismiss: (reason?: any) => activeOffcanvas.dismiss(reason),
       });
       this._applicationRef.attachView(viewRef);
-      deferred.resolve(new ContentRef<T>([viewRef.rootNodes], viewRef));
-      return deferred.promise;
+      return this.$q.resolve(new ContentRef<T>([viewRef.rootNodes], viewRef));
     }
 
-    const componentRef = this._createRootComponent<T>(content, {
+    return this._createRootComponent<T>(content, {
       bindings: {
         ...options.bindings,
         ngbActiveOffcanvas: activeOffcanvas,
       },
-    });
-    deferred.resolve(new ContentRef<T>([[componentRef.location.nativeElement]], undefined, componentRef));
-
-    return deferred.promise;
+    }).then(
+      (componentRef) =>
+        new ContentRef<T>([[componentRef.location.nativeElement]], undefined, componentRef),
+    );
   }
 
   private _createRootComponent<C>(
     component: string,
     options?: { projectableNodes?: Node[][]; bindings?: Record<string, unknown> },
-  ): ComponentRef<C> {
-    const componentRef = createComponent<C>(component, {
+  ): IPromise<ComponentRef<C>> {
+    return createComponent<C>(component, {
       environmentInjector: this._applicationRef.injector,
       ...options,
+    }).then((componentRef) => {
+      return this._attachRootComponent(componentRef);
     });
+  }
 
+  private _attachRootComponent<C>(componentRef: ComponentRef<C>): ComponentRef<C> {
     try {
       this._applicationRef.attachView(componentRef.hostView);
       componentRef.changeDetectorRef.markForCheck();

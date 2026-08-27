@@ -66,7 +66,7 @@ describe("NgbModal", () => {
   });
 
   async function flush(): Promise<void> {
-    for (let index = 0; index < 6; index++) {
+    for (let index = 0; index < 20; index++) {
       $rootScope.$digest();
       await Promise.resolve();
     }

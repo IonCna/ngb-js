@@ -11,7 +11,16 @@ import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options } from "@popperjs/core";
 import type angular from "angular";
-import type { IAugmentedJQuery, IController, IDirective, INgModelController, IOnChangesObject, IScope } from "angular";
+import type {
+  IAugmentedJQuery,
+  IController,
+  IDirective,
+  INgModelController,
+  IOnChangesObject,
+  IPromise,
+  IQService,
+  IScope,
+} from "angular";
 import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef, ViewContainerRef } from "ngjs-core";
 import {
   BehaviorSubject,
@@ -53,6 +62,7 @@ export class NgbTypeahead implements IController {
   private _onChange = (_value: any) => {};
   private _positioning!: NgbPositioning;
   private readonly _popupService: PopupService<NgbTypeaheadWindow>;
+  private readonly $q: IQService;
   private _valueChanges$!: Observable<string>;
   private _resubscribeTypeahead$ = new BehaviorSubject<null>(null);
   private _closed$ = new Subject<void>();
@@ -73,6 +83,7 @@ export class NgbTypeahead implements IController {
     viewContainerRef: ViewContainerRef,
     private readonly _rtl: NgbRTL,
   ) {
+    this.$q = $injector.get<IQService>("$q");
     this._popupService = new PopupService<NgbTypeaheadWindow>(
       NgbTypeaheadWindow.$name,
       $injector,
@@ -213,21 +224,19 @@ export class NgbTypeahead implements IController {
     return toNativeElement(this.$element);
   }
 
-  private _openPopup(): void {
-    if (this.isPopupOpen()) {
-      return;
-    }
+  private _openPopup(): IPromise<void> {
+    if (this.isPopupOpen()) return this.$q.resolve();
 
     this._inputValueBackup = this._nativeElement.value;
-    const { windowRef } = this._popupService.open();
-    this._windowRef = windowRef;
-    windowRef.setInput("id", this.popupId);
-    windowRef.setInput("popupClass", this.popupClass);
-    windowRef.setInput("selectEvent", ({ $event }: { $event: any }) => this._selectResultClosePopup($event));
-    windowRef.setInput("activeChangeEvent", ({ $event }: { $event?: string }) => {
-      this.activeDescendant = $event ?? null;
-      this._renderHostState();
-    });
+    return this._popupService.open().then(({ windowRef }) => {
+      this._windowRef = windowRef;
+      windowRef.setInput("id", this.popupId);
+      windowRef.setInput("popupClass", this.popupClass);
+      windowRef.setInput("selectEvent", ({ $event }: { $event: any }) => this._selectResultClosePopup($event));
+      windowRef.setInput("activeChangeEvent", ({ $event }: { $event?: string }) => {
+        this.activeDescendant = $event ?? null;
+        this._renderHostState();
+      });
 
     const popupElement = windowRef.location.nativeElement;
     if (this.container === "body") {
@@ -251,14 +260,15 @@ export class NgbTypeahead implements IController {
       }
     });
 
-    ngbAutoClose(
-      this._ngZone,
-      "outside",
-      this._closed$,
-      () => this.dismissPopup(),
-      [popupElement],
-      [this._nativeElement],
-    );
+      ngbAutoClose(
+        this._ngZone,
+        "outside",
+        this._closed$,
+        () => this.dismissPopup(),
+        [popupElement],
+        [this._nativeElement],
+      );
+    });
   }
 
   private _closePopup(): void {

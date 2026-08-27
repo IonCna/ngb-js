@@ -1,4 +1,4 @@
-import type { ICompileService, IRootScopeService, ITimeoutService } from "angular";
+import type { ICompileService, IPromise, IRootScopeService, ITimeoutService } from "angular";
 import angular from "angular";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NgbModule } from "../ngb.module";
@@ -26,7 +26,26 @@ describe("ngbTooltip", () => {
     document.body.innerHTML = "";
   });
 
-  it("opens and closes tooltip via controller api", () => {
+  async function settle(promise: IPromise<void>): Promise<void> {
+    let settled = false;
+    let rejected: unknown;
+    promise.then(
+      () => {
+        settled = true;
+      },
+      (error) => {
+        rejected = error;
+      },
+    );
+    for (let index = 0; index < 20; index++) {
+      $rootScope.$digest();
+      await Promise.resolve();
+    }
+    if (rejected) throw rejected;
+    if (!settled) throw new Error("Tooltip opening did not settle");
+  }
+
+  it("opens and closes tooltip via controller api", async () => {
     const scope = $rootScope.$new() as IRootScopeService & {
       shown: () => void;
       hidden: () => void;
@@ -52,10 +71,12 @@ describe("ngbTooltip", () => {
     expect(document.body.querySelector(".tooltip")).toBeNull();
 
     const ctrl = element.controller("ngbTooltip") as {
-      open: () => void;
+      open: () => IPromise<void>;
       close: () => void;
     };
-    ctrl.open();
+    const opening = ctrl.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
     $timeout.flush();
     scope.$digest();
@@ -93,7 +114,7 @@ describe("ngbTooltip", () => {
     element.remove();
   });
 
-  it("renders a TemplateRef with the provided tooltip context", () => {
+  it("renders a TemplateRef with the provided tooltip context", async () => {
     const scope = $rootScope.$new();
     const host = $compile(`
       <div>
@@ -113,8 +134,10 @@ describe("ngbTooltip", () => {
     scope.$digest();
 
     const button = angular.element(host[0].querySelector("button") as Element);
-    const tooltip = button.controller("ngbTooltip") as { open: (context?: { name: string }) => void };
-    tooltip.open({ name: "ngjs-core" });
+    const tooltip = button.controller("ngbTooltip") as { open: (context?: { name: string }) => IPromise<void> };
+    const opening = tooltip.open({ name: "ngjs-core" });
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
     $timeout.flush();
     scope.$digest();
@@ -122,7 +145,7 @@ describe("ngbTooltip", () => {
     expect(document.body.querySelector(".template-tooltip")?.textContent).toContain("Hello ngjs-core");
   });
 
-  it("reopens when hovering again during the closing transition", () => {
+  it("reopens when hovering again during the closing transition", async () => {
     const scope = $rootScope.$new();
     const element = $compile(`
             <button
@@ -140,11 +163,15 @@ describe("ngbTooltip", () => {
     const button = element[0];
 
     button.dispatchEvent(new MouseEvent("mouseenter"));
+    await Promise.resolve();
+    await Promise.resolve();
     scope.$digest();
     $timeout.flush();
 
     button.dispatchEvent(new MouseEvent("mouseleave"));
     button.dispatchEvent(new MouseEvent("mouseenter"));
+    await Promise.resolve();
+    await Promise.resolve();
     scope.$digest();
     $timeout.flush();
     scope.$digest();
@@ -154,7 +181,7 @@ describe("ngbTooltip", () => {
     element.remove();
   });
 
-  it("opens the next tooltip when moving quickly between hosts", () => {
+  it("opens the next tooltip when moving quickly between hosts", async () => {
     const scope = $rootScope.$new();
     const elements = $compile(`
             <div>
@@ -168,11 +195,13 @@ describe("ngbTooltip", () => {
     const [first, second] = Array.from(elements[0].querySelectorAll("button"));
 
     first.dispatchEvent(new MouseEvent("mouseenter"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     scope.$digest();
     $timeout.flush();
 
     first.dispatchEvent(new MouseEvent("mouseleave"));
     second.dispatchEvent(new MouseEvent("mouseenter"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     scope.$digest();
     $timeout.flush();
     scope.$digest();
@@ -185,7 +214,7 @@ describe("ngbTooltip", () => {
     elements.remove();
   });
 
-  it("supports literal attribute values without expression bindings", () => {
+  it("supports literal attribute values without expression bindings", async () => {
     const scope = $rootScope.$new();
     const element = $compile(`
             <button
@@ -201,10 +230,12 @@ describe("ngbTooltip", () => {
     scope.$digest();
 
     const ctrl = element.controller("ngbTooltip") as {
-      open: () => void;
+      open: () => IPromise<void>;
       isOpen: () => boolean;
     };
-    ctrl.open();
+    const opening = ctrl.open();
+    scope.$digest();
+    await settle(opening);
     scope.$digest();
     $timeout.flush();
     scope.$digest();

@@ -17,7 +17,16 @@ import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/u
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options } from "@popperjs/core";
-import type { IAugmentedJQuery, IController, IDirective, INgModelController, IOnChangesObject, IScope } from "angular";
+import type {
+  IAugmentedJQuery,
+  IController,
+  IDirective,
+  INgModelController,
+  IOnChangesObject,
+  IPromise,
+  IQService,
+  IScope,
+} from "angular";
 import angular from "angular";
 import {
   ChangeDetectorRef,
@@ -88,6 +97,7 @@ export class NgbInputDatepicker implements IController {
   private readonly _closed$ = new Subject<void>();
   private readonly _nativeElement: HTMLInputElement;
   private readonly _popupService: PopupService<NgbDatepicker>;
+  private readonly $q: IQService;
   private readonly _positioning: NgbPositioning;
   private _windowRef: ComponentRef<NgbDatepicker> | null = null;
   private _model: NgbDate | null = null;
@@ -123,6 +133,7 @@ export class NgbInputDatepicker implements IController {
     viewContainerRef: ViewContainerRef,
     rtl: NgbRTL,
   ) {
+    this.$q = $injector.get<IQService>("$q");
     this._nativeElement = toNativeElement<HTMLInputElement>($element);
     this._popupService = new PopupService<NgbDatepicker>(
       NgbDatepicker.$name,
@@ -270,13 +281,13 @@ export class NgbInputDatepicker implements IController {
     return this._windowRef !== null;
   }
 
-  open(): void {
-    if (this.isOpen()) return;
+  open(): IPromise<void> {
+    if (this.isOpen()) return this.$q.resolve();
 
-    const { windowRef } = this._popupService.open();
-    this._windowRef = windowRef;
-    const instance = windowRef.instance;
-    if (!instance) throw new Error("Unable to create the datepicker popup component.");
+    return this._popupService.open().then(({ windowRef }) => {
+      this._windowRef = windowRef;
+      const instance = windowRef.instance;
+      if (!instance) return this.$q.reject(new Error("Unable to create the datepicker popup component."));
 
     const $windowElement = angular.element(windowRef.location.nativeElement);
     $windowElement.addClass("dropdown-menu show p-0");
@@ -315,8 +326,9 @@ export class NgbInputDatepicker implements IController {
       });
     });
     this._unwatchPositioning = this.$scope.$watch(() => this._positioning.update());
-    this._setCloseHandlers();
-    this._changeDetector.markForCheck();
+      this._setCloseHandlers();
+      this._changeDetector.markForCheck();
+    });
   }
 
   close(restoreFocus = true): void {

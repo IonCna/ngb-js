@@ -13,6 +13,8 @@ import angular, {
   type IAugmentedJQuery,
   type IController,
   type IDirective,
+  type IPromise,
+  type IQService,
   type IOnChangesObject,
   type IScope,
   type ITimeoutService,
@@ -48,6 +50,7 @@ export class NgbTooltip implements IController {
   private _transitioning = false;
   private _opening = true;
   private readonly popupService: PopupService<NgbTooltipWindow>;
+  private readonly $q: IQService;
   private shown?: () => void;
   private hidden?: () => void;
 
@@ -63,6 +66,7 @@ export class NgbTooltip implements IController {
     private _changeDetector: ChangeDetectorRef,
     private $attrs: IAttributes,
   ) {
+    this.$q = $injector.get<IQService>("$q");
     this.popupService = new PopupService<NgbTooltipWindow>(
       NgbTooltipWindow.$name,
       $injector,
@@ -115,7 +119,7 @@ export class NgbTooltip implements IController {
     }
   }
 
-  public open(context?: any) {
+  public open(context?: any): IPromise<void> {
     if (!this._opening && this._transitioning) {
       this._transitioning = false;
       ngbCompleteTransition(angular.element(this._windowRef!.location.nativeElement));
@@ -123,50 +127,49 @@ export class NgbTooltip implements IController {
 
     if (this._windowRef || this.disableTooltip || !this._ngbTooltip) {
       this._changeDetector.markForCheck();
-      return;
+      return this.$q.resolve();
     }
 
-    const { windowRef, transition$ } = this.popupService.open(
-      this._ngbTooltip,
-      context ?? this.tooltipContext,
-      this.animation,
-    );
-    this._opening = true;
-    this._transitioning = true;
-    this._windowRef = windowRef;
+    return this.popupService
+      .open(this._ngbTooltip, context ?? this.tooltipContext, this.animation)
+      .then(({ windowRef, transition$ }) => {
+        this._opening = true;
+        this._transitioning = true;
+        this._windowRef = windowRef;
 
-    windowRef.setInput("animation", this.animation);
-    windowRef.setInput("tooltipClass", this.tooltipClass);
-    windowRef.setInput("id", this._ngbTooltipWindowId);
-    windowRef.setInput("onMouseEnter", () => this._mouseenterContent$.next());
-    windowRef.setInput("onMouseLeave", () => this._mouseleaveContent$.next());
+        windowRef.setInput("animation", this.animation);
+        windowRef.setInput("tooltipClass", this.tooltipClass);
+        windowRef.setInput("id", this._ngbTooltipWindowId);
+        windowRef.setInput("onMouseEnter", () => this._mouseenterContent$.next());
+        windowRef.setInput("onMouseLeave", () => this._mouseleaveContent$.next());
 
-    toNativeElement(this._getPositionTargetElement()).setAttribute("aria-describedby", this._ngbTooltipWindowId);
+        toNativeElement(this._getPositionTargetElement()).setAttribute("aria-describedby", this._ngbTooltipWindowId);
 
-    this._applyContainer();
-    windowRef.changeDetectorRef.detectChanges();
-    this._changeDetector.markForCheck();
+        this._applyContainer();
+        windowRef.changeDetectorRef.detectChanges();
+        this._changeDetector.markForCheck();
 
-    this._ngZone.runOutsideAngular(() => {
-      this._positioning.createPopper({
-        hostElement: toNativeElement(this._getPositionTargetElement()),
-        targetElement: this._windowRef!.location.nativeElement,
-        placement: this.placement,
-        baseClass: "bs-tooltip",
-        updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
+        this._ngZone.runOutsideAngular(() => {
+          this._positioning.createPopper({
+            hostElement: toNativeElement(this._getPositionTargetElement()),
+            targetElement: this._windowRef!.location.nativeElement,
+            placement: this.placement,
+            baseClass: "bs-tooltip",
+            updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
+          });
+          this.$timeout(() => this._positioning.update(), 0, false);
+          this._watchPositioning();
+        });
+        this._setCloseHandlers();
+
+        transition$.subscribe(() => {
+          if (this._transitioning) {
+            this._transitioning = false;
+            this._positioning.update();
+            this.shown?.();
+          }
+        });
       });
-      Promise.resolve().then(() => this._positioning.update());
-      this._watchPositioning();
-    });
-    this._setCloseHandlers();
-
-    transition$.subscribe(() => {
-      if (this._transitioning) {
-        this._transitioning = false;
-        this._positioning.update();
-        this.shown?.();
-      }
-    });
   }
 
   public close(animation = this.animation): void {
