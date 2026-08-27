@@ -2,22 +2,22 @@ import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
 import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component";
 import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
+import { PopupService } from "@ngb/utils/popup.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
-import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { listenToTriggers } from "@ngb/utils/triggers";
 import type { Options } from "@popperjs/core";
 import angular, {
-  type IAugmentedJQuery,
   type IAttributes,
+  type IAugmentedJQuery,
   type IController,
   type IDirective,
   type IOnChangesObject,
   type IScope,
   type ITimeoutService,
 } from "angular";
-import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef } from "ngjs-core";
+import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef, ViewContainerRef } from "ngjs-core";
 import { Subject } from "rxjs";
 
 let nextId = 0;
@@ -47,24 +47,31 @@ export class NgbTooltip implements IController {
 
   private _transitioning = false;
   private _opening = true;
-  private popupService!: IPopupService<NgbTooltipWindow>;
+  private readonly popupService: PopupService<NgbTooltipWindow>;
   private shown?: () => void;
   private hidden?: () => void;
 
   constructor(
     private _config: NgbTooltipConfig,
     private $element: IAugmentedJQuery,
-    private popupFactory: PopupFactory,
+    $injector: angular.auto.IInjectorService,
+    viewContainerRef: ViewContainerRef,
     private $ngbRTL: NgbRTL,
     private $timeout: ITimeoutService,
     private $scope: IScope,
     private _ngZone: NgZone,
     private _changeDetector: ChangeDetectorRef,
     private $attrs: IAttributes,
-  ) {}
+  ) {
+    this.popupService = new PopupService<NgbTooltipWindow>(
+      NgbTooltipWindow.$name,
+      $injector,
+      viewContainerRef,
+      this._ngZone,
+    );
+  }
 
   $onInit(): void {
-    this.popupService = this.popupFactory.$create<NgbTooltipWindow>(NgbTooltipWindow.$name);
     this._positioning = ngbPositioning(this.$ngbRTL);
     this.animation = this.animation ?? this._config.animation;
     this.autoClose = this.autoClose ?? this._config.autoClose;
@@ -282,7 +289,8 @@ export class NgbTooltip implements IController {
     return [
       NgbTooltipConfig.$name,
       "$element",
-      PopupFactory.$name,
+      "$injector",
+      ViewContainerRef.$name,
       NgbRTL.$name,
       "$timeout",
       "$scope",

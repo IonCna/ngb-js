@@ -12,14 +12,21 @@ import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-c
 import { toNativeElement } from "@ngb/utils";
 import { ngbAutoClose } from "@ngb/utils/autoclose";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
-import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import { PopupService } from "@ngb/utils/popup.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options } from "@popperjs/core";
 import type { IAugmentedJQuery, IController, IDirective, INgModelController, IOnChangesObject, IScope } from "angular";
 import angular from "angular";
-import { ChangeDetectorRef, type ComponentRef, type NgDisabled, NgZone, type TemplateRef } from "ngjs-core";
+import {
+  ChangeDetectorRef,
+  type ComponentRef,
+  type NgDisabled,
+  NgZone,
+  type TemplateRef,
+  ViewContainerRef,
+} from "ngjs-core";
 import { Subject } from "rxjs";
 
 const DATEPICKER_INPUTS = [
@@ -80,7 +87,7 @@ export class NgbInputDatepicker implements IController {
   private ngModelCtrl?: INgModelController;
   private readonly _closed$ = new Subject<void>();
   private readonly _nativeElement: HTMLInputElement;
-  private readonly _popupService: IPopupService<NgbDatepicker>;
+  private readonly _popupService: PopupService<NgbDatepicker>;
   private readonly _positioning: NgbPositioning;
   private _windowRef: ComponentRef<NgbDatepicker> | null = null;
   private _model: NgbDate | null = null;
@@ -112,11 +119,17 @@ export class NgbInputDatepicker implements IController {
     private readonly _config: NgbInputDatepickerConfig,
     private readonly _ngZone: NgZone,
     private readonly _changeDetector: ChangeDetectorRef,
-    popupFactory: PopupFactory,
+    $injector: angular.auto.IInjectorService,
+    viewContainerRef: ViewContainerRef,
     rtl: NgbRTL,
   ) {
     this._nativeElement = toNativeElement<HTMLInputElement>($element);
-    this._popupService = popupFactory.$create<NgbDatepicker>(NgbDatepicker.$name);
+    this._popupService = new PopupService<NgbDatepicker>(
+      NgbDatepicker.$name,
+      $injector,
+      viewContainerRef,
+      this._ngZone,
+    );
     this._positioning = ngbPositioning(rtl);
   }
 
@@ -425,7 +438,8 @@ export class NgbInputDatepicker implements IController {
       NgbInputDatepickerConfig.$name,
       NgZone.$name,
       ChangeDetectorRef.$name,
-      PopupFactory.$name,
+      "$injector",
+      ViewContainerRef.$name,
       NgbRTL.$name,
     ];
   }

@@ -2,7 +2,7 @@ import { NgbPopoverConfig } from "@ngb/popover/ngb-popover-config.service";
 import { NgbPopoverWindow } from "@ngb/popover/ngb-popover-window";
 import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose } from "@ngb/utils/autoclose";
-import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import { PopupService } from "@ngb/utils/popup.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
@@ -10,7 +10,7 @@ import { listenToTriggers } from "@ngb/utils/triggers";
 import type { Options } from "@popperjs/core";
 import type { IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope, ITimeoutService } from "angular";
 import angular from "angular";
-import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef } from "ngjs-core";
+import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef, ViewContainerRef } from "ngjs-core";
 import { Subject } from "rxjs";
 
 let nextId = 0;
@@ -38,7 +38,7 @@ export class NgbPopover implements IController {
 
   private _nativeElement: HTMLElement;
   private _ngbPopoverWindowId = `ngb-popover-${nextId++}`;
-  private _popupService!: IPopupService<NgbPopoverWindow>;
+  private readonly _popupService: PopupService<NgbPopoverWindow>;
   private _windowRef: ComponentRef<NgbPopoverWindow> | null = null;
   private _unregisterListenersFn?: () => void;
   private _positioning!: NgbPositioning;
@@ -54,7 +54,8 @@ export class NgbPopover implements IController {
   constructor(
     private readonly _config: NgbPopoverConfig,
     private readonly $element: IAugmentedJQuery,
-    private readonly _popupFactory: PopupFactory,
+    $injector: angular.auto.IInjectorService,
+    viewContainerRef: ViewContainerRef,
     private readonly _rtl: NgbRTL,
     private readonly $timeout: ITimeoutService,
     private readonly $scope: IScope,
@@ -62,6 +63,12 @@ export class NgbPopover implements IController {
     private readonly _changeDetector: ChangeDetectorRef,
   ) {
     this._nativeElement = toNativeElement(this.$element);
+    this._popupService = new PopupService<NgbPopoverWindow>(
+      NgbPopoverWindow.$name,
+      $injector,
+      viewContainerRef,
+      this._ngZone,
+    );
   }
 
   public open(context?: any): void {
@@ -165,7 +172,6 @@ export class NgbPopover implements IController {
   }
 
   $onInit(): void {
-    this._popupService = this._popupFactory.$create<NgbPopoverWindow>(NgbPopoverWindow.$name);
     this._positioning = ngbPositioning(this._rtl);
 
     this.animation = this.animation ?? this._config.animation;
@@ -226,7 +232,8 @@ export class NgbPopover implements IController {
     return [
       NgbPopoverConfig.$name,
       "$element",
-      PopupFactory.$name,
+      "$injector",
+      ViewContainerRef.$name,
       NgbRTL.$name,
       "$timeout",
       "$scope",

@@ -5,13 +5,14 @@ import { NgbTypeaheadWindow } from "@ngb/typeahead/ngb-typeahead-window";
 import { toString as ngbToString, toNativeElement } from "@ngb/utils";
 import { LiveService } from "@ngb/utils/accessibility/live.service";
 import { ngbAutoClose } from "@ngb/utils/autoclose";
-import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import { PopupService } from "@ngb/utils/popup.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options } from "@popperjs/core";
+import type angular from "angular";
 import type { IAugmentedJQuery, IController, IDirective, INgModelController, IOnChangesObject, IScope } from "angular";
-import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef } from "ngjs-core";
+import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef, ViewContainerRef } from "ngjs-core";
 import {
   BehaviorSubject,
   fromEvent,
@@ -51,7 +52,7 @@ export class NgbTypeahead implements IController {
   private _onTouched = () => {};
   private _onChange = (_value: any) => {};
   private _positioning!: NgbPositioning;
-  private _popupService!: IPopupService<NgbTypeaheadWindow>;
+  private readonly _popupService: PopupService<NgbTypeaheadWindow>;
   private _valueChanges$!: Observable<string>;
   private _resubscribeTypeahead$ = new BehaviorSubject<null>(null);
   private _closed$ = new Subject<void>();
@@ -68,14 +69,20 @@ export class NgbTypeahead implements IController {
     private readonly _live: LiveService,
     private readonly _ngZone: NgZone,
     private readonly _changeDetector: ChangeDetectorRef,
-    private readonly _popupFactory: PopupFactory,
+    $injector: angular.auto.IInjectorService,
+    viewContainerRef: ViewContainerRef,
     private readonly _rtl: NgbRTL,
-  ) {}
+  ) {
+    this._popupService = new PopupService<NgbTypeaheadWindow>(
+      NgbTypeaheadWindow.$name,
+      $injector,
+      viewContainerRef,
+      this._ngZone,
+    );
+  }
 
   $onInit(): void {
     this._positioning = ngbPositioning(this._rtl);
-    this._popupService = this._popupFactory.$create<NgbTypeaheadWindow>(NgbTypeaheadWindow.$name);
-
     this.autocomplete = this.autocomplete ?? "off";
     this.container = this.container ?? this._config.container;
     this.editable = this.editable ?? this._config.editable;
@@ -408,7 +415,8 @@ export class NgbTypeahead implements IController {
       LiveService.$name,
       NgZone.$name,
       ChangeDetectorRef.$name,
-      PopupFactory.$name,
+      "$injector",
+      ViewContainerRef.$name,
       NgbRTL.$name,
     ];
   }

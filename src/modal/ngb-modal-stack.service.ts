@@ -6,8 +6,8 @@ import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
 import angular, { type IAugmentedJQuery, type IDeferred, type IPromise, type IQService } from "angular";
+import { ApplicationRef, type ComponentRef, NgZone, TemplateRef } from "ngjs-core";
 import { Subject, take } from "rxjs";
-import { type ComponentRef, NgZone, TemplateRef, type ViewContainerRef } from "ngjs-core";
 
 export class NgbModalStack {
   private _scrollBarRestoreFn: null | (() => void) = null;
@@ -21,7 +21,7 @@ export class NgbModalStack {
   constructor(
     private ngbScrollbar: NgbScrollbar,
     private _ngZone: NgZone,
-    private _viewContainerRef: ViewContainerRef,
+    private _applicationRef: ApplicationRef,
     private $q: IQService,
   ) {
     this._activeInstances = this.$q.defer();
@@ -152,7 +152,7 @@ export class NgbModalStack {
   }
 
   private _attachBackdrop(container: IAugmentedJQuery): IPromise<ComponentRef<NgbModalBackdrop>> {
-    const ref = this._viewContainerRef.createComponent<NgbModalBackdrop>(NgbModalBackdrop.$name);
+    const ref = this._createRootComponent<NgbModalBackdrop>(NgbModalBackdrop.$name);
     container.append(angular.element(ref.location.nativeElement));
     return this.$q.resolve(ref);
   }
@@ -161,7 +161,7 @@ export class NgbModalStack {
     container: IAugmentedJQuery,
     contentRef: ContentRef,
   ): IPromise<ComponentRef<NgbModalWindow>> {
-    const ref = this._viewContainerRef.createComponent<NgbModalWindow>(NgbModalWindow.$name, {
+    const ref = this._createRootComponent<NgbModalWindow>(NgbModalWindow.$name, {
       projectableNodes: contentRef.nodes,
     });
     container.append(angular.element(ref.location.nativeElement));
@@ -181,7 +181,7 @@ export class NgbModalStack {
       return deferred.promise;
     }
 
-    const componentRef = this._viewContainerRef.createComponent<T>(content, {
+    const componentRef = this._createRootComponent<T>(content, {
       bindings: {
         ...options.bindings,
         ngbActiveModal: activeModal,
@@ -198,6 +198,27 @@ export class NgbModalStack {
     deferred.resolve(new ContentRef<T>(nodes, undefined, componentRef));
 
     return deferred.promise;
+  }
+
+  private _createRootComponent<C>(
+    component: string,
+    options?: { projectableNodes?: Node[][]; bindings?: Record<string, unknown> },
+  ): ComponentRef<C> {
+    const componentRef = createComponent<C>(component, {
+      environmentInjector: this._applicationRef.injector,
+      ...options,
+    });
+
+    try {
+      this._applicationRef.attachView(componentRef.hostView);
+      componentRef.changeDetectorRef.markForCheck();
+    } catch (error) {
+      componentRef.destroy();
+      throw error;
+    }
+
+    componentRef.onDestroy(() => this._applicationRef.detachView(componentRef.hostView));
+    return componentRef;
   }
 
   private _setAriaHidden(node: HTMLElement) {
@@ -249,6 +270,6 @@ export class NgbModalStack {
   }
 
   static get $inject() {
-    return [NgbScrollbar.$name, NgZone.$name, "ViewContainerRef", "$q"];
+    return [NgbScrollbar.$name, NgZone.$name, ApplicationRef.$name, "$q"];
   }
 }

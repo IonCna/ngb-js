@@ -1,5 +1,5 @@
 import angular from "angular";
-import { type ComponentRef, NgZone, TemplateRef, type ViewContainerRef, type ViewRef } from "ngjs-core";
+import { type ComponentRef, type NgZone, TemplateRef, type ViewContainerRef, type ViewRef } from "ngjs-core";
 import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
 import { type NgbTransitionStartFn, ngbRunTransition } from ".";
 
@@ -11,32 +11,19 @@ export class ContentRef<T = any> {
   ) {}
 }
 
-export interface IPopupService<T = any> {
-  open(
-    content?: string | TemplateRef<any>,
-    context?: any,
-    animation?: boolean,
-  ): {
-    windowRef: ComponentRef<T>;
-    transition$: Observable<void>;
-  };
-
-  close(animation?: boolean): Observable<void>;
-}
-
 const popupTransition: NgbTransitionStartFn = (element) => {
   element.removeClass("show");
 };
 
-export class PopupService<T> implements IPopupService<T> {
+export class PopupService<T> {
   private _windowRef: ComponentRef<T> | null = null;
   private _contentRef: ContentRef | null = null;
 
   constructor(
+    private _componentType: string,
     private _injector: angular.auto.IInjectorService,
     private _viewContainerRef: ViewContainerRef,
     private _ngZone: NgZone,
-    private _componentType: string,
   ) {}
 
   open(content?: string | TemplateRef<any>, context?: any, animation = false) {
@@ -44,8 +31,11 @@ export class PopupService<T> implements IPopupService<T> {
       this._contentRef = this._getContentRef(content, context);
       this._windowRef = this._viewContainerRef.createComponent<T>(this._componentType, {
         injector: this._injector,
-        projectableNodes: this._contentRef.nodes,
       });
+
+      const nativeElement = this._windowRef.location.nativeElement;
+      const contentHost = nativeElement.querySelector?.("[ngb-popup-content]") ?? nativeElement;
+      contentHost.append(...this._contentRef.nodes.flat());
     }
 
     const nativeElement = this._windowRef.location.nativeElement;
@@ -106,25 +96,5 @@ export class PopupService<T> implements IPopupService<T> {
     }
 
     return new ContentRef([[document.createTextNode(`${content}`)]]);
-  }
-}
-
-export class PopupFactory {
-  constructor(
-    private _injector: angular.auto.IInjectorService,
-    private _viewContainerRef: ViewContainerRef,
-    private _ngZone: NgZone,
-  ) {}
-
-  $create<T = any>(_componentType: string) {
-    return new PopupService<T>(this._injector, this._viewContainerRef, this._ngZone, _componentType);
-  }
-
-  static get $inject() {
-    return ["$injector", "ViewContainerRef", NgZone.$name];
-  }
-
-  static get $name() {
-    return "ngb.popup.factory";
   }
 }
