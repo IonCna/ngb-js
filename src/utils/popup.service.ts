@@ -1,43 +1,14 @@
-import type {
-  IAugmentedJQuery,
-  ICompileService,
-  IOnChangesObject,
-  IRootScopeService,
-  IScope,
-} from "angular";
 import angular from "angular";
-import { type EmbeddedViewRef, NgZone, TemplateRef } from "ngjs-core";
+import { type ComponentRef, NgZone, TemplateRef, type ViewContainerRef, type ViewRef } from "ngjs-core";
 import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
-import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition } from ".";
+import { type NgbTransitionStartFn, ngbRunTransition } from ".";
 
 export class ContentRef<T = any> {
   constructor(
-    public componentInstance?: T,
-    private embeddedViewRef?: EmbeddedViewRef<any>,
+    public nodes: Node[][],
+    public viewRef?: ViewRef,
+    public componentRef?: ComponentRef<T>,
   ) {}
-
-  public setInput(key: string, value?: unknown) {
-    if (!this.componentInstance) {
-      throw new Error("can not set on componentInstance because is undefined");
-    }
-
-    const instance = this.componentInstance as any;
-    const previousValue = instance[key];
-    instance[key] = value;
-    instance.$onChanges?.({
-      [key]: {
-        currentValue: value,
-        previousValue,
-        isFirstChange: () => previousValue === undefined,
-      },
-    } satisfies IOnChangesObject);
-    this.$scope?.$evalAsync();
-  }
-
-  public destroy(): void {
-    this.embeddedViewRef?.destroy();
-    this.embeddedViewRef = undefined;
-  }
 }
 
 export interface IPopupService<T = any> {
@@ -46,7 +17,7 @@ export interface IPopupService<T = any> {
     context?: any,
     animation?: boolean,
   ): {
-    windowRef: ContentRef<T>;
+    windowRef: ComponentRef<T>;
     transition$: Observable<void>;
   };
 
@@ -57,35 +28,28 @@ const popupTransition: NgbTransitionStartFn = (element) => {
   element.removeClass("show");
 };
 
-class PopupService<T> implements IPopupService<T> {
-  private _windowRef: ContentRef<T> | null = null;
-  private _contentRef: ContentRef<T> | null = null;
+export class PopupService<T> implements IPopupService<T> {
+  private _windowRef: ComponentRef<T> | null = null;
+  private _contentRef: ContentRef | null = null;
 
   constructor(
-    private $compile: ICompileService,
+    private _injector: angular.auto.IInjectorService,
+    private _viewContainerRef: ViewContainerRef,
     private _ngZone: NgZone,
-    private $rootScope: IRootScopeService,
     private _componentType: string,
   ) {}
 
   open(content?: string | TemplateRef<any>, context?: any, animation = false) {
     if (!this._windowRef) {
       this._contentRef = this._getContentRef(content, context);
-      const component = camelToKebabCase(this._componentType);
-
-      const scope = this.$rootScope.$new();
-      const host = angular.element(`<${component}></${component}>`);
-
-      const linkFn = this.$compile(host);
-      const compiled = linkFn(scope);
-      const instance = compiled.controller(this._componentType);
-      const contentHost = compiled[0].querySelector?.("[ngb-popup-content]");
-      angular.element(contentHost ?? compiled).append(this._contentRef.$element);
-
-      this._windowRef = new ContentRef<T>(compiled, scope, instance);
+      this._windowRef = this._viewContainerRef.createComponent<T>(this._componentType, {
+        injector: this._injector,
+        projectableNodes: this._contentRef.nodes,
+      });
     }
 
-    const { $element } = this._windowRef!;
+    const nativeElement = this._windowRef.location.nativeElement;
+    const $element = angular.element(nativeElement);
 
     const nextRenderSubject = new Subject<void>();
 
@@ -112,8 +76,7 @@ class PopupService<T> implements IPopupService<T> {
       ),
     );
 
-    const ref = this._windowRef!;
-    return { windowRef: ref, transition$ };
+    return { windowRef: this._windowRef, transition$ };
   }
 
   close(animation = false): Observable<void> {
@@ -121,49 +84,44 @@ class PopupService<T> implements IPopupService<T> {
       return of(undefined);
     }
 
-    return ngbRunTransition(this._ngZone, this._windowRef.$element, popupTransition, {
+    return ngbRunTransition(this._ngZone, angular.element(this._windowRef.location.nativeElement), popupTransition, {
       animation,
       runningTransition: "stop",
     }).pipe(
       tap(() => {
-        this._contentRef?.destroy();
+        this._windowRef?.destroy();
+        this._contentRef?.viewRef?.destroy();
         this._contentRef = null;
-
-        this._windowRef?.destroy()
         this._windowRef = null;
       }),
     );
   }
 
-  private _getContentRef(content?: string | TemplateRef<any>, context?: any) {
-    if (!content) return new ContentRef(angular.element([]));
+  private _getContentRef(content?: string | TemplateRef<any>, context?: any): ContentRef {
+    if (!content) return new ContentRef([]);
 
     if (content instanceof TemplateRef) {
       const viewRef = content.createEmbeddedView(context ?? {});
-      return new ContentRef(angular.element(viewRef.rootNodes as any), undefined, undefined, viewRef);
+      return new ContentRef([viewRef.rootNodes], viewRef);
     }
 
-    const node = document.createTextNode(`${content}`);
-
-    //@ts-expect-error
-    const $text = angular.element(node);
-    return new ContentRef($text);
+    return new ContentRef([[document.createTextNode(`${content}`)]]);
   }
 }
 
 export class PopupFactory {
   constructor(
-    private $compile: ICompileService,
+    private _injector: angular.auto.IInjectorService,
+    private _viewContainerRef: ViewContainerRef,
     private _ngZone: NgZone,
-    private $rootScope: IRootScopeService,
   ) {}
 
   $create<T = any>(_componentType: string) {
-    return new PopupService<T>(this.$compile, this._ngZone, this.$rootScope, _componentType);
+    return new PopupService<T>(this._injector, this._viewContainerRef, this._ngZone, _componentType);
   }
 
   static get $inject() {
-    return ["$compile", NgZone.$name, "$rootScope"];
+    return ["$injector", "ViewContainerRef", NgZone.$name];
   }
 
   static get $name() {

@@ -4,6 +4,7 @@ import type { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
 import type { ContentRef } from "@ngb/utils/popup.service";
 import type { IPromise, IQService } from "angular";
 import angular from "angular";
+import type { ComponentRef } from "ngjs-core";
 import { of, Subject, takeUntil, zip } from "rxjs";
 
 export class NgbActiveModal {
@@ -24,9 +25,9 @@ export class NgbModalRef<T = any> {
 
   constructor(
     private readonly $q: IQService,
-    private windowRef: ContentRef<NgbModalWindow>,
+    private windowRef: ComponentRef<NgbModalWindow>,
     private contentRef: ContentRef<T>,
-    private backdropRef?: ContentRef<NgbModalBackdrop>,
+    private backdropRef?: ComponentRef<NgbModalBackdrop>,
     private readonly _beforeDismiss?: () => boolean | Promise<boolean>,
   ) {
     const deferred = this.$q.defer();
@@ -37,15 +38,15 @@ export class NgbModalRef<T = any> {
 
     deferred.promise.then(angular.noop, angular.noop);
 
-    windowRef.componentInstance?.onDismiss((reason: any) => {
+    windowRef.instance?.onDismiss((reason: any) => {
       this.dismiss(reason);
     });
   }
 
   update(options: NgbModalUpdatableOptions): void {
-    this.windowRef.componentInstance?.updateOptions(options);
-    if (this.backdropRef?.componentInstance) {
-      this.backdropRef.componentInstance.updateOptions(options);
+    this.windowRef.instance?.updateOptions(options);
+    if (this.backdropRef?.instance) {
+      this.backdropRef.instance.updateOptions(options);
     }
   }
 
@@ -89,29 +90,30 @@ export class NgbModalRef<T = any> {
   }
 
   get shown() {
-    return this.windowRef.componentInstance?.shown.asObservable();
+    return this.windowRef.instance?.shown.asObservable();
   }
 
   get componentInstance() {
-    return this.contentRef.componentInstance;
+    return this.contentRef.componentRef?.instance;
   }
 
   private _removeModalElements() {
-    const windowTransition = this.windowRef.componentInstance?.hide();
-    const backdropTransition = this.backdropRef?.componentInstance?.hide() ?? of(undefined);
+    const windowTransition = this.windowRef.instance?.hide();
+    const backdropTransition = this.backdropRef?.instance?.hide() ?? of(undefined);
 
     windowTransition?.subscribe(() => {
-      this.windowRef.$element.remove();
+      angular.element(this.windowRef.location.nativeElement).remove();
       this.windowRef.destroy();
 
-      this.contentRef.destroy();
+      this.contentRef.componentRef?.destroy();
+      this.contentRef.viewRef?.destroy();
       this.windowRef = <any>null;
       this.contentRef = <any>null;
     });
 
     backdropTransition.subscribe(() => {
       if (!this.backdropRef) return;
-      this.backdropRef.$element.remove();
+      angular.element(this.backdropRef.location.nativeElement).remove();
       this.backdropRef.destroy();
       this.backdropRef = <any>null;
     });

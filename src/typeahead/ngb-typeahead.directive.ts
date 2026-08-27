@@ -5,13 +5,13 @@ import { NgbTypeaheadWindow } from "@ngb/typeahead/ngb-typeahead-window";
 import { toString as ngbToString, toNativeElement } from "@ngb/utils";
 import { LiveService } from "@ngb/utils/accessibility/live.service";
 import { ngbAutoClose } from "@ngb/utils/autoclose";
-import { type ContentRef, type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options } from "@popperjs/core";
 import type { IAugmentedJQuery, IController, IDirective, INgModelController, IOnChangesObject, IScope } from "angular";
-import { ChangeDetectorRef, NgZone, type TemplateRef } from "ngjs-core";
+import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef } from "ngjs-core";
 import {
   BehaviorSubject,
   fromEvent,
@@ -58,7 +58,7 @@ export class NgbTypeahead implements IController {
   private _inputValueBackup: string | null = null;
   private _inputValueForSelectOnExact: string | null = null;
   private _subscription: Subscription | null = null;
-  private _windowRef: ContentRef<NgbTypeaheadWindow> | null = null;
+  private _windowRef: ComponentRef<NgbTypeaheadWindow> | null = null;
   private _unwatchPositioning?: () => void;
 
   constructor(
@@ -173,7 +173,7 @@ export class NgbTypeahead implements IController {
       return;
     }
 
-    const windowInstance = this._windowRef?.componentInstance;
+    const windowInstance = this._windowRef?.instance;
     if (!windowInstance) {
       return;
     }
@@ -222,7 +222,7 @@ export class NgbTypeahead implements IController {
       this._renderHostState();
     });
 
-    const popupElement = toNativeElement(windowRef.$element);
+    const popupElement = windowRef.location.nativeElement;
     if (this.container === "body") {
       popupElement.style.zIndex = "1055";
       document.body.appendChild(popupElement);
@@ -293,7 +293,7 @@ export class NgbTypeahead implements IController {
   }
 
   private _showHint(): void {
-    const windowInstance = this._windowRef?.componentInstance;
+    const windowInstance = this._windowRef?.instance;
     if (this.showHint && windowInstance?.hasActive() && this._inputValueBackup != null) {
       const userInputLowerCase = this._inputValueBackup.toLowerCase();
       const formattedValue = this._formatItemForInput(windowInstance.getActive());
@@ -351,8 +351,8 @@ export class NgbTypeahead implements IController {
           if (this.resultTemplate) {
             windowRef.setInput("resultTemplate", this.resultTemplate);
           }
-          windowRef.componentInstance?.resetActive();
-          windowRef.$scope?.$digest();
+          windowRef.instance?.resetActive();
+          windowRef.changeDetectorRef.detectChanges();
           this._showHint();
         }
 

@@ -3,28 +3,16 @@ import type { NgbOffcanvasOptions } from "@ngb/offcanvas/ngb-offcanvas-config.se
 import { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanvas-ref";
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
-import { camelToKebabCase, toNativeElement } from "@ngb/utils";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
-import angular, {
-  type IAugmentedJQuery,
-  type ICompileService,
-  type IPromise,
-  type IQService,
-  type IRootScopeService,
-} from "angular";
+import angular, { type IAugmentedJQuery, type IPromise, type IQService } from "angular";
 import { finalize, Subject } from "rxjs";
-import { NgZone, TemplateRef } from "ngjs-core";
-
-type OffcanvasContentScope = angular.IScope & {
-  activeOffcanvas: NgbActiveOffcanvas;
-  [key: string]: any;
-};
+import { type ComponentRef, NgZone, TemplateRef, type ViewContainerRef } from "ngjs-core";
 
 export class NgbOffcanvasStack {
   private _scrollBarRestoreFn: null | (() => void) = null;
   private _offcanvasRef?: NgbOffcanvasRef;
-  private _panelRef?: ContentRef<NgbOffcanvasPanel>;
+  private _panelRef?: ComponentRef<NgbOffcanvasPanel>;
 
   private _activePanelCmptHasChanged = new Subject<void>();
   private _activeInstance = new Subject<NgbOffcanvasRef | undefined>();
@@ -32,13 +20,12 @@ export class NgbOffcanvasStack {
   constructor(
     private ngbScrollbar: NgbScrollbar,
     private _ngZone: NgZone,
-    private $compile: ICompileService,
-    private $rootScope: IRootScopeService,
+    private _viewContainerRef: ViewContainerRef,
     private $q: IQService,
   ) {
     this._activePanelCmptHasChanged.subscribe(() => {
       if (this._panelRef) {
-        ngbFocusTrap(this._ngZone, toNativeElement(this._panelRef.$element), this._activePanelCmptHasChanged);
+        ngbFocusTrap(this._ngZone, this._panelRef.location.nativeElement, this._activePanelCmptHasChanged);
       }
     });
   }
@@ -61,7 +48,7 @@ export class NgbOffcanvasStack {
     const backdropRef = options.backdrop !== false ? this._attachBackdrop(container) : undefined;
 
     await this.$q.all([backdropRef, contentRef]).then(([backdropRef, contentRef]) => {
-      const panelRef = this._attachPanelComponent(container, contentRef.$element);
+      const panelRef = this._attachPanelComponent(container, contentRef);
 
       return panelRef.then((panelRef) => {
         const ngbOffcanvasRef = new NgbOffcanvasRef(this.$q, panelRef, contentRef, backdropRef, options.beforeDismiss);
@@ -74,12 +61,12 @@ export class NgbOffcanvasStack {
           ngbOffcanvasRef.dismiss(reason);
         };
 
-        if (panelRef.componentInstance) {
-          this._applyPanelOptions(panelRef.componentInstance, options);
+        if (panelRef.instance) {
+          this._applyPanelOptions(panelRef.instance, options);
         }
 
-        if (backdropRef?.componentInstance) {
-          this._applyBackdropOptions(backdropRef.componentInstance, options);
+        if (backdropRef?.instance) {
+          this._applyBackdropOptions(backdropRef.instance, options);
         }
 
         this._registerOffcanvasRef(ngbOffcanvasRef);
@@ -132,51 +119,21 @@ export class NgbOffcanvasStack {
     return container ?? angular.element(document.body);
   }
 
-  private _attachBackdrop(container: IAugmentedJQuery): IPromise<ContentRef<NgbOffcanvasBackdrop>> {
-    const deferred = this.$q.defer<ContentRef<NgbOffcanvasBackdrop>>();
-    const scope = this.$rootScope.$new(true);
-    const linkFn = this.$compile("<ngb-offcanvas-backdrop></ngb-offcanvas-backdrop>");
-
-    const compiled = linkFn(scope);
-    container.append(compiled);
-
-    const watcher = this.$rootScope.$watch(
-      () => compiled.controller(NgbOffcanvasBackdrop.$name),
-      (instance) => {
-        watcher();
-
-        const ref = new ContentRef(compiled, scope, instance);
-        deferred.resolve(ref);
-      },
-    );
-
-    return deferred.promise;
+  private _attachBackdrop(container: IAugmentedJQuery): IPromise<ComponentRef<NgbOffcanvasBackdrop>> {
+    const ref = this._viewContainerRef.createComponent<NgbOffcanvasBackdrop>(NgbOffcanvasBackdrop.$name);
+    container.append(angular.element(ref.location.nativeElement));
+    return this.$q.resolve(ref);
   }
 
   private _attachPanelComponent(
     container: IAugmentedJQuery,
-    content: IAugmentedJQuery,
-  ): IPromise<ContentRef<NgbOffcanvasPanel>> {
-    const deferred = this.$q.defer<ContentRef<NgbOffcanvasPanel>>();
-    const scope = this.$rootScope.$new(true);
-    const linkFn = this.$compile("<ngb-offcanvas-panel></ngb-offcanvas-panel>");
-
-    const compiled = linkFn(scope);
-    compiled.append(content);
-
-    container.append(compiled);
-
-    const watcher = this.$rootScope.$watch(
-      () => compiled.controller(NgbOffcanvasPanel.$name),
-      (instance) => {
-        watcher();
-
-        const ref = new ContentRef(compiled, scope, instance);
-        deferred.resolve(ref);
-      },
-    );
-
-    return deferred.promise;
+    contentRef: ContentRef,
+  ): IPromise<ComponentRef<NgbOffcanvasPanel>> {
+    const ref = this._viewContainerRef.createComponent<NgbOffcanvasPanel>(NgbOffcanvasPanel.$name, {
+      projectableNodes: contentRef.nodes,
+    });
+    container.append(angular.element(ref.location.nativeElement));
+    return this.$q.resolve(ref);
   }
 
   private _applyPanelOptions(panelInstance: NgbOffcanvasPanel, options: NgbOffcanvasOptions): void {
@@ -197,40 +154,19 @@ export class NgbOffcanvasStack {
         close: (result?: any) => activeOffcanvas.close(result),
         dismiss: (reason?: any) => activeOffcanvas.dismiss(reason),
       });
-      deferred.resolve(new ContentRef<T>(angular.element(viewRef.rootNodes as any), undefined, undefined, viewRef));
+      deferred.resolve(new ContentRef<T>([viewRef.rootNodes], viewRef));
       return deferred.promise;
     }
 
-    const scope = this.$rootScope.$new(true) as OffcanvasContentScope;
-    const componentName = camelToKebabCase(content);
-    const attrs = this._buildBindingsAttrs(options);
-    
-    const linkFn = this.$compile(
-      `<${componentName} ${attrs} ngb-active-offcanvas="activeOffcanvas"></${componentName}>`,
-    );
-
-    scope.activeOffcanvas = activeOffcanvas;
-    angular.extend(scope, options.bindings);
-
-    const compiled = linkFn(scope);
-
-    const watcher = this.$rootScope.$watch(
-      () => compiled.controller(content),
-      (instance) => {
-        watcher();
-
-        const ref = new ContentRef(compiled, scope, instance);
-        deferred.resolve(ref);
+    const componentRef = this._viewContainerRef.createComponent<T>(content, {
+      bindings: {
+        ...options.bindings,
+        ngbActiveOffcanvas: activeOffcanvas,
       },
-    );
+    });
+    deferred.resolve(new ContentRef<T>([[componentRef.location.nativeElement]], undefined, componentRef));
 
     return deferred.promise;
-  }
-
-  private _buildBindingsAttrs(options: NgbOffcanvasOptions) {
-    return Object.entries(options.bindings || {})
-      .map(([key, value]) => `${camelToKebabCase(key)}="${value}"`)
-      .join(" ");
   }
 
   private _registerOffcanvasRef(ngbOffcanvasRef: NgbOffcanvasRef) {
@@ -244,11 +180,11 @@ export class NgbOffcanvasStack {
     ngbOffcanvasRef.result?.then(unregisterOffcanvasRef, unregisterOffcanvasRef);
   }
 
-  private _registerPanelRef(panelRef: ContentRef<NgbOffcanvasPanel>) {
+  private _registerPanelRef(panelRef: ComponentRef<NgbOffcanvasPanel>) {
     this._panelRef = panelRef;
     this._activePanelCmptHasChanged.next();
 
-    panelRef.$scope?.$on("$destroy", () => {
+    panelRef.onDestroy(() => {
       this._panelRef = undefined;
       this._activePanelCmptHasChanged.next();
     });
@@ -259,6 +195,6 @@ export class NgbOffcanvasStack {
   }
 
   static get $inject() {
-    return [NgbScrollbar.$name, NgZone.$name, "$compile", "$rootScope", "$q"];
+    return [NgbScrollbar.$name, NgZone.$name, "ViewContainerRef", "$q"];
   }
 }

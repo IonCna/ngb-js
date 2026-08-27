@@ -4,7 +4,7 @@ import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
-import { type ContentRef, type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { listenToTriggers } from "@ngb/utils/triggers";
 import type { Options } from "@popperjs/core";
@@ -17,7 +17,7 @@ import angular, {
   type IScope,
   type ITimeoutService,
 } from "angular";
-import { ChangeDetectorRef, NgZone, type TemplateRef } from "ngjs-core";
+import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef } from "ngjs-core";
 import { Subject } from "rxjs";
 
 let nextId = 0;
@@ -39,7 +39,7 @@ export class NgbTooltip implements IController {
 
   private _ngbTooltip?: string | TemplateRef<any>;
   private _ngbTooltipWindowId = `ngb-tooltip-${nextId++}`;
-  private _windowRef: ContentRef<NgbTooltipWindow> | null = null;
+  private _windowRef: ComponentRef<NgbTooltipWindow> | null = null;
   private _positioning!: NgbPositioning;
   private _unlistenTriggers?: () => void;
   private _unwatchPositioning?: () => void;
@@ -95,7 +95,7 @@ export class NgbTooltip implements IController {
     if (this.isOpen() && (changes.placement || changes.popperOptions || changes.positionTarget)) {
       this._positioning.setOptions({
         hostElement: toNativeElement(this._getPositionTargetElement()),
-        targetElement: toNativeElement(this._windowRef!.$element),
+        targetElement: this._windowRef!.location.nativeElement,
         placement: this.placement,
         baseClass: "bs-tooltip",
         updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
@@ -111,7 +111,7 @@ export class NgbTooltip implements IController {
   public open(context?: any) {
     if (!this._opening && this._transitioning) {
       this._transitioning = false;
-      ngbCompleteTransition(this._windowRef!.$element);
+      ngbCompleteTransition(angular.element(this._windowRef!.location.nativeElement));
     }
 
     if (this._windowRef || this.disableTooltip || !this._ngbTooltip) {
@@ -139,7 +139,7 @@ export class NgbTooltip implements IController {
     this._applyContainer();
     this._positioning.createPopper({
       hostElement: toNativeElement(this._getPositionTargetElement()),
-      targetElement: toNativeElement(this._windowRef.$element),
+      targetElement: this._windowRef.location.nativeElement,
       placement: this.placement,
       baseClass: "bs-tooltip",
       updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
@@ -162,7 +162,7 @@ export class NgbTooltip implements IController {
   public close(animation = this.animation): void {
     if (this._opening && this._transitioning) {
       this._transitioning = false;
-      ngbCompleteTransition(this._windowRef!.$element);
+      ngbCompleteTransition(angular.element(this._windowRef!.location.nativeElement));
     }
 
     if (!this._windowRef) return;
@@ -212,7 +212,7 @@ export class NgbTooltip implements IController {
 
   private _applyContainer(): void {
     const container = this._getContainerElement();
-    container.append(this._windowRef!.$element);
+    container.append(angular.element(this._windowRef!.location.nativeElement));
   }
 
   private _getContainerElement(): IAugmentedJQuery {
@@ -256,7 +256,7 @@ export class NgbTooltip implements IController {
           toNativeElement(this.$element).focus();
         }
       },
-      this._windowRef ? [toNativeElement(this._windowRef.$element)] : [],
+      this._windowRef ? [this._windowRef.location.nativeElement] : [],
       [toNativeElement(this.$element)],
     );
   }

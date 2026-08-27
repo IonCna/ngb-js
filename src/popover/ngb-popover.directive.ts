@@ -2,14 +2,15 @@ import { NgbPopoverConfig } from "@ngb/popover/ngb-popover-config.service";
 import { NgbPopoverWindow } from "@ngb/popover/ngb-popover-window";
 import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose } from "@ngb/utils/autoclose";
-import { type ContentRef, type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { listenToTriggers } from "@ngb/utils/triggers";
 import type { Options } from "@popperjs/core";
 import type { IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope, ITimeoutService } from "angular";
-import { ChangeDetectorRef, NgZone, type TemplateRef } from "ngjs-core";
+import angular from "angular";
+import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef } from "ngjs-core";
 import { Subject } from "rxjs";
 
 let nextId = 0;
@@ -38,7 +39,7 @@ export class NgbPopover implements IController {
   private _nativeElement: HTMLElement;
   private _ngbPopoverWindowId = `ngb-popover-${nextId++}`;
   private _popupService!: IPopupService<NgbPopoverWindow>;
-  private _windowRef: ContentRef<NgbPopoverWindow> | null = null;
+  private _windowRef: ComponentRef<NgbPopoverWindow> | null = null;
   private _unregisterListenersFn?: () => void;
   private _positioning!: NgbPositioning;
   private _afterRenderRef?: () => void;
@@ -66,7 +67,7 @@ export class NgbPopover implements IController {
   public open(context?: any): void {
     if (!this._opening && this._transitioning && this._windowRef) {
       this._transitioning = false;
-      ngbCompleteTransition(this._windowRef.$element);
+      ngbCompleteTransition(angular.element(this._windowRef.location.nativeElement));
     }
 
     if (!this._windowRef && !this._isDisabled()) {
@@ -90,14 +91,14 @@ export class NgbPopover implements IController {
 
       this._getPositionTargetElement().setAttribute("aria-describedby", this._ngbPopoverWindowId);
 
-      const popupElement = toNativeElement(windowRef.$element);
+      const popupElement = windowRef.location.nativeElement;
       if (this.container === "body") {
         document.body.appendChild(popupElement);
       } else {
         this._nativeElement.parentNode?.insertBefore(popupElement, this._nativeElement.nextSibling);
       }
 
-      windowRef.$scope?.$evalAsync();
+      windowRef.changeDetectorRef.detectChanges();
       this._changeDetector.markForCheck();
 
       this._ngZone.runOutsideAngular(() => {
@@ -127,7 +128,7 @@ export class NgbPopover implements IController {
   public close(animation = this.animation): void {
     if (this._opening && this._transitioning && this._windowRef) {
       this._transitioning = false;
-      ngbCompleteTransition(this._windowRef.$element);
+      ngbCompleteTransition(angular.element(this._windowRef.location.nativeElement));
     }
 
     const windowRef = this._windowRef;
@@ -136,7 +137,7 @@ export class NgbPopover implements IController {
       this._opening = false;
       this._transitioning = true;
       this._popupService.close(animation).subscribe(() => {
-        windowRef.$element.remove();
+        angular.element(windowRef.location.nativeElement).remove();
         this._windowRef = null;
         this._positioning.destroy();
         this._afterRenderRef?.();

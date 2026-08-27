@@ -1,30 +1,18 @@
-import type { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
+import { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
 import type { NgbModalOptions, NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
-import type { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
+import { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
-import { camelToKebabCase, toNativeElement } from "@ngb/utils";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
-import angular, {
-  type IAugmentedJQuery,
-  type ICompileService,
-  type IDeferred,
-  type IQService,
-  type IRootScopeService,
-} from "angular";
+import angular, { type IAugmentedJQuery, type IDeferred, type IPromise, type IQService } from "angular";
 import { Subject, take } from "rxjs";
-import { NgZone, TemplateRef } from "ngjs-core";
-
-type ModalContentScope = angular.IScope & {
-  activeModal: NgbActiveModal;
-  [key: string]: any;
-};
+import { type ComponentRef, NgZone, TemplateRef, type ViewContainerRef } from "ngjs-core";
 
 export class NgbModalStack {
   private _scrollBarRestoreFn: null | (() => void) = null;
   private _modalRefs: NgbModalRef[] = [];
-  private _windowRefs: ContentRef<NgbModalWindow>[] = [];
+  private _windowRefs: ComponentRef<NgbModalWindow>[] = [];
   private _ariaHiddenValues: Map<Element, string | null> = new Map();
 
   private _activeWindowCmptHasChanged = new Subject<void>();
@@ -33,8 +21,7 @@ export class NgbModalStack {
   constructor(
     private ngbScrollbar: NgbScrollbar,
     private _ngZone: NgZone,
-    private $compile: ICompileService,
-    private $rootScope: IRootScopeService,
+    private _viewContainerRef: ViewContainerRef,
     private $q: IQService,
   ) {
     this._activeInstances = this.$q.defer();
@@ -46,9 +33,9 @@ export class NgbModalStack {
       }
 
       const activeWindow = this._windowRefs[this._windowRefs.length - 1];
-      ngbFocusTrap(this._ngZone, toNativeElement(activeWindow.$element), this._activeWindowCmptHasChanged);
+      ngbFocusTrap(this._ngZone, activeWindow.location.nativeElement, this._activeWindowCmptHasChanged);
       this._revertAriaHidden();
-      this._setAriaHidden(activeWindow.$element);
+      this._setAriaHidden(activeWindow.location.nativeElement);
     });
   }
 
@@ -68,7 +55,7 @@ export class NgbModalStack {
     const backdropRef = options.backdrop !== false ? this._attachBackdrop(container) : undefined;
 
     await this.$q.all([backdropRef, contentRef]).then(([backdropRef, contentRef]) => {
-      const windowRef = this._attachWindowComponent(container, contentRef.$element);
+      const windowRef = this._attachWindowComponent(container, contentRef);
 
       return windowRef.then((windowRef) => {
         const ngbModalRef = new NgbModalRef<T>(this.$q, windowRef, contentRef, backdropRef, options.beforeDismiss);
@@ -110,11 +97,11 @@ export class NgbModalStack {
     return modal.promise;
   }
 
-  private _registerWindow(ngbWindow: ContentRef<NgbModalWindow>) {
+  private _registerWindow(ngbWindow: ComponentRef<NgbModalWindow>) {
     this._windowRefs.push(ngbWindow);
     this._activeWindowCmptHasChanged.next();
 
-    ngbWindow.$scope?.$on("$destroy", () => {
+    ngbWindow.onDestroy(() => {
       const index = this._windowRefs.indexOf(ngbWindow);
 
       if (index > -1) {
@@ -164,52 +151,21 @@ export class NgbModalStack {
     return container ?? angular.element(document.body);
   }
 
-  private _attachBackdrop(container: IAugmentedJQuery) {
-    const deferred = this.$q.defer<ContentRef<NgbModalBackdrop>>();
-    const scope = this.$rootScope.$new(true);
-    const linkFn = this.$compile("<ngb-modal-backdrop></ngb-modal-backdrop>");
-
-    const compiled = linkFn(scope);
-    container.append(compiled);
-
-    const watcher = this.$rootScope.$watch(
-      () => compiled.controller("ngbModalBackdrop"),
-      (instance) => {
-        watcher();
-
-        const ref = new ContentRef(compiled, scope, instance);
-        deferred.resolve(ref);
-      },
-    );
-
-    return deferred.promise;
+  private _attachBackdrop(container: IAugmentedJQuery): IPromise<ComponentRef<NgbModalBackdrop>> {
+    const ref = this._viewContainerRef.createComponent<NgbModalBackdrop>(NgbModalBackdrop.$name);
+    container.append(angular.element(ref.location.nativeElement));
+    return this.$q.resolve(ref);
   }
 
-  private _attachWindowComponent(container: IAugmentedJQuery, content: IAugmentedJQuery) {
-    const deferred = this.$q.defer<ContentRef<NgbModalWindow>>();
-    const scope = this.$rootScope.$new(true);
-    const linkFn = this.$compile(`<ngb-modal-window></ngb-modal-window>`);
-
-    const compiled = linkFn(scope);
-    const modalContent = toNativeElement(compiled).querySelector(".modal-content");
-
-    if (modalContent) {
-      angular.element(modalContent).append(content);
-    }
-
-    container.append(compiled);
-
-    const watcher = this.$rootScope.$watch(
-      () => compiled.controller("ngbModalWindow"),
-      (instance) => {
-        watcher();
-
-        const ref = new ContentRef(compiled, scope, instance);
-        deferred.resolve(ref);
-      },
-    );
-
-    return deferred.promise;
+  private _attachWindowComponent(
+    container: IAugmentedJQuery,
+    contentRef: ContentRef,
+  ): IPromise<ComponentRef<NgbModalWindow>> {
+    const ref = this._viewContainerRef.createComponent<NgbModalWindow>(NgbModalWindow.$name, {
+      projectableNodes: contentRef.nodes,
+    });
+    container.append(angular.element(ref.location.nativeElement));
+    return this.$q.resolve(ref);
   }
 
   private _getContentRef<T>(content: any, activeModal: NgbActiveModal, options: NgbModalOptions) {
@@ -221,46 +177,30 @@ export class NgbModalStack {
         close: (result?: any) => activeModal.close(result),
         dismiss: (reason?: any) => activeModal.dismiss(reason),
       });
-      const nodes = angular.element(viewRef.rootNodes as any);
-      deferred.resolve(new ContentRef<T>(nodes, undefined, undefined, viewRef));
+      deferred.resolve(new ContentRef<T>([viewRef.rootNodes], viewRef));
       return deferred.promise;
     }
 
-    const scope = this.$rootScope.$new(true) as ModalContentScope;
-    const componentName = camelToKebabCase(content);
-    const attrs = this._buildBindingsAttrs(options);
-    const linkFn = this.$compile(`<${componentName} ${attrs} ngb-active-modal="activeModal"></${componentName}>`);
-
-    scope.activeModal = activeModal;
-    angular.extend(scope, options.bindings);
-
-    const compiled = linkFn(scope);
+    const componentRef = this._viewContainerRef.createComponent<T>(content, {
+      bindings: {
+        ...options.bindings,
+        ngbActiveModal: activeModal,
+      },
+    });
+    const nodes = [[componentRef.location.nativeElement]];
 
     if (options.scrollable) {
-      compiled.addClass("component-host-scrollable d-flex flex-column overflow-hidden");
+      angular
+        .element(componentRef.location.nativeElement)
+        .addClass("component-host-scrollable d-flex flex-column overflow-hidden");
     }
 
-    const watcher = this.$rootScope.$watch(
-      () => compiled.controller(content),
-      (instance) => {
-        watcher();
-
-        const ref = new ContentRef(compiled, scope, instance);
-        deferred.resolve(ref);
-      },
-    );
+    deferred.resolve(new ContentRef<T>(nodes, undefined, componentRef));
 
     return deferred.promise;
   }
 
-  private _buildBindingsAttrs(options: NgbModalOptions) {
-    return Object.keys(options.bindings || {})
-      .map((key) => `${camelToKebabCase(key)}="${key}"`)
-      .join(" ");
-  }
-
-  private _setAriaHidden(element: IAugmentedJQuery) {
-    const node = toNativeElement(element);
+  private _setAriaHidden(node: HTMLElement) {
     const parent = node.parentElement;
     const body = document.body as HTMLBodyElement;
 
@@ -272,7 +212,7 @@ export class NgbModalStack {
         }
       });
 
-      this._setAriaHidden(angular.element(parent));
+      this._setAriaHidden(parent);
     }
   }
 
@@ -309,6 +249,6 @@ export class NgbModalStack {
   }
 
   static get $inject() {
-    return [NgbScrollbar.$name, NgZone.$name, "$compile", "$rootScope", "$q"];
+    return [NgbScrollbar.$name, NgZone.$name, "ViewContainerRef", "$q"];
   }
 }

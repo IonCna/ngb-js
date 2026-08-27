@@ -3,6 +3,7 @@ import type { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.compo
 import type { ContentRef } from "@ngb/utils/popup.service";
 import type { IPromise, IQService } from "angular";
 import angular from "angular";
+import type { ComponentRef } from "ngjs-core";
 import { of, Subject, takeUntil, zip } from "rxjs";
 
 export class NgbActiveOffcanvas {
@@ -22,9 +23,9 @@ export class NgbOffcanvasRef {
 
   constructor(
     private readonly $q: IQService,
-    private panelRef: ContentRef<NgbOffcanvasPanel>,
+    private panelRef: ComponentRef<NgbOffcanvasPanel>,
     private contentRef: ContentRef,
-    private backdropRef?: ContentRef<NgbOffcanvasBackdrop>,
+    private backdropRef?: ComponentRef<NgbOffcanvasBackdrop>,
     private readonly _beforeDismiss?: () => boolean | Promise<boolean>,
   ) {
     const deferred = this.$q.defer();
@@ -35,12 +36,12 @@ export class NgbOffcanvasRef {
 
     deferred.promise.then(angular.noop, angular.noop);
 
-    if (this.panelRef.componentInstance) {
-      this.panelRef.componentInstance.onDismiss = ({ $event }) => this.dismiss($event);
+    if (this.panelRef.instance) {
+      this.panelRef.instance.onDismiss = ({ $event }: { $event: any }) => this.dismiss($event);
     }
 
-    if (this.backdropRef?.componentInstance) {
-      this.backdropRef.componentInstance.onDismiss = ({ $event }) => this.dismiss($event);
+    if (this.backdropRef?.instance) {
+      this.backdropRef.instance.onDismiss = ({ $event }: { $event: any }) => this.dismiss($event);
     }
   }
 
@@ -84,29 +85,30 @@ export class NgbOffcanvasRef {
   }
 
   get shown() {
-    return this.panelRef.componentInstance?.shown.asObservable();
+    return this.panelRef.instance?.shown.asObservable();
   }
 
   get componentInstance() {
-    return this.contentRef.componentInstance;
+    return this.contentRef.componentRef?.instance;
   }
 
   private _removeOffcanvasElements() {
-    const panelTransition = this.panelRef.componentInstance?.hide();
-    const backdropTransition = this.backdropRef?.componentInstance?.hide() ?? of(undefined);
+    const panelTransition = this.panelRef.instance?.hide();
+    const backdropTransition = this.backdropRef?.instance?.hide() ?? of(undefined);
 
     panelTransition?.subscribe(() => {
-      this.panelRef.$element.remove();
+      angular.element(this.panelRef.location.nativeElement).remove();
       this.panelRef.destroy();
 
-      this.contentRef.destroy();
+      this.contentRef.componentRef?.destroy();
+      this.contentRef.viewRef?.destroy();
       this.panelRef = <any>null;
       this.contentRef = <any>null;
     });
 
     backdropTransition.subscribe(() => {
       if (!this.backdropRef) return;
-      this.backdropRef.$element.remove();
+      angular.element(this.backdropRef.location.nativeElement).remove();
       this.backdropRef.destroy();
       this.backdropRef = <any>null;
     });

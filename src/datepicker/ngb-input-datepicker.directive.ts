@@ -12,22 +12,14 @@ import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-c
 import { toNativeElement } from "@ngb/utils";
 import { ngbAutoClose } from "@ngb/utils/autoclose";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
-import { type ContentRef, type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
+import { type IPopupService, PopupFactory } from "@ngb/utils/popup.service";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options } from "@popperjs/core";
-import type {
-  IAugmentedJQuery,
-  ICompileService,
-  IController,
-  IDirective,
-  INgModelController,
-  IOnChangesObject,
-  IRootScopeService,
-  IScope,
-} from "angular";
-import { ChangeDetectorRef, type NgDisabled, NgZone, type TemplateRef } from "ngjs-core";
+import type { IAugmentedJQuery, IController, IDirective, INgModelController, IOnChangesObject, IScope } from "angular";
+import angular from "angular";
+import { ChangeDetectorRef, type ComponentRef, type NgDisabled, NgZone, type TemplateRef } from "ngjs-core";
 import { Subject } from "rxjs";
 
 const DATEPICKER_INPUTS = [
@@ -90,7 +82,7 @@ export class NgbInputDatepicker implements IController {
   private readonly _nativeElement: HTMLInputElement;
   private readonly _popupService: IPopupService<NgbDatepicker>;
   private readonly _positioning: NgbPositioning;
-  private _windowRef: ContentRef<NgbDatepicker> | null = null;
+  private _windowRef: ComponentRef<NgbDatepicker> | null = null;
   private _model: NgbDate | null = null;
   private _inputValue = "";
   private _disabled = false;
@@ -111,7 +103,7 @@ export class NgbInputDatepicker implements IController {
       (value === undefined && !!this._nativeElement?.hasAttribute("disabled")) ||
       !!(value && value !== "false");
     this._nativeElement?.toggleAttribute("disabled", this._disabled);
-    this._windowRef?.componentInstance?.setDisabledState(this._disabled);
+    this._windowRef?.instance?.setDisabledState(this._disabled);
   }
 
   constructor(
@@ -120,12 +112,10 @@ export class NgbInputDatepicker implements IController {
     private readonly _config: NgbInputDatepickerConfig,
     private readonly _ngZone: NgZone,
     private readonly _changeDetector: ChangeDetectorRef,
-    $compile: ICompileService,
-    $rootScope: IRootScopeService,
+    popupFactory: PopupFactory,
     rtl: NgbRTL,
   ) {
     this._nativeElement = toNativeElement<HTMLInputElement>($element);
-    const popupFactory = new PopupFactory($compile, _ngZone, $rootScope);
     this._popupService = popupFactory.$create<NgbDatepicker>(NgbDatepicker.$name);
     this._positioning = ngbPositioning(rtl);
   }
@@ -181,8 +171,9 @@ export class NgbInputDatepicker implements IController {
 
     if (changes.datepickerClass && this._windowRef) {
       const { currentValue, previousValue } = changes.datepickerClass;
-      if (previousValue) this._windowRef.$element.removeClass(previousValue);
-      if (currentValue) this._windowRef.$element.addClass(currentValue);
+      const $windowElement = angular.element(this._windowRef.location.nativeElement);
+      if (previousValue) $windowElement.removeClass(previousValue);
+      if (currentValue) $windowElement.addClass(currentValue);
     }
 
     if (changes.autoClose && this.isOpen()) this._setCloseHandlers();
@@ -191,7 +182,7 @@ export class NgbInputDatepicker implements IController {
       for (const name of DATEPICKER_INPUTS) {
         if (name in changes) this._windowRef.setInput(name, this[name]);
       }
-      if (changes.startDate) this._windowRef.componentInstance?.navigateTo(this.startDate);
+      if (changes.startDate) this._windowRef.instance?.navigateTo(this.startDate);
     }
   }
 
@@ -253,9 +244,12 @@ export class NgbInputDatepicker implements IController {
 
   setDisabledState(disabled: boolean): void {
     this.disabled = disabled;
-    this._windowRef?.$element.toggleClass("disabled", disabled);
+    if (this._windowRef) angular.element(this._windowRef.location.nativeElement).toggleClass("disabled", disabled);
     if (this._windowRef) {
-      this.$scope.$evalAsync(() => this._windowRef?.$element.toggleClass("disabled", this.disabled));
+      this.$scope.$evalAsync(() => {
+        if (this._windowRef)
+          angular.element(this._windowRef.location.nativeElement).toggleClass("disabled", this.disabled);
+      });
     }
   }
 
@@ -268,14 +262,15 @@ export class NgbInputDatepicker implements IController {
 
     const { windowRef } = this._popupService.open();
     this._windowRef = windowRef;
-    const instance = windowRef.componentInstance;
+    const instance = windowRef.instance;
     if (!instance) throw new Error("Unable to create the datepicker popup component.");
 
-    windowRef.$element.addClass("dropdown-menu show p-0");
-    if (this.datepickerClass) windowRef.$element.addClass(this.datepickerClass);
+    const $windowElement = angular.element(windowRef.location.nativeElement);
+    $windowElement.addClass("dropdown-menu show p-0");
+    if (this.datepickerClass) $windowElement.addClass(this.datepickerClass);
     if (this.container === "body") {
-      windowRef.$element.addClass("ngb-dp-body");
-      windowRef.$element.css("z-index", "1055");
+      $windowElement.addClass("ngb-dp-body");
+      $windowElement.css("z-index", "1055");
     }
 
     this._applyDatepickerInputs(windowRef);
@@ -284,10 +279,13 @@ export class NgbInputDatepicker implements IController {
     windowRef.setInput("startDate", this.startDate ?? this._model);
     instance.writeValue(this.dateAdapter?.toModel(this._model));
     instance.setDisabledState(!!this.disabled);
-    windowRef.$element.toggleClass("disabled", !!this.disabled);
-    this.$scope.$evalAsync(() => this._windowRef?.$element.toggleClass("disabled", this.disabled));
+    $windowElement.toggleClass("disabled", !!this.disabled);
+    this.$scope.$evalAsync(() => {
+      if (this._windowRef)
+        angular.element(this._windowRef.location.nativeElement).toggleClass("disabled", this.disabled);
+    });
 
-    const popupElement = toNativeElement(windowRef.$element);
+    const popupElement = windowRef.location.nativeElement;
     if (this.container === "body") document.body.appendChild(popupElement);
     else this._nativeElement.parentNode?.insertBefore(popupElement, this._nativeElement.nextSibling);
 
@@ -331,7 +329,7 @@ export class NgbInputDatepicker implements IController {
   }
 
   navigateTo(date?: { year: number; month: number; day?: number }): void {
-    this._windowRef?.componentInstance?.navigateTo(date);
+    this._windowRef?.instance?.navigateTo(date);
   }
 
   private _parseViewValue(value: unknown): unknown {
@@ -358,7 +356,7 @@ export class NgbInputDatepicker implements IController {
     const value = this.parserFormatter.format(model);
     this._inputValue = value;
     this._nativeElement.value = value;
-    this._windowRef?.componentInstance?.writeValue(this.dateAdapter.toModel(model));
+    this._windowRef?.instance?.writeValue(this.dateAdapter.toModel(model));
   }
 
   private _fromDateStruct(date: NgbDateStruct | null): NgbDate | null {
@@ -366,7 +364,7 @@ export class NgbInputDatepicker implements IController {
     return this.calendar?.isValid(ngbDate) ? ngbDate : null;
   }
 
-  private _applyDatepickerInputs(windowRef: ContentRef<NgbDatepicker>): void {
+  private _applyDatepickerInputs(windowRef: ComponentRef<NgbDatepicker>): void {
     windowRef.setInput("calendar", this.calendar);
     windowRef.setInput("dateAdapter", this.dateAdapter);
     if (this.i18n) windowRef.setInput("i18n", this.i18n);
@@ -387,7 +385,7 @@ export class NgbInputDatepicker implements IController {
 
   private _setCloseHandlers(): void {
     this._closed$.next();
-    const popupElement = this._windowRef ? toNativeElement(this._windowRef.$element) : null;
+    const popupElement = this._windowRef ? this._windowRef.location.nativeElement : null;
     if (!popupElement) return;
     ngbAutoClose(
       this._ngZone,
@@ -427,8 +425,7 @@ export class NgbInputDatepicker implements IController {
       NgbInputDatepickerConfig.$name,
       NgZone.$name,
       ChangeDetectorRef.$name,
-      "$compile",
-      "$rootScope",
+      PopupFactory.$name,
       NgbRTL.$name,
     ];
   }
