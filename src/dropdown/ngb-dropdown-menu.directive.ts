@@ -7,7 +7,7 @@ import { ContentChildren, type QueryList } from "ngjs-core";
 const ALLOWED_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Enter", " ", "Tab"]);
 
 export class NgbDropdownMenu implements IController {
-  public ngbDropdown!: NgbDropdown;
+  public dropdown!: NgbDropdown;
   public nativeElement!: HTMLElement;
 
   @ContentChildren(NgbDropdownItem)
@@ -26,14 +26,14 @@ export class NgbDropdownMenu implements IController {
     this.nativeElement = toNativeElement(this.$element);
 
     this.unwatchOpenState = this.$scope.$watch(
-      () => this.ngbDropdown.isOpen(),
+      () => this.dropdown.isOpen(),
       (isOpen) => this.$element.toggleClass("show", isOpen),
     );
 
     this.keydownListener = (event) => {
       if (!ALLOWED_KEYS.has(event.key)) return;
 
-      this.ngbDropdown.onKeyDown(event);
+      this.dropdown.onKeyDown(event);
     };
 
     this.$element.on("keydown", this.keydownListener);
@@ -54,7 +54,7 @@ export class NgbDropdownMenu implements IController {
       bindToController: true,
       controller: NgbDropdownMenu,
       require: {
-        ngbDropdown: "^ngbDropdown",
+        dropdown: "^ngbDropdown",
       },
       scope: true,
       restrict: "A",

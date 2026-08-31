@@ -1,6 +1,6 @@
 import { NgbCollapseConfig } from "@ngb/collapse/ngb-collapse-config.service";
 import { type INgbEvent, ngbCollapsingTransition, ngbRunTransition } from "@ngb/utils";
-import type { IAugmentedJQuery, IController, IDirective, ILogService } from "angular";
+import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import { NgZone } from "ngjs-core";
 import { Subject } from "rxjs";
 
@@ -24,7 +24,6 @@ export class NgbCollapse implements IController, INgbCollapse {
   constructor(
     private readonly $element: IAugmentedJQuery,
     private readonly ngbCollapseConfig: NgbCollapseConfig,
-    private readonly $log: ILogService,
     private readonly _ngZone: NgZone,
   ) {}
 
@@ -66,13 +65,11 @@ export class NgbCollapse implements IController, INgbCollapse {
       if (collapsed) {
         this.hiddenCallback?.();
         this.hidden.next();
-        this.$log.log("[ngb.collapse]: collapse was hidden");
         return;
       }
 
       this.shownCallback?.();
       this.shown.next();
-      this.$log.log("[ngb.collapse]: collapse was shown");
     });
   }
 
@@ -88,7 +85,7 @@ export class NgbCollapse implements IController, INgbCollapse {
   }
 
   static get $inject() {
-    return ["$element", NgbCollapseConfig.$name, "$log", NgZone.$name];
+    return ["$element", NgbCollapseConfig.$name, NgZone.$name];
   }
 
   static get $factory(): () => IDirective {

@@ -1,4 +1,4 @@
-import type { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollSpy-menu.directive";
+import type { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollspy-menu.directive";
 import type { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyService, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";

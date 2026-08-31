@@ -42,12 +42,8 @@ export class NgbNavPane implements IController {
         role: "<?",
       },
       bindToController: true,
-      template: `
-        <ng-container
-          ng-template-outlet="$.item.contentTpl"
-          ng-template-outlet-context="{ $implicit: $.item.active }">
-        </ng-container>
-      `,
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 

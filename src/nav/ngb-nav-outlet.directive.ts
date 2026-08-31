@@ -32,7 +32,14 @@ export class NgbNavOutlet implements IController {
   $postLink(): void {
     this.$element.addClass("tab-content");
     this._updateActivePane();
-    this._panesSubscription = this._panes.changes.subscribe(() => this._startPendingTransition());
+    this._panesSubscription = this._panes.changes.subscribe(() => {
+      if (!this._activePane) {
+        this._updateActivePane();
+        return;
+      }
+
+      this._startPendingTransition();
+    });
     this._navSubscription = this.nav.navItemChange$.subscribe((nextItem) => {
       if (this._activePane?.item === nextItem) return;
 
@@ -125,6 +132,10 @@ export class NgbNavOutlet implements IController {
           item="item"
           nav="$.nav"
           role="$.paneRole">
+          <ng-container
+            ng-template-outlet="item.contentTpl"
+            ng-template-outlet-context="{ $implicit: item.active || $.isPanelTransitioning(item) }">
+          </ng-container>
         </div>
       `,
     });

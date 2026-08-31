@@ -1,4 +1,4 @@
-import angular, {type IAugmentedJQuery, type IComponentController, type IComponentOptions, type ILogService} from "angular";
+import angular, {type IAugmentedJQuery, type IComponentController, type IComponentOptions} from "angular";
 import template from "@ngb/timepicker/ngb-timepicker.component.html";
 import {NgbTime} from "@ngb/timepicker/ngb-time.ts";
 import {isInteger, isNumber, padNumber, toInteger} from "@ngb/utils";
@@ -6,8 +6,6 @@ import {NgbTimepickerConfig} from "@ngb/timepicker/ngb-timepicker-config.service
 import {ChangeDetectorRef, NgDisabled} from "ngjs-core";
 import {NgbTimeAdapter} from "@ngb/timepicker/ngb-timepicker-adapter.service.ts";
 import {NgbTimepickerI18n} from "@ngb/timepicker/ngb-timepicker-i18n";
-// import { NgbTime } from "@ngb/timepicker/ngb-time"
-// import { isInteger } from "@ngb/utils";
 
 const FILTER_REGEX = /[^0-9]/g;
 
@@ -64,7 +62,6 @@ export class NgbTimepicker implements IComponentController {
       private _cd: ChangeDetectorRef,
       private _ngbTimeAdapter: NgbTimeAdapter<any>,
       public readonly i18n: NgbTimepickerI18n,
-      private $log: ILogService,
   ) {}
 
   $onInit() {
@@ -78,7 +75,6 @@ export class NgbTimepicker implements IComponentController {
     this.size = this.size ?? this._config.size
 
     if(!this.ngModelCtrl) {
-      this.$log.error("[ngbTimepicker] The ng-model attribute is required.")
       return
     }
 
@@ -254,7 +250,6 @@ export class NgbTimepicker implements IComponentController {
       ChangeDetectorRef.$name,
       NgbTimeAdapter.$name,
       NgbTimepickerI18n.$name,
-      "$log",
     ];
   }
 

@@ -1,7 +1,7 @@
 import { NgbScrollSpyConfig } from "@ngb/scrollspy/ngb-scrollspy-config.service";
 import { NgbScrollSpyFragment } from "@ngb/scrollspy/ngb-scrollspy-fragment.directive";
 import { NgbScrollSpyItem } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
-import { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollSpy-menu.directive";
+import { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollspy-menu.directive";
 import { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyService } from "@ngb/scrollspy/scrollspy.service";
 import angular, {type IModule} from "angular";

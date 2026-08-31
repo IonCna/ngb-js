@@ -29,24 +29,24 @@ export class NgbOffcanvasBackdrop implements IComponentController {
   ) {}
 
   $postLink(): void {
+    const animation = this.animation ?? true;
+
     this._ngZone.runOutsideAngular(() =>
       queueMicrotask(() =>
         ngbRunTransition(this._ngZone, this.$element, ngbOffcanvasFadeInTransition, {
-          animation: this.animation ?? true,
+          animation,
           runningTransition: "continue",
         }),
       ),
     );
 
     this.$element.addClass("offcanvas-backdrop");
+    this.$element.toggleClass("fade", animation);
 
     this.$element.on("mousedown", this.dismiss.bind(this));
   }
 
   $onChanges(): void {
-    this.$element.toggleClass("show", !this.animation);
-    this.$element.toggleClass("fade", this.animation);
-
     if (this._appliedBackdropClass)
       this._appliedBackdropClass
         .split(/\s+/)

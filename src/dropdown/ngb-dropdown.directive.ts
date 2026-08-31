@@ -32,6 +32,7 @@ export class NgbDropdown implements IController {
 
   private _destroyCloseHandlers$ = new Subject<void>();
   private _unwatchOpenState?: () => void;
+  private _unwatchPositioning?: () => void;
 
   private autoClose!: boolean | "inside" | "outside";
   private dropdownClass?: string;
@@ -154,9 +155,17 @@ export class NgbDropdown implements IController {
 
     this._applyPlacementClasses();
 
-    this._ngZone.runOutsideAngular(() => queueMicrotask(() => this._positionMenu()));
+    this._ngZone.runOutsideAngular(() => {
+      queueMicrotask(() => this._positionMenu());
+      this._watchPositioning();
+    });
 
     this._changeDetector.markForCheck();
+  }
+
+  private _watchPositioning(): void {
+    this._unwatchPositioning?.();
+    this._unwatchPositioning = this.$scope.$watch(() => this._positionMenu());
   }
 
   private _setCloseHandlers() {
@@ -186,6 +195,8 @@ export class NgbDropdown implements IController {
     this._open = false;
     this._resetContainer();
     this._positioning?.destroy();
+    this._unwatchPositioning?.();
+    this._unwatchPositioning = undefined;
     this._destroyCloseHandlers$.next();
     this.openChange?.({ $event: false });
 
@@ -302,7 +313,7 @@ export class NgbDropdown implements IController {
       if (itemElements.length) {
         const actions: Record<string, () => number> = {
           ArrowDown: () => Math.min(position + 1, itemElements.length - 1),
-          ArrowUp: () => (this._isDropUp() && position === -1 ? itemElements.length - 1 : Math.max(position - 1, 0)),
+          ArrowUp: () => (this._isDropup() && position === -1 ? itemElements.length - 1 : Math.max(position - 1, 0)),
           Home: () => 0,
           End: () => itemElements.length - 1,
         };
@@ -316,7 +327,7 @@ export class NgbDropdown implements IController {
     }
   }
 
-  private _isDropUp(): boolean {
+  private _isDropup(): boolean {
     return this.$element.hasClass("dropup");
   }
 

@@ -55,7 +55,7 @@ export class NgbRating implements IComponentController {
     this.$element.attr("aria-valuemin", "0");
 
     this.$element.on("blur", () => this.$scope.$evalAsync());
-    this.$element.on("keydown", (event) => this.$scope.$evalAsync(() => this._handleKeyDown(event)));
+    this.$element.on("keydown", (event) => this.$scope.$evalAsync(() => this.handleKeyDown(event)));
     this.$element.on("mouseleave", () => this.$scope.$evalAsync(() => this.reset()));
     this.removeDisabledListener = this.ngDisabled?.onChange(() => this._render());
     this._render();
@@ -119,7 +119,7 @@ export class NgbRating implements IComponentController {
     this._updateState(this.rate);
   }
 
-  private _handleKeyDown(event: JQueryEventObject): void {
+  handleKeyDown(event: JQueryEventObject): void {
     switch (event.key) {
       case "ArrowDown":
       case "ArrowLeft":

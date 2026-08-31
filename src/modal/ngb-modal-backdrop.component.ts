@@ -31,14 +31,16 @@ export class NgbModalBackdrop implements IComponentController {
 
   $postLink(): void {
     const backdropClass = this.backdropClass ? this.backdropClass : "";
+    const animation = this.animation ?? this.$ngbModalConfig.animation;
 
     this.$element.addClass(`modal-backdrop ${backdropClass}`);
+    this.$element.toggleClass("fade", animation);
     this.$element.css({ "z-index": "1055" });
 
     this._ngZone.runOutsideAngular(() =>
       queueMicrotask(() =>
         ngbRunTransition(this._ngZone, this.$element, ngbModalBackdropFadeInTransition, {
-          animation: this.animation ?? this.$ngbModalConfig.animation,
+          animation,
           runningTransition: "continue",
         }),
       ),
@@ -46,9 +48,6 @@ export class NgbModalBackdrop implements IComponentController {
   }
 
   $onChanges(): void {
-    this.$element.toggleClass("show", !this.animation);
-    this.$element.toggleClass("fade", this.animation);
-
     if (this._appliedBackdropClass)
       this._appliedBackdropClass
         .split(/\s+/)

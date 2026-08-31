@@ -51,6 +51,8 @@ export class NgbNav implements IController {
     this.keyboard ??= this.config.keyboard;
     this.orientation ??= this.config.orientation;
     this.roles ??= this.config.roles;
+
+    this._applyOrientationBindings();
   }
 
   $postLink(): void {
@@ -78,16 +80,20 @@ export class NgbNav implements IController {
   }
 
   $onChanges(changes: IOnChangesObject): void {
+    this._applyOrientationBindings();
+
+    if (changes.activeId && !changes.activeId.isFirstChange()) {
+      this._notifyItemChanged(changes.activeId.currentValue);
+    }
+  }
+
+  private _applyOrientationBindings(): void {
     this.$element.toggleClass("flex-column", this.orientation === "vertical");
     assertAttribute(
       this.$element,
       "aria-orientation",
       this.orientation === "vertical" && this.roles === "tablist" ? "vertical" : undefined,
     );
-
-    if (changes.activeId && !changes.activeId.isFirstChange()) {
-      this._notifyItemChanged(changes.activeId.currentValue);
-    }
   }
 
   $onDestroy(): void {

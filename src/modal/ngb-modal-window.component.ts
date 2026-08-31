@@ -8,7 +8,7 @@ import {
 } from "@ngb/modal/ngb-modal-window-transition";
 import { type NgbTransitionOptions, type NgbTransitionStartFn, ngbRunTransition, toNativeElement } from "@ngb/utils";
 import { getFocusableBoundaryElements } from "@ngb/utils/focus-trap";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, ILogService } from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import angular from "angular";
 import { ChangeDetectorRef, ElementRef, NgZone, ViewChild } from "ngjs-core";
 import { filter, fromEvent, type Observable, Subject, switchMap, take, takeUntil, tap, zip } from "rxjs";
@@ -63,7 +63,6 @@ export class NgbModalWindow implements IComponentController {
     private $element: IAugmentedJQuery,
     private _ngZone: NgZone,
     private _cdRef: ChangeDetectorRef,
-    private $log: ILogService,
   ) {}
 
   $onInit(): void {
@@ -215,8 +214,6 @@ export class NgbModalWindow implements IComponentController {
         filter((event) => event.key === "Escape"),
       )
       .subscribe((event) => {
-        this.$log.info("ngbModalWindow keydown", event);
-
         if (this.keyboard) {
           requestAnimationFrame(() => {
             if (!event.defaultPrevented) {
@@ -236,23 +233,19 @@ export class NgbModalWindow implements IComponentController {
     fromEvent<MouseEvent>(dialog, "mousedown")
       .pipe(
         takeUntil(this._closed$),
-        tap((event) => {
-          this.$log.info("ngbModalWindow dialog mousedown", event);
+        tap(() => {
           preventClose = false;
         }),
         switchMap(() => fromEvent<MouseEvent>(native, "mouseup").pipe(takeUntil(this._closed$), take(1))),
         filter(({ target }) => target === native),
       )
-      .subscribe((event) => {
-        this.$log.info("ngbModalWindow mouseup", event);
+      .subscribe(() => {
         preventClose = true;
       });
 
     fromEvent<MouseEvent>(native, "click")
       .pipe(takeUntil(this._closed$))
       .subscribe((event) => {
-        this.$log.info("ngbModalWindow click", event);
-
         if (event.target === native) {
           if (this.backdrop === "static") {
             this._bumpBackdrop();
@@ -299,7 +292,7 @@ export class NgbModalWindow implements IComponentController {
   }
 
   static get $inject() {
-    return ["$element", NgZone.$name, ChangeDetectorRef.$name, "$log"];
+    return ["$element", NgZone.$name, ChangeDetectorRef.$name];
   }
 
   static get $factory(): IComponentOptions {

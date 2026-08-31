@@ -3,7 +3,6 @@ import angular, {
   type ICompileService,
   type IFormController,
   type IInjectorService,
-  type ILogService,
   type INgModelController,
   type IRootScopeService,
   type IScope,
@@ -35,7 +34,6 @@ interface TestScope extends IScope {
 describe("NgbTimepicker", () => {
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
-  let $log: ILogService;
   let config: NgbTimepickerConfig;
   const mounted: IAugmentedJQuery[] = [];
 
@@ -45,12 +43,10 @@ describe("NgbTimepicker", () => {
       (
         _$compile_: ICompileService,
         _$rootScope_: IRootScopeService,
-        _$log_: ILogService,
         _$injector_: IInjectorService,
       ) => {
         $compile = _$compile_;
         $rootScope = _$rootScope_;
-        $log = _$log_;
         config = _$injector_.get<NgbTimepickerConfig>(NgbTimepickerConfig.$name);
       },
     );
@@ -96,10 +92,8 @@ describe("NgbTimepicker", () => {
     input.dispatchEvent(new KeyboardEvent("keydown", {key, bubbles: true, cancelable: true}));
   }
 
-  it("requires ng-model and reports a useful error when it is missing", () => {
-    const error = vi.spyOn($log, "error");
-    setup("<ngb-timepicker></ngb-timepicker>", {});
-    expect(error).toHaveBeenCalledWith("[ngbTimepicker] The ng-model attribute is required.");
+  it("does not throw when ng-model is missing", () => {
+    expect(() => setup("<ngb-timepicker></ngb-timepicker>", {})).not.toThrow();
   });
 
   it("renders and pads the model value", () => {
