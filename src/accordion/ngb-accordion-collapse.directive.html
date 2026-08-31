@@ -1,9 +1,8 @@
 <section
+    role="region"
     class="accordion-collapse"
     ng-attr-id="{{ $.item.collapseId }}"
     ng-attr-aria-labelledby="{{ $.item.toggleId }}"
-    ngb-collapse="$.item.collapsed"
-    ngb-hidden="$.hidden()"
-    shown="$.shown()"
-    ng-transclude>
+    ngb-collapse="$.item.collapsed">
+    <ng-content></ng-content>
 </section>

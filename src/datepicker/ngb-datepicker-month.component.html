@@ -1,0 +1,52 @@
+<div
+  ng-if="$.viewModel.weekdays.length"
+  class="ngb-dp-week ngb-dp-weekdays d-flex rounded-0 border-bottom bg-body-tertiary"
+  role="row">
+  <div
+    ng-if="$.datepicker.showWeekNumbers"
+    class="ngb-dp-weekday ngb-dp-showweek small fst-italic text-center"
+    ng-class="{ 'text-muted': $.datepicker.model.disabled }"
+    style="width: 2rem; height: 2rem; line-height: 2rem">
+    {{ $.datepicker.i18n.getWeekLabel() }}
+  </div>
+  <div
+    ng-repeat="weekday in $.viewModel.weekdays track by $index"
+    class="ngb-dp-weekday small fst-italic text-center text-info"
+    ng-class="{ 'text-muted': $.datepicker.model.disabled }"
+    style="width: 2rem; height: 2rem; line-height: 2rem"
+    role="columnheader">
+    {{ weekday }}
+  </div>
+</div>
+
+<div
+  ng-repeat="week in $.viewModel.weeks track by $index"
+  ng-if="!week.collapsed"
+  class="ngb-dp-week d-flex rounded-1"
+  ng-class="{ 'pb-1': $last }"
+  role="row">
+  <div
+    ng-if="$.datepicker.showWeekNumbers"
+    class="ngb-dp-week-number small text-muted fst-italic text-center"
+    style="width: 2rem; height: 2rem; line-height: 2rem">
+    {{ $.datepicker.i18n.getWeekNumerals(week.number) }}
+  </div>
+  <div
+    ng-repeat="day in week.days track by day.date.year + '-' + day.date.month + '-' + day.date.day"
+    ng-click="$.doSelect(day); $event.preventDefault()"
+    class="ngb-dp-day"
+    style="width: 2rem; height: 2rem; cursor: pointer"
+    ng-style="{ cursor: day.context.disabled || day.hidden ? 'default' : 'pointer' }"
+    ng-class="{ disabled: day.context.disabled, hidden: day.hidden, invisible: day.hidden, 'pe-none': day.context.disabled || day.hidden, 'z-1': day.tabindex === 0, 'ngb-dp-today': day.context.today }"
+    role="gridcell"
+    ng-attr-tabindex="{{ day.tabindex }}"
+    ng-attr-aria-label="{{ day.ariaLabel }}"
+    ng-attr-aria-disabled="{{ day.context.disabled }}"
+    ng-attr-aria-selected="{{ day.context.selected }}">
+    <ng-template
+      ng-if="!day.hidden"
+      ng-template-outlet="$.datepicker.dayTemplate"
+      ng-template-outlet-context="day.context">
+    </ng-template>
+  </div>
+</div>

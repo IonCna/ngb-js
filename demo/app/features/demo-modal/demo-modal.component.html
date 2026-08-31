@@ -31,6 +31,9 @@
         <button type="button" class="btn btn-primary" ng-click="$.open()">
             Open modal
         </button>
+        <button type="button" class="btn btn-primary" ng-click="$.openTemplate()">
+            Open TemplateRef modal
+        </button>
         <button type="button" class="btn btn-warning" ng-click="$.openMultiple()">
             Open 3 modals
         </button>
@@ -51,4 +54,19 @@
         <div><strong>Last result:</strong> {{ $.lastResult }}</div>
         <div><strong>Last dismissed:</strong> {{ $.lastDismissed }}</div>
     </div>
+
+    <ng-template ng-ref="$.template" let-close="close" let-dismiss="dismiss">
+        <div class="modal-header">
+            <h4 class="modal-title">TemplateRef modal</h4>
+            <button type="button" class="btn-close" aria-label="Close" ng-click="dismiss('template header close')"></button>
+        </div>
+        <div class="modal-body">
+            <p>{{ $.templateMessage }}</p>
+            <p class="text-muted mb-0">The close and dismiss functions come from the embedded-view context.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" ng-click="dismiss('template cancel')">Dismiss</button>
+            <button type="button" class="btn btn-primary" ng-click="close('template modal result')">Close with result</button>
+        </div>
+    </ng-template>
 </div>

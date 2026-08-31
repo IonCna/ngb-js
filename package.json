@@ -1,14 +1,32 @@
 {
   "name": "ngb-js",
   "version": "0.0.0",
+  "license": "MIT",
+  "main": "./dist/ngb-js.cjs",
+  "module": "./dist/ngb-js.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/ngb-js.js",
+      "require": "./dist/ngb-js.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@types/node": "^25.9.1"
+    "ngjs-core": "link:ngjs-core"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
     "@types/angular": "^1.8.9",
     "@types/angular-mocks": "^1.7.4",
+    "@types/node": "^26.2.0",
     "angular-mocks": "^1.8.3",
     "esbuild": "^0.28.0",
     "jsdom": "^29.1.1",
@@ -17,7 +35,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "esbuild",
+    "build": "bun esbuild.config.ts",
     "serve": "bun demo/esbuild.config.ts",
     "lint": "bunx --bun @biomejs/biome format --write",
     "format": "bunx --bun @biomejs/biome check --write src/"
@@ -25,6 +43,7 @@
   "type": "module",
   "peerDependencies": {
     "angular": "1.8.3",
-    "bootstrap": "^5.3.8"
+    "bootstrap": "^5.3.8",
+    "rxjs": "^7.8.2"
   }
 }

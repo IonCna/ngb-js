@@ -1,14 +1,13 @@
-import { reflow } from "@ngb/utils";
-import type { IAugmentedJQuery } from "angular";
+import { type NgbTransitionStartFn, reflow } from "@ngb/utils";
 
-export function ngbModalBackdropFadeOutTransition(element: IAugmentedJQuery) {
+export const ngbModalBackdropFadeOutTransition: NgbTransitionStartFn = (element) => {
   element.removeClass("show");
-}
+};
 
-export function ngbModalBackdropFadeInTransition(element: IAugmentedJQuery, animation: boolean) {
+export const ngbModalBackdropFadeInTransition: NgbTransitionStartFn = (element, animation) => {
   if (animation) {
     reflow(element);
   }
 
   element.addClass("show");
-}
+};

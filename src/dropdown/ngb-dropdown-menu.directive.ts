@@ -1,15 +1,18 @@
 import type { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
-import type { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
+import { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
 import { toNativeElement } from "@ngb/utils";
 import type { IController, IDirective, IScope } from "angular";
+import { ContentChildren, type QueryList } from "ngjs-core";
 
 const ALLOWED_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Enter", " ", "Tab"]);
 
 export class NgbDropdownMenu implements IController {
-  public ngbDropdown!: NgbDropdown;
+  public dropdown!: NgbDropdown;
   public nativeElement!: HTMLElement;
 
-  public menuItems: NgbDropdownItem[] = [];
+  @ContentChildren(NgbDropdownItem)
+  public menuItems!: QueryList<NgbDropdownItem>;
+
   private keydownListener?: (event: JQueryEventObject) => void;
   private unwatchOpenState?: () => void;
 
@@ -19,19 +22,18 @@ export class NgbDropdownMenu implements IController {
   ) {}
 
   $postLink(): void {
-    this.ngbDropdown.registerMenu(this);
     this.$element.addClass("dropdown-menu");
     this.nativeElement = toNativeElement(this.$element);
 
     this.unwatchOpenState = this.$scope.$watch(
-      () => this.ngbDropdown.isOpen(),
+      () => this.dropdown.isOpen(),
       (isOpen) => this.$element.toggleClass("show", isOpen),
     );
 
     this.keydownListener = (event) => {
       if (!ALLOWED_KEYS.has(event.key)) return;
 
-      this.ngbDropdown.onKeyDown(event);
+      this.dropdown.onKeyDown(event);
     };
 
     this.$element.on("keydown", this.keydownListener);
@@ -40,14 +42,6 @@ export class NgbDropdownMenu implements IController {
   $onDestroy(): void {
     if (this.keydownListener) this.$element.off("keydown", this.keydownListener);
     this.unwatchOpenState?.();
-  }
-
-  public register(item: NgbDropdownItem) {
-    this.menuItems.push(item);
-  }
-
-  public unregister(item: NgbDropdownItem) {
-    this.menuItems = this.menuItems.filter((menuItem) => menuItem !== item);
   }
 
   //#region $angular
@@ -60,10 +54,12 @@ export class NgbDropdownMenu implements IController {
       bindToController: true,
       controller: NgbDropdownMenu,
       require: {
-        ngbDropdown: "^ngbDropdown",
+        dropdown: "^ngbDropdown",
       },
       scope: true,
       restrict: "A",
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 

@@ -1,0 +1,107 @@
+<h5 class="mb-3">Paginated content</h5>
+<div class="border rounded p-3 mb-4">
+    <div class="table-responsive mb-3">
+        <table class="table table-sm table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="item in $.getBasicPageItems() track by item.id">
+                    <th scope="row">{{ item.id }}</th>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.category }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <ngb-pagination
+        collection-size="$.items.length"
+        page="$.basicPage"
+        page-change="$.setBasicPage($event)"
+        page-size="$.basicPageSize"
+        max-size="5"
+        rotate="true"
+        boundary-links="true">
+    </ngb-pagination>
+    <div class="small text-muted mt-2">
+        Page <strong>{{ $.basicPage }}</strong> · {{ $.basicPageSize }} records per page · {{ $.items.length }} records
+    </div>
+</div>
+
+<h5 class="mb-3">Disabled pagination</h5>
+<div class="border rounded p-3 mb-4">
+    <p>Pagination control can be disabled:</p>
+    <ngb-pagination
+        collection-size="70"
+        page="$.disabledPage"
+        page-change="$.setDisabledPage($event)"
+        ng-disabled="$.isDisabled">
+    </ngb-pagination>
+
+    <button
+        class="btn btn-sm btn-outline-primary mt-2"
+        type="button"
+        ng-click="$.toggleDisabled()">
+        Toggle disabled
+    </button>
+</div>
+
+<h5 class="mb-3">Boundary links</h5>
+<div class="border rounded p-3 mb-4">
+    <ngb-pagination
+        collection-size="100"
+        page="$.boundaryPage"
+        page-change="$.setBoundaryPage($event)"
+        boundary-links="true">
+    </ngb-pagination>
+    <div class="small text-muted mt-2">Current page: <strong>{{ $.boundaryPage }}</strong></div>
+</div>
+
+<h5 class="mb-3">Restricted size and rotation</h5>
+<div class="border rounded p-3 mb-4">
+    <ngb-pagination
+        collection-size="300"
+        page="$.rotatedPage"
+        page-change="$.setRotatedPage($event)"
+        page-size="$.pageSize"
+        max-size="5"
+        rotate="true"
+        boundary-links="true">
+    </ngb-pagination>
+
+    <label class="form-label mt-3" for="pagination-page-size">Items per page</label>
+    <select
+        id="pagination-page-size"
+        class="form-select form-select-sm"
+        style="max-width: 10rem"
+        ng-model="$.pageSize"
+        ng-options="size for size in [5, 10, 20, 50]">
+    </select>
+    <div class="small text-muted mt-2">
+        Page <strong>{{ $.rotatedPage }}</strong>, showing {{ $.pageSize }} items per page.
+    </div>
+</div>
+
+<h5 class="mb-3">Sizes</h5>
+<div class="border rounded p-3">
+    <div class="small text-muted mb-2">Small</div>
+    <ngb-pagination
+        collection-size="50"
+        page="$.smallPage"
+        page-change="$.setSmallPage($event)"
+        size="'sm'">
+    </ngb-pagination>
+
+    <div class="small text-muted mt-3 mb-2">Large</div>
+    <ngb-pagination
+        collection-size="50"
+        page="$.largePage"
+        page-change="$.setLargePage($event)"
+        size="'lg'">
+    </ngb-pagination>
+</div>

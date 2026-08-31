@@ -1,21 +1,13 @@
-import { toNativeElement } from "@ngb/utils";
-import type { IDocumentService, IWindowService } from "angular";
+import type { IWindowService } from "angular";
 
 export type ScrollbarReverter = () => void;
 
 export class NgbScrollbar {
-  _document: Document;
-
-  constructor(
-    private readonly $document: IDocumentService,
-    private readonly $window: IWindowService,
-  ) {
-    this._document = toNativeElement(this.$document);
-  }
+  constructor(private readonly $window: IWindowService) {}
 
   hide(): ScrollbarReverter {
-    const scrollbarWidth = Math.abs(this.$window.innerWidth - this._document.documentElement.clientWidth);
-    const body = toNativeElement<HTMLBodyElement>(this.$document.find("body"));
+    const scrollbarWidth = Math.abs(this.$window.innerWidth - document.documentElement.clientWidth);
+    const body = document.body as HTMLBodyElement;
 
     const style = body.style;
     const { overflow, paddingRight } = style;
@@ -41,6 +33,6 @@ export class NgbScrollbar {
   }
 
   static get $inject() {
-    return ["$document", "$window"];
+    return ["$window"];
   }
 }

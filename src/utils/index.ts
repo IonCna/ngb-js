@@ -1,5 +1,7 @@
 import type { IAugmentedJQuery } from "angular";
 import angular from "angular";
+import type { NgZone } from "ngjs-core";
+import { Observable, type OperatorFunction } from "rxjs";
 
 export { FOCUSABLE_ELEMENTS_SELECTOR } from "@ngb/utils/focus-trap";
 export type { INgbEvent } from "@ngb/utils/transition";
@@ -15,6 +17,17 @@ export function reflow(element: IAugmentedJQuery) {
   return (toNativeElement(element) || document.body).getBoundingClientRect();
 }
 
+export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
+  return (source) =>
+    new Observable((observer) => {
+      const next = (value: T) => zone.run(() => observer.next(value));
+      const error = (reason: unknown) => zone.run(() => observer.error(reason));
+      const complete = () => zone.run(() => observer.complete());
+
+      return source.subscribe({ next, error, complete });
+    });
+}
+
 export function getValueInRange(value: number, max: number, min = 0): number {
   return Math.max(Math.min(value, max), min);
 }
@@ -28,12 +41,24 @@ export function isInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && Math.floor(value) === value && angular.isNumber(value);
 }
 
+export function toString(value: any): string {
+  return value !== undefined && value !== null ? `${value}` : '';
+}
+
 export function padNumber(value: number) {
-  if (angular.isNumber(value)) {
+  if (isNumber(value)) {
     return `0${value}`.slice(-2);
   }
 
   return "";
+}
+
+export function regExpEscape(text: string) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+export function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 export function closest(element: IAugmentedJQuery, selector?: string) {

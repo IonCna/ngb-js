@@ -4,15 +4,10 @@ import {
 } from "@ngb/modal/ngb-modal-backdrop-transition";
 import { NgbModalConfig, type NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { ngbRunTransition } from "@ngb/utils";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  IQService,
-  IScope,
-  ITimeoutService,
-} from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import angular from "angular";
+import { ChangeDetectorRef, NgZone } from "ngjs-core";
+import type { Observable } from "rxjs";
 
 const BACKDROP_ATTRIBUTES = [
   "animation",
@@ -29,30 +24,30 @@ export class NgbModalBackdrop implements IComponentController {
 
   constructor(
     private $element: IAugmentedJQuery,
-    private $scope: IScope,
     private $ngbModalConfig: NgbModalConfig,
-    private $q: IQService,
-    private $timeout: ITimeoutService,
+    private _ngZone: NgZone,
+    private _cdRef: ChangeDetectorRef,
   ) {}
 
   $postLink(): void {
     const backdropClass = this.backdropClass ? this.backdropClass : "";
+    const animation = this.animation ?? this.$ngbModalConfig.animation;
 
     this.$element.addClass(`modal-backdrop ${backdropClass}`);
+    this.$element.toggleClass("fade", animation);
     this.$element.css({ "z-index": "1055" });
 
-    this.$scope.$evalAsync(() =>
-      ngbRunTransition(this.$q, this.$timeout, this.$element, ngbModalBackdropFadeInTransition, {
-        animation: this.animation ?? this.$ngbModalConfig.animation,
-        runningTransition: "continue",
-      }),
+    this._ngZone.runOutsideAngular(() =>
+      queueMicrotask(() =>
+        ngbRunTransition(this._ngZone, this.$element, ngbModalBackdropFadeInTransition, {
+          animation,
+          runningTransition: "continue",
+        }),
+      ),
     );
   }
 
   $onChanges(): void {
-    this.$element.toggleClass("show", !this.animation);
-    this.$element.toggleClass("fade", this.animation);
-
     if (this._appliedBackdropClass)
       this._appliedBackdropClass
         .split(/\s+/)
@@ -72,8 +67,8 @@ export class NgbModalBackdrop implements IComponentController {
     this._appliedBackdropClass = this.backdropClass;
   }
 
-  hide() {
-    return ngbRunTransition(this.$q, this.$timeout, this.$element, ngbModalBackdropFadeOutTransition, {
+  hide(): Observable<void> {
+    return ngbRunTransition(this._ngZone, this.$element, ngbModalBackdropFadeOutTransition, {
       animation: this.animation ?? this.$ngbModalConfig.animation,
       runningTransition: "stop",
     });
@@ -82,13 +77,13 @@ export class NgbModalBackdrop implements IComponentController {
   updateOptions(options: NgbModalUpdatableOptions) {
     const source: BackdropOptions = options;
 
-    this.$scope.$evalAsync(() =>
-      BACKDROP_ATTRIBUTES.forEach((attr) => {
-        if (angular.isDefined(source[attr])) {
-          Object.assign(this, { [attr]: source[attr] });
-        }
-      }),
-    );
+    BACKDROP_ATTRIBUTES.forEach((attr) => {
+      if (angular.isDefined(source[attr])) {
+        Object.assign(this, { [attr]: source[attr] });
+      }
+    });
+    this.$onChanges();
+    this._cdRef.markForCheck();
   }
 
   static get $name() {
@@ -96,7 +91,7 @@ export class NgbModalBackdrop implements IComponentController {
   }
 
   static get $inject() {
-    return ["$element", "$scope", NgbModalConfig.$name, "$q", "$timeout"];
+    return ["$element", NgbModalConfig.$name, NgZone.$name, ChangeDetectorRef.$name];
   }
 
   static get $factory(): IComponentOptions {

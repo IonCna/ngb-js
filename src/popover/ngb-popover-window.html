@@ -1,0 +1,11 @@
+<div class="popover-arrow" data-popper-arrow></div>
+
+<h3 ng-if="$.title" class="popover-header">
+    <ng-template ng-ref="simpleTitle">{{ $.title }}</ng-template>
+    <ng-template
+            ng-template-outlet="$.isTitleTemplate() ? $.title : simpleTitle"
+            ng-template-outlet-context="$.context"
+    ></ng-template>
+</h3>
+
+<div class="popover-body"><ng-content></ng-content></div>

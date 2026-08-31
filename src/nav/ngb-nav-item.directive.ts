@@ -1,28 +1,28 @@
 import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
-import type { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
+import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
 import { toNativeElement } from "@ngb/utils";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
 import angular from "angular";
+import { ContentChild, NgDisabled, TemplateRef } from "ngjs-core";
 
 const isValidNavId = (id?: string): id is string => angular.isDefined(id) && id !== "";
 let navCounter = 0;
 
 export class NgbNavItem implements IController {
-  public ngbNav!: NgbNav;
+  private _nav!: NgbNav;
   public destroyOnHide?: boolean;
-  public disabled?: boolean;
+  public ngDisabled?: NgDisabled;
   public domId!: string;
   public shown?: () => void;
   public hidden?: () => void;
 
   private _id?: string;
-  private content?: NgbNavContent;
+  @ContentChild(NgbNavContent, { descendants: false, read: TemplateRef })
+  public contentTpl?: TemplateRef<{ $implicit: boolean }>;
 
   constructor(private $element: IAugmentedJQuery) {}
 
   $onInit(): void {
-    this.disabled = this.disabled ?? false;
-
     if (!angular.isDefined(this.domId)) {
       this.domId = `ngb-nav-${navCounter++}`;
     }
@@ -33,7 +33,7 @@ export class NgbNavItem implements IController {
   }
 
   get active() {
-    return this.ngbNav.activeId === this.id;
+    return this._nav.activeId === this.id;
   }
 
   get id() {
@@ -44,20 +44,16 @@ export class NgbNavItem implements IController {
     return `${this.domId}-panel`;
   }
 
+  public isDisabled(): boolean {
+    return this.ngDisabled?.disabled ?? false;
+  }
+
   public isPanelInDom() {
-    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : this.ngbNav.destroyOnHide || this.active;
+    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : !this._nav.destroyOnHide || this.active;
   }
 
   public isNgContainer() {
     return toNativeElement(this.$element).nodeType === Node.COMMENT_NODE;
-  }
-
-  public register(content: NgbNavContent) {
-    if (this.content) {
-      throw new Error("only one content in item are allowed");
-    }
-
-    this.content = content;
   }
 
   //#region $angular
@@ -76,16 +72,18 @@ export class NgbNavItem implements IController {
       restrict: "A",
       bindToController: true,
       require: {
-        ngbNav: "^ngbNav",
+        _nav: "^ngbNav",
+        ngDisabled: "?ngDisabled",
       },
       scope: {
         destroyOnHide: "<?",
-        disabled: "<?",
         domId: "@?",
         _id: "@?ngbNavItem",
-        shown: "&",
+        shown: "&?",
         hidden: "&?",
       },
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 

@@ -1,0 +1,66 @@
+<ng-template
+  ng-ref="defaultDayTemplate"
+  let-date="date"
+  let-current-month="currentMonth"
+  let-selected="selected"
+  let-disabled="disabled"
+  let-focused="focused">
+  <div
+    ngb-datepicker-day-view
+    date="date"
+    current-month="currentMonth"
+    i18n="$.i18n"
+    selected="selected"
+    disabled="disabled"
+    focused="focused"
+    class="btn btn-light border-0 p-0 text-center rounded-1"
+    style="width: 2rem; height: 2rem; line-height: 2rem; background: transparent">
+  </div>
+</ng-template>
+
+<ng-template ng-ref="defaultContentTemplate">
+  <div
+    ng-repeat="month in $.model.months track by $index"
+    class="ngb-dp-month pe-none"
+    ng-class="{ 'ps-3': !$first, 'ps-1': $first, 'pe-1': $last }">
+    <div
+      ng-if="$.navigation === 'none' || ($.displayMonths > 1 && $.navigation === 'select')"
+      class="ngb-dp-month-name fs-5 text-center bg-body-tertiary"
+      ng-class="{ 'text-muted': $.model.disabled }"
+      style="height: 2rem; line-height: 2rem">
+      {{ $.i18n.getMonthLabel(month.firstDate) }}
+    </div>
+    <ngb-datepicker-month class="d-block pe-auto" month="month.firstDate" datepicker="$"></ngb-datepicker-month>
+  </div>
+</ng-template>
+
+<div class="ngb-dp-header pt-1 border-bottom-0 rounded-top bg-body-tertiary">
+  <ngb-datepicker-navigation
+    ng-if="$.navigation !== 'none' && $.model"
+    date="$.model.firstDate"
+    i18n="$.i18n"
+    months="$.model.months"
+    disabled="$.model.disabled"
+    show-select="$.model.navigation === 'select'"
+    prev-disabled="$.model.prevDisabled"
+    next-disabled="$.model.nextDisabled"
+    select-boxes="$.model.selectBoxes"
+    navigate="$.onNavigateEvent($event)"
+    select="$.onNavigateDateSelect($event)"
+    class="d-flex align-items-center">
+  </ngb-datepicker-navigation>
+</div>
+
+<div
+  class="ngb-dp-content"
+  ng-class="{ 'ngb-dp-months': !$.contentTemplate, 'd-flex': !$.contentTemplate }"
+  ng-ref="content">
+  <ng-template
+    ng-if="$.model"
+    ng-template-outlet="$.contentTemplate || ($.contentTemplateFromContent && $.contentTemplateFromContent.templateRef) || defaultContentTemplate"
+    ng-template-outlet-context="{ $implicit: $ }">
+  </ng-template>
+</div>
+
+<ng-template ng-if="$.footerTemplate" ng-template-outlet="$.footerTemplate"></ng-template>
+<ng-content></ng-content>

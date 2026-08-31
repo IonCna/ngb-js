@@ -1,28 +1,17 @@
-import { type INgbDropdownAnchor, NgbDropdownConfig } from "@ngb/dropdown/ngb-dropdown-config.service";
-import type { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
+import { NgbDropdownAnchor } from "@ngb/dropdown/ngb-dropdown-anchor.directive";
+import { NgbDropdownConfig } from "@ngb/dropdown/ngb-dropdown-config.service";
+import type { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
+import { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
 import { FOCUSABLE_ELEMENTS_SELECTOR, getActiveElement, type INgbEvent, toNativeElement } from "@ngb/utils";
 import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
 import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import type { Options, Placement } from "@popperjs/core";
-import type {
-  IAugmentedJQuery,
-  IController,
-  IDeferred,
-  IDirective,
-  IDocumentService,
-  ILogService,
-  IOnChangesObject,
-  IQService,
-  IScope,
-  ITimeoutService,
-} from "angular";
+import type { IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope } from "angular";
 import angular from "angular";
-
-function isValidElement(element: unknown): element is IAugmentedJQuery {
-  return angular.isElement(element);
-}
+import { ChangeDetectorRef, ContentChild, NgZone, type QueryList } from "ngjs-core";
+import { fromEvent, Subject, take } from "rxjs";
 
 export class NgbDropdown implements IController {
   static ngAcceptInputType_autoClose: boolean | string;
@@ -31,30 +20,37 @@ export class NgbDropdown implements IController {
   private _bodyContainer: IAugmentedJQuery | null = null;
   private _positioning: NgbPositioning | null = null;
 
+  @ContentChild(NgbDropdownMenu)
   private _menu!: NgbDropdownMenu;
-  private _anchor!: INgbDropdownAnchor;
-  private _destroyCloseHandlers?: IDeferred<void>;
+
+  @ContentChild(NgbDropdownAnchor)
+  private _anchor!: NgbDropdownAnchor;
+
+  public get menuItems(): QueryList<NgbDropdownItem> {
+    return this._menu.menuItems;
+  }
+
+  private _destroyCloseHandlers$ = new Subject<void>();
   private _unwatchOpenState?: () => void;
+  private _unwatchPositioning?: () => void;
 
   private autoClose!: boolean | "inside" | "outside";
   private dropdownClass?: string;
   private _open = false;
   private placement!: PlacementArray;
   private popperOptions!: (options?: Partial<Options>) => Options;
-  private container?: null | "body";
-  private display?: "dynamic" | "static";
+  private container!: null | "body";
+  private display!: "dynamic" | "static";
 
   private openChange?: ({ $event }: INgbEvent<boolean>) => void;
 
   constructor(
     private $config: NgbDropdownConfig,
-    private $document: IDocumentService,
     private $element: IAugmentedJQuery,
     private $ngbRTL: NgbRTL,
-    private $timeout: ITimeoutService,
     private $scope: IScope,
-    private $log: ILogService,
-    private $q: IQService,
+    private _ngZone: NgZone,
+    private _changeDetector: ChangeDetectorRef,
   ) {}
 
   $onInit(): void {
@@ -63,7 +59,6 @@ export class NgbDropdown implements IController {
     this.placement = this.placement ?? this.$config.placement;
     this.popperOptions = this.popperOptions ?? this.$config.popperOptions;
     this.container = this.container ?? this.$config.container;
-    this._destroyCloseHandlers = this.$q.defer();
 
     this._unwatchOpenState = this.$scope.$watch(
       () => this.isOpen(),
@@ -77,30 +72,15 @@ export class NgbDropdown implements IController {
       this.display = native.closest(".navbar") ? "static" : "dynamic";
     }
 
-    this.$timeout(
-      () => {
+    this._ngZone.runOutsideAngular(() => {
+      queueMicrotask(() => {
         this._applyPlacementClasses();
-
-        if (!this._open) return;
-        this._setCloseHandlers();
-      },
-      0,
-      false,
-    );
-  }
-
-  registerMenu(menu: NgbDropdownMenu) {
-    this._menu = menu;
-    this.$log.info(`[ngb-dropdown]: Menu Registered`);
-    this.$log.info(this._menu);
-  }
-
-  registerAnchor(anchor: INgbDropdownAnchor) {
-    if (this._anchor) return;
-
-    this._anchor = anchor;
-    this.$log.info(`[ngb-dropdown]: Anchor Registered`);
-    this.$log.info(this._anchor);
+        if (this._open) {
+          this._applyContainer(this.container);
+          this._setCloseHandlers();
+        }
+      });
+    });
   }
 
   $onChanges(changes: IOnChangesObject): void {
@@ -108,7 +88,7 @@ export class NgbDropdown implements IController {
       this._validateContainer(this.container);
     }
 
-    if (changes.container && this._open) {
+    if (changes.container && this._open && this._menu) {
       this._applyContainer(this.container);
     }
 
@@ -145,7 +125,7 @@ export class NgbDropdown implements IController {
 
   public open(): void {
     if (this._open) {
-      this.$scope.$evalAsync();
+      this._changeDetector.markForCheck();
       return;
     }
 
@@ -160,7 +140,7 @@ export class NgbDropdown implements IController {
     this._anchor.nativeElement.focus();
 
     if (this.display !== "dynamic") {
-      this.$scope.$evalAsync();
+      this._changeDetector.markForCheck();
       return;
     }
 
@@ -175,34 +155,36 @@ export class NgbDropdown implements IController {
 
     this._applyPlacementClasses();
 
-    this.$timeout(
-      () => {
-        this._positionMenu();
-      },
-      0,
-      false,
-    );
+    this._ngZone.runOutsideAngular(() => {
+      queueMicrotask(() => this._positionMenu());
+      this._watchPositioning();
+    });
 
-    this.$scope.$evalAsync();
+    this._changeDetector.markForCheck();
+  }
+
+  private _watchPositioning(): void {
+    this._unwatchPositioning?.();
+    this._unwatchPositioning = this.$scope.$watch(() => this._positionMenu());
   }
 
   private _setCloseHandlers() {
-    this._destroyCloseHandlers?.notify();
-    this._destroyCloseHandlers = this.$q.defer();
+    this._destroyCloseHandlers$.next();
+    const menuElement = this._menu?.nativeElement;
+    const anchorElement = this._anchor?.nativeElement;
 
     ngbAutoClose(
-      this.$timeout,
-      this.$document,
+      this._ngZone,
       this.autoClose,
-      this._destroyCloseHandlers?.promise,
+      this._destroyCloseHandlers$,
       (source: SOURCE) => {
         this.close();
         if (source === SOURCE.ESCAPE) {
           this._anchor?.nativeElement.focus();
         }
       },
-      this._menu ? [this._menu.$element] : [],
-      this._anchor ? [angular.element(this._anchor.nativeElement)] : [],
+      menuElement ? [menuElement] : [],
+      anchorElement ? [anchorElement] : [],
       ".dropdown-item,.dropdown-divider",
     );
   }
@@ -213,10 +195,12 @@ export class NgbDropdown implements IController {
     this._open = false;
     this._resetContainer();
     this._positioning?.destroy();
-    this._destroyCloseHandlers?.notify();
+    this._unwatchPositioning?.();
+    this._unwatchPositioning = undefined;
+    this._destroyCloseHandlers$.next();
     this.openChange?.({ $event: false });
 
-    this.$scope.$evalAsync();
+    this._changeDetector.markForCheck();
   }
 
   public toggle() {
@@ -240,13 +224,12 @@ export class NgbDropdown implements IController {
       for (let index = 0; index < itemElements.length; index++) {
         const item = itemElements[index];
         const native = toNativeElement(item);
-        const doc = toNativeElement<Document>(this.$document);
 
         if (native.contains(event.target as HTMLElement)) {
           itemElement = item;
         }
 
-        if (native === getActiveElement(doc)) {
+        if (native === getActiveElement()) {
           position = index;
         }
       }
@@ -254,15 +237,11 @@ export class NgbDropdown implements IController {
 
     if (key === " " || key === "Enter") {
       if (itemElement == null) return;
-      if (!isValidElement(itemElement)) return;
 
       if (this.autoClose === true || this.autoClose === "inside") {
-        const onClick = () => {
-          itemElement.off("click", onClick);
-          this.close();
-        };
-
-        itemElement.on("click", onClick);
+        fromEvent(toNativeElement(itemElement), "click")
+          .pipe(take(1))
+          .subscribe(() => this.close());
       }
 
       return;
@@ -309,16 +288,13 @@ export class NgbDropdown implements IController {
       };
 
       const handleInlineTab = () => {
-        const $target = angular.element(target);
-        const onFocusOut = (focusEvent: JQueryEventObject) => {
-          $target.off("focusout", onFocusOut);
-          const relatedTarget =
-            focusEvent.relatedTarget ?? (focusEvent.originalEvent as FocusEvent | undefined)?.relatedTarget;
-          if (!toNativeElement(this.$element).contains(relatedTarget as HTMLElement)) {
-            this.close();
-          }
-        };
-        $target.on("focusout", onFocusOut);
+        fromEvent<FocusEvent>(target, "focusout")
+          .pipe(take(1))
+          .subscribe(({ relatedTarget }) => {
+            if (!toNativeElement(this.$element).contains(relatedTarget as HTMLElement)) {
+              this.close();
+            }
+          });
       };
 
       if (isFromAnchor) {
@@ -337,7 +313,7 @@ export class NgbDropdown implements IController {
       if (itemElements.length) {
         const actions: Record<string, () => number> = {
           ArrowDown: () => Math.min(position + 1, itemElements.length - 1),
-          ArrowUp: () => (this._isDropUp() && position === -1 ? itemElements.length - 1 : Math.max(position - 1, 0)),
+          ArrowUp: () => (this._isDropup() && position === -1 ? itemElements.length - 1 : Math.max(position - 1, 0)),
           Home: () => 0,
           End: () => itemElements.length - 1,
         };
@@ -351,7 +327,7 @@ export class NgbDropdown implements IController {
     }
   }
 
-  private _isDropUp(): boolean {
+  private _isDropup(): boolean {
     return this.$element.hasClass("dropup");
   }
 
@@ -362,7 +338,7 @@ export class NgbDropdown implements IController {
 
   private _getMenuElements(): IAugmentedJQuery[] {
     if (!this._menu) return [];
-    return this._menu.menuItems.filter(({ disabled }) => !disabled).map(({ $element }) => $element);
+    return this._menu.menuItems.filter((item) => !item.isDisabled()).map(({ $element }) => $element);
   }
 
   private _positionMenu() {
@@ -415,10 +391,10 @@ export class NgbDropdown implements IController {
       });
 
       this._bodyContainer.append(this._menu.$element);
-      this.$document.find("body").append(this._bodyContainer);
+      angular.element(document.body).append(this._bodyContainer);
     }
 
-    this._applyCustomDropdownClass(this.dropdownClass!);
+    this._applyCustomDropdownClass(this.dropdownClass ?? "");
   }
 
   private _applyCustomDropdownClass(newClass: string, oldClass?: string) {
@@ -477,7 +453,6 @@ export class NgbDropdown implements IController {
       scope: true,
       bindToController: {
         autoClose: "<?",
-        animation: "<?",
         container: "@?",
         display: "<?",
         dropdownClass: "<?",
@@ -487,11 +462,20 @@ export class NgbDropdown implements IController {
         placement: "<?",
       },
       controller: NgbDropdown,
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 
   static get $inject() {
-    return [NgbDropdownConfig.$name, "$document", "$element", NgbRTL.$name, "$timeout", "$scope", "$log", "$q"];
+    return [
+      NgbDropdownConfig.$name,
+      "$element",
+      NgbRTL.$name,
+      "$scope",
+      NgZone.$name,
+      ChangeDetectorRef.$name,
+    ];
   }
 
   //#endregion

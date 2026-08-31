@@ -7,6 +7,9 @@ export enum NgbSlideEventDirection {
 }
 
 export interface NgbCarouselCtx {
+  /**
+   * Possible values are 'start' | 'end'.
+   */
   direction: "start" | "end";
 }
 
@@ -36,6 +39,7 @@ export const ngbCarouselTransitionIn: NgbTransitionStartFn<NgbCarouselCtx> = (
 
   if (isBeingAnimated(element)) removeDirectionClasses(element);
   else {
+    // For the 'in' transition, a 'pre-class' is applied to the element to ensure its visibility
     element.addClass(`carousel-item-${direction === NgbSlideEventDirection.START ? "next" : "prev"}`);
     reflow(element);
     element.addClass(`carousel-item-${direction}`);
@@ -58,6 +62,7 @@ export const ngbCarouselTransitionOut: NgbTransitionStartFn<NgbCarouselCtx> = (
     return;
   }
 
+  // direction is left or right, depending on the way the slide goes out.
   if (isBeingAnimated(element)) removeDirectionClasses(element);
   else element.addClass(`carousel-item-${direction}`);
 
@@ -66,4 +71,3 @@ export const ngbCarouselTransitionOut: NgbTransitionStartFn<NgbCarouselCtx> = (
     element.removeClass("active");
   };
 };
-// NICE!

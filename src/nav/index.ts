@@ -1,3 +1,12 @@
 export { NgbNav } from "@ngb/nav/ngb-nav.directive";
 export { NgbNavModule } from "@ngb/nav/ngb-nav.module";
+export type { NgbNavChangeEvent, NgbNavContentContext } from "@ngb/nav/ngb-nav-config.service";
 export { NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
+export { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
+export { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
+export { NgbNavItemRole } from "@ngb/nav/ngb-nav-item-role.directive";
+export { NgbNavLink } from "@ngb/nav/ngb-nav-link.directive";
+export { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
+export { NgbNavLinkButton } from "@ngb/nav/ngb-nav-link-button.directive";
+export { NgbNavOutlet } from "@ngb/nav/ngb-nav-outlet.directive";
+export { NgbNavPane } from "@ngb/nav/ngb-nav-pane.directive";

@@ -56,7 +56,7 @@
         pause-on-focus="$.pauseOnFocus" pause-on-hover="$.pauseOnHover" show-navigation-arrows="$.showNavigationArrows"
         show-navigation-indicators="$.showNavigationIndicators" wrap="$.wrap" slide="$.onSlide($event)"
         slid="$.onSlid($event)">
-        <section ngb-slide id="slide-1">
+        <ng-template ngb-slide id="slide-1">
             <div class="picsum-img-wrapper">
                 <img class="d-block w-100" ng-src="{{ $.images[0] }}" alt="Random first slide" />
             </div>
@@ -64,9 +64,9 @@
                 <h5>First slide</h5>
                 <p>Exercises activeId, animation and transition events.</p>
             </div>
-        </section>
+        </ng-template>
 
-        <section ngb-slide id="slide-2">
+        <ng-template ngb-slide id="slide-2">
             <div class="picsum-img-wrapper">
                 <img class="d-block w-100" ng-src="{{ $.images[1] }}" alt="Random second slide" />
             </div>
@@ -74,9 +74,9 @@
                 <h5>Second slide</h5>
                 <p>Use the controls above to stress the current port.</p>
             </div>
-        </section>
+        </ng-template>
 
-        <section ngb-slide id="slide-3">
+        <ng-template ngb-slide id="slide-3">
             <div class="picsum-img-wrapper">
                 <img class="d-block w-100" ng-src="{{ $.images[2] }}" alt="Random third slide" />
             </div>
@@ -84,6 +84,6 @@
                 <h5>Third slide</h5>
                 <p>Covers slide and slid outputs plus interval and wrap.</p>
             </div>
-        </section>
+        </ng-template>
     </ngb-carousel>
 </div>

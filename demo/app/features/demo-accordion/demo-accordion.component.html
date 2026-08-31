@@ -29,18 +29,22 @@
             </h2>
             <div ngb-accordion-collapse>
                 <div ngb-accordion-body>
-                    First panel content with two-way collapsed binding.
+                    <ng-template>
+                        First panel content with two-way collapsed binding.
+                    </ng-template>
                 </div>
             </div>
         </div>
 
-        <div ngb-accordion-item="second" collapsed="$.secondCollapsed" disabled="$.secondDisabled">
+        <div ngb-accordion-item="second" collapsed="$.secondCollapsed" ng-disabled="$.secondDisabled">
             <h2 ngb-accordion-header>
                 <button ngb-accordion-button>Second panel</button>
             </h2>
             <div ngb-accordion-collapse>
                 <div ngb-accordion-body>
-                    Use the disabled toggle above to block this panel.
+                    <ng-template>
+                        Use the disabled toggle above to block this panel.
+                    </ng-template>
                 </div>
             </div>
         </div>
@@ -51,7 +55,9 @@
             </h2>
             <div ngb-accordion-collapse>
                 <div ngb-accordion-body>
-                    This panel gives closeOthers another item to coordinate.
+                    <ng-template>
+                        This panel gives closeOthers another item to coordinate.
+                    </ng-template>
                 </div>
             </div>
         </div>

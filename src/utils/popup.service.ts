@@ -1,165 +1,128 @@
-import type {
-  IAugmentedJQuery,
-  ICompileService,
-  IDocumentService,
-  IPromise,
-  IQService,
-  IRootScopeService,
-  IScope,
-  ITimeoutService,
-  ITranscludeFunction,
-} from "angular";
+import type { IPromise, IQService, ITimeoutService } from "angular";
 import angular from "angular";
-import { camelToKebabCase, type NgbTransitionStartFn, ngbRunTransition, toNativeElement } from ".";
-
-function targetIsTranscludeFunction(target: unknown): target is ITranscludeFunction {
-  return Boolean(target && Object.hasOwn(target, "isSlotFilled"));
-}
+import {
+  ApplicationRef,
+  type ComponentRef,
+  type NgZone,
+  TemplateRef,
+  type ViewContainerRef,
+  type ViewRef,
+} from "ngjs-core";
+import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
+import { type NgbTransitionStartFn, ngbRunTransition } from ".";
 
 export class ContentRef<T = any> {
   constructor(
-    public $element: IAugmentedJQuery,
-    public $scope?: IScope,
-    public componentInstance?: T,
+    public nodes: Node[][],
+    public viewRef?: ViewRef,
+    public componentRef?: ComponentRef<T>,
   ) {}
-
-  public setInput(key: string, value?: unknown) {
-    const isFn = angular.isFunction(value);
-    this.$scope?.$evalAsync(() => {
-      if (!this.componentInstance) {
-        throw new Error("can not set on componentInstance because is undefined");
-      }
-
-      (this.componentInstance as any)[key] = isFn ? value?.() : value;
-    });
-  }
-}
-
-export interface IPopupService<T = any> {
-  open(
-    content?: string | ITranscludeFunction,
-    context?: any,
-    animation?: boolean,
-  ): {
-    windowRef: ContentRef<T>;
-    transition$: IPromise<void>;
-  };
-
-  close(animation?: boolean): IPromise<void>;
 }
 
 const popupTransition: NgbTransitionStartFn = (element) => {
   element.removeClass("show");
 };
 
-class PopupService<T> implements IPopupService<T> {
-  private _windowRef: ContentRef<T> | null = null;
-  private _contentRef: ContentRef<T> | null = null;
+export class PopupService<T> {
+  private _windowRef: ComponentRef<T> | null = null;
+  private _contentRef: ContentRef | null = null;
+  private readonly _applicationRef: ApplicationRef;
+  private readonly $q: IQService;
+  private readonly $timeout: ITimeoutService;
 
   constructor(
-    private $document: IDocumentService,
-    private $compile: ICompileService,
-    private $timeout: ITimeoutService,
-    private $q: IQService,
-    private $rootScope: IRootScopeService,
     private _componentType: string,
-  ) {}
+    private _injector: angular.auto.IInjectorService,
+    private _viewContainerRef: ViewContainerRef,
+    private _ngZone: NgZone,
+  ) {
+    this._applicationRef = this._injector.get<ApplicationRef>(ApplicationRef.$name);
+    this.$q = this._injector.get<IQService>("$q");
+    this.$timeout = this._injector.get<ITimeoutService>("$timeout");
+  }
 
-  open(content?: string | ITranscludeFunction, context?: any, animation = false) {
-    if (!this._windowRef) {
-      this._contentRef = this._getContentRef(content, context);
-      const component = camelToKebabCase(this._componentType);
+  open(
+    content?: string | TemplateRef<any>,
+    context?: any,
+    animation = false,
+  ): IPromise<{ windowRef: ComponentRef<T>; transition$: Observable<void> }> {
+    if (this._windowRef) return this.$q.resolve(this._createOpenResult(this._windowRef, animation));
 
-      const scope = this.$rootScope.$new();
-      const linkFn = this.$compile(`<${component}></${component}>`);
-      const compiled = linkFn(scope);
-      const instance = compiled.controller(this._componentType);
+    this._contentRef = this._getContentRef(content, context);
+    return this._viewContainerRef
+      .createComponent<T>(this._componentType, {
+        injector: this._injector,
+        projectableNodes: this._contentRef.nodes,
+      })
+      .then((windowRef) => {
+        this._windowRef = windowRef;
+        return this._createOpenResult(windowRef, animation);
+      });
+  }
 
-      this._windowRef = new ContentRef<T>(compiled, scope, instance);
-    }
+  private _createOpenResult(windowRef: ComponentRef<T>, animation: boolean) {
+    const nativeElement = windowRef.location.nativeElement;
+    const $element = angular.element(nativeElement);
 
-    const { $element } = this._windowRef!;
+    const nextRenderSubject = new Subject<void>();
 
-    const nextRender = this.$q.defer();
-
-    this.$timeout(() => {
-      nextRender.resolve();
-    }, 0);
-
-    const transition$ = nextRender.promise.then(() =>
-      ngbRunTransition(
-        this.$q,
-        this.$timeout,
-        $element,
-        (element) => {
-          element.addClass("show");
+    this._ngZone.runOutsideAngular(() => {
+      this.$timeout(
+        () => {
+          nextRenderSubject.next();
+          nextRenderSubject.complete();
         },
-        {
-          animation,
-          runningTransition: "continue",
-        },
+        0,
+        false,
+      );
+    });
+
+    const transition$ = nextRenderSubject.pipe(
+      mergeMap(() =>
+        ngbRunTransition(
+          this._ngZone,
+          $element,
+          (element) => {
+            element.addClass("show");
+          },
+          {
+            animation,
+            runningTransition: "continue",
+          },
+        ),
       ),
     );
 
-    const ref = this._windowRef!;
-    return { windowRef: ref, transition$ };
+    return { windowRef, transition$ };
   }
 
-  async close(animation = false) {
+  close(animation = false): Observable<void> {
     if (!this._windowRef) {
-      return this.$q.resolve();
+      return of(undefined);
     }
 
-    await ngbRunTransition(this.$q, this.$timeout, this._windowRef?.$element, popupTransition, {
+    return ngbRunTransition(this._ngZone, angular.element(this._windowRef.location.nativeElement), popupTransition, {
       animation,
       runningTransition: "stop",
-    });
-
-    this._contentRef?.$scope?.$destroy();
-    this._contentRef = null;
-
-    this._windowRef?.$scope?.$destroy();
-    this._windowRef = null;
+    }).pipe(
+      tap(() => {
+        this._windowRef?.destroy();
+        this._contentRef?.viewRef?.destroy();
+        this._contentRef = null;
+        this._windowRef = null;
+      }),
+    );
   }
 
-  private _getContentRef(content?: string | ITranscludeFunction, context?: any) {
-    if (!content) return new ContentRef(angular.element([]));
+  private _getContentRef(content?: string | TemplateRef<any>, context?: any): ContentRef {
+    if (!content) return new ContentRef([]);
 
-    if (targetIsTranscludeFunction(content)) {
-      const scope = this.$rootScope.$new();
-      angular.extend(scope, context);
-
-      const compiled = content(scope, angular.noop);
-      return new ContentRef(compiled, scope);
+    if (content instanceof TemplateRef) {
+      const viewRef = content.createEmbeddedView(context ?? {});
+      this._applicationRef.attachView(viewRef);
+      return new ContentRef([viewRef.rootNodes], viewRef);
     }
 
-    const document = toNativeElement<Document>(this.$document);
-    const node = document.createTextNode(`${content}`);
-
-    //@ts-expect-error
-    const $text = angular.element(node);
-    return new ContentRef($text);
-  }
-}
-
-export class PopupFactory {
-  constructor(
-    private $document: IDocumentService,
-    private $compile: ICompileService,
-    private $timeout: ITimeoutService,
-    private $q: IQService,
-    private $rootScope: IRootScopeService,
-  ) {}
-
-  $create(_componentType: string) {
-    return new PopupService(this.$document, this.$compile, this.$timeout, this.$q, this.$rootScope, _componentType);
-  }
-
-  static get $inject() {
-    return ["$document", "$compile", "$timeout", "$q", "$rootScope"];
-  }
-
-  static get $name() {
-    return "ngb.popup.factory";
+    return new ContentRef([[document.createTextNode(`${content}`)]]);
   }
 }

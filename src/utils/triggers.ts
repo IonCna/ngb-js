@@ -1,5 +1,5 @@
-import type { IAugmentedJQuery, IPromise, IQService, ITimeoutService } from "angular";
-import angular from "angular";
+import type { IPromise, ITimeoutService } from "angular";
+import { EMPTY, type Observable } from "rxjs";
 
 const ALIASES: Record<string, string[]> = {
   hover: ["mouseenter", "mouseleave"],
@@ -7,114 +7,102 @@ const ALIASES: Record<string, string[]> = {
 };
 
 export function parseTriggers(triggers: string = ""): [string, string?][] {
-  if (triggers.trim().length === 0) {
+  const trimmedTriggers = (triggers || "").trim();
+
+  if (trimmedTriggers.length === 0) {
     return [];
   }
 
-  const parsed = triggers
+  const parsedTriggers = trimmedTriggers
     .split(/\s+/)
     .map((trigger) => trigger.split(":"))
-    .map((pair) => {
-      const [firstPair] = pair;
-      return (ALIASES[firstPair] || pair) as [string, string?];
-    });
+    .map((triggerPair) => (ALIASES[triggerPair[0]] || triggerPair) as [string, string?]);
 
-  const manual = parsed.filter((trigger) => trigger.includes("manual"));
+  const manualTriggers = parsedTriggers.filter((triggerPair) => triggerPair.includes("manual"));
 
-  if (manual.length > 1) {
-    throw new Error("Triggers parse error: only one manual trigger is allowed");
+  if (manualTriggers.length > 1) {
+    throw `Triggers parse error: only one manual trigger is allowed`;
   }
 
-  if (manual.length === 1 && parsed.length > 1) {
-    throw new Error(`Triggers parse error: manual trigger can't be mixed with other triggers`);
+  if (manualTriggers.length === 1 && parsedTriggers.length > 1) {
+    throw `Triggers parse error: manual trigger can't be mixed with other triggers`;
   }
 
-  return manual.length ? [] : parsed;
+  return manualTriggers.length ? [] : parsedTriggers;
 }
 
 export function listenToTriggers(
   $timeout: ITimeoutService,
-  $q: IQService,
-  element: IAugmentedJQuery,
+  element: HTMLElement,
   triggers: string,
-  isOpenFn: () => boolean,
+  isOpenedFn: () => boolean,
   openFn: () => void,
   closeFn: () => void,
   openDelayMs = 0,
   closeDelayMs = 0,
-  enterContent: IPromise<void>,
-  leaveContent: IPromise<void>,
+  enterContent: Observable<void> = EMPTY,
+  leaveContent: Observable<void> = EMPTY,
 ) {
-  const activeOpenTriggers = new Set<string>();
-  const cleanupFns: (() => void)[] = [];
-  let timeout: IPromise<void>;
   const parsedTriggers = parseTriggers(triggers);
 
   if (parsedTriggers.length === 0) {
-    return angular.noop;
+    return () => {};
   }
 
+  const activeOpenTriggers = new Set<string>();
+  const cleanupFns: (() => void)[] = [];
+  let timeout: IPromise<void>;
+
   function addEventListener(name: string, listener: () => void) {
-    element.on(name, listener);
-    cleanupFns.push(() => {
-      return element.off(name, listener);
-    });
+    element.addEventListener(name, listener);
+    cleanupFns.push(() => element.removeEventListener(name, listener));
   }
 
   function withDelay(fn: () => void, delayMs: number) {
-    if (timeout) {
-      $timeout.caller(timeout);
-    }
-
+    $timeout.cancel(timeout);
     if (delayMs > 0) {
       timeout = $timeout(fn, delayMs);
-      return;
+    } else {
+      fn();
     }
-
-    fn();
   }
 
   for (const [openTrigger, closeTrigger] of parsedTriggers) {
-    if (openTrigger === "mouseenter" && closeTrigger === "mouseleave" && closeDelayMs > 0) {
-      const enterContentPromise = enterContent.then(() => {
-        activeOpenTriggers.delete(openTrigger);
-        $timeout.cancel(timeout);
+    if (!closeTrigger) {
+      addEventListener(openTrigger, () =>
+        isOpenedFn() ? withDelay(closeFn, closeDelayMs) : withDelay(openFn, openDelayMs),
+      );
+    } else {
+      addEventListener(openTrigger, () => {
+        activeOpenTriggers.add(openTrigger);
+        withDelay(() => activeOpenTriggers.size > 0 && openFn(), openDelayMs);
       });
-
-      const leaveContentPromise = leaveContent.then(() => {
+      addEventListener(closeTrigger, () => {
         activeOpenTriggers.delete(openTrigger);
         withDelay(() => activeOpenTriggers.size === 0 && closeFn(), closeDelayMs);
       });
+    }
 
+    if (openTrigger === "mouseenter" && closeTrigger === "mouseleave" && closeDelayMs > 0) {
+      const enterContentSub = enterContent.subscribe(() => {
+        activeOpenTriggers.delete(openTrigger);
+        $timeout.cancel(timeout);
+      });
+      const leaveContentSub = leaveContent.subscribe(() => {
+        activeOpenTriggers.delete(openTrigger);
+        withDelay(() => activeOpenTriggers.size === 0 && closeFn(), closeDelayMs);
+      });
       cleanupFns.push(
-        () => $q.resolve(enterContentPromise),
-        () => $q.resolve(leaveContentPromise),
+        () => enterContentSub.unsubscribe(),
+        () => leaveContentSub.unsubscribe(),
       );
     }
-
-    if (!closeTrigger) {
-      addEventListener(openTrigger, () => {
-        activeOpenTriggers.add(openTrigger);
-        return isOpenFn() ? withDelay(closeFn, closeDelayMs) : withDelay(openFn, openDelayMs);
-      });
-
-      continue;
-    }
-
-    addEventListener(openTrigger, () => {
-      activeOpenTriggers.add(openTrigger);
-      withDelay(() => activeOpenTriggers.size > 0 && openFn(), openDelayMs);
-    });
-    addEventListener(closeTrigger, () => {
-      activeOpenTriggers.delete(openTrigger);
-      withDelay(() => activeOpenTriggers.size === 0 && closeFn(), closeDelayMs);
-    });
   }
 
   cleanupFns.push(() => $timeout.cancel(timeout));
   return () => {
-    cleanupFns.forEach((fn) => {
-      fn();
+    cleanupFns.forEach((cleanupFn) => {
+      cleanupFn();
     });
   };
 }

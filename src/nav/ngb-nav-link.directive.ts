@@ -1,66 +1,53 @@
-import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
-import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
-import { toNativeElement } from "@ngb/utils";
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
+import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
+import type { IAttributes, IAugmentedJQuery, IDirective, IScope } from "angular";
 
-export class NgbNavLink implements IController {
-  public ngbNavItem!: NgbNavItem;
-  public nativeElement!: HTMLElement;
-  private ngbNav!: NgbNav;
-  private itemWatcher?: () => void;
-
+export class NgbNavLink extends NgbNavLinkBase {
   constructor(
-    private $element: IAugmentedJQuery,
-    private $scope: IScope,
-  ) {}
-
-  $onInit(): void {
-    this.itemWatcher = this.$scope.$watch(
-      () => this.ngbNavItem,
-      (nav) => {
-        this.$element.toggleClass("nav-item", nav.isNgContainer());
-        this.$element.toggleClass("active", nav.active);
-        this.$element.toggleClass("disabled", nav.disabled);
-
-        this.$element.attr("id", nav.domId);
-      },
-    );
+    $element: IAugmentedJQuery,
+    public $attrs: IAttributes,
+    $scope: IScope
+  ) {
+    super($element, $attrs, $scope)
   }
 
-  get tabindex() {
-    if (this.ngbNav.keyboard === false) {
-      return this.ngbNavItem.disabled ? -1 : undefined;
+  override $postLink(): void {
+    super.$postLink();
+
+    const tag = this.nativeElement.tagName.toLowerCase();
+
+    if (tag === "button") {
+      this._setupButton();
+      return
     }
 
-    if (this.ngbNav._navigatingWithKeyboard) {
-      return -1;
+    if (tag !== "a") {
+      return
     }
 
-    return this.ngbNavItem.disabled || !this.ngbNavItem.active ? -1 : undefined;
-  }
+    const hasAttrs = Object.hasOwn(this.$attrs.$attr, "uiSref")
 
-  $postLink(): void {
-    this.$element.addClass("nav-link");
-
-    if (this.tabindex) {
-      this.$element.attr("tabindex", this.tabindex);
+    if(!hasAttrs) {
+      this.$element.attr("href", "");
     }
 
-    this.nativeElement = toNativeElement(this.$element);
-  }
+    this._clickHandler = (event) => {
+      if(!hasAttrs) {
+        event.preventDefault();
+      }
 
-  $onDestroy(): void {
-    this.itemWatcher?.();
+      this.$scope.$evalAsync(() => this.ngbNav.click(this.ngbNavItem));
+    };
+    this.$element.on("click", this._clickHandler);
   }
 
   //#region $angular
 
-  static get $inject() {
-    return ["$element", "$scope"];
-  }
-
   static get $name() {
     return "ngbNavLink";
+  }
+
+  static get $inject() {
+    return ["$element", "$attrs", "$scope"]
   }
 
   static get $factory(): () => IDirective {

@@ -11,7 +11,7 @@ export class NgbNavItemRole implements IController {
 
   $onInit(): void {
     this.$attributes.$observe("role", (role?: string) => {
-      assertAttribute(this.$element, "role", role, this.nav.role ? "presentation" : undefined);
+      assertAttribute(this.$element, "role", role, this.nav.roles ? "presentation" : undefined);
     });
   }
 
@@ -22,7 +22,7 @@ export class NgbNavItemRole implements IController {
   }
 
   static get $inject() {
-    return ["$attr", "$element"];
+    return ["$attrs", "$element"];
   }
 
   static get $factory(): () => IDirective {

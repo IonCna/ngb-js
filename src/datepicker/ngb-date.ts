@@ -1,5 +1,5 @@
-import type { NgbDateStruct } from "@/datepicker/adapters/ngb-date-adapter.factory";
-import { isInteger } from "@/utils";
+import type { NgbDateStruct } from "@ngb/datepicker/ngb-date-struct";
+import { isInteger } from "@ngb/utils";
 
 export class NgbDate implements NgbDateStruct {
   year: number;
@@ -10,6 +10,7 @@ export class NgbDate implements NgbDateStruct {
     if (date instanceof NgbDate) {
       return date;
     }
+
     return date ? new NgbDate(date.year, date.month, date.day) : null;
   }
 
@@ -19,23 +20,35 @@ export class NgbDate implements NgbDateStruct {
     this.day = isInteger(day) ? day : <any>null;
   }
 
-  equals(other?: NgbDateStruct | null): boolean {
+  public equals(other?: NgbDateStruct | null): boolean {
     return other != null && this.year === other.year && this.month === other.month && this.day === other.day;
   }
 
-  before(other?: NgbDateStruct | null): boolean {
+  public before(other?: NgbDateStruct | null): boolean {
     if (!other) return false;
-    if (this.year !== other.year) return this.year < other.year;
-    if (this.month === other.month) return this.day === other.day ? false : this.day < other.day;
 
-    return this.month < other.month;
+    if (this.year === other.year) {
+      if (this.month === other.month) {
+        return this.day === other.day ? false : this.day < other.day;
+      }
+
+      return this.month < other.month;
+    }
+
+    return this.year < other.year;
   }
 
-  after(other?: NgbDateStruct | null): boolean {
+  public after(other?: NgbDateStruct | null): boolean {
     if (!other) return false;
-    if (this.year !== other.year) return this.year > other.year;
-    if (this.month === other.month) return this.day === other.day ? false : this.day > other.day;
 
-    return this.month > other.month;
+    if (this.year === other.year) {
+      if (this.month === other.month) {
+        return this.day === other.day ? false : this.day > other.day;
+      }
+
+      return this.month > other.month;
+    }
+
+    return this.year > other.year;
   }
 }

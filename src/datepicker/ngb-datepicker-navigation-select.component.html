@@ -1,0 +1,31 @@
+<select
+  ng-disabled="$.disabled"
+  ng-model="$.selectedMonth"
+  ng-change="$.changeMonth($.selectedMonth)"
+  class="form-select flex-grow-1 py-0 px-2 small"
+  style="height: 1.85rem"
+  i18n-aria-label="@@ngb.datepicker.select-month"
+  aria-label="Select month"
+  i18n-title="@@ngb.datepicker.select-month"
+  title="Select month">
+  <option
+    ng-repeat="month in $.months track by month"
+    ng-value="month"
+    ng-attr-aria-label="{{ $.i18n.getMonthFullName(month, $.date.year) }}">
+    {{ $.i18n.getMonthShortName(month, $.date.year) }}
+  </option>
+</select>
+<select
+  ng-disabled="$.disabled"
+  ng-model="$.selectedYear"
+  ng-change="$.changeYear($.selectedYear)"
+  class="form-select flex-grow-1 py-0 px-2 small"
+  style="height: 1.85rem"
+  i18n-aria-label="@@ngb.datepicker.select-year"
+  aria-label="Select year"
+  i18n-title="@@ngb.datepicker.select-year"
+  title="Select year">
+  <option ng-repeat="year in $.years track by year" ng-value="year">
+    {{ $.i18n.getYearNumerals(year) }}
+  </option>
+</select>

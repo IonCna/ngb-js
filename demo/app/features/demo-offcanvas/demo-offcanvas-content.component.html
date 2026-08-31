@@ -1,0 +1,19 @@
+<div class="offcanvas-header">
+    <h5 class="offcanvas-title">Greet someone</h5>
+    <button type="button" class="btn-close" aria-label="Close" ng-click="$.ngbActiveOffcanvas.dismiss('cross click')"></button>
+</div>
+<div class="offcanvas-body">
+    <p>Enter a name to greet:</p>
+    <input type="text" class="form-control" ng-model="$.name" placeholder="e.g. World" />
+    <hr />
+    <div class="d-flex gap-2 justify-content-end">
+        <button type="button" class="btn btn-outline-secondary" ng-click="$.ngbActiveOffcanvas.dismiss('cancel')">Cancel</button>
+        <button
+            type="button"
+            class="btn btn-primary"
+            ng-click="$.ngbActiveOffcanvas.close('Hello, ' + ($.name || 'World') + '!')"
+        >
+            Say hello
+        </button>
+    </div>
+</div>

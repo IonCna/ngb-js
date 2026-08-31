@@ -6,15 +6,15 @@ import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "
 import angular from "angular";
 
 export class NgbProgressbar implements IComponentController {
-  protected animated?: boolean;
-  protected ariaLabel?: string;
-  protected height?: string;
+  protected animated!: boolean;
+  protected ariaLabel!: string;
+  protected height!: string;
   protected _max?: number;
-  protected showValue?: boolean;
-  protected striped?: boolean;
-  protected textType?: string;
-  protected type?: string;
-  protected value?: number;
+  protected showValue!: boolean;
+  protected striped!: boolean;
+  protected textType!: string;
+  protected type!: string;
+  protected value!: number;
   protected stacked?: NgbProgressbarStacked;
 
   constructor(

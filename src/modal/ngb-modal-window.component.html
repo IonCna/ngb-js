@@ -1,4 +1,5 @@
 <div
+    ng-ref="dialog"
     role="document"
     class="modal-dialog"
     ng-class="[
@@ -8,4 +9,5 @@
         $.scrollable ? 'modal-dialog-scrollable' : '',
         $.modalDialogClass || ''
     ]">
+    <div class="modal-content"><ng-content></ng-content></div>
 </div>

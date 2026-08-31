@@ -1,0 +1,54 @@
+<div class="row g-4">
+  <div class="col-lg-6">
+    <h5 class="mb-2">Búsqueda básica</h5>
+    <p class="small text-muted">Escribe al menos dos letras del nombre de un estado de México.</p>
+
+    <label class="form-label" for="typeahead-state">Estado</label>
+    <input
+      id="typeahead-state"
+      class="form-control"
+      type="text"
+      ng-model="$.state"
+      ngb-typeahead="$.searchStates"
+      select-on-exact="true"
+      select-item="$.onStateSelected($event)"
+      placeholder="Ej. Jalisco"
+    />
+    <div class="form-text">Modelo: <strong>{{ $.state || 'Vacío' }}</strong></div>
+  </div>
+
+  <div class="col-lg-6">
+    <h5 class="mb-2">Objetos y template personalizado</h5>
+    <p class="small text-muted">Incluye formatter, hint, modelo no editable y popup dentro de body.</p>
+
+    <ng-template ng-ref="$.countryTemplate" let-result="result" let-term="term">
+      <span class="badge text-bg-secondary me-2">{{ result.code }}</span>
+      <ngb-highlight result="result.name" term="term"></ngb-highlight>
+    </ng-template>
+
+    <label class="form-label" for="typeahead-country">País</label>
+    <input
+      id="typeahead-country"
+      class="form-control"
+      type="text"
+      ng-model="$.country"
+      ngb-typeahead="$.searchCountries"
+      input-formatter="$.formatCountry"
+      result-formatter="$.formatCountry"
+      result-template="$.countryTemplate"
+      editable="false"
+      focus-first="true"
+      show-hint="true"
+      container="'body'"
+      select-item="$.onCountrySelected($event)"
+      placeholder="Ej. México"
+    />
+    <div class="form-text">
+      Modelo: <strong>{{ $.country ? $.country.name + ' (' + $.country.code + ')' : 'Vacío' }}</strong>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-light border mt-4 mb-0" role="status">
+  Última selección: <strong>{{ $.lastSelection }}</strong>
+</div>

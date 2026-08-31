@@ -1,7 +1,11 @@
+import { ngbAutoClose } from "@ngb/utils/autoclose";
 import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
+import type { NgZone } from "ngjs-core";
+import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { NgbModule } from "../ngb.module";
+import { NgbDropdown } from "./ngb-dropdown.directive";
 
 describe("ngbDropdown", () => {
   let $compile: ICompileService;
@@ -15,16 +19,17 @@ describe("ngbDropdown", () => {
     });
   });
 
-  it("keeps menu open when clicking disabled items with inside autoclose", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { opened: boolean };
+  it("collects menu items and their disabled state from projected content", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { opened: boolean; itemDisabled: boolean };
     scope.opened = true;
+    scope.itemDisabled = true;
 
     const element = $compile(`
             <div ngb-dropdown open="opened" auto-close="'inside'" animation="false">
                 <button type="button" ngb-dropdown-toggle>toggle</button>
                 <div ngb-dropdown-menu>
-                    <button type="button" class="enabled" ngb-dropdown-button-item>enabled</button>
-                    <button type="button" class="disabled-item" ngb-dropdown-button-item ngb-disabled="true">disabled</button>
+                    <button type="button" class="enabled" ngb-dropdown-item>enabled</button>
+                    <button type="button" class="disabled-item" ngb-dropdown-item ng-disabled="itemDisabled">disabled</button>
                 </div>
             </div>
         `)(scope);
@@ -33,23 +38,18 @@ describe("ngbDropdown", () => {
 
     const root = element[0] as HTMLElement;
     const menu = angular.element(root.querySelector(".dropdown-menu") as Element);
-    const disabledItem = angular.element(root.querySelector(".disabled-item") as Element);
-    const enabledItem = angular.element(root.querySelector(".enabled") as Element);
+    const dropdown = element.controller<NgbDropdown>(NgbDropdown.$name);
 
     expect(menu.hasClass("show")).toBe(true);
+    expect(dropdown.menuItems).toHaveLength(2);
+    expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, true]);
 
-    menu.triggerHandler({
-      type: "click",
-      target: disabledItem[0],
-    } as JQueryEventObject);
+    scope.itemDisabled = false;
     scope.$digest();
-    expect(menu.hasClass("show")).toBe(true);
-    expect(scope.opened).toBe(true);
+    expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, false]);
+    expect(angular.element(root.querySelector(".disabled-item") as Element).hasClass("disabled")).toBe(false);
 
-    menu.triggerHandler({
-      type: "click",
-      target: enabledItem[0],
-    } as JQueryEventObject);
+    dropdown.close();
     scope.$digest();
     expect(menu.hasClass("show")).toBe(false);
 
@@ -64,8 +64,8 @@ describe("ngbDropdown", () => {
             <div ngb-dropdown open="opened" auto-close="'inside'" animation="false">
                 <button type="button" class="toggle" ngb-dropdown-toggle>toggle</button>
                 <div ngb-dropdown-menu>
-                    <button type="button" class="first-item" ngb-dropdown-button-item>first</button>
-                    <button type="button" ngb-dropdown-button-item>second</button>
+                    <button type="button" class="first-item" ngb-dropdown-item>first</button>
+                    <button type="button" ngb-dropdown-item>second</button>
                 </div>
             </div>
         `)(scope);
@@ -74,25 +74,36 @@ describe("ngbDropdown", () => {
 
     const root = element[0] as HTMLElement;
     const menu = angular.element(root.querySelector(".dropdown-menu") as Element);
+    const toggle = angular.element(root.querySelector(".toggle") as Element);
     const firstItem = root.querySelector(".first-item") as HTMLElement;
-    const $document = angular.element(document);
 
-    menu.triggerHandler({
+    toggle.triggerHandler({
       type: "keydown",
       key: "ArrowDown",
+      target: toggle[0],
       preventDefault: () => void 0,
     } as JQueryEventObject);
     scope.$digest();
     expect(document.activeElement).toBe(firstItem);
 
-    $document.triggerHandler({
-      type: "keydown",
-      key: "Escape",
-      preventDefault: () => void 0,
-    } as JQueryEventObject);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     scope.$digest();
     expect(menu.hasClass("show")).toBe(false);
 
     element.remove();
+  });
+
+  it("ignores containment entries whose native element is not linked yet", () => {
+    const closed = new Subject<void>();
+    const ngZone = {
+      runOutsideAngular: (callback: () => void) => callback(),
+      run: (callback: () => void) => callback(),
+    } as unknown as NgZone;
+
+    ngbAutoClose(ngZone, true, closed, () => void 0, [undefined], [undefined]);
+
+    expect(() => document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))).not.toThrow();
+    closed.next();
+    closed.complete();
   });
 });

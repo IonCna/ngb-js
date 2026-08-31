@@ -38,7 +38,7 @@ describe("ngbProgressbar", () => {
     scope.$digest();
 
     const host = element[0] as HTMLElement;
-    const progress = host.querySelector(".progress") as HTMLElement;
+    const progress = host;
     const progressBar = host.querySelector(".progress-bar") as HTMLElement;
 
     expect(progress).toBeTruthy();
@@ -65,7 +65,7 @@ describe("ngbProgressbar", () => {
     scope.$digest();
 
     const host = element[0] as HTMLElement;
-    const stacked = host.querySelector(".progress-stacked") as HTMLElement;
+    const stacked = host;
     const progress = host.querySelector("ngb-progressbar") as HTMLElement;
     const progressBar = host.querySelector(".progress-bar") as HTMLElement;
 
@@ -75,6 +75,6 @@ describe("ngbProgressbar", () => {
     expect(progress.classList.contains("progress")).toBe(true);
     expect(progress.getAttribute("role")).toBe("progressbar");
     expect(progress.getAttribute("aria-valuenow")).toBe("20");
-    expect(progressBar.classList.contains("w-100")).toBe(true);
+    expect(progressBar.style.width).toBe("");
   });
 });

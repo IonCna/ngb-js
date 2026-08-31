@@ -1,26 +1,23 @@
-import type { ITranscludeFunction } from "angular";
-import type { NgbDateStruct } from "@/datepicker/ngb-date-struct";
+import type { NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
+import type { DayTemplateContext } from "@ngb/datepicker/ngb-datepicker-day-template-context.ts";
+import type { TemplateRef } from "ngjs-core";
 
 export class NgbDatepickerConfig {
-  public showWeekNumbers = false;
-  public outsideDays: "visible" | "collapsed" | "hidden" = "visible";
-  public navigation: "select" | "arrows" | "none" = "select";
-  public displayMonths = 1;
-  public firstDayOfWeek = 1;
-
-  public minDate?: NgbDateStruct;
-  public maxDate?: NgbDateStruct;
-
-  public startDate?: { year: number; month: number; day?: number };
-  public weekdays: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined> | boolean = "narrow";
-
-  public dayTemplateData?: (date: NgbDateStruct, current?: { year: number; month: number }) => any;
-  public markDisabled?: (date: NgbDateStruct, current?: { year: number; month: number }) => boolean;
-
-  dayTemplate?: ITranscludeFunction;
-  footerTemplate?: ITranscludeFunction;
+  dayTemplate?: TemplateRef<DayTemplateContext>;
+  dayTemplateData?: (date: NgbDateStruct, current?: { year: number; month: number }) => any;
+  footerTemplate?: TemplateRef<any>;
+  displayMonths = 1;
+  firstDayOfWeek = 1;
+  markDisabled?: (date: NgbDateStruct, current?: { year: number; month: number }) => boolean;
+  minDate?: NgbDateStruct;
+  maxDate?: NgbDateStruct;
+  navigation: "select" | "arrows" | "none" = "select";
+  outsideDays: "visible" | "collapsed" | "hidden" = "visible";
+  showWeekNumbers = false;
+  startDate?: { year: number; month: number; day?: number };
+  weekdays: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined> | boolean = "narrow";
 
   static get $name() {
-    return "ngb.datepicker.config.service";
+    return "ngb.datepicker-config.service";
   }
 }

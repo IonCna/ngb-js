@@ -2,62 +2,63 @@ import template from "@ngb/alert/ngb-alert.component.html";
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
 import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  ILogService,
-  IPromise,
-  IQService,
-  ITimeoutService,
-} from "angular";
+import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import { NgZone } from "ngjs-core";
+import type { Observable } from "rxjs";
 
 export interface INgbAlert {
-  close(): IPromise<void>;
+  close(): Observable<void>;
 }
 
 export class NgbAlert implements IComponentController, INgbAlert {
-  protected animation?: boolean;
-  protected dismissible?: boolean;
-  protected type?: string;
+  protected animation!: boolean;
+  protected dismissible!: boolean;
+  protected type!: string;
   protected closed?: () => void;
+
+  private _appliedType?: string;
 
   constructor(
     private readonly $element: IAugmentedJQuery,
     private readonly ngbAlertConfig: NgbAlertConfig,
-    private readonly $q: IQService,
-    private readonly $timeout: ITimeoutService,
-    private readonly $log: ILogService,
+    private readonly _ngZone: NgZone,
   ) {}
 
   $onInit(): void {
     this.animation = this.animation ?? this.ngbAlertConfig.animation;
     this.dismissible = this.dismissible ?? this.ngbAlertConfig.dismissible;
     this.type = this.type ?? this.ngbAlertConfig.type;
+
+    // $onChanges runs before $onInit, so the config-derived defaults above
+    // are not yet reflected in the DOM. Re-apply them now.
+    this.$onChanges();
   }
 
   $postLink(): void {
     this.$element.attr("role", "alert");
     this.$element.addClass("alert d-block show");
-
-    const type = `alert-${this.type}`;
-    this.$element.addClass(type);
   }
 
   $onChanges(): void {
     this.$element.toggleClass("fade", this.animation);
     this.$element.toggleClass("alert-dismissible", this.dismissible);
+
+    if (this._appliedType) this.$element.removeClass(`alert-${this._appliedType}`);
+    if (this.type) this.$element.addClass(`alert-${this.type}`);
+    this._appliedType = this.type;
   }
 
-  async close() {
-    const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbAlertFadingTransition, {
+  close(): Observable<void> {
+    const transition = ngbRunTransition(this._ngZone, this.$element, ngbAlertFadingTransition, {
       animation: this.animation ?? this.ngbAlertConfig.animation,
       runningTransition: "continue",
     });
 
-    await transition;
-    this.closed?.();
-    this.$log.info("[ngb.alert]: was closed");
+    transition.subscribe(() => {
+      this.closed?.();
+    });
+
+    return transition;
   }
 
   static get $name() {
@@ -65,7 +66,7 @@ export class NgbAlert implements IComponentController, INgbAlert {
   }
 
   static get $inject() {
-    return ["$element", NgbAlertConfig.$name, "$q", "$timeout", "$log"];
+    return ["$element", NgbAlertConfig.$name, NgZone.$name];
   }
 
   static get $factory(): IComponentOptions {

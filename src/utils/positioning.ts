@@ -50,23 +50,18 @@ export function getBootstrapBaseClassPlacement(baseClass: string, placement: Pop
   const newPrimary = primary.replace(popperStartPrimaryPlacement, "start").replace(popperEndPrimaryPlacement, "end");
   const classnames = [newPrimary];
 
-  if (baseClass) {
-    return classnames.map((classname) => `${baseClass}-${classname}`).join(" ");
+  if (secondary) {
+    let newSecondary = secondary;
+    if (primary === "left" || primary === "right") {
+      newSecondary = newSecondary
+        .replace(popperStartSecondaryPlacement, "top")
+        .replace(popperEndSecondaryPlacement, "bottom");
+    }
+
+    classnames.push(`${newPrimary}-${newSecondary}` as Placement);
   }
 
-  if (!secondary) {
-    return classnames.join(" ");
-  }
-
-  let newSecondary = secondary;
-  if (primary === "left" || primary === "right") {
-    newSecondary = newSecondary
-      .replace(popperStartSecondaryPlacement, "top")
-      .replace(popperEndSecondaryPlacement, "bottom");
-  }
-
-  classnames.push(`${newPrimary}-${newSecondary}` as Placement);
-  return classnames.join(" ");
+  return baseClass ? classnames.map((classname) => `${baseClass}-${classname}`).join(" ") : classnames.join(" ");
 }
 
 export function getPopperOptions({ placement, baseClass }: PositioningOptions, rtl: NgbRTL): Partial<Options> {
@@ -189,10 +184,16 @@ export function ngbPositioning(ngbRTL: NgbRTL): NgbPositioning {
 
   return {
     createPopper(positioningOption: PositioningOptions) {
-      const updatePopperOptions = positioningOption.updatePopperOptions || noMod;
-      const popperOptions = updatePopperOptions(getPopperOptions(positioningOption, ngbRTL));
+      if (!popperInstance) {
+        const updatePopperOptions = positioningOption.updatePopperOptions || noMod;
+        const popperOptions = updatePopperOptions(getPopperOptions(positioningOption, ngbRTL));
 
-      popperInstance = createPopperLite(positioningOption.hostElement, positioningOption.targetElement, popperOptions);
+        popperInstance = createPopperLite(
+          positioningOption.hostElement,
+          positioningOption.targetElement,
+          popperOptions,
+        );
+      }
     },
     update() {
       if (popperInstance) {

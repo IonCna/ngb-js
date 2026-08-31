@@ -1,6 +1,6 @@
 import template from "@ngb/toast/ngb-toast.component.html";
 import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
-import type { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
+import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
 import type {
@@ -10,23 +10,28 @@ import type {
   IComponentOptions,
   IOnChangesObject,
   IPromise,
-  IQService,
   ITimeoutService,
-  ITranscludeFunction,
 } from "angular";
+import { ContentChild, NgZone, TemplateRef, ViewChild } from "ngjs-core";
+import type { Observable } from "rxjs";
 
 export interface INgbToast {
-  hide(): IPromise<void>;
-  show(): IPromise<void>;
+  hide(): Observable<void>;
+  show(): Observable<void>;
 }
 
 export class NgbToast implements IComponentController, INgbToast {
-  protected animation?: boolean;
-  protected autohide?: boolean;
-  protected delay?: number;
+  protected animation!: boolean;
+  protected autohide!: boolean;
+  protected delay!: number;
   protected header?: string;
-  protected ariaLive?: string;
-  protected contentHeaderTpl?: ITranscludeFunction | null = null;
+  protected ariaLive!: string;
+
+  @ContentChild(NgbToastHeader, { read: TemplateRef, static: true })
+  protected contentHeaderTpl?: TemplateRef<unknown> | null = null;
+
+  @ViewChild("headerTpl", { read: TemplateRef, static: true })
+  protected headerTpl!: TemplateRef<unknown>;
 
   protected hidden?: () => void;
   protected shown?: () => void;
@@ -36,9 +41,9 @@ export class NgbToast implements IComponentController, INgbToast {
   constructor(
     private $element: IAugmentedJQuery,
     private ngbToastConfig: NgbToastConfig,
-    private $q: IQService,
     private $timeout: ITimeoutService,
     private $attrs: IAttributes,
+    private _ngZone: NgZone,
   ) {}
 
   $onInit(): void {
@@ -67,35 +72,33 @@ export class NgbToast implements IComponentController, INgbToast {
     }
   }
 
-  register(header: NgbToastHeader): void {
-    this.contentHeaderTpl = header.$transclude;
-  }
-
-  hide(): IPromise<void> {
+  hide(): Observable<void> {
     this._clearTimeout();
 
-    const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbToastFadeOutTransition, {
+    const transition = ngbRunTransition(this._ngZone, this.$element, ngbToastFadeOutTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "stop",
     });
 
-    transition.then(() => this.hidden?.());
+    transition.subscribe(() => this.hidden?.());
     return transition;
   }
 
-  show(): IPromise<void> {
-    const transition = ngbRunTransition(this.$q, this.$timeout, this.$element, ngbToastFadeInTransition, {
+  show(): Observable<void> {
+    const transition = ngbRunTransition(this._ngZone, this.$element, ngbToastFadeInTransition, {
       animation: this.animation ?? this.ngbToastConfig.animation,
       runningTransition: "continue",
     });
 
-    transition.then(() => this.shown?.());
+    transition.subscribe(() => this.shown?.());
     return transition;
   }
 
   private _init(): void {
     if (this.autohide && !this._timeoutID) {
-      this._timeoutID = this.$timeout(() => this.hide(), this.delay);
+      this._timeoutID = this.$timeout(() => {
+        this.hide();
+      }, this.delay);
     }
   }
 
@@ -111,7 +114,7 @@ export class NgbToast implements IComponentController, INgbToast {
   }
 
   static get $inject() {
-    return ["$element", NgbToastConfig.$name, "$q", "$timeout", "$attrs"];
+    return ["$element", NgbToastConfig.$name, "$timeout", "$attrs", NgZone.$name];
   }
 
   static get $factory(): IComponentOptions {

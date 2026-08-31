@@ -30,7 +30,7 @@ describe("ngbToast", () => {
     const scope = $rootScope.$new();
     const element = $compile(`
             <ngb-toast>
-                <div ngb-toast-header><strong>Custom header</strong></div>
+                <ng-template ngb-toast-header><strong>Custom header</strong></ng-template>
                 Toast body
             </ngb-toast>
         `)(scope);

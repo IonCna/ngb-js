@@ -7,5 +7,5 @@
     ]"
     ng-style="{ width: !$.stacked ? $.getPercentValue() + '%' : null }">
     <span ng-if="$.showValue">{{ $.getValue() / $.max | ngbProgressbarPercent }}</span>
-    <ng-transclude></ng-transclude>
+    <ng-content></ng-content>
 </div>

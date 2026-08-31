@@ -7,9 +7,12 @@ import { NgbAccordionHeader } from "@ngb/accordion/ngb-accordion-header.directiv
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import { NgbAccordionToggle } from "@ngb/accordion/ngb-accordion-toggle.directive";
 import { NgbCollapseModule } from "@ngb/collapse";
-import angular from "angular";
+import angular, {type IModule} from "angular";
+import { CommonModule } from "ngjs-core";
 
-export const NgbAccordionModule = angular.module("ngb.accordion", [NgbCollapseModule.name]);
+export const NgbAccordionModule: IModule = angular.module("ngb.accordion", [
+    CommonModule.name, NgbCollapseModule.name
+]);
 
 NgbAccordionModule.service(NgbAccordionConfig.$name, NgbAccordionConfig);
 

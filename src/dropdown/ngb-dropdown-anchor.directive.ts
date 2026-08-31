@@ -9,14 +9,13 @@ export class NgbDropdownAnchor implements IController {
   private unwatchOpenState?: () => void;
 
   constructor(
-    private readonly $element: JQLite,
-    private readonly $scope: IScope,
+    protected readonly $element: JQLite,
+    protected readonly $scope: IScope,
   ) {}
 
   $postLink(): void {
     this.nativeElement = toNativeElement(this.$element);
     this.$element.addClass("dropdown-toggle");
-    this.dropdown.registerAnchor(this);
 
     this.unwatchOpenState = this.$scope.$watch(
       () => this.dropdown.isOpen(),
