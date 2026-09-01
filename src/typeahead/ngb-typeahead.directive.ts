@@ -70,6 +70,7 @@ export class NgbTypeahead implements IController {
   private _inputValueForSelectOnExact: string | null = null;
   private _subscription: Subscription | null = null;
   private _windowRef: ComponentRef<NgbTypeaheadWindow> | null = null;
+  private _openingPromise?: IPromise<void>;
   private _unwatchPositioning?: () => void;
 
   constructor(
@@ -226,49 +227,57 @@ export class NgbTypeahead implements IController {
 
   private _openPopup(): IPromise<void> {
     if (this.isPopupOpen()) return this.$q.resolve();
+    if (this._openingPromise) return this._openingPromise;
 
     this._inputValueBackup = this._nativeElement.value;
-    return this._popupService.open().then(({ windowRef }) => {
-      this._windowRef = windowRef;
-      windowRef.setInput("id", this.popupId);
-      windowRef.setInput("popupClass", this.popupClass);
-      windowRef.setInput("selectEvent", ({ $event }: { $event: any }) => this._selectResultClosePopup($event));
-      windowRef.setInput("activeChangeEvent", ({ $event }: { $event?: string }) => {
-        this.activeDescendant = $event ?? null;
+    this._openingPromise = this._popupService
+      .open()
+      .then(({ windowRef }) => {
+        this._windowRef = windowRef;
+        windowRef.setInput("id", this.popupId);
+        windowRef.setInput("popupClass", this.popupClass);
+        windowRef.setInput("selectEvent", ({ $event }: { $event: any }) => this._selectResultClosePopup($event));
+        windowRef.setInput("activeChangeEvent", ({ $event }: { $event?: string }) => {
+          this.activeDescendant = $event ?? null;
+          this._renderHostState();
+        });
+
+        const popupElement = windowRef.location.nativeElement;
+        if (this.container === "body") {
+          popupElement.style.zIndex = "1055";
+          document.body.appendChild(popupElement);
+        }
+
         this._renderHostState();
+        this._changeDetector.markForCheck();
+
+        this._ngZone.runOutsideAngular(() => {
+          if (this._windowRef) {
+            this._positioning.createPopper({
+              hostElement: this._nativeElement,
+              targetElement: popupElement,
+              placement: this.placement ?? this._config.placement,
+              updatePopperOptions: (options) =>
+                (this.popperOptions ?? this._config.popperOptions)(addPopperOffset([0, 2])(options)),
+            });
+            this._watchPositioning();
+          }
+        });
+
+        ngbAutoClose(
+          this._ngZone,
+          "outside",
+          this._closed$,
+          () => this.dismissPopup(),
+          [popupElement],
+          [this._nativeElement],
+        );
+      })
+      .finally(() => {
+        this._openingPromise = undefined;
       });
 
-    const popupElement = windowRef.location.nativeElement;
-    if (this.container === "body") {
-      popupElement.style.zIndex = "1055";
-      document.body.appendChild(popupElement);
-    }
-
-    this._renderHostState();
-    this._changeDetector.markForCheck();
-
-    this._ngZone.runOutsideAngular(() => {
-      if (this._windowRef) {
-        this._positioning.createPopper({
-          hostElement: this._nativeElement,
-          targetElement: popupElement,
-          placement: this.placement ?? this._config.placement,
-          updatePopperOptions: (options) =>
-            (this.popperOptions ?? this._config.popperOptions)(addPopperOffset([0, 2])(options)),
-        });
-        this._watchPositioning();
-      }
-    });
-
-      ngbAutoClose(
-        this._ngZone,
-        "outside",
-        this._closed$,
-        () => this.dismissPopup(),
-        [popupElement],
-        [this._nativeElement],
-      );
-    });
+    return this._openingPromise;
   }
 
   private _closePopup(): void {
@@ -339,8 +348,8 @@ export class NgbTypeahead implements IController {
       this.ngbTypeahead ? this.ngbTypeahead : () => of([]),
     );
 
-    this._subscription = this._resubscribeTypeahead$.pipe(switchMap(() => results$)).subscribe((results) => {
-      this._ngZone.run(() => {
+    this._subscription = this._resubscribeTypeahead$.pipe(switchMap(() => results$)).subscribe(async (results) => {
+      await this._ngZone.run(async () => {
         if (!results || results.length === 0) {
           this._closePopup();
         } else if (
@@ -351,23 +360,25 @@ export class NgbTypeahead implements IController {
           this._selectResult(results[0]);
           this._closePopup();
         } else {
-          this._openPopup();
-          const windowRef = this._windowRef;
-          if (!windowRef) {
-            return;
-          }
-          windowRef.setInput("focusFirst", this.focusFirst);
-          windowRef.setInput("results", results);
-          windowRef.setInput("term", this._nativeElement.value);
-          if (this.resultFormatter) {
-            windowRef.setInput("formatter", this.resultFormatter);
-          }
-          if (this.resultTemplate) {
-            windowRef.setInput("resultTemplate", this.resultTemplate);
-          }
-          windowRef.instance?.resetActive();
-          windowRef.changeDetectorRef.detectChanges();
-          this._showHint();
+          await this._openPopup();
+          this._ngZone.run(() => {
+            const windowRef = this._windowRef;
+            if (!windowRef) {
+              return;
+            }
+            windowRef.setInput("focusFirst", this.focusFirst);
+            windowRef.setInput("results", results);
+            windowRef.setInput("term", this._nativeElement.value);
+            if (this.resultFormatter) {
+              windowRef.setInput("formatter", this.resultFormatter);
+            }
+            if (this.resultTemplate) {
+              windowRef.setInput("resultTemplate", this.resultTemplate);
+            }
+            windowRef.instance?.resetActive();
+            windowRef.changeDetectorRef.detectChanges();
+            this._showHint();
+          });
         }
 
         const count = results ? results.length : 0;
