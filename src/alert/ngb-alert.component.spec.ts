@@ -23,7 +23,7 @@ describe("ngbAlert", () => {
     scope.onClosed = onClosed;
 
     const element = $compile(`
-            <ngb-alert dismissible="true" animation="false" type="success" closed="onClosed()">
+            <ngb-alert dismissible="true" animation="false" type="'success'" closed="onClosed()">
                 Alert text
             </ngb-alert>
         `)(scope);

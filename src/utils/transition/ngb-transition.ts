@@ -1,15 +1,13 @@
-import { runInZone, toNativeElement } from "@ngb/utils";
+import { runInZone } from "@ngb/utils";
 import { getTransitionDurationMs } from "@ngb/utils/transition";
-import type { IAugmentedJQuery } from "angular";
-import angular from "angular";
 import type { NgZone } from "ngjs-core";
 import { EMPTY, endWith, filter, fromEvent, type Observable, of, race, Subject, takeUntil, timer } from "rxjs";
 
 export type NgbTransitionStartFn<T = unknown> = (
-  element: IAugmentedJQuery,
+  element: HTMLElement,
   animation: boolean,
   context: T,
-) => NgbTransitionEndFn | undefined;
+) => NgbTransitionEndFn | void;
 
 export type NgbTransitionEndFn = () => void;
 
@@ -20,52 +18,57 @@ export interface NgbTransitionOptions<T> {
 }
 
 export interface NgbTransitionCtx<T> {
-  transition$: Subject<void>;
+  // biome-ignore lint/suspicious/noExplicitAny: port textual de @ng-bootstrap
+  transition$: Subject<any>;
   complete: () => void;
   context: T;
 }
 
-const noopFn = angular.noop;
+const noopFn: NgbTransitionEndFn = () => {};
 
 export const environment = {
   getTransitionTimerDelayMs: () => 5,
 };
 
-const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<unknown>>();
+// biome-ignore lint/suspicious/noExplicitAny: port textual
+const runningTransitions = new Map<HTMLElement, NgbTransitionCtx<any>>();
 
-export function ngbRunTransition<T>(
-  ngZone: NgZone,
-  element: IAugmentedJQuery,
+/**
+ * Port textual del `ngbRunTransition` de `@ng-bootstrap`
+ * (`utils/transition/ngbTransition.ts`). Opera sobre `HTMLElement` crudo — los
+ * consumidores le pasan `elementRef.nativeElement`.
+ */
+export const ngbRunTransition = <T>(
+  zone: NgZone,
+  element: HTMLElement,
   startFn: NgbTransitionStartFn<T>,
   options: NgbTransitionOptions<T>,
-): Observable<void> {
-  let context = options.context ?? <T>{};
-  const nativeElement = toNativeElement(element);
+): Observable<void> => {
+  let context: T = options.context || <T>{};
 
-  const running = runningTransitions.get(nativeElement);
-
+  const running = runningTransitions.get(element);
   if (running) {
-    if (options.runningTransition === "continue") {
-      return EMPTY;
+    switch (options.runningTransition) {
+      case "continue":
+        return EMPTY;
+      case "stop":
+        zone.run(() => running.transition$.complete());
+        context = Object.assign(running.context, context);
+        runningTransitions.delete(element);
     }
-
-    ngZone.run(() => running.transition$.complete());
-    context = angular.extend(running.context, context);
-    runningTransitions.delete(nativeElement);
   }
 
   const endFn = startFn(element, options.animation, context) || noopFn;
 
-  if (!options.animation || window.getComputedStyle(nativeElement).transitionProperty === "none") {
-    ngZone.run(() => endFn());
-    return of(undefined).pipe(runInZone(ngZone));
+  if (!options.animation || window.getComputedStyle(element).transitionProperty === "none") {
+    zone.run(() => endFn());
+    return of(undefined).pipe(runInZone(zone));
   }
 
   const transition$ = new Subject<void>();
   const finishTransition$ = new Subject<void>();
   const stop$ = transition$.pipe(endWith(true));
-
-  runningTransitions.set(nativeElement, {
+  runningTransitions.set(element, {
     transition$,
     complete: () => {
       finishTransition$.next();
@@ -74,21 +77,20 @@ export function ngbRunTransition<T>(
     context,
   });
 
-  const transitionDurationMs = getTransitionDurationMs(nativeElement);
+  const transitionDurationMs = getTransitionDurationMs(element);
 
-  ngZone.runOutsideAngular(() => {
-    const transitionEnd$ = fromEvent(nativeElement, "transitionend").pipe(
+  zone.runOutsideAngular(() => {
+    const transitionEnd$ = fromEvent(element, "transitionend").pipe(
       takeUntil(stop$),
-      filter(({ target }) => target === nativeElement),
+      filter(({ target }) => target === element),
     );
-
     const timer$ = timer(transitionDurationMs + environment.getTransitionTimerDelayMs()).pipe(takeUntil(stop$));
 
     race(timer$, transitionEnd$, finishTransition$)
       .pipe(takeUntil(stop$))
       .subscribe(() => {
-        runningTransitions.delete(nativeElement);
-        ngZone.run(() => {
+        runningTransitions.delete(element);
+        zone.run(() => {
           endFn();
           transition$.next();
           transition$.complete();
@@ -97,8 +99,8 @@ export function ngbRunTransition<T>(
   });
 
   return transition$.asObservable();
-}
+};
 
-export function ngbCompleteTransition(element: IAugmentedJQuery) {
-  runningTransitions.get(toNativeElement(element))?.complete();
-}
+export const ngbCompleteTransition = (element: HTMLElement) => {
+  runningTransitions.get(element)?.complete();
+};

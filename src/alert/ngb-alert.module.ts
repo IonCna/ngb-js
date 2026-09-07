@@ -1,8 +1,12 @@
 import { NgbAlert } from "@ngb/alert/ngb-alert.component";
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
-import angular from "angular";
 import { CommonModule } from "ngjs-core/runtime/common";
+import { NgModule } from "ngjs-core/runtime/core";
 
-export const NgbAlertModule = angular.module("ngb.alert", [CommonModule.name]);
-NgbAlertModule.component(NgbAlert.$name, NgbAlert.$factory);
-NgbAlertModule.service(NgbAlertConfig.$name, NgbAlertConfig);
+@NgModule({
+  id: "ngb.alert",
+  imports: [CommonModule],
+  declarations: [NgbAlert],
+  providers: [NgbAlertConfig],
+})
+export class NgbAlertModule {}

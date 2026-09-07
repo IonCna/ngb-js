@@ -21,32 +21,46 @@ import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
 import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
 import { LiveService } from "@ngb/utils/accessibility/live.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
+import { NgModule, registerNgModule } from "ngjs-core/runtime/core";
 
-import angular, { type IModule } from "angular";
+/**
+ * Módulo raíz. Los feature modules ya convertidos a `@NgModule` entran como
+ * clase; los que siguen siendo `angular.module` crudos, por `.name`. `imports`
+ * de `@NgModule` acepta las dos formas + `angular.IModule`, así la migración es
+ * incremental.
+ */
+@NgModule({
+  id: "ngb",
+  controllerAs: "$",
+  imports: [
+    NgbAlertModule,
+    NgbProgressbarModule,
+    NgbCollapseModule.name,
+    NgbCarouselModule.name,
+    NgbToastModule,
+    NgbAccordionModule.name,
+    NgbModalModule.name,
+    NgbDropdownModule.name,
+    NgbTooltipModule.name,
+    NgbNavModule.name,
+    NgbOffcanvasModule.name,
+    NgbPopoverModule.name,
+    NgbScrollSpyModule.name,
+    NgbRatingModule.name,
+    NgbTimepickerModule.name,
+    NgbTypeaheadModule.name,
+    NgbPaginationModule,
+    NgbDatepickerModule.name,
+  ],
+  providers: [
+    NgbConfig,
+    NgbScrollbar,
+    LiveService,
+    NgbRTL,
+    { provide: ARIA_LIVE_DELAY.$name, useValue: ARIA_LIVE_DELAY.$value },
+  ],
+})
+class NgbRootModule {}
 
-export const NgbModule: IModule = angular.module("ngb", [
-  NgbAlertModule.name,
-  NgbProgressbarModule.name,
-  NgbCollapseModule.name,
-  NgbCarouselModule.name,
-  NgbToastModule.name,
-  NgbAccordionModule.name,
-  NgbModalModule.name,
-  NgbDropdownModule.name,
-  NgbTooltipModule.name,
-  NgbNavModule.name,
-  NgbOffcanvasModule.name,
-  NgbPopoverModule.name,
-  NgbScrollSpyModule.name,
-  NgbRatingModule.name,
-  NgbTimepickerModule.name,
-  NgbTypeaheadModule.name,
-  NgbPaginationModule.name,
-  NgbDatepickerModule.name,
-]);
-
-NgbModule.service(NgbConfig.$name, NgbConfig);
-NgbModule.service(NgbScrollbar.$name, NgbScrollbar);
-NgbModule.service(LiveService.$name, LiveService);
-NgbModule.service(NgbRTL.$name, NgbRTL);
-NgbModule.constant(ARIA_LIVE_DELAY.$name, ARIA_LIVE_DELAY.$value);
+/** El único `registerNgModule` — el borde público (`angular.module("app", [NgbModule.name])`). */
+export const NgbModule = registerNgModule(NgbRootModule);

@@ -2,85 +2,56 @@ import template from "@ngb/alert/ngb-alert.component.html";
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
 import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
-import { NgZone } from "ngjs-core";
+import { Component, ElementRef, EventEmitter, HostBinding, inject, Input, NgZone, Output } from "ngjs-core";
 import type { Observable } from "rxjs";
 
 export interface INgbAlert {
   close(): Observable<void>;
 }
 
-export class NgbAlert implements IComponentController, INgbAlert {
-  protected animation!: boolean;
-  protected dismissible!: boolean;
-  protected type!: string;
-  protected closed?: () => void;
+@Component({
+  selector: "ngb-alert",
+  exportAs: "ngbAlert",
+  template,
+})
+export class NgbAlert implements INgbAlert {
+  private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly _config = inject(NgbAlertConfig);
+  private readonly _zone = inject(NgZone);
 
-  private _appliedType?: string;
+  @Input() animation = this._config.animation;
+  @Input() dismissible = this._config.dismissible;
+  @Input() type = this._config.type;
+  @Output() closed = new EventEmitter<void>();
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly ngbAlertConfig: NgbAlertConfig,
-    private readonly _ngZone: NgZone,
-  ) {}
+  @HostBinding("attr.role") readonly _role = "alert";
+  @HostBinding("class.d-block") readonly _block = true;
 
-  $onInit(): void {
-    this.animation = this.animation ?? this.ngbAlertConfig.animation;
-    this.dismissible = this.dismissible ?? this.ngbAlertConfig.dismissible;
-    this.type = this.type ?? this.ngbAlertConfig.type;
-
-    // $onChanges runs before $onInit, so the config-derived defaults above
-    // are not yet reflected in the DOM. Re-apply them now.
-    this.$onChanges();
+  @HostBinding("class")
+  get _hostClass(): string {
+    return `alert show${this.type ? ` alert-${this.type}` : ""}`;
   }
 
-  $postLink(): void {
-    this.$element.attr("role", "alert");
-    this.$element.addClass("alert d-block show");
+  @HostBinding("class.fade")
+  get _fade(): boolean {
+    return this.animation;
   }
 
-  $onChanges(): void {
-    this.$element.toggleClass("fade", this.animation);
-    this.$element.toggleClass("alert-dismissible", this.dismissible);
-
-    if (this._appliedType) this.$element.removeClass(`alert-${this._appliedType}`);
-    if (this.type) this.$element.addClass(`alert-${this.type}`);
-    this._appliedType = this.type;
+  @HostBinding("class.alert-dismissible")
+  get _dismissibleClass(): boolean {
+    return this.dismissible;
   }
 
   close(): Observable<void> {
-    const transition = ngbRunTransition(this._ngZone, this.$element, ngbAlertFadingTransition, {
-      animation: this.animation ?? this.ngbAlertConfig.animation,
+    const transition = ngbRunTransition(this._zone, this._elementRef.nativeElement, ngbAlertFadingTransition, {
+      animation: this.animation ?? this._config.animation,
       runningTransition: "continue",
     });
 
     transition.subscribe(() => {
-      this.closed?.();
+      this.closed.emit();
     });
 
     return transition;
-  }
-
-  static get $name() {
-    return "ngbAlert";
-  }
-
-  static get $inject() {
-    return ["$element", NgbAlertConfig.$name, NgZone.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        animation: "<?",
-        dismissible: "<?",
-        type: "@?",
-        closed: "&?",
-      },
-      transclude: true,
-      controller: NgbAlert,
-      controllerAs: "$",
-      template,
-    };
   }
 }

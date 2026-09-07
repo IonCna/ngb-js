@@ -1,26 +1,20 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
+import { inject, Injectable } from "ngjs-core";
 
+/** Defaults de `NgbAlert`. Paridad con `@ng-bootstrap` (`alert-config.ts`). */
+@Injectable()
 export class NgbAlertConfig {
+  private readonly _config = inject(NgbConfig);
   private _animation?: boolean;
 
-  constructor(private readonly ngbConfig: NgbConfig) {}
+  dismissible = true;
+  type = "warning";
 
-  public dismissible = true;
-  public type = "warning";
-
-  get animation() {
-    return this._animation ?? this.ngbConfig.animation;
+  get animation(): boolean {
+    return this._animation ?? this._config.animation;
   }
 
   set animation(animation: boolean) {
     this._animation = animation;
-  }
-
-  static get $name() {
-    return "ngb.alert.config.service";
-  }
-
-  static get $inject() {
-    return [NgbConfig.$name];
   }
 }
