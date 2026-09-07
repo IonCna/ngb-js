@@ -1,15 +1,12 @@
-export class NgbProgressbarPercentFilter {
-  static get $name() {
-    return "ngbProgressbarPercent";
-  }
+import { Pipe, type PipeTransform } from "ngjs-core";
 
-  static $transform() {
-    return (value?: number | null) => {
-      const number = Number(value);
-      if (!Number.isFinite(number)) return "0%";
+@Pipe({ name: "ngbProgressbarPercent" })
+export class NgbProgressbarPercentFilter implements PipeTransform<number | null | undefined, string> {
+  transform(value?: number | null): string {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "0%";
 
-      const percent = Math.round(number * 10000) / 100;
-      return `${percent}%`;
-    };
+    const percent = Math.round(number * 10000) / 100;
+    return `${percent}%`;
   }
 }

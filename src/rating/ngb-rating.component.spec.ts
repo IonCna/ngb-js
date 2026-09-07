@@ -62,7 +62,7 @@ describe("ngbRating", () => {
     const scope = $rootScope.$new() as IRootScopeService & { disabled: boolean };
     scope.disabled = true;
 
-    const element = $compile(`<ngb-rating rate="2" max="5" ng-disabled="disabled"></ngb-rating>`)(scope);
+    const element = $compile(`<ngb-rating rate="2" max="5" disabled="disabled"></ngb-rating>`)(scope);
     scope.$digest();
 
     const fourthStar = element[0].querySelectorAll(":scope > span")[3].querySelector("span:last-child") as HTMLElement;
@@ -103,3 +103,4 @@ describe("ngbRating", () => {
     ]);
   });
 });
+

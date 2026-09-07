@@ -1,86 +1,60 @@
-import { NgbScrollSpyConfig } from "@ngb/scrollspy/ngb-scrollspy-config.service";
 import type { NgbScrollSpyFragment } from "@ngb/scrollspy/ngb-scrollspy-fragment.directive";
-import {
-  NgbScrollSpyService,
-  type NgbScrollSpyProcessChanges,
-  type NgbScrollToOptions,
-} from "@ngb/scrollspy/scrollspy.service";
-import type { IAugmentedJQuery, IController, IDirective, IOnChangesObject } from "angular";
-import { ChangeDetectorRef, NgZone } from "ngjs-core";
-import type { Observable, Subscription } from "rxjs";
+import { NgbScrollSpyService, type NgbScrollSpyProcessChanges, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
+import { Directive, ElementRef, HostBinding, inject, Input, type AfterViewInit, type OnDestroy, Output } from "ngjs-core";
+import type { Observable } from "rxjs";
+import type { NgbScrollSpyRef } from "./ngb-scrollspy-item.directive";
 
-export class NgbScrollSpy implements IController {
+@Directive({
+  selector: "[ngbScrollSpy]",
+  exportAs: "ngbScrollSpy",
+  providers: [NgbScrollSpyService],
+})
+export class NgbScrollSpy implements NgbScrollSpyRef, AfterViewInit, OnDestroy {
   static ngAcceptInputType_scrollBehavior: string;
 
   private _initialFragment: string | null = null;
-  private _activeChangeSubscription?: Subscription;
-  private _service: NgbScrollSpyService;
+  private _service = inject(NgbScrollSpyService);
+  private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  public processChanges?: NgbScrollSpyProcessChanges;
-  public rootMargin?: string;
-  public scrollBehavior?: "auto" | "smooth";
-  public threshold?: number | number[];
-  public activeChange?: ({ $event }: { $event: string }) => void;
+  @Input() processChanges?: NgbScrollSpyProcessChanges;
+  @Input() rootMargin?: string;
+  @Input() scrollBehavior?: "auto" | "smooth";
+  @Input() threshold?: number | number[];
 
-  constructor(
-    private $element: IAugmentedJQuery,
-    $config: NgbScrollSpyConfig,
-    private _changeDetector: ChangeDetectorRef,
-    _ngZone: NgZone,
-  ) {
-    this._service = new NgbScrollSpyService($config, this._changeDetector, _ngZone);
-  }
-
+  @Input()
   set active(fragment: string) {
     this._initialFragment = fragment;
-
-    if (fragment) {
-      this.scrollTo(fragment);
-    }
+    this.scrollTo(fragment);
   }
 
-  /**
-   * Getter/setter for the currently active fragment id.
-   */
+  @Output() activeChange = this._service.active$;
+
+  @HostBinding("attr.tabindex")
+  readonly _tabindex = "0";
+
+  @HostBinding("style.overflow-y")
+  readonly _overflowY = "auto";
+
   get active(): string {
     return this._service.active;
   }
 
-  /**
-   * Returns an observable that emits currently active section id.
-   */
   get active$(): Observable<string> {
     return this._service.active$;
   }
 
-  $postLink(): void {
-    this.$element.attr("tabindex", "0");
-    this.$element.css("overflow-y", "auto");
-
+  ngAfterViewInit(): void {
     this._service.start({
       processChanges: this.processChanges,
-      root: this.$element,
+      root: this._nativeElement,
       rootMargin: this.rootMargin,
       threshold: this.threshold,
-      scrollBehavior: this.scrollBehavior,
-      changeDetectorRef: this._changeDetector,
       ...(this._initialFragment && { initialFragment: this._initialFragment }),
     });
-
-    this._activeChangeSubscription = this._service.active$.subscribe((active) => {
-      this.activeChange?.({ $event: active });
-    });
   }
 
-  $onChanges(changes: IOnChangesObject): void {
-    if (changes.active && !changes.active.isFirstChange()) {
-      this.active = changes.active.currentValue;
-    }
-  }
-
-  $onDestroy(): void {
-    this._activeChangeSubscription?.unsubscribe();
-    this._service.$onDestroy();
+  ngOnDestroy(): void {
+    this._service.ngOnDestroy();
   }
 
   /**
@@ -97,42 +71,10 @@ export class NgbScrollSpy implements IController {
     this._service.unobserve(fragment.id);
   }
 
-  /**
-   * Scrolls to a fragment that is identified by the `ngbScrollSpyFragment` directive.
-   * An id or an element reference can be passed.
-   */
-  scrollTo(fragment: string | HTMLElement | IAugmentedJQuery, options?: NgbScrollToOptions): void {
+  scrollTo(fragment: string | HTMLElement, options?: NgbScrollToOptions): void {
     this._service.scrollTo(fragment, {
       ...(this.scrollBehavior && { behavior: this.scrollBehavior }),
       ...options,
     });
   }
-
-  //#region $angular
-
-  static get $name() {
-    return "ngbScrollSpy";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: {
-        active: "@?",
-        activeChange: "&?",
-        processChanges: "<?",
-        rootMargin: "@?",
-        scrollBehavior: "@?",
-        threshold: "<?",
-      },
-      controller: NgbScrollSpy,
-      scope: true,
-      restrict: "A",
-    });
-  }
-
-  static get $inject() {
-    return ["$element", NgbScrollSpyConfig.$name, ChangeDetectorRef.$name, NgZone.$name];
-  }
-
-  //#endregion
 }

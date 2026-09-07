@@ -8,3 +8,8 @@ export { NgbPaginationNext } from "@ngb/pagination/ngb-pagination-next.directive
 export { NgbPaginationNumber } from "@ngb/pagination/ngb-pagination-number.directive";
 export { NgbPaginationPages } from "@ngb/pagination/ngb-pagination-pages.directive";
 export { NgbPaginationPrevious } from "@ngb/pagination/ngb-pagination-previous.directive";
+export type {
+  NgbPaginationLinkContext,
+  NgbPaginationNumberContext,
+  NgbPaginationPagesContext,
+} from "@ngb/pagination/ngb-pagination.component";

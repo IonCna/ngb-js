@@ -1,125 +1,153 @@
 import template from "@ngb/rating/ngb-rating.component.html";
 import { NgbRatingConfig } from "@ngb/rating/ngb-rating-config.service";
 import { getValueInRange } from "@ngb/utils";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
-import { ContentChild, NgDisabled, TemplateRef, ViewChild } from "ngjs-core";
+import {
+  Component,
+  ContentChild,
+  EventEmitter,
+  HostBinding,
+  HostListener,
+  inject,
+  Input,
+  type OnChanges,
+  type OnInit,
+  Output,
+  TemplateRef,
+  ViewChild,
+  type SimpleChanges,
+} from "ngjs-core";
 
 export interface StarTemplateContext {
   fill: number;
   index: number;
 }
 
-export class NgbRating implements IComponentController {
-  protected ngDisabled?: NgDisabled;
-  protected _max?: number;
-  protected rate!: number;
-  protected readonly!: boolean;
-  protected resettable!: boolean;
-  protected tabindex!: number | string;
+@Component({
+  selector: "ngb-rating",
+  template,
+  transclude: true,
+})
+export class NgbRating implements OnInit, OnChanges {
+  contexts: StarTemplateContext[] = [];
+  nextRate!: number;
 
-  protected rateChange?: (locals: { $event: number }) => void;
-  protected hover?: (locals: { $event: number }) => void;
-  protected leave?: (locals: { $event: number }) => void;
+  private _config = inject(NgbRatingConfig);
 
-  public starTemplate?: TemplateRef<StarTemplateContext>;
+  @Input() disabled = false;
+  @Input() max = this._config.max;
+  @Input() rate!: number;
+  @Input() readonly = this._config.readonly;
+  @Input() resettable = this._config.resettable;
+  @Input() starTemplate?: TemplateRef<StarTemplateContext>;
 
   @ContentChild(TemplateRef, { static: false })
-  public starTemplateFromContent?: TemplateRef<StarTemplateContext>;
+  starTemplateFromContent?: TemplateRef<StarTemplateContext>;
 
   @ViewChild("defaultStar", { read: TemplateRef, static: true })
-  public defaultStarTemplate!: TemplateRef<StarTemplateContext>;
+  defaultStarTemplate!: TemplateRef<StarTemplateContext>;
 
-  protected contexts: StarTemplateContext[] = [];
-  protected nextRate!: number;
-  private removeDisabledListener?: () => void;
+  @Input() tabindex: number | string = this._config.tabindex;
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $scope: IScope,
-    private readonly ngbRatingConfig: NgbRatingConfig,
-  ) {}
-
-  $onInit(): void {
-    this.readonly = this.readonly ?? this.ngbRatingConfig.readonly;
-    this.resettable = this.resettable ?? this.ngbRatingConfig.resettable;
-    this.tabindex = this.tabindex ?? this.ngbRatingConfig.tabindex;
-    this.rate = this.rate ?? 0;
-
-    this._setupContexts();
-    this.update(this.rate);
-  }
-
-  $postLink(): void {
-    this.$element.addClass("d-inline-flex");
-    this.$element.attr("role", "slider");
-    this.$element.attr("aria-valuemin", "0");
-
-    this.$element.on("blur", () => this.$scope.$evalAsync());
-    this.$element.on("keydown", (event) => this.$scope.$evalAsync(() => this.handleKeyDown(event)));
-    this.$element.on("mouseleave", () => this.$scope.$evalAsync(() => this.reset()));
-    this.removeDisabledListener = this.ngDisabled?.onChange(() => this._render());
-    this._render();
-  }
-
-  $onDestroy(): void {
-    this.$element.off("blur");
-    this.$element.off("keydown");
-    this.$element.off("mouseleave");
-    this.removeDisabledListener?.();
-  }
-
-  $onChanges(changes: IOnChangesObject): void {
-    if ("rate" in changes) this.update(this.rate);
-    if ("max" in changes && !changes["max"].isFirstChange()) this._updateMax();
-
-    this._render();
-  }
-
-  set max(max: number) {
-    this._max = max;
-  }
-
-  get max(): number {
-    return this._max ?? this.ngbRatingConfig.max;
-  }
-
-  public ariaValueText(current: number, max: number): string {
+  @Input() ariaValueText(current: number, max: number): string {
     return `${current} out of ${max}`;
   }
 
-  isInteractive(): boolean {
-    return !this.readonly && !this.isDisabled();
+  @Output() hover = new EventEmitter<number>();
+  @Output() leave = new EventEmitter<number>();
+  @Output() rateChange = new EventEmitter<number>();
+
+  onChange = (_: any) => {};
+  onTouched = () => {};
+
+  @HostBinding("class.d-inline-flex")
+  readonly _dInlineFlex = true;
+
+  @HostBinding("attr.tabindex")
+  get _tabindex(): number | string {
+    return this.disabled ? -1 : this.tabindex;
   }
 
-  isDisabled(): boolean {
-    return this.ngDisabled?.disabled ?? false;
+  @HostBinding("attr.role")
+  readonly _role = "slider";
+
+  @HostBinding("attr.aria-valuemin")
+  readonly _ariaValueMin = "0";
+
+  @HostBinding("attr.aria-valuemax")
+  get _ariaValueMax(): number {
+    return this.max;
+  }
+
+  @HostBinding("attr.aria-valuenow")
+  get _ariaValueNow(): number {
+    return this.nextRate;
+  }
+
+  @HostBinding("attr.aria-valuetext")
+  get _ariaValueText(): string {
+    return this.ariaValueText(this.nextRate, this.max);
+  }
+
+  @HostBinding("attr.aria-readonly")
+  get _ariaReadonly(): true | null {
+    return this.readonly && !this.disabled ? true : null;
+  }
+
+  @HostBinding("attr.aria-disabled")
+  get _ariaDisabled(): true | null {
+    return this.disabled ? true : null;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes["rate"]) {
+      this.update(this.rate);
+    }
+    if (changes["max"]) {
+      this._updateMax();
+    }
+  }
+
+  ngOnInit(): void {
+    this._setupContexts();
+    this._updateState(this.rate);
+  }
+
+  registerOnChange(fn: (value: any) => any): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => any): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+  }
+
+  isInteractive(): boolean {
+    return !this.readonly && !this.disabled;
   }
 
   enter(value: number): void {
-    if (this.isInteractive()) this._updateState(value);
-    this.hover?.({ $event: value });
+    if (this.isInteractive()) {
+      this._updateState(value);
+    }
+    this.hover.emit(value);
+  }
+
+  @HostListener("blur")
+  handleBlur(): void {
+    this.onTouched();
   }
 
   handleClick(value: number): void {
-    if (!this.isInteractive()) return;
-    this.update(this.resettable && this.rate === value ? 0 : value);
-  }
-
-  reset(): void {
-    this.leave?.({ $event: this.nextRate });
-    this._updateState(this.rate);
-  }
-
-  update(value: number): void {
-    const newRate = getValueInRange(value, this.max, 0);
-    if (this.isInteractive() && this.rate !== newRate) {
-      this.rate = newRate;
-      this.rateChange?.({ $event: this.rate });
+    if (this.isInteractive()) {
+      this.update(this.resettable && this.rate === value ? 0 : value);
     }
-    this._updateState(this.rate);
   }
 
-  handleKeyDown(event: JQueryEventObject): void {
+  @HostListener("keydown", ["$event"])
+  handleKeyDown(event: KeyboardEvent): void {
     switch (event.key) {
       case "ArrowDown":
       case "ArrowLeft":
@@ -138,29 +166,38 @@ export class NgbRating implements IComponentController {
       default:
         return;
     }
+
     event.preventDefault();
+  }
+
+  @HostListener("mouseleave")
+  reset(): void {
+    this.leave.emit(this.nextRate);
+    this._updateState(this.rate);
+  }
+
+  update(value: number, internalChange = true): void {
+    const newRate = getValueInRange(value, this.max, 0);
+    if (this.isInteractive() && this.rate !== newRate) {
+      this.rate = newRate;
+      this.rateChange.emit(this.rate);
+    }
+    if (internalChange) {
+      this.onChange(this.rate);
+      this.onTouched();
+    }
+    this._updateState(this.rate);
+  }
+
+  writeValue(value: number): void {
+    this.update(value, false);
   }
 
   private _updateState(nextValue: number): void {
     this.nextRate = nextValue;
-    this.contexts = this.contexts.map((context, index) => ({
-      ...context,
-      fill: Math.round(getValueInRange(nextValue - index, 1, 0) * 100),
-    }));
-    this._render();
-  }
-
-  private _render(): void {
-    this.$element.attr("tabindex", this.isDisabled() ? "-1" : `${this.tabindex ?? this.ngbRatingConfig.tabindex}`);
-    this.$element.attr("aria-valuemax", `${this.max}`);
-    this.$element.attr("aria-valuenow", `${this.nextRate}`);
-    this.$element.attr("aria-valuetext", this.ariaValueText(this.nextRate, this.max));
-
-    if (this.readonly && !this.isDisabled()) this.$element.attr("aria-readonly", "true");
-    else this.$element.removeAttr("aria-readonly");
-
-    if (this.isDisabled()) this.$element.attr("aria-disabled", "true");
-    else this.$element.removeAttr("aria-disabled");
+    this.contexts.forEach(
+      (context, index) => (context.fill = Math.round(getValueInRange(nextValue - index, 1, 0) * 100)),
+    );
   }
 
   private _updateMax(): void {
@@ -171,38 +208,7 @@ export class NgbRating implements IComponentController {
   }
 
   private _setupContexts(): void {
-    this.contexts = Array.from({ length: this.max }, (_, index) => ({ fill: 0, index }));
-  }
-
-  static get $name() {
-    return "ngbRating";
-  }
-
-  static get $inject() {
-    return ["$element", "$scope", NgbRatingConfig.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        max: "<?",
-        rate: "<?",
-        rateChange: "&?",
-        readonly: "<?",
-        resettable: "<?",
-        starTemplate: "<?",
-        tabindex: "<?",
-        ariaValueText: "<?",
-        hover: "&?",
-        leave: "&?",
-      },
-      controller: NgbRating,
-      controllerAs: "$",
-      require: {
-        ngDisabled: "?ngDisabled",
-      },
-      transclude: true,
-      template,
-    };
+    this.contexts = Array.from({ length: this.max }, (_value, index) => ({ fill: 0, index }));
   }
 }
+

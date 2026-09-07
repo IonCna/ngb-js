@@ -1,110 +1,80 @@
 import { NgbCollapseConfig } from "@ngb/collapse/ngb-collapse-config.service";
-import { type INgbEvent, ngbCollapsingTransition, ngbRunTransition } from "@ngb/utils";
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import { NgZone } from "ngjs-core";
-import { Subject } from "rxjs";
+import { ngbCollapsingTransition, ngbRunTransition } from "@ngb/utils";
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  inject,
+  Input,
+  NgZone,
+  type OnInit,
+  Output,
+} from "ngjs-core";
+import type { Observable } from "rxjs";
 
 export interface INgbCollapse {
   toggle(open?: boolean): void;
 }
 
-export class NgbCollapse implements IController, INgbCollapse {
-  public animation!: boolean;
-  public horizontal!: boolean;
-  public readonly hidden = new Subject<void>();
-  public readonly shown = new Subject<void>();
-
-  protected hiddenCallback?: () => void;
-  protected ngbCollapseChange?: ({ $event }: INgbEvent<boolean>) => void;
-  protected shownCallback?: () => void;
-
+@Directive({
+  selector: "[ngbCollapse]",
+  exportAs: "ngbCollapse",
+})
+export class NgbCollapse implements OnInit, INgbCollapse {
+  private _config = inject(NgbCollapseConfig);
+  private _element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private _zone = inject(NgZone);
   private _afterInit = false;
   private _isCollapsed = false;
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly ngbCollapseConfig: NgbCollapseConfig,
-    private readonly _ngZone: NgZone,
-  ) {}
+  @Input() animation = this._config.animation;
 
-  $onInit(): void {
-    this.animation = this.animation ?? this.ngbCollapseConfig.animation;
-    this.horizontal = this.horizontal ?? this.ngbCollapseConfig.horizontal;
-    this.$element.toggleClass("collapse-horizontal", this.horizontal);
+  @Input("ngbCollapse")
+  set collapsed(isCollapsed: boolean) {
+    if (this._isCollapsed !== isCollapsed) {
+      this._isCollapsed = isCollapsed;
+      if (this._afterInit) {
+        this._runTransitionWithEvents(isCollapsed, this.animation);
+      }
+    }
+  }
 
+  @Output() ngbCollapseChange = new EventEmitter<boolean>();
+  @Input() horizontal = this._config.horizontal;
+  @Output() shown = new EventEmitter<void>();
+  @Output() hidden = new EventEmitter<void>();
+
+  @HostBinding("class.collapse-horizontal")
+  get _collapseHorizontal(): boolean {
+    return this.horizontal;
+  }
+
+  ngOnInit() {
     this._runTransition(this._isCollapsed, false);
     this._afterInit = true;
   }
 
-  $onChanges(): void {
-    this.$element.toggleClass("collapse-horizontal", !!this.horizontal);
-  }
-
-  $onDestroy(): void {
-    this.hidden.complete();
-    this.shown.complete();
-  }
-
-  set collapsed(isCollapsed: boolean) {
-    if (isCollapsed === undefined) return;
-    if (isCollapsed === this._isCollapsed) return;
-    this._isCollapsed = isCollapsed;
-
-    if (this._afterInit) {
-      this._runTransitionWithEvents(isCollapsed, this.animation ?? this.ngbCollapseConfig.animation);
-    }
-  }
-
-  public toggle(open: boolean = this._isCollapsed): void {
+  toggle(open: boolean = this._isCollapsed): void {
     this.collapsed = !open;
-    this.ngbCollapseChange?.({ $event: this._isCollapsed });
+    this.ngbCollapseChange.next(this._isCollapsed);
   }
 
-  private _runTransitionWithEvents(collapsed: boolean, animation: boolean) {
-    this._runTransition(collapsed, animation).subscribe(() => {
-      if (collapsed) {
-        this.hiddenCallback?.();
-        this.hidden.next();
-        return;
-      }
-
-      this.shownCallback?.();
-      this.shown.next();
-    });
-  }
-
-  private _runTransition(collapsed: boolean, animation: boolean) {
-    return ngbRunTransition(this._ngZone, this.$element, ngbCollapsingTransition, {
+  private _runTransition(collapsed: boolean, animation: boolean): Observable<void> {
+    return ngbRunTransition(this._zone, this._element.nativeElement, ngbCollapsingTransition, {
       animation,
       runningTransition: "stop",
-      context: {
-        direction: collapsed ? "hide" : "show",
-        dimension: this.horizontal ? "width" : "height",
-      },
+      context: { direction: collapsed ? "hide" : "show", dimension: this.horizontal ? "width" : "height" },
     });
   }
 
-  static get $inject() {
-    return ["$element", NgbCollapseConfig.$name, NgZone.$name];
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      controller: NgbCollapse,
-      restrict: "A",
-      scope: {
-        animation: "<?",
-        horizontal: "<?",
-        collapsed: "<ngbCollapse",
-        hiddenCallback: "&?ngbHidden",
-        ngbCollapseChange: "&?",
-        shownCallback: "&?shown",
-      },
-      bindToController: true,
+  private _runTransitionWithEvents(collapsed: boolean, animation: boolean): void {
+    this._runTransition(collapsed, animation).subscribe(() => {
+      if (collapsed) {
+        this.hidden.emit();
+      } else {
+        this.shown.emit();
+      }
     });
-  }
-
-  static get $name() {
-    return "ngbCollapse";
   }
 }

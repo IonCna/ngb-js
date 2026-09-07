@@ -1,8 +1,10 @@
-import { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
 import { NgbCollapseConfig } from "@ngb/collapse/ngb-collapse-config.service";
-import angular, {type IModule} from "angular";
-import { installCoreModule } from "ngjs-core/runtime";
+import { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
+import { NgModule } from "ngjs-core/runtime/core";
 
-export const NgbCollapseModule: IModule = angular.module("ngb.collapse", [installCoreModule().name]);
-NgbCollapseModule.directive(NgbCollapse.$name, NgbCollapse.$factory);
-NgbCollapseModule.service(NgbCollapseConfig.$name, NgbCollapseConfig);
+@NgModule({
+  id: "ngb.collapse",
+  declarations: [NgbCollapse],
+  providers: [NgbCollapseConfig],
+})
+export class NgbCollapseModule {}

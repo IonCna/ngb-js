@@ -1,3 +1,6 @@
+import { Injectable } from "ngjs-core";
+
+@Injectable({ providedIn: "root" })
 export class NgbPaginationConfig {
     disabled = false
     boundaryLinks = false;
@@ -7,8 +10,4 @@ export class NgbPaginationConfig {
     pageSize = 10;
     rotate = false;
     size?: 'sm' | 'lg' | string | null;
-
-    static get $name() {
-        return "ngb.pagination-config.service"
-    }
 }

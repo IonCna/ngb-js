@@ -16,7 +16,7 @@ describe("ngbCollapse", () => {
       (_$compile_: ICompileService, _$rootScope_: IRootScopeService, _$injector_: IInjectorService) => {
         $compile = _$compile_;
         $rootScope = _$rootScope_;
-        config = _$injector_.get<NgbCollapseConfig>(NgbCollapseConfig.$name);
+        config = _$injector_.get<NgbCollapseConfig>("NgbCollapseConfig");
       },
     );
   });
@@ -79,7 +79,7 @@ describe("ngbCollapse", () => {
     `)(scope);
     scope.$digest();
 
-    const collapse = element.controller<NgbCollapse>(NgbCollapse.$name);
+    const collapse = element.controller<NgbCollapse>("ngbCollapse");
 
     collapse.toggle();
 
@@ -113,3 +113,4 @@ describe("ngbCollapse", () => {
     expect(element.hasClass("collapse-horizontal")).toBe(true);
   });
 });
+

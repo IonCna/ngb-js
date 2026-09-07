@@ -1,48 +1,24 @@
-import type { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
-import type { IController, IDirective } from "angular";
+import { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
+import { Directive, HostBinding, inject, Input, type AfterViewInit, type OnDestroy } from "ngjs-core";
 
-export class NgbScrollSpyFragment implements IController {
-  public id!: string;
-  public ngbScrollSpy!: NgbScrollSpy;
+@Directive({
+  selector: "[ngbScrollSpyFragment]",
+})
+export class NgbScrollSpyFragment implements AfterViewInit, OnDestroy {
+  private _scrollSpy = inject(NgbScrollSpy);
 
-  constructor(public $element: JQLite) {}
+  @Input("ngbScrollSpyFragment") id!: string;
 
-  $postLink(): void {
-    this.$element.attr("id", this.id);
-    this.ngbScrollSpy._registerFragment(this);
+  @HostBinding("attr.id")
+  get _id(): string {
+    return this.id;
   }
 
-  $onChanges(): void {
-    this.$element.attr("id", this.id);
+  ngAfterViewInit(): void {
+    this._scrollSpy._registerFragment(this);
   }
 
-  $onDestroy(): void {
-    this.ngbScrollSpy._unregisterFragment(this);
+  ngOnDestroy(): void {
+    this._scrollSpy._unregisterFragment(this);
   }
-
-  //#region $angular
-
-  static get $name() {
-    return "ngbScrollSpyFragment";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: {
-        id: "@ngbScrollSpyFragment",
-      },
-      controller: NgbScrollSpyFragment,
-      require: {
-        ngbScrollSpy: "^ngbScrollSpy",
-      },
-      scope: true,
-      restrict: "A",
-    });
-  }
-
-  static get $inject() {
-    return ["$element"];
-  }
-
-  //#endregion
 }

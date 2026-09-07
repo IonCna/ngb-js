@@ -1,21 +1,7 @@
-import type {TemplateRef} from "ngjs-core";
-import type {IDirective} from "angular";
+import { Directive, inject, TemplateRef } from "ngjs-core";
+import type { NgbPaginationLinkContext } from "@ngb/pagination/ngb-pagination.component";
 
+@Directive({ selector: "ng-template[ngbPaginationLast]" })
 export class NgbPaginationLast {
-    public templateRef!: TemplateRef<any>;
-
-    static get $name() {
-        return "ngbPaginationLast";
-    }
-
-    static $factory(): IDirective {
-        return {
-            restrict: "A",
-            bindToController: true,
-            controller: NgbPaginationLast,
-            require: {
-                templateRef: "ngTemplate",
-            }
-        }
-    }
+  templateRef = inject(TemplateRef<NgbPaginationLinkContext>);
 }

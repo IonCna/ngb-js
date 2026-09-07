@@ -1,24 +1,9 @@
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
+import { Component, HostBinding } from "ngjs-core";
 
-export class NgbProgressbarStacked implements IComponentController {
-  constructor(private readonly $element: IAugmentedJQuery) {}
-
-  $postLink(): void {
-    this.$element.addClass("progress-stacked");
-  }
-
-  static get $name() {
-    return "ngbProgressbarStacked";
-  }
-
-  static get $inject() {
-    return ["$element"];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      controller: NgbProgressbarStacked,
-      controllerAs: "$",
-    };
-  }
+@Component({
+  selector: "ngb-progressbar-stacked",
+  template: "<ng-content></ng-content>",
+})
+export class NgbProgressbarStacked {
+  @HostBinding("class.progress-stacked") readonly _progressStacked = true;
 }

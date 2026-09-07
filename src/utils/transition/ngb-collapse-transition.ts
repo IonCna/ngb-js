@@ -1,6 +1,4 @@
-import { reflow, toNativeElement } from "@ngb/utils";
-import type { IAugmentedJQuery } from "angular";
-import angular from "angular";
+import { reflow } from "@ngb/utils";
 
 type Dimension = "width" | "height";
 
@@ -10,36 +8,39 @@ export interface NgbCollapseCtx {
   maxSize?: string;
 }
 
-function measureCollapsingElementDimensionPx(element: IAugmentedJQuery, dimension: Dimension): string {
+function measureCollapsingElementDimensionPx(element: HTMLElement, dimension: Dimension): string {
   if (typeof navigator === "undefined") {
     return "0px";
   }
 
-  const hasShowClass = element.hasClass("show");
+  const { classList, style } = element;
+  const hasShowClass = classList.contains("show");
   if (!hasShowClass) {
-    element.addClass("show");
+    classList.add("show");
   }
 
-  element.css({ [dimension]: "" });
-  const dimensionSize = `${toNativeElement(element).getBoundingClientRect()[dimension]}px`;
+  style[dimension] = "";
+  const dimensionSize = `${element.getBoundingClientRect()[dimension]}px`;
 
   if (!hasShowClass) {
-    element.removeClass("show");
+    classList.remove("show");
   }
 
   return dimensionSize;
 }
 
-export function ngbCollapsingTransition(element: IAugmentedJQuery, animation: boolean, context: NgbCollapseCtx) {
+export function ngbCollapsingTransition(element: HTMLElement, animation: boolean, context: NgbCollapseCtx) {
+  const { classList, style } = element;
+
   const setInitialClasses = () => {
-    element.addClass("collapse");
+    classList.add("collapse");
 
     if (context.direction === "show") {
-      element.addClass("show");
+      classList.add("show");
       return;
     }
 
-    element.removeClass("show");
+    classList.remove("show");
   };
 
   if (!animation) {
@@ -48,28 +49,23 @@ export function ngbCollapsingTransition(element: IAugmentedJQuery, animation: bo
   }
 
   if (!context.maxSize) {
-    const maxSize = measureCollapsingElementDimensionPx(element, context.dimension);
-    angular.extend(context, { maxSize });
+    context.maxSize = measureCollapsingElementDimensionPx(element, context.dimension);
 
-    element.css({
-      [context.dimension]: context.direction !== "show" ? maxSize : "0px",
-    });
+    style[context.dimension] = context.direction !== "show" ? context.maxSize : "0px";
 
-    element.removeClass("collapse collapsing show");
+    classList.remove("collapse", "collapsing", "show");
     reflow(element);
 
-    element.addClass("collapsing");
+    classList.add("collapsing");
   }
 
   if (!context.maxSize) throw new Error("[ngb-transition]: context.maxSize was undefined");
 
-  element.css({
-    [context.dimension]: context.direction === "show" ? context.maxSize : "0px",
-  });
+  style[context.dimension] = context.direction === "show" ? context.maxSize : "0px";
 
   return () => {
     setInitialClasses();
-    element.removeClass("collapsing");
-    element.css({ [context.dimension]: "" });
+    classList.remove("collapsing");
+    style[context.dimension] = "";
   };
 }

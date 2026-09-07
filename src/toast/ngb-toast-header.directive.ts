@@ -1,15 +1,4 @@
-import type { IDirective } from "angular";
+import { Directive } from "ngjs-core";
 
-export class NgbToastHeader {
-  static get $name() {
-    return "ngbToastHeader";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      controller: NgbToastHeader,
-      restrict: "A",
-    });
-  }
-}
+@Directive({ selector: "[ngbToastHeader]" })
+export class NgbToastHeader {}

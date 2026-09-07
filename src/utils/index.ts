@@ -13,8 +13,9 @@ export {
   ngbRunTransition,
 } from "@ngb/utils/transition/ngb-transition";
 
-export function reflow(element: IAugmentedJQuery) {
-  return (toNativeElement(element) || document.body).getBoundingClientRect();
+export function reflow(element: IAugmentedJQuery | HTMLElement) {
+  const native = element instanceof HTMLElement ? element : toNativeElement(element);
+  return (native || document.body).getBoundingClientRect();
 }
 
 export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {

@@ -1,14 +1,13 @@
-export class NgbProgressbarConfig {
-  public ariaLabel = "progress bar";
-  public animated = false;
-  public height?: string;
-  public max = 100;
-  public showValue = false;
-  public striped = false;
-  public textType?: "success" | "info" | "warning" | "danger" | "primary" | "secondary" | "dark" | "light";
-  public type?: "success" | "info" | "warning" | "danger" | "primary" | "secondary" | "dark" | "light";
+import { Injectable } from "ngjs-core";
 
-  static get $name() {
-    return "ngb.progressbar.config.service";
-  }
+@Injectable({ providedIn: "root" })
+export class NgbProgressbarConfig {
+  max = 100;
+  animated = false;
+  ariaLabel = "progress bar";
+  striped = false;
+  textType?: string;
+  type?: string;
+  showValue = false;
+  height?: string;
 }

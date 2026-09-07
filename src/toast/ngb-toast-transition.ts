@@ -1,32 +1,26 @@
-import type { NgbTransitionStartFn } from "@ngb/utils";
-import { reflow } from "@ngb/utils";
-import angular from "angular";
+import { reflow, type NgbTransitionStartFn } from "@ngb/utils";
 
-export const ngbToastFadeInTransition: NgbTransitionStartFn = (element, animation) => {
-  if (!animation) {
-    element.addClass("show");
-    return angular.noop;
+export const ngbToastFadeInTransition: NgbTransitionStartFn = (element: HTMLElement, animation: boolean) => {
+  const { classList } = element;
+
+  if (animation) {
+    classList.add("fade");
+  } else {
+    classList.add("show");
+    return;
   }
 
-  element.addClass("fade");
-
   reflow(element);
-  element.addClass("show showing");
+  classList.add("show", "showing");
 
   return () => {
-    element.removeClass("showing");
+    classList.remove("showing");
   };
 };
 
-export const ngbToastFadeOutTransition: NgbTransitionStartFn = (element, animation) => {
-  element.addClass("showing");
-
+export const ngbToastFadeOutTransition: NgbTransitionStartFn = ({ classList }: HTMLElement) => {
+  classList.add("showing");
   return () => {
-    if (!animation) {
-      element.removeClass("d-block");
-      return;
-    }
-
-    element.removeClass("show showing");
+    classList.remove("show", "showing");
   };
 };

@@ -23,3 +23,5 @@ NgbAccordionModule.directive(NgbAccordionHeader.$name, NgbAccordionHeader.$facto
 NgbAccordionModule.directive(NgbAccordionItem.$name, NgbAccordionItem.$factory);
 NgbAccordionModule.directive(NgbAccordionToggle.$name, NgbAccordionToggle.$factory);
 NgbAccordionModule.directive(NgbAccordion.$name, NgbAccordion.$factory);
+
+

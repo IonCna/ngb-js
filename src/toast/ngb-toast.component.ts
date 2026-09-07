@@ -3,16 +3,23 @@ import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
 import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
-import type {
-  IAttributes,
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  IOnChangesObject,
-  IPromise,
-  ITimeoutService,
-} from "angular";
-import { ContentChild, NgZone, TemplateRef, ViewChild } from "ngjs-core";
+import {
+  afterNextRender,
+  Attribute,
+  Component,
+  ContentChild,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  inject,
+  Input,
+  NgZone,
+  type OnChanges,
+  Output,
+  type SimpleChanges,
+  TemplateRef,
+  ViewChild,
+} from "ngjs-core";
 import type { Observable } from "rxjs";
 
 export interface INgbToast {
@@ -20,52 +27,57 @@ export interface INgbToast {
   show(): Observable<void>;
 }
 
-export class NgbToast implements IComponentController, INgbToast {
-  protected animation!: boolean;
-  protected autohide!: boolean;
-  protected delay!: number;
-  protected header?: string;
-  protected ariaLive!: string;
+@Component({
+  selector: "ngb-toast",
+  exportAs: "ngbToast",
+  template,
+})
+export class NgbToast implements OnChanges , INgbToast {
+  private _config = inject(NgbToastConfig);
+  private _zone = inject(NgZone);
+  private _element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private _timeoutID?: ReturnType<typeof setTimeout> | null = null;
+
+  @Input() animation = this._config.animation;
+  @Input() delay = this._config.delay;
+  @Input() autohide = this._config.autohide;
+  @Input() header?: string;
 
   @ContentChild(NgbToastHeader, { read: TemplateRef, static: true })
-  protected contentHeaderTpl?: TemplateRef<unknown> | null = null;
+  contentHeaderTpl?: TemplateRef<unknown> | null = null;
 
   @ViewChild("headerTpl", { read: TemplateRef, static: true })
-  protected headerTpl!: TemplateRef<unknown>;
+  headerTpl!: TemplateRef<unknown>;
 
-  protected hidden?: () => void;
-  protected shown?: () => void;
+  @Output() shown = new EventEmitter<void>();
+  @Output() hidden = new EventEmitter<void>();
 
-  private _timeoutID?: IPromise<void> | null = null;
+  @HostBinding("attr.role") readonly _role = "alert";
+  @HostBinding("attr.aria-atomic") readonly _ariaAtomic = "true";
+  @HostBinding("class.toast") readonly _toast = true;
 
-  constructor(
-    private $element: IAugmentedJQuery,
-    private ngbToastConfig: NgbToastConfig,
-    private $timeout: ITimeoutService,
-    private $attrs: IAttributes,
-    private _ngZone: NgZone,
-  ) {}
-
-  $onInit(): void {
-    this.animation = this.animation ?? this.ngbToastConfig.animation;
-    this.autohide = this.autohide ?? this.ngbToastConfig.autohide;
-    this.delay = this.delay ?? this.ngbToastConfig.delay;
-    this.ariaLive = this.$attrs.ariaLive ?? this.ngbToastConfig.ariaLive;
+  @HostBinding("attr.aria-live")
+  get _ariaLive(): string {
+    return this.ariaLive;
   }
 
-  $postLink(): void {
-    this.$element.attr("role", "alert");
-    this.$element.attr("aria-live", this.ariaLive ?? this.ngbToastConfig.ariaLive);
-    this.$element.attr("aria-atomic", "true");
-    this.$element.addClass("toast d-block");
-
-    this._init();
-    this.show();
+  @HostBinding("class.fade")
+  get _fade(): boolean {
+    return this.animation;
   }
 
-  $onChanges(changes: IOnChangesObject): void {
-    this.$element.toggleClass("fade", this.animation);
+  constructor(@Attribute("aria-live") public ariaLive: string) {
+    this.ariaLive ??= this._config.ariaLive;
+  }
 
+  ngAfterContentInit() {
+    afterNextRender(() => {
+      this._init();
+      this.show();
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
     if ("autohide" in changes) {
       this._clearTimeout();
       this._init();
@@ -75,62 +87,39 @@ export class NgbToast implements IComponentController, INgbToast {
   hide(): Observable<void> {
     this._clearTimeout();
 
-    const transition = ngbRunTransition(this._ngZone, this.$element, ngbToastFadeOutTransition, {
-      animation: this.animation ?? this.ngbToastConfig.animation,
+    const transition = ngbRunTransition(this._zone, this._element.nativeElement, ngbToastFadeOutTransition, {
+      animation: this.animation,
       runningTransition: "stop",
     });
 
-    transition.subscribe(() => this.hidden?.());
+    transition.subscribe(() => {
+      this.hidden.emit();
+    });
     return transition;
   }
 
   show(): Observable<void> {
-    const transition = ngbRunTransition(this._ngZone, this.$element, ngbToastFadeInTransition, {
-      animation: this.animation ?? this.ngbToastConfig.animation,
+    const transition = ngbRunTransition(this._zone, this._element.nativeElement, ngbToastFadeInTransition, {
+      animation: this.animation,
       runningTransition: "continue",
     });
 
-    transition.subscribe(() => this.shown?.());
+    transition.subscribe(() => {
+      this.shown.emit();
+    });
     return transition;
   }
 
   private _init(): void {
     if (this.autohide && !this._timeoutID) {
-      this._timeoutID = this.$timeout(() => {
-        this.hide();
-      }, this.delay);
+      this._timeoutID = setTimeout(() => this.hide(), this.delay);
     }
   }
 
   private _clearTimeout(): void {
     if (this._timeoutID) {
-      this.$timeout.cancel(this._timeoutID);
+      clearTimeout(this._timeoutID);
       this._timeoutID = null;
     }
-  }
-
-  static get $name() {
-    return "ngbToast";
-  }
-
-  static get $inject() {
-    return ["$element", NgbToastConfig.$name, "$timeout", "$attrs", NgZone.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        animation: "<?",
-        autohide: "<?",
-        delay: "<?",
-        header: "@?",
-        hidden: "&?",
-        shown: "&?",
-      },
-      controllerAs: "$",
-      transclude: true,
-      controller: NgbToast,
-      template,
-    };
   }
 }

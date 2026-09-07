@@ -1,32 +1,26 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
+import { inject, Injectable } from "ngjs-core";
 
 export interface NgbToastOptions {
-  ariaLive: "polite" | "assertive";
-  autohide: boolean;
-  delay: number;
+  autohide?: boolean;
+  delay?: number;
+  ariaLive?: "polite" | "assertive";
 }
 
+@Injectable({ providedIn: "root" })
 export class NgbToastConfig implements NgbToastOptions {
-  private _animation!: boolean;
-  public ariaLive: "polite" | "assertive" = "polite";
-  public autohide = true;
-  public delay = 5000;
+  private _ngbConfig = inject(NgbConfig);
+  private _animation?: boolean;
 
-  constructor(private ngbConfig: NgbConfig) {}
+  autohide = true;
+  delay = 5000;
+  ariaLive: "polite" | "assertive" = "polite";
 
-  public get animation() {
-    return this._animation ?? this.ngbConfig.animation;
+  get animation(): boolean {
+    return this._animation ?? this._ngbConfig.animation;
   }
 
   set animation(animation: boolean) {
     this._animation = animation;
-  }
-
-  static get $inject() {
-    return [NgbConfig.$name];
-  }
-
-  static get $name() {
-    return "ngb.toast.config.service";
   }
 }

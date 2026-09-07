@@ -27,12 +27,12 @@ describe("ngbProgressbar", () => {
             <ngb-progressbar
                 value="value"
                 max="max"
-                aria-label="Download"
+                aria-label="'Download'"
                 show-value="true"
                 striped="true"
                 animated="true"
-                type="success"
-                text-type="dark">
+                type="'success'"
+                text-type="'dark'">
             </ngb-progressbar>
         `)(scope);
     scope.$digest();

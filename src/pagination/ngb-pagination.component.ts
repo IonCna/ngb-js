@@ -1,5 +1,4 @@
-import {type IAugmentedJQuery, type IComponentController, type IComponentOptions} from "angular";
-import {ContentChild, NgDisabled} from "ngjs-core";
+import { Component, ContentChild, EventEmitter, HostBinding, inject, Input, type OnChanges, Output, type SimpleChanges } from "ngjs-core";
 import {NgbPaginationEllipsis} from "@ngb/pagination/ngb-pagination-ellipsis.directive";
 import {NgbPaginationFirst} from "@ngb/pagination/ngb-pagination-first.directive";
 import {NgbPaginationLast} from "@ngb/pagination/ngb-pagination-last.directive";
@@ -12,24 +11,30 @@ import {getValueInRange, isNumber} from "@ngb/utils";
 import template from "@ngb/pagination/ngb-pagination.component.html"
 import {NgbPaginationConfig} from "@ngb/pagination/ngb-pagination-config.service";
 
-export class NgbPagination implements IComponentController {
+export interface NgbPaginationLinkContext {
+    currentPage: number;
+    disabled: boolean;
+}
+
+export interface NgbPaginationNumberContext extends NgbPaginationLinkContext {
+    $implicit: number;
+}
+
+export interface NgbPaginationPagesContext {
+    $implicit: number;
+    disabled: boolean;
+    pages: number[];
+}
+
+@Component({
+    selector: "ngb-pagination",
+    template,
+})
+export class NgbPagination implements OnChanges {
+    private _config = inject(NgbPaginationConfig);
+
     public pageCount = 0
     public pages: number[] = []
-
-    ngDisabled?: NgDisabled
-
-    boundaryLinks?: boolean
-    directionLinks?: boolean
-    ellipses?: boolean
-    rotate?: boolean
-    maxSize!: number
-    size?: string | null
-    pageSize!: number
-
-    page!: number
-    collectionSize!: number
-
-    pageChange?: (_: { $event: number }) => void
 
     @ContentChild(NgbPaginationEllipsis, { static: false })
     tplEllipsis?: NgbPaginationEllipsis
@@ -52,30 +57,22 @@ export class NgbPagination implements IComponentController {
     @ContentChild(NgbPaginationPages, { static: false })
     tplPages?: NgbPaginationPages
 
-    constructor(
-        private $element: IAugmentedJQuery,
-        private _config: NgbPaginationConfig
-    ) {}
+    @Input() disabled = this._config.disabled;
+    @Input() boundaryLinks = this._config.boundaryLinks;
+    @Input() directionLinks = this._config.directionLinks;
+    @Input() ellipses = this._config.ellipses;
+    @Input() rotate = this._config.rotate;
+    @Input({ required: true }) collectionSize!: number;
+    @Input() maxSize = this._config.maxSize;
+    @Input() page = 1;
+    @Input() pageSize = this._config.pageSize;
+    @Output() pageChange = new EventEmitter<number>();
+    @Input() size = this._config.size;
 
-    $onInit() {
-        this.boundaryLinks = this.boundaryLinks ?? this._config.boundaryLinks;
-        this.directionLinks = this.directionLinks ?? this._config.directionLinks;
-        this.ellipses = this.ellipses ?? this._config.ellipses;
-        this.rotate = this.rotate ?? this._config.rotate;
-        this.maxSize = this.maxSize ?? this._config.maxSize;
-        this.pageSize = this.pageSize ?? this._config.pageSize;
-        this.page = this.page ?? 1
-        this.size = this.size ?? this._config.size;
-
-        this._updatePages(this.page);
-    }
-
-    $postLink() {
-        this.$element.attr("role", "navigation")
-    }
+    @HostBinding("attr.role") readonly _role = "navigation";
 
     isDisabled(): boolean {
-        return this.ngDisabled?.disabled ?? this._config.disabled;
+        return this.disabled;
     }
     
     hasPrevious() {
@@ -96,6 +93,10 @@ export class NgbPagination implements IComponentController {
 
     selectPage(pageNumber: number): void {
         this._updatePages(pageNumber);
+    }
+
+    ngOnChanges(_changes: SimpleChanges): void {
+        this._updatePages(this.page);
     }
 
     isEllipsis(pageNumber: number): boolean {
@@ -150,9 +151,7 @@ export class NgbPagination implements IComponentController {
         this.page = getValueInRange(newPageNo, this.pageCount, 1)
 
         if(this.page != prevPageNo && isNumber(this.collectionSize)) {
-            this.pageChange?.({
-                $event: this.page
-            });
+            this.pageChange.emit(this.page);
         }
     }
 
@@ -182,36 +181,5 @@ export class NgbPagination implements IComponentController {
 
             this._applyEllipses(start, end)
         }
-    }
-
-    static get $name() {
-        return "ngbPagination";
-    }
-
-    static get $factory(): IComponentOptions {
-        return {
-            controller: NgbPagination,
-            controllerAs: "$",
-            template,
-            require: {
-                ngDisabled: "?ngDisabled"
-            },
-            bindings: {
-                boundaryLinks: "<?",
-                directionLinks: "<?",
-                ellipses: "<?",
-                rotate: "<?",
-                collectionSize: "<",
-                maxSize: "<?",
-                page: "<?",
-                pageSize: "<?",
-                pageChange: "&?",
-                size: "<?"
-            }
-        }
-    }
-
-    static get $inject() {
-        return ["$element", NgbPaginationConfig.$name]
     }
 }

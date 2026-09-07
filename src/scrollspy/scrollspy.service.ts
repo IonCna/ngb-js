@@ -1,9 +1,8 @@
 import { NgbScrollSpyConfig } from "@ngb/scrollspy/ngb-scrollspy-config.service";
 import { toFragmentElement } from "@ngb/scrollspy/scrollspy.utils";
-import type { IAugmentedJQuery } from "angular";
-import angular from "angular";
-import { ChangeDetectorRef, NgZone } from "ngjs-core";
-import { distinctUntilChanged, type Observable, Subject, type Subscription } from "rxjs";
+import { ChangeDetectorRef, DOCUMENT, inject, Injectable, NgZone, type OnDestroy } from "ngjs-core";
+import { distinctUntilChanged, type Observable, Subject } from "rxjs";
+import type { NgbScrollSpyRef } from "./ngb-scrollspy-item.directive";
 
 const MATCH_THRESHOLD = 3;
 
@@ -19,128 +18,60 @@ export type NgbScrollSpyProcessChanges = (
   context: object,
 ) => void;
 
-export interface NgbScrollSpyOptions {
-  /** Change detector to notify when the active fragment changes. */
+export interface NgbScrollSpyOptions extends Pick<IntersectionObserverInit, "root" | "rootMargin" | "threshold"> {
   changeDetectorRef?: ChangeDetectorRef;
-
-  /**
-   * An optional initial fragment to scroll to when the service starts.
-   */
-  initialFragment?: string | HTMLElement | IAugmentedJQuery;
-
-  /**
-   * An optional list of fragments to observe when the service starts.
-   * You can alternatively use `.addFragment()` to add fragments.
-   */
-  fragments?: (string | HTMLElement | IAugmentedJQuery)[];
-
-  /**
-   * An optional function that is called when the `IntersectionObserver` detects a change.
-   * It is used to determine if currently active fragment should be changed.
-   *
-   * You can override this function to provide your own scrollspy logic.
-   * It provides:
-   *  - a scrollspy `state` (observer entries, root element, fragments, scrollSpy instance, etc.)
-   *  - a `changeActive` function that should be called with the new active fragment
-   *  - a `context` that is persisted between calls
-   */
+  initialFragment?: string | HTMLElement;
+  fragments?: (string | HTMLElement)[];
   processChanges?: NgbScrollSpyProcessChanges;
-
-  /**
-   * An optional `IntersectionObserver` root element. If not provided, the document element will be used.
-   */
-  root?: HTMLElement | IAugmentedJQuery;
-
-  /**
-   * An optional `IntersectionObserver` margin for the root element.
-   */
+  root?: HTMLElement;
   rootMargin?: string;
-
-  /**
-   * An optional default scroll behavior to use when using the `.scrollTo()` method.
-   */
   scrollBehavior?: "auto" | "smooth";
-
-  /**
-   * An optional `IntersectionObserver` threshold.
-   */
   threshold?: number | number[];
 }
 
-/**
- * Scroll options passed to the `.scrollTo()` method.
- * An extension of the standard `ScrollOptions` interface.
- *
- * @since 15.1.0
- */
 export interface NgbScrollToOptions extends ScrollOptions {
-  /**
-   * Scroll behavior as defined in the `ScrollOptions` interface.
-   */
   behavior?: "auto" | "smooth";
 }
 
-export class NgbScrollSpyService {
+@Injectable({ providedIn: "root" })
+export class NgbScrollSpyService implements NgbScrollSpyRef, OnDestroy {
   private _observer: IntersectionObserver | null = null;
-
-  private _containerElement: IAugmentedJQuery | null = null;
+  private _containerElement: HTMLElement | null = null;
   private _fragments = new Set<Element>();
-  private _preRegisteredFragments = new Set<string | HTMLElement | IAugmentedJQuery>();
-
+  private _preRegisteredFragments = new Set<string | HTMLElement>();
   private _active$ = new Subject<string>();
   private _distinctActive$ = this._active$.pipe(distinctUntilChanged());
-  private _activeSubscription: Subscription;
   private _active = "";
 
-  private _scrollBehavior: "auto" | "smooth";
-  private _changeDetectorRef: ChangeDetectorRef;
+  private _config = inject(NgbScrollSpyConfig);
+  private _document = inject(DOCUMENT);
+  private _scrollBehavior = this._config.scrollBehavior;
+  private _diChangeDetectorRef = inject<ChangeDetectorRef>(ChangeDetectorRef, { optional: true });
+  private _changeDetectorRef = this._diChangeDetectorRef;
+  private _zone = inject(NgZone);
+  private _activeSubscription = this._distinctActive$.subscribe((active) => {
+    this._active = active;
+    this._changeDetectorRef?.markForCheck();
+  });
 
-  constructor(
-    private $config: NgbScrollSpyConfig,
-    private _diChangeDetectorRef: ChangeDetectorRef,
-    private _ngZone: NgZone,
-  ) {
-    this._scrollBehavior = this.$config.scrollBehavior;
-    this._changeDetectorRef = this._diChangeDetectorRef;
-    this._activeSubscription = this._distinctActive$.subscribe((active) => {
-      this._active = active;
-      this._changeDetectorRef.markForCheck();
-    });
-  }
-
-  /**
-   * Getter for the currently active fragment id. Returns empty string if none.
-   */
   get active(): string {
     return this._active;
   }
 
-  /**
-   * An observable emitting the currently active fragment. Emits empty string if none.
-   */
   get active$(): Observable<string> {
     return this._distinctActive$;
   }
 
-  /**
-   * Starts the scrollspy service and observes specified fragments.
-   */
-  start(options?: NgbScrollSpyOptions) {
+  start(options?: NgbScrollSpyOptions): void {
     this._cleanup();
 
     const { root, rootMargin, scrollBehavior, threshold, fragments, changeDetectorRef, processChanges } = {
       ...options,
     };
-    const rootElement = toFragmentElement(document.documentElement, root ?? document.documentElement);
-
-    if (!rootElement) {
-      return;
-    }
-
-    this._containerElement = angular.element(rootElement);
+    this._containerElement = root ?? this._document.documentElement;
     this._changeDetectorRef = changeDetectorRef ?? this._diChangeDetectorRef;
-    this._scrollBehavior = scrollBehavior ?? this.$config.scrollBehavior;
-    const processChangesFn = processChanges ?? this.$config.processChanges;
+    this._scrollBehavior = scrollBehavior ?? this._config.scrollBehavior;
+    const processChangesFn = processChanges ?? this._config.processChanges;
 
     const context = {};
     this._observer = new IntersectionObserver(
@@ -148,7 +79,7 @@ export class NgbScrollSpyService {
         processChangesFn(
           {
             entries,
-            rootElement,
+            rootElement: this._containerElement!,
             fragments: this._fragments,
             scrollSpy: this,
             options: { ...options },
@@ -157,13 +88,12 @@ export class NgbScrollSpyService {
           context,
         ),
       {
-        root: rootElement,
+        root: root ?? this._document,
         ...(rootMargin && { rootMargin }),
         ...(threshold && { threshold }),
       },
     );
 
-    // merging fragments added before starting and the ones passed as options
     for (const element of [...this._preRegisteredFragments, ...(fragments ?? [])]) {
       this.observe(element);
     }
@@ -171,70 +101,51 @@ export class NgbScrollSpyService {
     this._preRegisteredFragments.clear();
   }
 
-  /**
-   * Stops the service and unobserves all fragments.
-   */
-  stop() {
+  stop(): void {
     this._cleanup();
     this._active$.next("");
   }
 
-  /**
-   * Scrolls to a fragment, it must be known to the service and contained in the root element.
-   * An id or an element reference can be passed.
-   */
-  scrollTo(fragment: string | HTMLElement | IAugmentedJQuery, options?: NgbScrollToOptions) {
+  scrollTo(fragment: string | HTMLElement, options?: NgbScrollToOptions): void {
     const { behavior } = { behavior: this._scrollBehavior, ...options };
-    const containerElement = toFragmentElement(document.documentElement, this._containerElement);
 
-    if (!containerElement) {
-      return;
-    }
+    if (this._containerElement) {
+      const fragmentElement = toFragmentElement(this._containerElement, fragment);
 
-    const fragmentElement = toFragmentElement(containerElement, fragment);
+      if (fragmentElement) {
+        const heightPx = fragmentElement.offsetTop - this._containerElement.offsetTop;
 
-    if (!fragmentElement) {
-      return;
-    }
+        this._containerElement.scrollTo({ top: heightPx, behavior });
 
-    const heightPx = fragmentElement.offsetTop - containerElement.offsetTop;
+        let lastOffset = this._containerElement.scrollTop;
+        let matchCounter = 0;
+        const containerElement = this._containerElement;
 
-    containerElement.scrollTo({ top: heightPx, behavior });
+        this._zone.runOutsideAngular(() => {
+          const updateActiveWhenScrollingIsFinished = () => {
+            const sameOffsetAsLastTime = lastOffset === containerElement.scrollTop;
 
-    let lastOffset = containerElement.scrollTop;
-    let matchCounter = 0;
+            if (sameOffsetAsLastTime) {
+              matchCounter++;
+            } else {
+              matchCounter = 0;
+            }
 
-    // we should update the active section only after scrolling is finished
-    // and there is no clean way to do it at the moment
-    this._ngZone.runOutsideAngular(() => {
-      const updateActiveWhenScrollingIsFinished = () => {
-        const sameOffsetAsLastTime = lastOffset === containerElement.scrollTop;
-
-        if (sameOffsetAsLastTime) {
-          matchCounter++;
-        } else {
-          matchCounter = 0;
-        }
-
-        if (!sameOffsetAsLastTime || (sameOffsetAsLastTime && matchCounter < MATCH_THRESHOLD)) {
-          lastOffset = containerElement.scrollTop;
+            if (!sameOffsetAsLastTime || (sameOffsetAsLastTime && matchCounter < MATCH_THRESHOLD)) {
+              lastOffset = containerElement.scrollTop;
+              requestAnimationFrame(updateActiveWhenScrollingIsFinished);
+            } else {
+              this._zone.run(() => this._active$.next(fragmentElement.id));
+            }
+          };
 
           requestAnimationFrame(updateActiveWhenScrollingIsFinished);
-          return;
-        }
-
-        this._ngZone.run(() => this._active$.next(fragmentElement.id));
-      };
-
-      requestAnimationFrame(updateActiveWhenScrollingIsFinished);
-    });
+        });
+      }
+    }
   }
 
-  /**
-   * Adds a fragment to observe. It must be contained in the root element.
-   * An id or an element reference can be passed.
-   */
-  observe(fragment: string | HTMLElement | IAugmentedJQuery) {
+  observe(fragment: string | HTMLElement): void {
     if (!this._observer) {
       this._preRegisteredFragments.add(fragment);
       return;
@@ -242,19 +153,13 @@ export class NgbScrollSpyService {
 
     const fragmentElement = toFragmentElement(this._containerElement, fragment);
 
-    if (!fragmentElement || this._fragments.has(fragmentElement)) {
-      return;
+    if (fragmentElement && !this._fragments.has(fragmentElement)) {
+      this._fragments.add(fragmentElement);
+      this._observer.observe(fragmentElement);
     }
-
-    this._fragments.add(fragmentElement);
-    this._observer.observe(fragmentElement);
   }
 
-  /**
-   * Unobserves a fragment.
-   * An id or an element reference can be passed.
-   */
-  unobserve(fragment: string | HTMLElement | IAugmentedJQuery) {
+  unobserve(fragment: string | HTMLElement): void {
     if (!this._observer) {
       this._preRegisteredFragments.delete(fragment);
       return;
@@ -262,40 +167,28 @@ export class NgbScrollSpyService {
 
     const fragmentElement = toFragmentElement(this._containerElement, fragment);
 
-    if (!fragmentElement) {
-      return;
-    }
+    if (fragmentElement) {
+      this._fragments.delete(fragmentElement);
+      this._observer.disconnect();
 
-    this._fragments.delete(fragmentElement);
-
-    // we're removing and re-adding all current fragments to recompute active one
-    this._observer.disconnect();
-
-    for (const fragment of this._fragments) {
-      this._observer.observe(fragment);
+      for (const fragment of this._fragments) {
+        this._observer.observe(fragment);
+      }
     }
   }
 
-  $onDestroy() {
+  ngOnDestroy(): void {
     this._cleanup();
     this._activeSubscription.unsubscribe();
     this._active$.complete();
   }
 
-  private _cleanup() {
+  private _cleanup(): void {
     this._fragments.clear();
     this._observer?.disconnect();
     this._changeDetectorRef = this._diChangeDetectorRef;
-    this._scrollBehavior = this.$config.scrollBehavior;
+    this._scrollBehavior = this._config.scrollBehavior;
     this._observer = null;
     this._containerElement = null;
-  }
-
-  static get $name() {
-    return "ngb.scrollspy.service";
-  }
-
-  static get $inject() {
-    return [NgbScrollSpyConfig.$name, ChangeDetectorRef.$name, NgZone.$name];
   }
 }

@@ -1,21 +1,7 @@
-import type {TemplateRef} from "ngjs-core";
-import type {IDirective} from "angular";
+import { Directive, inject, TemplateRef } from "ngjs-core";
+import type { NgbPaginationNumberContext } from "@ngb/pagination/ngb-pagination.component";
 
+@Directive({ selector: "ng-template[ngbPaginationNumber]" })
 export class NgbPaginationNumber {
-    public templateRef!: TemplateRef<any>;
-
-    static get $name() {
-        return "ngbPaginationNumber";
-    }
-
-    static $factory(): IDirective {
-        return {
-            restrict: "A",
-            bindToController: true,
-            controller: NgbPaginationNumber,
-            require: {
-                templateRef: "ngTemplate",
-            }
-        }
-    }
+  templateRef = inject(TemplateRef<NgbPaginationNumberContext>);
 }

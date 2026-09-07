@@ -35,7 +35,7 @@ import { NgModule, registerNgModule } from "ngjs-core/runtime/core";
   imports: [
     NgbAlertModule,
     NgbProgressbarModule,
-    NgbCollapseModule.name,
+    NgbCollapseModule,
     NgbCarouselModule.name,
     NgbToastModule,
     NgbAccordionModule.name,
@@ -45,8 +45,8 @@ import { NgModule, registerNgModule } from "ngjs-core/runtime/core";
     NgbNavModule.name,
     NgbOffcanvasModule.name,
     NgbPopoverModule.name,
-    NgbScrollSpyModule.name,
-    NgbRatingModule.name,
+    NgbScrollSpyModule,
+    NgbRatingModule,
     NgbTimepickerModule.name,
     NgbTypeaheadModule.name,
     NgbPaginationModule,
@@ -64,3 +64,5 @@ class NgbRootModule {}
 
 /** El único `registerNgModule` — el borde público (`angular.module("app", [NgbModule.name])`). */
 export const NgbModule = registerNgModule(NgbRootModule);
+
+

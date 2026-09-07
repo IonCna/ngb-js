@@ -1,24 +1,18 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
+import { inject, Injectable } from "ngjs-core";
 
+@Injectable({ providedIn: "root" })
 export class NgbCollapseConfig {
+  private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;
-  public horizontal: boolean = false;
 
-  constructor(private readonly ngbConfig: NgbConfig) {}
+  horizontal = false;
 
-  public get animation() {
-    return this._animation ?? this.ngbConfig.animation;
+  get animation(): boolean {
+    return this._animation ?? this._ngbConfig.animation;
   }
 
-  public set animation(animation: boolean) {
+  set animation(animation: boolean) {
     this._animation = animation;
-  }
-
-  static get $inject() {
-    return [NgbConfig.$name];
-  }
-
-  static get $name() {
-    return "ngb.collapse.config.service";
   }
 }
