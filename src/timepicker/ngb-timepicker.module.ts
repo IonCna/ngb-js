@@ -7,7 +7,7 @@ import {
     NgbTimepickerI18nDefault,
 } from "@ngb/timepicker/ngb-timepicker-i18n";
 
-import { CommonModule } from "ngjs-core"
+import { CommonModule } from "ngjs-core/runtime/common"
 import angular from "angular";
 
 export const NgbTimepickerModule = angular.module("ngb.timepicker", [

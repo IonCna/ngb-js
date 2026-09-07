@@ -5,9 +5,9 @@ import { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollspy-menu.directive";
 import { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyService } from "@ngb/scrollspy/scrollspy.service";
 import angular, {type IModule} from "angular";
-import { CoreModule } from "ngjs-core";
+import { installCoreModule } from "ngjs-core/runtime";
 
-export const NgbScrollSpyModule: IModule = angular.module("ngb.scrollspy", [CoreModule.name]);
+export const NgbScrollSpyModule: IModule = angular.module("ngb.scrollspy", [installCoreModule().name]);
 
 NgbScrollSpyModule.directive(NgbScrollSpy.$name, NgbScrollSpy.$factory);
 NgbScrollSpyModule.directive(NgbScrollSpyFragment.$name, NgbScrollSpyFragment.$factory);

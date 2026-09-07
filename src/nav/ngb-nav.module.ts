@@ -9,7 +9,7 @@ import { NgbNavLinkButton } from "@ngb/nav/ngb-nav-link-button.directive";
 import { NgbNavOutlet } from "@ngb/nav/ngb-nav-outlet.directive";
 import { NgbNavPane } from "@ngb/nav/ngb-nav-pane.directive";
 import angular, {type IModule} from "angular";
-import { CommonModule } from "ngjs-core";
+import { CommonModule } from "ngjs-core/runtime/common";
 
 export const NgbNavModule: IModule = angular.module("ngb.nav", [CommonModule.name]);
 

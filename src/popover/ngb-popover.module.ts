@@ -4,7 +4,7 @@ import { NgbPopoverConfig } from "@ngb/popover/ngb-popover-config.service";
 import { NgbPopoverWindow } from "@ngb/popover/ngb-popover-window";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import angular, { type IModule } from "angular";
-import { CommonModule } from "ngjs-core";
+import { CommonModule } from "ngjs-core/runtime/common";
 
 export const NgbPopoverModule: IModule = angular.module("ngb.popover", [CommonModule.name]);
 

@@ -8,7 +8,7 @@ import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import { NgbAccordionToggle } from "@ngb/accordion/ngb-accordion-toggle.directive";
 import { NgbCollapseModule } from "@ngb/collapse";
 import angular, {type IModule} from "angular";
-import { CommonModule } from "ngjs-core";
+import { CommonModule } from "ngjs-core/runtime/common";
 
 export const NgbAccordionModule: IModule = angular.module("ngb.accordion", [
     CommonModule.name, NgbCollapseModule.name

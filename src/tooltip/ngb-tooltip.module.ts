@@ -2,7 +2,7 @@ import { NgbTooltip } from "@ngb/tooltip/ngb-tooltip.directive";
 import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
 import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component";
 import angular, { type IModule } from "angular";
-import { CommonModule } from "ngjs-core";
+import { CommonModule } from "ngjs-core/runtime/common";
 
 export const NgbTooltipModule: IModule = angular.module("ngb.tooltip", [CommonModule.name]);
 export const NgbToolTipModule = NgbTooltipModule;

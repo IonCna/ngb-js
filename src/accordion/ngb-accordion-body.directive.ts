@@ -1,18 +1,18 @@
 import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import { ContentChild, type EmbeddedViewRef, TemplateRef, ViewChild, ViewContainerRef } from "ngjs-core";
+import { ContentChild, type EmbeddedViewRef, TemplateRef, ViewContainerRef } from "ngjs-core";
 
 export class NgbAccordionBody implements IController {
   protected item!: NgbAccordionItem;
   private _viewRef: EmbeddedViewRef<unknown> | null = null;
 
-  @ViewChild("container", { read: ViewContainerRef, static: true })
-  private _vcr!: ViewContainerRef;
-
   @ContentChild(TemplateRef, { static: true })
   private _bodyTpl!: TemplateRef<unknown>;
 
-  constructor(private readonly $element: IAugmentedJQuery) {}
+  constructor(
+    private readonly $element: IAugmentedJQuery,
+    private readonly _vcr: ViewContainerRef,
+  ) {}
 
   $postLink(): void {
     this.$element.addClass("accordion-body");
@@ -54,7 +54,7 @@ export class NgbAccordionBody implements IController {
   }
 
   static get $inject() {
-    return ["$element"];
+    return ["$element", ViewContainerRef.$name];
   }
 
   static get $factory(): () => IDirective {
@@ -69,7 +69,6 @@ export class NgbAccordionBody implements IController {
       restrict: "A",
       transclude: true,
       template: `
-        <ng-container ng-ref="container" ng-ref-read="viewContainerRef"></ng-container>
         <ng-content></ng-content>
       `,
     });

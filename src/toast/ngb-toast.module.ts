@@ -2,7 +2,7 @@ import { NgbToast } from "@ngb/toast/ngb-toast.component";
 import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
 import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import angular, {type IModule} from "angular";
-import { CommonModule } from "ngjs-core";
+import { CommonModule } from "ngjs-core/runtime/common";
 
 export const NgbToastModule: IModule = angular.module("ngb.toast", [CommonModule.name]);
 NgbToastModule.service(NgbToastConfig.$name, NgbToastConfig);

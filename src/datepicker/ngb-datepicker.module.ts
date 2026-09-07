@@ -9,7 +9,7 @@ import { NgbInputDatepicker } from "@ngb/datepicker/ngb-input-datepicker.directi
 import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-config.service.ts";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import angular, { type IModule } from "angular";
-import { CommonModule } from "ngjs-core";
+import { CommonModule } from "ngjs-core/runtime/common";
 
 export const NgbDatepickerModule: IModule = angular.module("ngb.datepicker", [CommonModule.name]);
 

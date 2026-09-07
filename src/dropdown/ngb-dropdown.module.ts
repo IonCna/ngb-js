@@ -6,9 +6,9 @@ import { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
 import { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
 import { NgbDropdownToggle } from "@ngb/dropdown/ngb-dropdown-toggle.directive";
 import angular, { type IModule } from "angular";
-import { CoreModule } from "ngjs-core";
+import { installCoreModule } from "ngjs-core/runtime";
 
-export const NgbDropdownModule: IModule = angular.module("ngb.dropdown", [CoreModule.name]);
+export const NgbDropdownModule: IModule = angular.module("ngb.dropdown", [installCoreModule().name]);
 NgbDropdownModule.directive(NgbDropdown.$name, NgbDropdown.$factory);
 NgbDropdownModule.directive(NgbDropdownToggle.$name, NgbDropdownToggle.$factory);
 NgbDropdownModule.directive(NgbDropdownMenu.$name, NgbDropdownMenu.$factory);

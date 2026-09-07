@@ -8,9 +8,9 @@ import { NgbPaginationNumber } from "@ngb/pagination/ngb-pagination-number.direc
 import { NgbPaginationPages } from "@ngb/pagination/ngb-pagination-pages.directive";
 import { NgbPaginationPrevious } from "@ngb/pagination/ngb-pagination-previous.directive.ts";
 import angular from "angular";
-import { CoreModule } from "ngjs-core";
+import { installCoreModule } from "ngjs-core/runtime";
 
-export const NgbPaginationModule = angular.module("ngb-pagination", [CoreModule.name]);
+export const NgbPaginationModule = angular.module("ngb-pagination", [installCoreModule().name]);
 
 NgbPaginationModule.component(NgbPagination.$name, NgbPagination.$factory);
 NgbPaginationModule.service(NgbPaginationConfig.$name, NgbPaginationConfig);

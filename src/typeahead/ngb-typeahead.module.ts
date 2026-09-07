@@ -6,7 +6,7 @@ import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
 import { LiveService } from "@ngb/utils/accessibility/live.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import angular, { type IModule } from "angular";
-import { CommonModule } from "ngjs-core";
+import { CommonModule } from "ngjs-core/runtime/common";
 
 export const NgbTypeaheadModule: IModule = angular.module("ngb.typeahead", [CommonModule.name]);
 
