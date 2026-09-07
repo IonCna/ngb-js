@@ -1,34 +1,28 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
 import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
+import { inject, Service } from "ngjs-core";
 
+@Service()
 export class NgbTooltipConfig {
+  private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;
-  public autoClose: boolean | "inside" | "outside" = true;
-  public placement: PlacementArray = "auto";
-  public popperOptions = (options: Partial<Options>) => options;
-  public triggers = "hover focus";
-  public container?: string;
-  public disableTooltip = false;
-  public tooltipClass?: string;
-  public openDelay = 0;
-  public closeDelay = 0;
 
-  constructor(private readonly $config: NgbConfig) {}
+  autoClose: boolean | "inside" | "outside" = true;
+  placement: PlacementArray = "auto";
+  popperOptions = (options: Partial<Options>) => options;
+  triggers = "hover focus";
+  container?: string;
+  disableTooltip = false;
+  tooltipClass?: string;
+  openDelay = 0;
+  closeDelay = 0;
 
-  get animation() {
-    return this._animation ?? this.$config.animation;
+  get animation(): boolean {
+    return this._animation ?? this._ngbConfig.animation;
   }
 
-  set animation(value: boolean) {
-    this._animation = value;
-  }
-
-  static get $inject() {
-    return [NgbConfig.$name];
-  }
-
-  static get $name() {
-    return "ngb.tooltip.config.service";
+  set animation(animation: boolean) {
+    this._animation = animation;
   }
 }

@@ -1,18 +1,26 @@
+import type { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyItem, type NgbScrollSpyRef } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
-import { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyService, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
-import { ContentChildren, Directive, inject, Input, type AfterViewInit, type OnDestroy, type QueryList } from "ngjs-core";
-import type { Observable, Subscription } from "rxjs";
+import {
+  type AfterViewInit,
+  ContentChildren,
+  DestroyRef,
+  Directive,
+  Input,
+  inject,
+  type QueryList,
+  takeUntilDestroyed,
+} from "ngjs-core";
+import type { Observable } from "rxjs";
 
 @Directive({
   selector: "[ngbScrollSpyMenu]",
 })
-export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit, OnDestroy {
+export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit {
   private _scrollSpyRef: NgbScrollSpyRef = inject(NgbScrollSpyService);
+  private _destroyRef = inject(DestroyRef);
   private _map = new Map<string, NgbScrollSpyItem>();
   private _lastActiveItem: NgbScrollSpyItem | null = null;
-  private _activeSubscription?: Subscription;
-  private _itemsSubscription?: Subscription;
 
   @ContentChildren(NgbScrollSpyItem, { descendants: true })
   private _items!: QueryList<NgbScrollSpyItem>;
@@ -39,10 +47,10 @@ export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit, OnDestr
   }
 
   ngAfterViewInit(): void {
-    this._itemsSubscription = this._items.changes.subscribe(() => this._rebuildMap());
+    this._items.changes.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => this._rebuildMap());
     this._rebuildMap();
 
-    this._activeSubscription = this._scrollSpyRef.active$.subscribe((activeId) => {
+    this._scrollSpyRef.active$.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((activeId) => {
       this._lastActiveItem?._deactivate();
       const item = this._map.get(activeId);
       if (item) {
@@ -50,13 +58,6 @@ export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit, OnDestr
         this._lastActiveItem = item;
       }
     });
-  }
-
-  ngOnDestroy(): void {
-    this._activeSubscription?.unsubscribe();
-    this._itemsSubscription?.unsubscribe();
-    this._map.clear();
-    this._lastActiveItem = null;
   }
 
   private _rebuildMap(): void {

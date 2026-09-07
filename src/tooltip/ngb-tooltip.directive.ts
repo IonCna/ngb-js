@@ -1,339 +1,222 @@
 import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
 import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component";
-import { ngbCompleteTransition, toNativeElement } from "@ngb/utils";
-import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
+import { isString, ngbCompleteTransition } from "@ngb/utils";
+import { ngbAutoClose } from "@ngb/utils/autoclose";
 import { PopupService } from "@ngb/utils/popup.service";
-import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
+import { ngbPositioning } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
-import { NgbRTL } from "@ngb/utils/rtl.service";
 import { listenToTriggers } from "@ngb/utils/triggers";
-import type { Options } from "@popperjs/core";
-import angular, {
-  type IAttributes,
-  type IAugmentedJQuery,
-  type IController,
-  type IDirective,
-  type IPromise,
-  type IQService,
-  type IOnChangesObject,
-  type IScope,
-  type ITimeoutService,
-} from "angular";
-import { ChangeDetectorRef, type ComponentRef, NgZone, type TemplateRef, ViewContainerRef } from "ngjs-core";
 import { Subject } from "rxjs";
+import {
+  afterEveryRender,
+  type AfterRenderRef,
+  ChangeDetectorRef,
+  type ComponentRef,
+  Directive,
+  DOCUMENT,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Injector,
+  Input,
+  NgZone,
+  type OnChanges,
+  type OnDestroy,
+  type OnInit,
+  Output,
+  type SimpleChanges,
+  type TemplateRef,
+} from "ngjs-core";
 
 let nextId = 0;
 
-export class NgbTooltip implements IController {
+@Directive({ selector: "[ngbTooltip]", exportAs: "ngbTooltip" })
+export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
   static ngAcceptInputType_autoClose: boolean | string;
-  public positionTarget?: string;
-  public animation!: boolean;
-  public autoClose!: boolean | "inside" | "outside";
-  public placement!: PlacementArray;
-  public popperOptions!: (options: Partial<Options>) => Partial<Options>;
-  public triggers!: string;
-  public container?: string;
-  public disableTooltip!: boolean;
-  public tooltipClass?: string;
-  public tooltipContext?: any;
-  public openDelay!: number;
-  public closeDelay!: number;
 
-  private _ngbTooltip?: string | TemplateRef<any>;
+  private _config = inject(NgbTooltipConfig);
+
+  @Input() animation = this._config.animation;
+  @Input() autoClose = this._config.autoClose;
+  @Input() placement = this._config.placement;
+  @Input() popperOptions = this._config.popperOptions;
+  @Input() triggers = this._config.triggers;
+  @Input() positionTarget?: string | HTMLElement;
+  @Input() container = this._config.container;
+  @Input() disableTooltip = this._config.disableTooltip;
+  @Input() tooltipClass = this._config.tooltipClass;
+  @Input() tooltipContext: any;
+  @Input() openDelay = this._config.openDelay;
+  @Input() closeDelay = this._config.closeDelay;
+
+  @Output() shown = new EventEmitter();
+  @Output() hidden = new EventEmitter();
+
+  private _nativeElement = inject(ElementRef).nativeElement as HTMLElement;
+  private _ngZone = inject(NgZone);
+  private _document = inject(DOCUMENT);
+  private _changeDetector = inject(ChangeDetectorRef);
+  private _injector = inject(Injector);
+
+  private _ngbTooltip: string | TemplateRef<any> | null | undefined;
   private _ngbTooltipWindowId = `ngb-tooltip-${nextId++}`;
+  private _popupService = new PopupService(NgbTooltipWindow);
   private _windowRef: ComponentRef<NgbTooltipWindow> | null = null;
-  private _positioning!: NgbPositioning;
-  private _unlistenTriggers?: () => void;
-  private _unwatchPositioning?: () => void;
-  private _destroyCloseHandlers$ = new Subject<void>();
+  private _unregisterListenersFn?: () => void;
+  private _positioning = ngbPositioning();
+  private _afterRenderRef: AfterRenderRef | undefined;
 
-  private _transitioning = false;
+  private _mouseEnterTooltip = new Subject<void>();
+  private _mouseLeaveTooltip = new Subject<void>();
+
   private _opening = true;
-  private readonly popupService: PopupService<NgbTooltipWindow>;
-  private readonly $q: IQService;
-  private shown?: () => void;
-  private hidden?: () => void;
+  private _transitioning = false;
 
-  constructor(
-    private _config: NgbTooltipConfig,
-    private $element: IAugmentedJQuery,
-    $injector: angular.auto.IInjectorService,
-    viewContainerRef: ViewContainerRef,
-    private $ngbRTL: NgbRTL,
-    private $timeout: ITimeoutService,
-    private $scope: IScope,
-    private _ngZone: NgZone,
-    private _changeDetector: ChangeDetectorRef,
-    private $attrs: IAttributes,
-  ) {
-    this.$q = $injector.get<IQService>("$q");
-    this.popupService = new PopupService<NgbTooltipWindow>(
-      NgbTooltipWindow.$name,
-      $injector,
-      viewContainerRef,
-      this._ngZone,
-    );
-  }
-
-  $onInit(): void {
-    this._positioning = ngbPositioning(this.$ngbRTL);
-    this.animation = this.animation ?? this._config.animation;
-    this.autoClose = this.autoClose ?? this._config.autoClose;
-    this.placement = this.placement ?? this._config.placement;
-    this.popperOptions = this.popperOptions ?? this._config.popperOptions;
-    this.triggers = this.triggers ?? this._config.triggers;
-    this.container = this.container ?? this._config.container;
-    this.disableTooltip = this.disableTooltip ?? this._config.disableTooltip;
-    this.tooltipClass = this.tooltipClass ?? this._config.tooltipClass;
-    this.openDelay = this.openDelay ?? this._config.openDelay;
-    this.closeDelay = this.closeDelay ?? this._config.closeDelay;
-    this._ngbTooltip = this._ngbTooltip ?? this.$attrs.ngbTooltip;
-  }
-
-  $postLink(): void {
-    this._listenToTriggers();
-  }
-
-  $onChanges(changes: IOnChangesObject): void {
-    if (changes.triggers && !changes.triggers.isFirstChange()) {
-      this._listenToTriggers();
-    }
-
-    if (changes.tooltipClass && this.isOpen()) {
-      this._windowRef!.setInput("tooltipClass", changes.tooltipClass.currentValue);
-    }
-
-    if (this.isOpen() && (changes.placement || changes.popperOptions || changes.positionTarget)) {
-      this._positioning.setOptions({
-        hostElement: toNativeElement(this._getPositionTargetElement()),
-        targetElement: this._windowRef!.location.nativeElement,
-        placement: this.placement,
-        baseClass: "bs-tooltip",
-        updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
-      });
-      this._positioning.update();
-    }
-
-    if (this.isOpen() && changes.disableTooltip?.currentValue) {
+  @Input()
+  set ngbTooltip(value: string | TemplateRef<any> | null | undefined) {
+    this._ngbTooltip = value;
+    if (!value && this._windowRef) {
       this.close();
     }
   }
 
-  public open(context?: any): IPromise<void> {
+  get ngbTooltip() {
+    return this._ngbTooltip;
+  }
+
+  async open(context?: any): Promise<void> {
     if (!this._opening && this._transitioning) {
       this._transitioning = false;
-      ngbCompleteTransition(angular.element(this._windowRef!.location.nativeElement));
+      ngbCompleteTransition(this._windowRef!.location.nativeElement);
     }
+    if (!this._windowRef && this._ngbTooltip && !this.disableTooltip) {
+      const { windowRef, transition$ } = await this._popupService.open(
+        this._ngbTooltip,
+        context ?? this.tooltipContext,
+        this.animation,
+      );
+      this._opening = true;
+      this._transitioning = true;
+      this._windowRef = windowRef;
+      this._windowRef.setInput("animation", this.animation);
+      this._windowRef.setInput("tooltipClass", this.tooltipClass);
+      this._windowRef.setInput("id", this._ngbTooltipWindowId);
+      this._windowRef.setInput("onMouseEnter", () => this._mouseEnterTooltip.next());
+      this._windowRef.setInput("onMouseLeave", () => this._mouseLeaveTooltip.next());
 
-    if (this._windowRef || this.disableTooltip || !this._ngbTooltip) {
-      this._changeDetector.markForCheck();
-      return this.$q.resolve();
-    }
+      this._getPositionTargetElement().setAttribute("aria-describedby", this._ngbTooltipWindowId);
 
-    return this.popupService
-      .open(this._ngbTooltip, context ?? this.tooltipContext, this.animation)
-      .then(({ windowRef, transition$ }) => {
-        this._opening = true;
-        this._transitioning = true;
-        this._windowRef = windowRef;
+      if (this.container === "body") {
+        this._document.body.appendChild(this._windowRef.location.nativeElement);
+      }
 
-        windowRef.setInput("animation", this.animation);
-        windowRef.setInput("tooltipClass", this.tooltipClass);
-        windowRef.setInput("id", this._ngbTooltipWindowId);
-        windowRef.setInput("onMouseEnter", () => this._mouseenterContent$.next());
-        windowRef.setInput("onMouseLeave", () => this._mouseleaveContent$.next());
+      this._windowRef.changeDetectorRef.detectChanges();
+      this._windowRef.changeDetectorRef.markForCheck();
 
-        toNativeElement(this._getPositionTargetElement()).setAttribute("aria-describedby", this._ngbTooltipWindowId);
-
-        this._applyContainer();
-        windowRef.changeDetectorRef.detectChanges();
-        this._changeDetector.markForCheck();
-
-        this._ngZone.runOutsideAngular(() => {
-          this._positioning.createPopper({
-            hostElement: toNativeElement(this._getPositionTargetElement()),
-            targetElement: this._windowRef!.location.nativeElement,
-            placement: this.placement,
-            baseClass: "bs-tooltip",
-            updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
-          });
-          this.$timeout(() => this._positioning.update(), 0, false);
-          this._watchPositioning();
+      this._ngZone.runOutsideAngular(() => {
+        this._positioning.createPopper({
+          hostElement: this._getPositionTargetElement(),
+          targetElement: this._windowRef!.location.nativeElement,
+          placement: this.placement,
+          baseClass: "bs-tooltip",
+          updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
         });
-        this._setCloseHandlers();
 
-        transition$.subscribe(() => {
-          if (this._transitioning) {
-            this._transitioning = false;
-            this._positioning.update();
-            this.shown?.();
-          }
+        Promise.resolve().then(() => {
+          this._positioning.update();
         });
+        this._afterRenderRef = afterEveryRender(
+          {
+            mixedReadWrite: () => {
+              this._positioning.update();
+            },
+          },
+          { injector: this._injector },
+        );
       });
+
+      ngbAutoClose(
+        this._ngZone,
+        this._document,
+        this.autoClose,
+        () => this.close(),
+        this.hidden,
+        [this._windowRef.location.nativeElement],
+        [this._nativeElement],
+      );
+
+      transition$.subscribe(() => {
+        if (this._transitioning) {
+          this._transitioning = false;
+          this.shown.emit();
+        }
+      });
+    }
   }
 
-  public close(animation = this.animation): void {
+  close(animation = this.animation): void {
     if (this._opening && this._transitioning) {
       this._transitioning = false;
-      ngbCompleteTransition(angular.element(this._windowRef!.location.nativeElement));
+      ngbCompleteTransition(this._windowRef!.location.nativeElement);
     }
-
-    if (!this._windowRef) return;
-
-    this._opening = false;
-    this._transitioning = true;
-    this._destroyCloseHandlers$.next();
-    toNativeElement(this._getPositionTargetElement()).removeAttribute("aria-describedby");
-
-    this.popupService.close(animation).subscribe(() => {
-      this._windowRef = null;
-      this._positioning.destroy();
-      this._unwatchPositioning?.();
-      this._unwatchPositioning = undefined;
-      if (this._transitioning) {
-        this._transitioning = false;
-        this.hidden?.();
-      }
-      this._changeDetector.markForCheck();
-    });
+    if (this._windowRef != null) {
+      this._getPositionTargetElement().removeAttribute("aria-describedby");
+      this._opening = false;
+      this._transitioning = true;
+      this._popupService.close(animation).subscribe(() => {
+        this._windowRef = null;
+        this._positioning.destroy();
+        this._afterRenderRef?.destroy();
+        if (this._transitioning) {
+          this._transitioning = false;
+          this.hidden.emit();
+        }
+        this._changeDetector.markForCheck();
+      });
+    }
   }
 
-  public toggle(): void {
-    this._windowRef ? this.close() : this.open();
+  toggle(): void {
+    if (this._windowRef) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 
-  public isOpen(): boolean {
+  isOpen(): boolean {
     return this._windowRef != null;
   }
 
-  $onDestroy(): void {
-    this.close(false);
-    this._unlistenTriggers?.();
-    this._destroyCloseHandlers$.next();
-    this._destroyCloseHandlers$.complete();
-  }
-
-  private _mouseenterContent$ = new Subject<void>();
-  private _mouseleaveContent$ = new Subject<void>();
-
-  private _getPositionTargetElement() {
-    const native = toNativeElement(this.$element);
-    const target = this.positionTarget ? document.querySelector(this.positionTarget) : null;
-
-    return angular.element(target ?? native);
-  }
-
-  private _applyContainer(): void {
-    if (!this.container) return;
-
-    const container = this._getContainerElement();
-    container.append(angular.element(this._windowRef!.location.nativeElement));
-  }
-
-  private _getContainerElement(): IAugmentedJQuery {
-    if (!this.container) return this.$element.parent();
-
-    if (this.container === "body") return angular.element(document.body);
-
-    const container = document.querySelector(this.container);
-    if (!container) {
-      throw new Error(`[ngb-tooltip]: The specified container "${this.container}" was not found in the DOM.`);
-    }
-
-    return angular.element(container);
-  }
-
-  private _listenToTriggers(): void {
-    this._unlistenTriggers?.();
-    this._unlistenTriggers = listenToTriggers(
-      this.$timeout,
-      toNativeElement(this.$element),
+  ngOnInit() {
+    this._unregisterListenersFn = listenToTriggers(
+      this._nativeElement,
       this.triggers,
-      () => this.isOpen(),
-      () => this.open(),
-      () => this.close(),
+      this.isOpen.bind(this),
+      this.open.bind(this),
+      this.close.bind(this),
       +this.openDelay,
       +this.closeDelay,
-      this._mouseenterContent$,
-      this._mouseleaveContent$,
+      this._mouseEnterTooltip,
+      this._mouseLeaveTooltip,
     );
   }
 
-  private _setCloseHandlers(): void {
-    this._destroyCloseHandlers$.next();
-    ngbAutoClose(
-      this._ngZone,
-      this.autoClose,
-      this._destroyCloseHandlers$,
-      (source: SOURCE) => {
-        this.close();
-        if (source === SOURCE.ESCAPE) {
-          toNativeElement(this.$element).focus();
-        }
-      },
-      this._windowRef ? [this._windowRef.location.nativeElement] : [],
-      [toNativeElement(this.$element)],
-    );
-  }
-
-  private _watchPositioning(): void {
-    this._unwatchPositioning?.();
-    this._unwatchPositioning = this.$scope.$watch(() => {
-      if (this._windowRef) {
-        this._positioning.update();
-      }
-    });
-  }
-
-  set ngbTooltip(value: string | TemplateRef<any>) {
-    this._ngbTooltip = value;
-
-    if (!value && this.isOpen()) {
-      this.close();
+  ngOnChanges({ tooltipClass }: SimpleChanges) {
+    if (tooltipClass && this.isOpen()) {
+      this._windowRef!.setInput("tooltipClass", tooltipClass.currentValue);
     }
   }
 
-  static get $inject() {
-    return [
-      NgbTooltipConfig.$name,
-      "$element",
-      "$injector",
-      ViewContainerRef.$name,
-      NgbRTL.$name,
-      "$timeout",
-      "$scope",
-      NgZone.$name,
-      ChangeDetectorRef.$name,
-      "$attrs",
-    ];
+  ngOnDestroy() {
+    this.close(false);
+    this._unregisterListenersFn?.();
   }
 
-  static get $factory(): () => IDirective {
-    return () => ({
-      controller: NgbTooltip,
-      bindToController: {
-        ngbTooltip: "<?",
-        animation: "<?",
-        autoClose: "<?",
-        placement: "<?",
-        popperOptions: "<?",
-        triggers: "<?",
-        positionTarget: "@?",
-        container: "<?",
-        disableTooltip: "<?",
-        tooltipClass: "@?",
-        tooltipContext: "<?",
-        openDelay: "<?",
-        closeDelay: "<?",
-        shown: "&?",
-        hidden: "&?",
-      },
-      scope: true,
-      restrict: "A",
-    });
-  }
-
-  static get $name() {
-    return "ngbTooltip";
+  private _getPositionTargetElement(): HTMLElement {
+    return (
+      (isString(this.positionTarget) ? this._document.querySelector(this.positionTarget) : this.positionTarget) ||
+      this._nativeElement
+    );
   }
 }

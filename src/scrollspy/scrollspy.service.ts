@@ -1,6 +1,15 @@
 import { NgbScrollSpyConfig } from "@ngb/scrollspy/ngb-scrollspy-config.service";
 import { toFragmentElement } from "@ngb/scrollspy/scrollspy.utils";
-import { ChangeDetectorRef, DOCUMENT, inject, Injectable, NgZone, type OnDestroy } from "ngjs-core";
+import {
+  ChangeDetectorRef,
+  DestroyRef,
+  DOCUMENT,
+  Injectable,
+  inject,
+  NgZone,
+  type OnDestroy,
+  takeUntilDestroyed,
+} from "ngjs-core";
 import { distinctUntilChanged, type Observable, Subject } from "rxjs";
 import type { NgbScrollSpyRef } from "./ngb-scrollspy-item.directive";
 
@@ -44,15 +53,19 @@ export class NgbScrollSpyService implements NgbScrollSpyRef, OnDestroy {
   private _active = "";
 
   private _config = inject(NgbScrollSpyConfig);
+  private _destroyRef = inject(DestroyRef);
   private _document = inject(DOCUMENT);
   private _scrollBehavior = this._config.scrollBehavior;
   private _diChangeDetectorRef = inject<ChangeDetectorRef>(ChangeDetectorRef, { optional: true });
   private _changeDetectorRef = this._diChangeDetectorRef;
   private _zone = inject(NgZone);
-  private _activeSubscription = this._distinctActive$.subscribe((active) => {
-    this._active = active;
-    this._changeDetectorRef?.markForCheck();
-  });
+
+  constructor() {
+    this._distinctActive$.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((active) => {
+      this._active = active;
+      this._changeDetectorRef?.markForCheck();
+    });
+  }
 
   get active(): string {
     return this._active;
@@ -179,8 +192,6 @@ export class NgbScrollSpyService implements NgbScrollSpyRef, OnDestroy {
 
   ngOnDestroy(): void {
     this._cleanup();
-    this._activeSubscription.unsubscribe();
-    this._active$.complete();
   }
 
   private _cleanup(): void {

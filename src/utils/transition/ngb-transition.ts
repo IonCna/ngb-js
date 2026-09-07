@@ -1,9 +1,9 @@
-import { runInZone } from "@ngb/utils";
-import { getTransitionDurationMs } from "@ngb/utils/transition";
+import { getTransitionDurationMs } from "@ngb/utils/transition/util";
+import { runInZone } from "@ngb/utils/util";
 import type { NgZone } from "ngjs-core";
 import { EMPTY, endWith, filter, fromEvent, type Observable, of, race, Subject, takeUntil, timer } from "rxjs";
 
-export type NgbTransitionStartFn<T = unknown> = (
+export type NgbTransitionStartFn<T = any> = (
   element: HTMLElement,
   animation: boolean,
   context: T,
@@ -44,7 +44,7 @@ export const ngbRunTransition = <T>(
   startFn: NgbTransitionStartFn<T>,
   options: NgbTransitionOptions<T>,
 ): Observable<void> => {
-  let context: T = options.context || <T>{};
+  let context = options.context || <T>{};
 
   const running = runningTransitions.get(element);
   if (running) {

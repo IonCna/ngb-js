@@ -1,51 +1,37 @@
 import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
 import type { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
-import { assertAttribute } from "@ngb/utils";
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
+import { Directive, ElementRef, HostBinding, inject, Input } from "ngjs-core";
 
-export class NgbNavPane implements IController {
-  item!: NgbNavItem;
-  nav!: NgbNav;
-  role?: string;
-  nativeElement!: HTMLElement;
+@Directive({
+  selector: "[ngbNavPane]",
+})
+export class NgbNavPane {
+  nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  constructor(public $element: IAugmentedJQuery) {}
+  @Input() item!: NgbNavItem;
+  @Input() nav!: NgbNav;
+  @Input() role?: string;
 
-  $postLink(): void {
-    this.nativeElement = this.$element[0] as HTMLElement;
-    this.$element.addClass("tab-pane");
-    if (this.nav.animation) this.$element.addClass("fade");
-
-    this.$element.attr("id", this.item.panelDomId);
-    this.$element.attr("aria-labelledby", this.item.domId);
-    assertAttribute(this.$element, "role", this.role, this.nav.roles ? "tabpanel" : undefined);
+  @HostBinding("attr.id")
+  get _id(): string {
+    return this.item.panelDomId;
   }
 
-  //#region $angular
+  @HostBinding("class.tab-pane")
+  readonly _tabPaneClass = true;
 
-  static get $name() {
-    return "ngbNavPane";
+  @HostBinding("class.fade")
+  get _fadeClass(): boolean {
+    return this.nav.animation;
   }
 
-  static get $inject() {
-    return ["$element"];
+  @HostBinding("attr.role")
+  get _role(): string | undefined {
+    return this.role || (this.nav.roles ? "tabpanel" : undefined);
   }
 
-  static get $factory(): () => IDirective {
-    return () => ({
-      controller: NgbNavPane,
-      controllerAs: "$",
-      restrict: "A",
-      scope: {
-        item: "<",
-        nav: "<",
-        role: "<?",
-      },
-      bindToController: true,
-      transclude: true,
-      template: "<ng-content></ng-content>",
-    });
+  @HostBinding("attr.aria-labelledby")
+  get _ariaLabelledBy(): string {
+    return this.item.domId;
   }
-
-  //#endregion
 }

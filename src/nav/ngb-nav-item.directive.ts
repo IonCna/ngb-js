@@ -1,91 +1,69 @@
-import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
+import { NgbNav } from "@ngb/nav/ngb-nav.directive";
 import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
-import { toNativeElement } from "@ngb/utils";
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import angular from "angular";
-import { ContentChild, NgDisabled, TemplateRef } from "ngjs-core";
+import {
+  ContentChild,
+  Directive,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  inject,
+  Input,
+  type OnInit,
+  Output,
+  TemplateRef,
+} from "ngjs-core";
 
-const isValidNavId = (id?: string): id is string => angular.isDefined(id) && id !== "";
+// biome-ignore lint/suspicious/noExplicitAny: los ids de nav aceptan cualquier tipo en ng-bootstrap
+const isValidNavId = (id: any): boolean => id !== undefined && id !== null && id !== "";
 let navCounter = 0;
 
-export class NgbNavItem implements IController {
-  private _nav!: NgbNav;
-  public destroyOnHide?: boolean;
-  public ngDisabled?: NgDisabled;
-  public domId!: string;
-  public shown?: () => void;
-  public hidden?: () => void;
+@Directive({
+  selector: "[ngbNavItem]",
+  exportAs: "ngbNavItem",
+})
+export class NgbNavItem implements OnInit {
+  private _nav = inject(NgbNav);
+  private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  private _id?: string;
+  @Input() destroyOnHide?: boolean;
+  @Input() disabled = false;
+  @Input() domId!: string;
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  @Input("ngbNavItem") _id: any;
+
+  @Output() shown = new EventEmitter<void>();
+  @Output() hidden = new EventEmitter<void>();
+
   @ContentChild(NgbNavContent, { descendants: false, read: TemplateRef })
-  public contentTpl?: TemplateRef<{ $implicit: boolean }>;
+  contentTpl?: TemplateRef<{ $implicit: boolean }>;
 
-  constructor(private $element: IAugmentedJQuery) {}
+  @HostBinding("class.nav-item")
+  readonly _navItemClass = true;
 
-  $onInit(): void {
-    if (!angular.isDefined(this.domId)) {
+  ngOnInit(): void {
+    if (this.domId === undefined || this.domId === null) {
       this.domId = `ngb-nav-${navCounter++}`;
     }
   }
 
-  $postLink(): void {
-    this.$element.addClass("nav-item");
-  }
-
-  get active() {
+  get active(): boolean {
     return this._nav.activeId === this.id;
   }
 
-  get id() {
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  get id(): any {
     return isValidNavId(this._id) ? this._id : this.domId;
   }
 
-  get panelDomId() {
+  get panelDomId(): string {
     return `${this.domId}-panel`;
   }
 
-  public isDisabled(): boolean {
-    return this.ngDisabled?.disabled ?? false;
+  isPanelInDom(): boolean {
+    return (this.destroyOnHide !== undefined ? !this.destroyOnHide : !this._nav.destroyOnHide) || this.active;
   }
 
-  public isPanelInDom() {
-    return angular.isDefined(this.destroyOnHide) ? !this.destroyOnHide : !this._nav.destroyOnHide || this.active;
+  isNgContainer(): boolean {
+    return this._nativeElement.nodeType === Node.COMMENT_NODE;
   }
-
-  public isNgContainer() {
-    return toNativeElement(this.$element).nodeType === Node.COMMENT_NODE;
-  }
-
-  //#region $angular
-
-  static get $inject() {
-    return ["$element"];
-  }
-
-  static get $name() {
-    return "ngbNavItem";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      controller: NgbNavItem,
-      restrict: "A",
-      bindToController: true,
-      require: {
-        _nav: "^ngbNav",
-        ngDisabled: "?ngDisabled",
-      },
-      scope: {
-        destroyOnHide: "<?",
-        domId: "@?",
-        _id: "@?ngbNavItem",
-        shown: "&?",
-        hidden: "&?",
-      },
-      transclude: true,
-      template: "<ng-content></ng-content>",
-    });
-  }
-
-  //#endregion
 }

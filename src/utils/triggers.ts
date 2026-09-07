@@ -1,4 +1,3 @@
-import type { IPromise, ITimeoutService } from "angular";
 import { EMPTY, type Observable } from "rxjs";
 
 const ALIASES: Record<string, string[]> = {
@@ -6,7 +5,7 @@ const ALIASES: Record<string, string[]> = {
   focus: ["focusin", "focusout"],
 };
 
-export function parseTriggers(triggers: string = ""): [string, string?][] {
+export function parseTriggers(triggers: string): [string, string?][] {
   const trimmedTriggers = (triggers || "").trim();
 
   if (trimmedTriggers.length === 0) {
@@ -32,7 +31,6 @@ export function parseTriggers(triggers: string = ""): [string, string?][] {
 }
 
 export function listenToTriggers(
-  $timeout: ITimeoutService,
   element: HTMLElement,
   triggers: string,
   isOpenedFn: () => boolean,
@@ -51,7 +49,7 @@ export function listenToTriggers(
 
   const activeOpenTriggers = new Set<string>();
   const cleanupFns: (() => void)[] = [];
-  let timeout: IPromise<void>;
+  let timeout: any;
 
   function addEventListener(name: string, listener: () => void) {
     element.addEventListener(name, listener);
@@ -59,9 +57,9 @@ export function listenToTriggers(
   }
 
   function withDelay(fn: () => void, delayMs: number) {
-    $timeout.cancel(timeout);
+    clearTimeout(timeout);
     if (delayMs > 0) {
-      timeout = $timeout(fn, delayMs);
+      timeout = setTimeout(fn, delayMs);
     } else {
       fn();
     }
@@ -86,7 +84,7 @@ export function listenToTriggers(
     if (openTrigger === "mouseenter" && closeTrigger === "mouseleave" && closeDelayMs > 0) {
       const enterContentSub = enterContent.subscribe(() => {
         activeOpenTriggers.delete(openTrigger);
-        $timeout.cancel(timeout);
+        clearTimeout(timeout);
       });
       const leaveContentSub = leaveContent.subscribe(() => {
         activeOpenTriggers.delete(openTrigger);
@@ -99,10 +97,6 @@ export function listenToTriggers(
     }
   }
 
-  cleanupFns.push(() => $timeout.cancel(timeout));
-  return () => {
-    cleanupFns.forEach((cleanupFn) => {
-      cleanupFn();
-    });
-  };
+  cleanupFns.push(() => clearTimeout(timeout));
+  return () => cleanupFns.forEach((cleanupFn) => cleanupFn());
 }

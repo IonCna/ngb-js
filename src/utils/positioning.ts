@@ -1,12 +1,20 @@
-import type { NgbRTL } from "@ngb/utils/rtl.service";
-import type { Options, Placement as PopperPlacement } from "@popperjs/core";
-import { arrow, createPopperLite, flip, type Instance, type Modifier, preventOverflow } from "@popperjs/core";
+import {
+  arrow,
+  createPopperLite,
+  flip,
+  type Instance,
+  type Modifier,
+  type Options,
+  type Placement as PopperPlacement,
+  preventOverflow,
+} from "@popperjs/core";
+import { inject } from "ngjs-core";
+import { NgbRTL } from "@ngb/utils/rtl";
 
 const placementSeparator = /\s+/;
-const spacesRegExp = / {2,}/gi;
+const spacesRegExp = /  +/gi;
 
-const bootstrapPopperMatches: Record<Placement, [PopperPlacement, PopperPlacement?]> = {
-  auto: ["auto"],
+const bootstrapPopperMatches: Record<Exclude<Placement, "auto">, [PopperPlacement, PopperPlacement?]> = {
   top: ["top"],
   bottom: ["bottom"],
   start: ["left", "right"],
@@ -32,7 +40,7 @@ const bootstrapPopperMatches: Record<Placement, [PopperPlacement, PopperPlacemen
 };
 
 export function getPopperClassPlacement(placement: Placement, isRTL: boolean): PopperPlacement {
-  const [leftClass, rightClass] = bootstrapPopperMatches[placement];
+  const [leftClass, rightClass] = bootstrapPopperMatches[placement as Exclude<Placement, "auto">];
   return isRTL ? rightClass || leftClass : leftClass;
 }
 
@@ -41,15 +49,10 @@ const popperEndPrimaryPlacement = /^right/;
 const popperStartSecondaryPlacement = /^start/;
 const popperEndSecondaryPlacement = /^end/;
 
-function noMod(args: Partial<Options>) {
-  return args;
-}
-
 export function getBootstrapBaseClassPlacement(baseClass: string, placement: PopperPlacement): string {
   const [primary, secondary] = placement.split("-");
   const newPrimary = primary.replace(popperStartPrimaryPlacement, "start").replace(popperEndPrimaryPlacement, "end");
-  const classnames = [newPrimary];
-
+  let classnames = [newPrimary];
   if (secondary) {
     let newSecondary = secondary;
     if (primary === "left" || primary === "right") {
@@ -57,16 +60,16 @@ export function getBootstrapBaseClassPlacement(baseClass: string, placement: Pop
         .replace(popperStartSecondaryPlacement, "top")
         .replace(popperEndSecondaryPlacement, "bottom");
     }
-
     classnames.push(`${newPrimary}-${newSecondary}` as Placement);
   }
-
-  return baseClass ? classnames.map((classname) => `${baseClass}-${classname}`).join(" ") : classnames.join(" ");
+  if (baseClass) {
+    classnames = classnames.map((classname) => `${baseClass}-${classname}`);
+  }
+  return classnames.join(" ");
 }
 
 export function getPopperOptions({ placement, baseClass }: PositioningOptions, rtl: NgbRTL): Partial<Options> {
-  const placementIsArray = Array.isArray(placement);
-  const placementVals: Array<Placement> = placementIsArray
+  const placementVals: Array<Placement> = Array.isArray(placement)
     ? placement
     : (placement.split(placementSeparator) as Array<Placement>);
 
@@ -85,18 +88,16 @@ export function getPopperOptions({ placement, baseClass }: PositioningOptions, r
     "end-bottom",
   ];
 
-  let hasAuto = placementVals.indexOf("auto");
-
-  if (hasAuto >= 0)
-    allowedPlacements.forEach((obj) => {
-      if (placementVals.find((val) => val.search(`^${obj}`) !== -1) == null) {
-        placementVals.splice(hasAuto++, 1, obj as Placement);
+  let hasAuto = placementVals.findIndex((value) => value === "auto");
+  if (hasAuto >= 0) {
+    allowedPlacements.forEach((placementValue) => {
+      if (placementVals.find((value) => value.search(`^${placementValue}`) !== -1) == null) {
+        placementVals.splice(hasAuto++, 1, placementValue as Placement);
       }
     });
+  }
 
-  const popperPlacements = placementVals.map((_placement) => {
-    return getPopperClassPlacement(_placement, rtl.isRTL());
-  });
+  const popperPlacements = placementVals.map((placementValue) => getPopperClassPlacement(placementValue, rtl.isRTL()));
 
   const mainPlacement = popperPlacements.shift();
 
@@ -106,13 +107,10 @@ export function getPopperOptions({ placement, baseClass }: PositioningOptions, r
     phase: "write",
     fn({ state }) {
       const bsClassRegExp = new RegExp(`${baseClass}(-[a-z]+)*`, "gi");
-
-      const popperElement: HTMLElement = state.elements.popper as HTMLElement;
+      const popperElement = state.elements.popper as HTMLElement;
       const popperPlacement = state.placement;
-
       let className = popperElement.className;
       className = className.replace(bsClassRegExp, "");
-
       className += ` ${getBootstrapBaseClassPlacement(baseClass!, popperPlacement)}`;
       className = className.trim().replace(spacesRegExp, " ");
       popperElement.className = className;
@@ -172,22 +170,19 @@ interface PositioningOptions {
   updatePopperOptions?: (options: Partial<Options>) => Partial<Options>;
 }
 
-export type NgbPositioning = {
-  createPopper(positioningOption: PositioningOptions): void;
-  update(): void;
-  setOptions(positioningOption: PositioningOptions): void;
-  destroy(): void;
-};
+function noop(argument: Partial<Options>) {
+  return argument;
+}
 
-export function ngbPositioning(ngbRTL: NgbRTL): NgbPositioning {
+export function ngbPositioning() {
+  const rtl = inject(NgbRTL);
   let popperInstance: Instance | null = null;
 
   return {
     createPopper(positioningOption: PositioningOptions) {
       if (!popperInstance) {
-        const updatePopperOptions = positioningOption.updatePopperOptions || noMod;
-        const popperOptions = updatePopperOptions(getPopperOptions(positioningOption, ngbRTL));
-
+        const updatePopperOptions = positioningOption.updatePopperOptions || noop;
+        const popperOptions = updatePopperOptions(getPopperOptions(positioningOption, rtl));
         popperInstance = createPopperLite(
           positioningOption.hostElement,
           positioningOption.targetElement,
@@ -202,8 +197,8 @@ export function ngbPositioning(ngbRTL: NgbRTL): NgbPositioning {
     },
     setOptions(positioningOption: PositioningOptions) {
       if (popperInstance) {
-        const updatePopperOptions = positioningOption.updatePopperOptions || noMod;
-        const popperOptions = updatePopperOptions(getPopperOptions(positioningOption, ngbRTL));
+        const updatePopperOptions = positioningOption.updatePopperOptions || noop;
+        const popperOptions = updatePopperOptions(getPopperOptions(positioningOption, rtl));
         popperInstance.setOptions(popperOptions);
       }
     },
