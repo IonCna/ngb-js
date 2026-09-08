@@ -13,8 +13,10 @@ contrato correspondiente.
 | `ChangeDetectionStrategy.Eager` | Decision: no se va a soportar (AngularJS no tiene CD por componente). Sacado de la ventana de typeahead. | Ventana de typeahead. |
 | `ControlValueAccessor` y `NG_VALUE_ACCESSOR` | No estan exportados por el core. | Rating y typeahead. |
 | Providers de directiva compatibles con `NG_VALUE_ACCESSOR` | Falta el token y el flujo completo de forms. | Rating y typeahead. |
-| `hostDirectives: [...]` (componer directiva sobre el host) | **Soportado** — `host-directives-bridge.ts` (ver abajo). Sin reenvío de `inputs`/`outputs` largos. | accordion. |
-| `@Input` de `@Directive` aplicado antes de resolver `@ContentChild`/`@ViewChild` estáticos | Timing: `ngjs-core` asigna el `<` en el link (pre-hijos); Angular en el CD del host (post-queries). Ver abajo. | **accordion** (`NgbAccordionItem.set collapsed`). |
+| `hostDirectives: [...]` (componer directiva sobre el host) | **Soportado** — `host-directives-bridge.ts`. Sin reenvío de `inputs`/`outputs` largos. | accordion. |
+| `@Input set` de `@Directive` que tira leyendo una query estática en el link | **Resuelto** — `input-defer-bridge.ts` re-aplica el setter en `$postLink`. | accordion. |
+| `@ContentChild`/`@ViewChild(forwardRef(() => X))` | **Soportado** — `resolveForwardRef` en los 4 `createDecorated*Queries`. | accordion (import circular). |
+| `@ViewChild(nombre, { read: ViewContainerRef })` sobre ancla sin controller | No resuelve (falta el `$viewContainerRefController`). Ver abajo. | accordion body (adaptado: `inject(ViewContainerRef)`). |
 
 ## Diferencias soportadas
 
@@ -217,28 +219,53 @@ Limitaciones: no reenvía `inputs`/`outputs` de la forma larga
 `{ directive, inputs, outputs }`; no soporta `hostDirectives` en `@Component` de
 elemento (sí de atributo y `@Directive`).
 
-### `@Input` de `@Directive` que lee un `@ContentChild`/`@ViewChild` estático en su setter (2026-09-07)
+### `@Input` de `@Directive` cuyo setter tira en el link temprano → replay (2026-09-07, RESUELTO)
 
 Angular aplica los `@Input` de una directiva durante la **detección de cambios**
 del host — después de crear la vista/el contenido y resolver las queries
 `{ static: true }`. `ngjs-core` (AngularJS) los asigna **sincrónicamente en el
 link**, ANTES de linkear los hijos → un `@Input set` que lee un `@ContentChild`/
-`@ViewChild` estático lo ve `undefined`.
+`@ViewChild` estático lo ve `undefined` y tira.
 
-Rompe `NgbAccordionItem`: `@Input() set collapsed` llama `expand()`/`collapse()`,
-que tocan `this._collapse.ngbCollapse` (`@ContentChild(NgbAccordionCollapse,
-{ static: true })`). Con `[collapsed]="false"` inicial → `expand()` en el link →
-`_collapse` es `undefined` → `TypeError`.
+Rompía `NgbAccordionItem`: `@Input() set collapsed` llama `expand()`, que toca
+`this._collapse.ngbCollapse` (`@ContentChild(NgbAccordionCollapse, { static: true })`).
+Con `[collapsed]="false"` inicial → `TypeError` en el link.
 
-`ngAfterContentInit` del item YA re-sincroniza `ngbCollapse.collapsed = this.collapsed`,
-así que el estado final igual queda bien — el problema es solo el `TypeError` del
-setter inicial. Fix en el core: aplicar el valor inicial de los `<`/`=` de una
-`@Directive` en el primer `$digest` (post-link), no en `initializeDirectiveBindings`.
+**Resuelto en el core**: `runtime/bridges/input-defer-bridge.ts` parcha los
+SETTERS de `@Input` de cada `@Directive`. Si el setter tira durante ese link
+temprano, el valor se guarda y se re-aplica en `$postLink` — ya con las queries
+resueltas (el bridge es interno a `ng-ref-bridge`, así su `resolve()` corre
+antes). Un setter que NO tira corre igual que siempre, sin cambio de timing.
 
-**Estado accordion:** migrado 1:1 a v20 (7 clases, un archivo por directiva,
-`@Directive`/`@Component`, `inject()`, `@HostBinding`/`@HostListener`,
-`@ContentChild(ren)`, ciclo de vida Angular). `hostDirectives` ✅. Falla 2/2 por
-este gap de timing de `@Input` + revisar el `ViewContainerRef` del `NgbAccordionBody`.
+### `@ContentChild`/`@ViewChild(forwardRef(() => X))` (2026-09-07, RESUELTO)
+
+Con directivas en archivos separados y `inject()` cruzado hay imports circulares:
+`A` decora con `@ContentChildren(X)` mientras `X` (definido en `B`, que importa
+`A`) todavía es `undefined` según el orden de carga.
+
+**Resuelto en el core**: los 4 `createDecorated*Queries` desenvuelven el locator
+(y `read`) con `resolveForwardRef` al CONSTRUIR la query (una vez por instancia)
+— para entonces `X` ya existe. `accordion` usa
+`@ContentChildren(forwardRef(() => NgbAccordionItem), { descendants: false })`.
+
+### `@ViewChild(nombre, { read: ViewContainerRef })` sobre un ancla que no es componente (2026-09-07)
+
+`ngjs-core` publica el `$viewContainerRefController` solo en elementos que TIENEN
+un controller (lo pone `view-container-ref-bridge` en `augmentLocals`). Un
+`<ng-container #container />` / `<span #container>` pelado no lo tiene, así que
+`@ViewChild("container", { read: ViewContainerRef })` queda `undefined`.
+
+ng-bootstrap v20 `NgbAccordionBody` usa ese patrón. **Adaptado en `ngb-js`**: el
+body usa el `ViewContainerRef` de su propio host (`inject(ViewContainerRef)`) y el
+template pasa a `<ng-content />` a secas — mismo efecto (la vista embebida queda
+dentro del `.accordion-body`). Fix en el core: que `@ViewChild(read: ViewContainerRef)`
+sintetice un VCR desde el nodo del candidato (como ya hace con `ElementRef`).
+
+**Estado accordion:** ✅ **2/2** — migrado 1:1 a v20 (7 clases, un archivo por
+directiva, `@Directive`/`@Component`, `inject()`, `@HostBinding`/`@HostListener`,
+`@ContentChild(ren)`, `hostDirectives`, ciclo de vida Angular). Únicas
+adaptaciones: `forwardRef` en el `@ContentChildren` (import circular) y el
+`ViewContainerRef` del body por `inject` (arriba).
 
 ### `@HostListener` con pseudo-eventos de tecla → soportado (2026-09-07, RESUELTO)
 

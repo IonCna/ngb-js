@@ -29,7 +29,7 @@ en field initializers no resuelve. `configureTestBed(NgbModule)` hace un
 `$compile`/`$rootScope`/`get` + `detectChanges()` (= `appRef.tick()`: digest +
 flush de `afterNextRender`). Se migran las specs a él **de a una, junto con su feature**.
 
-## Estado (suite: 110 pasan / 38 fallan, 18/26 archivos verdes)
+## Estado (suite: 112 pasan / 36 fallan, 19/26 archivos verdes)
 
 | Feature | Clases | `*.module.ts` | Spec | Ref |
 |---|---|---|---|---|
@@ -37,7 +37,7 @@ flush de `afterNextRender`). Se migran las specs a él **de a una, junto con su 
 | **collapse** · **rating** · **toast** · **nav** · **modal** · **carousel** | ✅ | ✅ | ✅ verde | — |
 | **tooltip** | ✅ | ✅ | ✅ 6/6 | `src/tooltip/tooltip.ts` |
 | **dropdown** | ✅ (6→5 dirs, button-item fusionado) | ✅ | ✅ 3/3 | `src/dropdown/dropdown.ts` |
-| **accordion** | ✅ (7 clases, 1:1 con v20) | ✅ | 🔴 0/2 — gap timing `@Input` | `src/accordion/accordion.directive.ts` |
+| **accordion** | ✅ (7 clases, 1:1 con v20) | ✅ | ✅ 2/2 | `src/accordion/accordion.directive.ts` |
 | offcanvas | ⬜ (5, service) | ⬜ | 🔴 4/4 | `src/offcanvas/offcanvas.ts` |
 | popover | ⬜ | ⬜ | 🔴 5/5 | `src/popover/popover.ts` |
 | typeahead | ✅ (module sin `id:`) | ✅ | 🔴 22/22 (highlight, window, directiva) | `src/typeahead/typeahead.ts` |
@@ -56,14 +56,14 @@ Leyenda: ✅ hecho/verde · ⬜ pendiente · 🟡 parcial · 🔴 rojo.
   `ngbAutoClose` a la firma v20; `afterNextRender` en vez de `queueMicrotask`;
   `@HostListener("keydown.*")` en menu/toggle.
 - `accordion`: **portado 1:1 al `accordion.directive.ts` de v20**, un archivo por
-  directiva (convención de `ngb-js`). `hostDirectives` ✅ (lo cablea
-  `host-directives-bridge.ts` de `ngjs-core`). Sigue rojo 2/2 por otro gap de
-  timing: `@Input() set collapsed` lee un `@ContentChild` estático que
-  `ngjs-core` todavía no resolvió al aplicar el binding (ver CORE_GAPS), y falta
-  revisar el `ViewContainerRef` del `NgbAccordionBody`. `disabled` del item es
-  `@Input() disabled` (es un `<div>`, sin choque con el atributo nativo); el
-  `[disabled]` del `<button>` va por `@HostBinding`. `<ng-container #container />`
-  → `<ng-container ng-ref="container" ng-ref-read="viewContainerRef">`.
+  directiva (convención de `ngb-js`). ✅ 2/2. Destrabó 3 features del core
+  (`hostDirectives`, `input-defer-bridge`, `forwardRef` en queries). Dos
+  adaptaciones puntuales: `@ContentChildren(forwardRef(() => NgbAccordionItem))`
+  (import circular entre `item` ↔ `directive`), y `NgbAccordionBody` usa el
+  `ViewContainerRef` del propio host (`inject`) en vez de un `<ng-container #container>`
+  + `@ViewChild(read: ViewContainerRef)` (gap del core, ver CORE_GAPS).
+  `disabled` del item es `@Input() disabled` (es un `<div>`, sin choque nativo);
+  el `[disabled]` del `<button>` va por `@HostBinding`.
   `@Injectable({ providedIn:"root" })` en el config. Spec a `configureTestBed`.
 
 ## Bugs de `ngjs-core` encontrados y arreglados
@@ -108,6 +108,14 @@ Leyenda: ✅ hecho/verde · ⬜ pendiente · 🟡 parcial · 🔴 rojo.
     antes de construirlo, la pasa por toda la cadena de bridges, la publica en
     `$element.data("$<sel>Controller")` para `inject()`, y le corre el ciclo de
     vida a mano. Sin reenvío de `inputs`/`outputs` largos. Usado por `accordion`.
+11. **`@Input set` de `@Directive` que tira en el link temprano** (sin commit) —
+    `input-defer-bridge.ts` parcha los setters de `@Input`: si tiran leyendo una
+    query `{ static: true }` todavía sin resolver, el valor se re-aplica en
+    `$postLink`. Desbloqueó `NgbAccordionItem.set collapsed`.
+12. **`forwardRef` en el locator de `@ContentChild`/`@ViewChild`** (sin commit) —
+    los 4 `createDecorated*Queries` desenvuelven `forwardRef(() => X)` al
+    construir la query (no al decorar). Necesario con directivas en archivos
+    separados + import circular (`accordion`).
 
 ## Adaptaciones en `ngb-js` (no en el core)
 
@@ -121,6 +129,10 @@ Leyenda: ✅ hecho/verde · ⬜ pendiente · 🟡 parcial · 🔴 rojo.
   cadena de prototipos — no hace falta `useExisting`).
 - **`NgbDropdown` sin template** (ng-bootstrap tampoco tiene): `@ContentChild`/
   `@ContentChildren` sobre `@Directive` sin template = light DOM (bug #4 del core).
+- **`accordion`**: `@ContentChildren(forwardRef(() => NgbAccordionItem))` (import
+  circular `item` ↔ `directive`); `NgbAccordionBody` usa `inject(ViewContainerRef)`
+  del host en vez de `<ng-container #container>` + `@ViewChild(read: ViewContainerRef)`
+  (gap del core).
 - **`NgbRootModule` importa `PlatformBrowserModule`** → token `DOCUMENT`.
 - **`toNativeElement`** restaurado en `utils` (9 componentes viejos lo usan).
 - **`@HostListener` usa `addEventListener`**, no jqLite `.on()` — las specs deben
@@ -134,25 +146,19 @@ Leyenda: ✅ hecho/verde · ⬜ pendiente · 🟡 parcial · 🔴 rojo.
 3. ~~dropdown~~ ✅ 3/3 (6 dirs → 5 + `NgbDropdownButtonItem` fusionado; module
    `@NgModule`; spec a `configureTestBed`; `ngbAutoClose` a la firma v20;
    `afterNextRender` en vez de `queueMicrotask`; `@HostListener("keydown.*")`).
-4. ~~accordion~~ portado 1:1 a v20; `hostDirectives` ✅. Sigue 0/2 por el gap de
-   timing de `@Input` (setter que lee `@ContentChild` estático) + revisar el
-   `ViewContainerRef` del body — a resolver en el core.
+4. ~~accordion~~ ✅ 2/2 — portado 1:1 a v20; destrabó `hostDirectives` +
+   `input-defer-bridge` + `forwardRef` en queries en el core.
 5. **offcanvas** → **popover** → **typeahead** → **datepicker**.
 
 Tras cada uno: `bunx vitest run src/<feature>` verde + suite completa sin nuevos rojos.
 
-## Pendiente en `ngjs-core` (resolver al final)
+## Pendiente en `ngjs-core` (mejora, no bloquea nada hoy)
 
-- **Timing de `@Input` de `@Directive`** — `ngjs-core` aplica el valor `<`
-  inicial en el link (antes de linkear los hijos); Angular lo aplica en el CD del
-  host (después de crear el contenido y resolver las queries `{ static: true }`).
-  Un `@Input set` que lee un `@ContentChild`/`@ViewChild` estático lo ve
-  `undefined`. Bloquea `NgbAccordionItem.set collapsed`. Fix: diferir el valor
-  inicial de los `<`/`=` de una `@Directive` al primer `$digest` post-link.
-- **`ViewContainerRef` de `NgbAccordionBody`** — el `<ng-template>` no se
-  inserta; revisar `@ViewChild("container", { read: ViewContainerRef })` +
-  `@ContentChild(TemplateRef, { static: true })` sobre un `@Component` de
-  atributo con `transclude`.
+- **`@ViewChild(nombre, { read: ViewContainerRef })` sobre un ancla sin
+  controller** (`<ng-container #x>` / `<span #x>`) — no resuelve porque el
+  `$viewContainerRefController` solo se pone en elementos con controller.
+  Fix: que la query sintetice un VCR desde el nodo del candidato (como ya hace
+  con `ElementRef`). Mientras tanto `NgbAccordionBody` usa `inject(ViewContainerRef)`.
 
 ## Receta por módulo
 

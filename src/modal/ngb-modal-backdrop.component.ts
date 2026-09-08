@@ -6,7 +6,7 @@ import { NgbModalConfig, type NgbModalUpdatableOptions } from "@ngb/modal/ngb-mo
 import { ngbRunTransition } from "@ngb/utils";
 import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
 import angular from "angular";
-import { ChangeDetectorRef, NgZone } from "ngjs-core";
+import { ChangeDetectorRef, NgZone } from "ngjs-core/core";
 import type { Observable } from "rxjs";
 
 const BACKDROP_ATTRIBUTES = [

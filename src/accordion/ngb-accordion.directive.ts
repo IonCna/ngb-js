@@ -1,6 +1,16 @@
 import { NgbAccordionConfig } from "@ngb/accordion/ngb-accordion-config.service";
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
-import { ContentChildren, Directive, EventEmitter, HostBinding, inject, Input, Output, type QueryList } from "ngjs-core";
+import {
+  ContentChildren,
+  Directive,
+  EventEmitter,
+  forwardRef,
+  HostBinding,
+  inject,
+  Input,
+  Output,
+  type QueryList,
+} from "ngjs-core";
 
 /**
  * El acordeón es una pila de tarjetas con header y body colapsable.
@@ -17,7 +27,10 @@ export class NgbAccordionDirective {
   private _config = inject(NgbAccordionConfig);
   private _anItemWasAlreadyExpandedDuringInitialisation = false;
 
-  @ContentChildren(NgbAccordionItem, { descendants: false })
+  // `forwardRef`: import circular con `ngb-accordion-item.directive.ts`
+  // (item importa este archivo para `inject(NgbAccordionDirective)`). Sin él,
+  // según el orden de carga, `NgbAccordionItem` es `undefined` al decorar.
+  @ContentChildren(forwardRef(() => NgbAccordionItem), { descendants: false })
   private _items?: QueryList<NgbAccordionItem>;
 
   @HostBinding("class.accordion")
