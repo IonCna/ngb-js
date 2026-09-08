@@ -1,6 +1,7 @@
 import { NgbNav } from "@ngb/nav/ngb-nav.directive";
 import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
 import {
+  Attribute,
   ContentChild,
   Directive,
   ElementRef,
@@ -39,6 +40,18 @@ export class NgbNavItem implements OnInit {
 
   @HostBinding("class.nav-item")
   readonly _navItemClass = true;
+
+  // ng-bootstrap separa esto en `NgbNavItemRole` (`selector: "[ngbNavItem]:not(ng-container)"`).
+  // AngularJS no deja dos directivas con el mismo nombre y ambas con controller
+  // (`$compile:multidir`), así que acá va integrado, con el mismo criterio
+  // `:not(ng-container)` chequeado en runtime. Ver CORE_GAPS.md.
+  constructor(@Attribute("role") private readonly _explicitRole?: string) {}
+
+  @HostBinding("attr.role")
+  get _role(): string | undefined {
+    if (this._nativeElement.tagName === "NG-CONTAINER") return undefined;
+    return this._explicitRole || (this._nav.roles ? "presentation" : undefined);
+  }
 
   ngOnInit(): void {
     if (this.domId === undefined || this.domId === null) {

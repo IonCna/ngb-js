@@ -20,6 +20,7 @@ import { NgbTooltipModule } from "@ngb/tooltip/ngb-tooltip.module";
 import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { NgModule, registerNgModule } from "ngjs-core";
+import { PlatformBrowserModule } from "ngjs-core/platform-browser";
 
 /**
  * Módulo raíz. Los feature modules ya convertidos a `@NgModule` entran como
@@ -31,6 +32,7 @@ import { NgModule, registerNgModule } from "ngjs-core";
   id: "ngb",
   controllerAs: "$",
   imports: [
+    PlatformBrowserModule,
     NgbAlertModule,
     NgbProgressbarModule,
     NgbCollapseModule,
