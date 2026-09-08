@@ -1,14 +1,12 @@
-import { NgbScrollSpyItem, type NgbScrollSpyRef } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
-import { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
+import type { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
+import { NgbScrollSpyItem } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
 import { NgbScrollSpyService, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
-import { ContentChildren, Directive, inject, Input, type AfterViewInit, type OnDestroy, type QueryList } from "ngjs-core";
+import type { IController, IDirective } from "angular";
+import { ContentChildren, type QueryList } from "ngjs-core";
 import type { Observable, Subscription } from "rxjs";
 
-@Directive({
-  selector: "[ngbScrollSpyMenu]",
-})
-export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit, OnDestroy {
-  private _scrollSpyRef: NgbScrollSpyRef = inject(NgbScrollSpyService);
+export class NgbScrollSpyMenu implements IController {
+  private _scrollSpyRef!: NgbScrollSpy | NgbScrollSpyService;
   private _map = new Map<string, NgbScrollSpyItem>();
   private _lastActiveItem: NgbScrollSpyItem | null = null;
   private _activeSubscription?: Subscription;
@@ -17,9 +15,37 @@ export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit, OnDestr
   @ContentChildren(NgbScrollSpyItem, { descendants: true })
   private _items!: QueryList<NgbScrollSpyItem>;
 
-  @Input("ngbScrollSpyMenu")
-  set scrollSpy(scrollSpy: NgbScrollSpy) {
-    this._scrollSpyRef = scrollSpy;
+  public scrollSpy?: NgbScrollSpy;
+  public parentScrollSpy?: NgbScrollSpy;
+
+  constructor(private $scrollSpy: NgbScrollSpyService) {}
+
+  $onInit(): void {
+    this._scrollSpyRef = this.scrollSpy ?? this.parentScrollSpy ?? this.$scrollSpy;
+  }
+
+  $postLink(): void {
+    this._rebuildMap();
+    this._itemsSubscription = this._items.changes.subscribe(() => this._rebuildMap());
+    this._activeSubscription = this._scrollSpyRef.active$.subscribe((activeId: string) => {
+      this._lastActiveItem?._deactivate();
+
+      const item = this._map.get(activeId);
+
+      if (!item) {
+        return;
+      }
+
+      item._activate();
+      this._lastActiveItem = item;
+    });
+  }
+
+  $onDestroy(): void {
+    this._activeSubscription?.unsubscribe();
+    this._itemsSubscription?.unsubscribe();
+    this._map.clear();
+    this._lastActiveItem = null;
   }
 
   get active(): string {
@@ -38,31 +64,36 @@ export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit, OnDestr
     return this._map.get(id);
   }
 
-  ngAfterViewInit(): void {
-    this._itemsSubscription = this._items.changes.subscribe(() => this._rebuildMap());
-    this._rebuildMap();
+  private _rebuildMap(): void {
+    this._map.clear();
+    for (const item of this._items) this._map.set(item.fragment, item);
+  }
 
-    this._activeSubscription = this._scrollSpyRef.active$.subscribe((activeId) => {
-      this._lastActiveItem?._deactivate();
-      const item = this._map.get(activeId);
-      if (item) {
-        item._activate();
-        this._lastActiveItem = item;
-      }
+  //#region $angular
+
+  static get $name() {
+    return "ngbScrollSpyMenu";
+  }
+
+  static get $factory(): () => IDirective {
+    return () => ({
+      bindToController: {
+        scrollSpy: "<?ngbScrollSpyMenu",
+      },
+      controller: NgbScrollSpyMenu,
+      require: {
+        parentScrollSpy: "?^ngbScrollSpy",
+      },
+      scope: true,
+      restrict: "A",
+      transclude: true,
+      template: "<ng-content></ng-content>",
     });
   }
 
-  ngOnDestroy(): void {
-    this._activeSubscription?.unsubscribe();
-    this._itemsSubscription?.unsubscribe();
-    this._map.clear();
-    this._lastActiveItem = null;
+  static get $inject() {
+    return [NgbScrollSpyService.$name];
   }
 
-  private _rebuildMap(): void {
-    this._map.clear();
-    for (const item of this._items) {
-      this._map.set(item.fragment, item);
-    }
-  }
+  //#endregion
 }
