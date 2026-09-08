@@ -18,12 +18,21 @@ describe("NgbTypeaheadWindow", () => {
 
   afterEach(() => element?.remove());
 
-  function setup(focusFirst = true, formatter?: (result: string) => string) {
-    const scope = $rootScope.$new() as IScope & Record<string, any>;
+  function setup(focusFirst = true, formatter?: (result: string) => string, popupClass?: string) {
+    const scope = $rootScope.$new() as IScope & {
+      results: string[];
+      term: string;
+      focusFirst: boolean;
+      formatter?: (result: string) => string;
+      popupClass?: string;
+      selected: ReturnType<typeof vi.fn>;
+      activeChanged: ReturnType<typeof vi.fn>;
+    };
     scope.results = ["bar", "baz"];
     scope.term = "ba";
     scope.focusFirst = focusFirst;
     scope.formatter = formatter;
+    scope.popupClass = popupClass;
     scope.selected = vi.fn();
     scope.activeChanged = vi.fn();
     element = $compile(`
@@ -32,6 +41,7 @@ describe("NgbTypeaheadWindow", () => {
         results="results"
         term="term"
         formatter="formatter"
+        popup-class="popupClass"
         focus-first="focusFirst"
         select="selected($event)"
         active-change="activeChanged($event)">
@@ -123,5 +133,34 @@ describe("NgbTypeaheadWindow", () => {
     const event = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
     root.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("returns the selected row through getActive and emits no active id when reset without focusFirst", () => {
+    const { scope, controller } = setup(false);
+    expect(controller.getActive()).toBeUndefined();
+    controller.markActive(1);
+    expect(controller.getActive()).toBe("baz");
+    controller.resetActive();
+    expect(controller.hasActive()).toBe(false);
+    expect(scope.activeChanged).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it("renders result buttons as non-submit buttons with the expected ARIA state", () => {
+    const { root } = setup();
+    const rows = Array.from(root.querySelectorAll<HTMLButtonElement>("button"));
+    expect(rows.every(({ type }) => type === "button")).toBe(true);
+    expect(rows.map((row) => row.getAttribute("role"))).toEqual(["option", "option"]);
+    expect(rows.map((row) => row.getAttribute("aria-selected"))).toEqual(["true", "false"]);
+  });
+
+  it("applies and updates a custom popup class", () => {
+    const { scope, root } = setup(true, undefined, "first second");
+    expect(root.classList.contains("first")).toBe(true);
+    expect(root.classList.contains("second")).toBe(true);
+    scope.popupClass = "replacement";
+    scope.$digest();
+    expect(root.classList.contains("dropdown-menu")).toBe(true);
+    expect(root.classList.contains("show")).toBe(true);
+    expect(root.classList.contains("replacement")).toBe(true);
   });
 });

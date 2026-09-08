@@ -61,4 +61,24 @@ describe("NgbHighlight", () => {
       "été",
     ]);
   });
+
+  it.each([
+    [null, "null", ""],
+    [undefined, "undefined", ""],
+    [0, "0", "0"],
+  ])("stringifies result %s consistently", (result, term, highlighted) => {
+    const root = setup(result, term);
+    expect(root.textContent).toBe(result == null ? "" : String(result));
+    expect(root.querySelector(".ngb-highlight")?.textContent ?? "").toBe(highlighted);
+  });
+
+  it("supports mixed string, numeric and null search terms", () => {
+    const root = setup("one 2 three", ["one", 2, null]);
+    expect(Array.from(root.querySelectorAll(".ngb-highlight"), ({ textContent }) => textContent)).toEqual(["one", "2"]);
+  });
+
+  it("keeps accent-sensitive matching enabled by default", () => {
+    const root = setup("Noël", "Noel");
+    expect(root.querySelector(".ngb-highlight")).toBeNull();
+  });
 });

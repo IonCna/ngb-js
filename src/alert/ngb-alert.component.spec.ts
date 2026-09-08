@@ -1,115 +1,136 @@
-import type { ICompileService, IRootScopeService } from "angular";
+import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
+import type { IRootScopeService } from "angular";
 import angular from "angular";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Injector } from "ngjs-core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbAlert } from "./ngb-alert.component";
 
+/** Port de `alert.spec.ts` de ng-bootstrap al harness de ngb-js. */
 describe("ngbAlert", () => {
-  let $compile: ICompileService;
+  let tb: NgbTestBed;
   let $rootScope: IRootScopeService;
 
-  beforeEach(() => {
-    angular.mock.module(NgbModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $rootScope = tb.$rootScope;
   });
 
-  it("renders bootstrap classes and closes when dismiss button is clicked", () => {
-    const scope = $rootScope.$new() as IRootScopeService & {
-      onClosed: () => void;
-    };
+  afterEach(() => tb.destroy());
+
+  const config = () => tb.get<Injector>(Injector.$name).get(NgbAlertConfig);
+
+  function create(html: string, scopeExtras: Record<string, unknown> = {}) {
+    const scope = Object.assign($rootScope.$new(), scopeExtras) as IRootScopeService & Record<string, unknown>;
+    const element = tb.$compile(html)(scope);
+    tb.detectChanges();
+    return { element, host: element[0] as HTMLElement, scope };
+  }
+
+  it("initializes inputs with default config values", () => {
+    const { element } = create(`<ngb-alert>Cool!</ngb-alert>`);
+    const alert = element.controller<NgbAlert>("ngbAlert") as NgbAlert & { dismissible: boolean; type: string };
+    expect(alert.dismissible).toBe(config().dismissible);
+    expect(alert.type).toBe(config().type);
+  });
+
+  it("applies the default values to the host", () => {
+    const { host } = create(`<ngb-alert animation="false">Cool!</ngb-alert>`);
+    expect(host.getAttribute("role")).toBe("alert");
+    expect(host.classList.contains("alert-warning")).toBe(true);
+    expect(host.classList.contains("alert-dismissible")).toBe(true);
+    expect(host.classList.contains("show")).toBe(true);
+    expect(host.classList.contains("fade")).toBe(false);
+  });
+
+  it("allows specifying the alert type and keeps custom classes", () => {
+    const { host } = create(`<ngb-alert type="'success'" class="class1 class2" animation="false">Cool!</ngb-alert>`);
+    expect(host.getAttribute("role")).toBe("alert");
+    expect(host.classList.contains("alert")).toBe(true);
+    expect(host.classList.contains("class1")).toBe(true);
+    expect(host.classList.contains("class2")).toBe(true);
+    expect(host.classList.contains("alert-success")).toBe(true);
+  });
+
+  it("reacts to a change of alert type", () => {
+    const { host, scope } = create(`<ngb-alert type="type" class="class1" animation="false">Cool!</ngb-alert>`, {
+      type: "success",
+    });
+    expect(host.classList.contains("alert-success")).toBe(true);
+
+    scope.type = "warning";
+    tb.detectChanges();
+    scope.$digest();
+    expect(host.classList.contains("alert-success")).toBe(false);
+    expect(host.classList.contains("class1")).toBe(true);
+    expect(host.classList.contains("alert-warning")).toBe(true);
+  });
+
+  it("renders the close button when dismissible", () => {
+    const { host } = create(`<ngb-alert dismissible="true">Watch out!</ngb-alert>`);
+    const button = host.querySelector("button.btn-close") as HTMLButtonElement;
+    expect(host.classList.contains("alert-dismissible")).toBe(true);
+    expect(button).toBeTruthy();
+    expect(button.getAttribute("aria-label")).toBe("Close");
+  });
+
+  it("does not render the close button when not dismissible", () => {
+    const { host } = create(`<ngb-alert dismissible="false">Don't close!</ngb-alert>`);
+    expect(host.classList.contains("alert-dismissible")).toBe(false);
+    expect(host.querySelector("button.btn-close")).toBeNull();
+  });
+
+  it("fires the closed event when the dismiss button is clicked", () => {
     const onClosed = vi.fn();
-    scope.onClosed = onClosed;
-
-    const element = $compile(`
-            <ngb-alert dismissible="true" animation="false" type="'success'" closed="onClosed()">
-                Alert text
-            </ngb-alert>
-        `)(scope);
-    scope.$digest();
-
-    const alert = element;
-    expect(alert.length).toBe(1);
-
-    expect(alert.hasClass("show")).toBe(true);
-    expect(alert.hasClass("alert-success")).toBe(true);
-    expect(alert.hasClass("alert-dismissible")).toBe(true);
-    expect(alert.attr("role")).toBe("alert");
-
-    const button = angular.element((element[0] as HTMLElement).querySelector(".btn-close") as Element);
-    expect(button.length).toBe(1);
-    button.triggerHandler("click");
-    scope.$digest();
-
-    expect(element.hasClass("show")).toBe(false);
+    const { host } = create(`<ngb-alert dismissible="true" animation="false" closed="onClosed()">Watch out!</ngb-alert>`, {
+      onClosed,
+    });
+    angular.element(host.querySelector("button.btn-close") as Element).triggerHandler("click");
+    tb.detectChanges();
+    $rootScope.$digest();
+    expect(host.classList.contains("show")).toBe(false);
     expect(onClosed).toHaveBeenCalledTimes(1);
   });
 
-  it("uses default type, dismissibility and animation classes", () => {
-    const element = $compile(`<ngb-alert>Default alert</ngb-alert>`)($rootScope.$new());
-    $rootScope.$digest();
-
-    expect(element.hasClass("alert-warning")).toBe(true);
-    expect(element.hasClass("alert-dismissible")).toBe(true);
-    expect(element.hasClass("fade")).toBe(true);
-    expect(element[0].querySelector(".btn-close")).not.toBeNull();
-  });
-
-  it("does not render a close button when dismissible is false", () => {
-    const element = $compile(`<ngb-alert dismissible="false">Alert</ngb-alert>`)($rootScope.$new());
-    $rootScope.$digest();
-    expect(element.hasClass("alert-dismissible")).toBe(false);
-    expect(element[0].querySelector(".btn-close")).toBeNull();
-  });
-
-  it("reacts to changes of type and dismissibility", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { dismissible: boolean; type: string };
-    scope.dismissible = false;
-    scope.type = "info";
-    const element = $compile(`<ngb-alert type="type" dismissible="dismissible">Alert</ngb-alert>`)(scope);
-    scope.$digest();
-    expect(element.hasClass("alert-info")).toBe(true);
-
-    scope.type = "danger";
-    scope.dismissible = true;
-    scope.$digest();
-    expect(element.hasClass("alert-info")).toBe(false);
-    expect(element.hasClass("alert-danger")).toBe(true);
-    expect(element[0].querySelector(".btn-close")).not.toBeNull();
-  });
-
-  it("preserves custom host classes", () => {
-    const element = $compile(`<ngb-alert class="custom-alert" animation="false">Alert</ngb-alert>`)($rootScope.$new());
-    $rootScope.$digest();
-    expect(element.hasClass("custom-alert")).toBe(true);
-    expect(element.hasClass("alert-warning")).toBe(true);
-  });
-
-  it("projects content before the close button", () => {
-    const element = $compile(`<ngb-alert animation="false"><span class="message">Message</span></ngb-alert>`)(
-      $rootScope.$new(),
-    );
-    $rootScope.$digest();
-    const message = element[0].querySelector(".message");
-    const button = element[0].querySelector(".btn-close");
-    expect(message?.compareDocumentPosition?.(button as Node) as any & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it("closes imperatively and emits closed once", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { onClosed: () => void };
-    scope.onClosed = vi.fn();
-    const element = $compile(`<ngb-alert animation="false" closed="onClosed()">Alert</ngb-alert>`)(scope);
-    scope.$digest();
-
-    const alert = element.controller<NgbAlert>("ngbAlert");
+  it("fires the closed event when close() is called imperatively", () => {
+    const onClosed = vi.fn();
+    const { element, host } = create(`<ngb-alert dismissible="true" animation="false" closed="onClosed()">Alert</ngb-alert>`, {
+      onClosed,
+    });
+    const alert = element.controller<NgbAlert>("ngbAlert") as NgbAlert;
     const completed = vi.fn();
     alert.close().subscribe({ complete: completed });
-    scope.$digest();
+    tb.detectChanges();
+    $rootScope.$digest();
+    expect(onClosed).toHaveBeenCalledTimes(1);
+    expect(completed).toHaveBeenCalledTimes(1);
+    expect(host.classList.contains("show")).toBe(false);
+  });
 
-    expect(element.hasClass("show")).toBe(false);
-    expect(scope.onClosed).toHaveBeenCalledOnce();
-    expect(completed).toHaveBeenCalledOnce();
+  it("projects the content into the component", () => {
+    const { host } = create(`<ngb-alert animation="false">Cool!</ngb-alert>`);
+    expect(host.textContent).toContain("Cool!");
+  });
+
+  it("projects content before the close button for screen readers", () => {
+    const { host } = create(`<ngb-alert dismissible="true" animation="false"><span>Cool!</span></ngb-alert>`);
+    const tags = Array.from(host.children).map((n) => n.tagName.toLowerCase());
+    expect(tags).toEqual(["span", "button"]);
+  });
+
+  describe("custom config", () => {
+    beforeEach(() => {
+      const c = config();
+      c.dismissible = false;
+      c.type = "success";
+    });
+
+    it("initializes inputs from the mutated config", () => {
+      const { element } = create(`<ngb-alert>Cool!</ngb-alert>`);
+      const alert = element.controller<NgbAlert>("ngbAlert") as NgbAlert & { dismissible: boolean; type: string };
+      expect(alert.dismissible).toBe(false);
+      expect(alert.type).toBe("success");
+    });
   });
 });

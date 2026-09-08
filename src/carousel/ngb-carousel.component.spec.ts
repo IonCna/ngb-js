@@ -41,7 +41,13 @@ describe("ngbCarousel", () => {
       </ngb-carousel>
     `)(scope);
     angular.element(document.body).append(element);
+    // Varios digests: los `@Input({ binding: "@" })` de `NgbSlide` (`id="one"`, …)
+    // resuelven la interpolación `@?` en el digest siguiente (Gap E), y el
+    // `ng-repeat`/`ngAfterViewInit` necesitan otro ciclo.
     tb.detectChanges();
+    $rootScope.$digest();
+    tb.detectChanges();
+    $rootScope.$digest();
     return { carousel: element.controller<NgbCarousel>("ngbCarousel"), element, scope };
   }
 
@@ -223,17 +229,22 @@ describe("ngbCarousel", () => {
     expect(carousel.activeId).toBe("three");
   });
 
-  it("wraps by default and stops at boundaries when wrap is false", () => {
-    const wrapping = createCarousel(`active-id="three"`);
-    wrapping.carousel.next();
-    expect(wrapping.carousel.activeId).toBe("one");
+  // Nota: un `it` por carrusel. Crear dos en el mismo test deja una transición
+  // async del primero pendiente que corre durante el `$compile` del segundo y
+  // rompe `_getSlideElement()`.
+  it("wraps around past the last slide by default", () => {
+    const { carousel } = createCarousel(`active-id="three"`);
+    carousel.next();
+    expect(carousel.activeId).toBe("one");
+  });
 
-    const bounded = createCarousel(`active-id="three" wrap="false"`);
-    bounded.carousel.next();
-    expect(bounded.carousel.activeId).toBe("three");
-    bounded.carousel.select("one");
-    bounded.carousel.prev();
-    expect(bounded.carousel.activeId).toBe("one");
+  it("stops at the boundaries when wrap is false", () => {
+    const { carousel } = createCarousel(`active-id="three" wrap="false"`);
+    carousel.next();
+    expect(carousel.activeId).toBe("three");
+    carousel.select("one");
+    carousel.prev();
+    expect(carousel.activeId).toBe("one");
   });
 
   it("emits direction, source and pause state for slide transitions", () => {
@@ -263,10 +274,33 @@ describe("ngbCarousel", () => {
   it("renders navigation controls according to their flags", () => {
     const hidden = createCarousel(`show-navigation-arrows="false" show-navigation-indicators="false"`);
     expect(hidden.element[0].querySelector(".carousel-control-next")).toBeNull();
-    expect(hidden.element[0].querySelector(".carousel-indicators")).toBeNull();
+    // El contenedor de indicadores siempre se renderiza (igual que upstream);
+    // se oculta con `visually-hidden` en vez de quitarse del DOM.
+    expect(hidden.element[0].querySelector(".carousel-indicators")?.classList.contains("visually-hidden")).toBe(true);
 
     const visible = createCarousel(`show-navigation-arrows="true" show-navigation-indicators="true"`);
     expect(visible.element[0].querySelectorAll(".carousel-control-prev, .carousel-control-next")).toHaveLength(2);
     expect(visible.element[0].querySelectorAll(".carousel-indicators button")).toHaveLength(3);
+  });
+
+  it("is focusable and tracks hover and focus state", () => {
+    const { carousel, element } = createCarousel();
+    expect(element.attr("tabindex")).toBe("0");
+    expect((element[0] as HTMLElement).style.display).toBe("block");
+    element[0].dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(carousel.mouseHover).toBe(true);
+    element[0].dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(carousel.mouseHover).toBe(false);
+    element[0].dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    expect(carousel.focused).toBe(true);
+    element[0].dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+    expect(carousel.focused).toBe(false);
+  });
+
+  it("does not emit a transition when selecting the active slide", () => {
+    const { carousel, scope } = createCarousel(`active-id="one"`);
+    carousel.select("one");
+    expect(scope.onSlide).not.toHaveBeenCalled();
+    expect(scope.onSlid).not.toHaveBeenCalled();
   });
 });

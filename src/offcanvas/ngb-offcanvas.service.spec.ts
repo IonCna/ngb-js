@@ -346,4 +346,16 @@ describe("NgbOffcanvas", () => {
     await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false, scroll: true }));
     expect(document.body.style.overflow).not.toBe("hidden");
   });
+
+  it("moves focus into the panel and restores the previously focused element", async () => {
+    const opener = document.createElement("button");
+    document.body.appendChild(opener);
+    opener.focus();
+    const ref = await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false }));
+    await flush();
+    expect(document.body.querySelector("ngb-offcanvas-panel")?.contains(document.activeElement)).toBe(true);
+    ref.close();
+    await flush();
+    expect(document.activeElement).toBe(opener);
+  });
 });

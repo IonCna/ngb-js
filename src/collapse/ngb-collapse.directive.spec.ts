@@ -1,26 +1,25 @@
-import type { ICompileService, IInjectorService, IRootScopeService } from "angular";
-import angular from "angular";
+import type { IRootScopeService } from "angular";
 import { Injector } from "ngjs-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbCollapse } from "./ngb-collapse.directive";
 import { NgbCollapseConfig } from "./ngb-collapse-config.service";
 
 describe("ngbCollapse", () => {
-  let $compile: ICompileService;
+  let tb: NgbTestBed;
+  let $compile: NgbTestBed["$compile"];
   let $rootScope: IRootScopeService;
   let config: NgbCollapseConfig;
 
-  beforeEach(() => {
-    angular.mock.module(NgbModule.name);
-    angular.mock.inject(
-      (_$compile_: ICompileService, _$rootScope_: IRootScopeService, _$injector_: IInjectorService) => {
-        $compile = _$compile_;
-        $rootScope = _$rootScope_;
-        config = _$injector_.get<Injector>(Injector.$name).get(NgbCollapseConfig);
-      },
-    );
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
+    config = tb.get<Injector>(Injector.$name).get(NgbCollapseConfig);
   });
+
+  afterEach(() => tb.destroy());
 
   it("responds to bound model changes and emits transition callbacks", () => {
     const scope = $rootScope.$new() as IRootScopeService & {
@@ -144,20 +143,21 @@ describe("ngbCollapse", () => {
     expect(element.hasClass("collapse-horizontal")).toBe(true);
   });
 
-  it("honors the explicit state passed to toggle", () => {
+  it("honors the explicit open state passed to toggle", () => {
     const scope = $rootScope.$new() as IRootScopeService & { onChange: (collapsed: boolean) => void };
     scope.onChange = vi.fn();
     const element = $compile(
-      `<div ngb-collapse="false" animation="false" ngb-collapse-change="onChange($event)"></div>`,
+      `<div ngb-collapse="true" animation="false" ngb-collapse-change="onChange($event)"></div>`,
     )(scope);
     scope.$digest();
     const collapse = element.controller<NgbCollapse>("ngbCollapse");
 
-    collapse.toggle(true);
-    expect(element.hasClass("show")).toBe(false);
-    expect(scope.onChange).toHaveBeenLastCalledWith(true);
-    collapse.toggle(false);
+    // `toggle(open)` → `collapsed = !open`; `ngbCollapseChange` emite el estado *collapsed*.
+    collapse.toggle(true); // abrir
     expect(element.hasClass("show")).toBe(true);
     expect(scope.onChange).toHaveBeenLastCalledWith(false);
+    collapse.toggle(false); // cerrar
+    expect(element.hasClass("show")).toBe(false);
+    expect(scope.onChange).toHaveBeenLastCalledWith(true);
   });
 });

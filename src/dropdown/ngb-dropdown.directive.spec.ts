@@ -177,4 +177,56 @@ describe("ngbDropdown", () => {
     expect(element.hasClass("dropup")).toBe(true);
     expect(element.hasClass("custom")).toBe(true);
   });
+
+  it("supports Home, End and ArrowUp keyboard navigation while skipping disabled items", () => {
+    const element = $compile(`
+      <div ngb-dropdown placement="'top'">
+        <button class="toggle" ngb-dropdown-toggle>Toggle</button>
+        <div ngb-dropdown-menu>
+          <button class="first" ngb-dropdown-item>First</button>
+          <button ngb-dropdown-item disabled="true">Disabled</button>
+          <button class="last" ngb-dropdown-item>Last</button>
+        </div>
+      </div>
+    `)($rootScope.$new());
+    angular.element(document.body).append(element);
+    tb.detectChanges();
+    const toggle = element[0].querySelector<HTMLElement>(".toggle") as HTMLElement;
+    const first = element[0].querySelector<HTMLElement>(".first");
+    const last = element[0].querySelector<HTMLElement>(".last");
+    toggle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(last);
+    last?.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(first);
+    first?.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(last);
+  });
+
+  it("moves the menu to a body container while open and restores it on close", () => {
+    const element = $compile(`
+      <div ngb-dropdown container="body">
+        <button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div>
+      </div>
+    `)($rootScope.$new());
+    angular.element(document.body).append(element);
+    tb.detectChanges();
+    const dropdown = element.controller<NgbDropdown>("ngbDropdown");
+    const menu = element[0].querySelector<HTMLElement>("[ngb-dropdown-menu]") as HTMLElement;
+    dropdown.open();
+    tb.detectChanges();
+    expect(menu.parentElement?.parentElement).toBe(document.body);
+    expect(menu.parentElement?.style.zIndex).toBe("1055");
+    dropdown.close();
+    tb.detectChanges();
+    expect(menu.parentElement).toBe(element[0]);
+  });
+
+  it("defaults to static display inside a navbar", () => {
+    const element = $compile(`
+      <nav class="navbar"><div ngb-dropdown><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div></div></nav>
+    `)($rootScope.$new());
+    tb.detectChanges();
+    const dropdownHost = element[0].querySelector<HTMLElement>("[ngb-dropdown]") as HTMLElement;
+    expect(dropdownHost.querySelector("[ngb-dropdown-menu]")?.getAttribute("data-bs-popper")).toBe("static");
+  });
 });

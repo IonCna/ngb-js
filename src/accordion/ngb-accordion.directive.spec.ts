@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbAccordionDirective } from "./ngb-accordion.directive";
+import type { NgbAccordionItem } from "./ngb-accordion-item.directive";
 
 /** Port de `accordion.directive.spec.ts` de ng-bootstrap al harness de ngb-js. */
 describe("ngbAccordion", () => {
@@ -59,7 +60,8 @@ describe("ngbAccordion", () => {
     };
   }
 
-  const buttons = (host: HTMLElement) => Array.from(host.querySelectorAll<HTMLButtonElement>("button[ngb-accordion-button]"));
+  const buttons = (host: HTMLElement) =>
+    Array.from(host.querySelectorAll<HTMLButtonElement>("button[ngb-accordion-button]"));
   const collapses = (host: HTMLElement) => Array.from(host.querySelectorAll<HTMLElement>(".accordion-collapse"));
   const headers = (host: HTMLElement) => Array.from(host.querySelectorAll<HTMLElement>("[ngb-accordion-header]"));
   const openState = (host: HTMLElement) => collapses(host).map((c) => c.classList.contains("show"));
@@ -121,8 +123,74 @@ describe("ngbAccordion", () => {
 
   it("gives headers and collapses their aria roles", () => {
     const { host } = createAccordion();
-    headers(host).forEach((header) => expect(header.getAttribute("role")).toBe("heading"));
-    collapses(host).forEach((collapse) => expect(collapse.getAttribute("role")).toBe("region"));
+    headers(host).forEach((header) => {
+      expect(header.getAttribute("role")).toBe("heading");
+    });
+    collapses(host).forEach((collapse) => {
+      expect(collapse.getAttribute("role")).toBe("region");
+    });
+  });
+
+  it("gives buttons stable ids, controls and expanded state", () => {
+    const { host } = createAccordion();
+    expect(buttons(host).map(({ type }) => type)).toEqual(["button", "button", "button"]);
+    expect(buttons(host).map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false", "false"]);
+    buttons(host).forEach((button, index) => {
+      expect(button.id).toBe(["first-toggle", "second-toggle", "third-toggle"][index]);
+      expect(button.getAttribute("aria-controls")).toBe(["first-collapse", "second-collapse", "third-collapse"][index]);
+    });
+    buttons(host)[0].click();
+    tb.detectChanges();
+    expect(buttons(host)[0].getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("uses custom item ids and generates unique ids when omitted", () => {
+    const scope = $rootScope.$new();
+    const element = $compile(`
+      <div ngb-accordion animation="false">
+        <div ngb-accordion-item="'custom'"><h2 ngb-accordion-header><button ngb-accordion-button>A</button></h2><div ngb-accordion-collapse><div ngb-accordion-body><ng-template>A</ng-template></div></div></div>
+        <div ngb-accordion-item><h2 ngb-accordion-header><button ngb-accordion-button>B</button></h2><div ngb-accordion-collapse><div ngb-accordion-body><ng-template>B</ng-template></div></div></div>
+        <div ngb-accordion-item><h2 ngb-accordion-header><button ngb-accordion-button>C</button></h2><div ngb-accordion-collapse><div ngb-accordion-body><ng-template>C</ng-template></div></div></div>
+      </div>
+    `)(scope);
+    tb.detectChanges();
+    const items = Array.from(element[0].querySelectorAll<HTMLElement>("[ngb-accordion-item]"));
+    expect(items[0].id).toBe("custom");
+    expect(items[1].id).toMatch(/^ngb-accordion-item-\d+$/);
+    expect(items[2].id).toMatch(/^ngb-accordion-item-\d+$/);
+    expect(items[1].id).not.toBe(items[2].id);
+  });
+
+  it("allows an item to override the parent destroyOnHide value", () => {
+    const { host } = createAccordion(`destroy-on-hide="true"`, `destroy-on-hide="false"`);
+    expect(bodyText(host, 0)).toContain("First body");
+    expect(bodyText(host, 1)).toBe("");
+  });
+
+  it("keeps only the first initially expanded item when closeOthers is enabled", () => {
+    const scope = $rootScope.$new();
+    const element = $compile(`
+      <div ngb-accordion close-others="true" animation="false">
+        <div ngb-accordion-item="'one'" collapsed="false"><h2 ngb-accordion-header><button ngb-accordion-button>One</button></h2><div ngb-accordion-collapse><div ngb-accordion-body><ng-template>One</ng-template></div></div></div>
+        <div ngb-accordion-item="'two'" collapsed="false"><h2 ngb-accordion-header><button ngb-accordion-button>Two</button></h2><div ngb-accordion-collapse><div ngb-accordion-body><ng-template>Two</ng-template></div></div></div>
+      </div>
+    `)(scope);
+    tb.detectChanges();
+    const accordion = element.controller<NgbAccordionDirective>("ngbAccordion") as NgbAccordionDirective;
+    expect(accordion.isExpanded("one")).toBe(true);
+    expect(accordion.isExpanded("two")).toBe(false);
+  });
+
+  it("exports item state and imperative methods", () => {
+    const { element, accordion } = createAccordion();
+    const firstElement = element.find("div").eq(0);
+    const item = firstElement.controller<NgbAccordionItem>("ngbAccordionItem") as NgbAccordionItem;
+    expect(item.id).toBe("first");
+    expect(item.collapsed).toBe(true);
+    item.toggle();
+    tb.detectChanges();
+    expect(item.collapsed).toBe(false);
+    expect(accordion.isExpanded("first")).toBe(true);
   });
 
   it("does not crash for an empty accordion", () => {

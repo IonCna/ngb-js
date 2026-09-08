@@ -179,6 +179,27 @@ describe("NgbModal", () => {
     animationFrame.mockRestore();
   });
 
+  it("keeps the modal open on Escape when keyboard handling is disabled", async () => {
+    await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: false, keyboard: false }));
+    document.body
+      .querySelector("ngb-modal-window")
+      ?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+    await flush();
+    expect(ngbModal.hasOpenModals()).toBe(true);
+  });
+
+  it("moves focus into the modal and restores the previously focused element", async () => {
+    const opener = document.createElement("button");
+    document.body.appendChild(opener);
+    opener.focus();
+    const modalRef = await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: false }));
+    await flush();
+    expect(document.body.querySelector("ngb-modal-window")?.contains(document.activeElement)).toBe(true);
+    modalRef.close();
+    await flush();
+    expect(document.activeElement).toBe(opener);
+  });
+
   it("renders default window, backdrop and accessibility semantics", async () => {
     await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: false }));
     const window = document.body.querySelector("ngb-modal-window");
