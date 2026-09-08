@@ -149,6 +149,25 @@ tienen `id:`** en su `@NgModule` → se registran como `angular.module("NgbToolt
 `"ngb-pagination"`, también raro). Homogeneizar a `"ngb.tooltip"` / `"ngb.typeahead"`
 al migrar esos módulos.
 
+### Confirmado
+
+`bootstrapApplication(AppModule)` **sí** dispara `ngOnInit` en el entorno de test
+de `ngb-js` (probado con un mini `@Component`). `angular.mock.module(NgbModule.name)`
+**no**. → El problema es el arranque de las specs, no la migración de cada feature.
+
+### Fix recomendado (a implementar cuando se acuerde)
+
+1. **Harness**: helper `test/testbed.ts` en `ngb-js` que reemplace el
+   `angular.mock.module(NgbModule.name)` + `angular.mock.inject(...)` por un
+   arranque real de `ngjs-core` (`bootstrapApplication` sobre un host detached, o
+   `configureTestingModule` si se lo arregla para armar el app injector). API
+   parecida a `TestBed.configureTestingModule({ imports: [...] })` de ng-bootstrap.
+2. **Core (`ngjs-core`)**, si hace falta:
+   - `configureTestingModule` debe dejar el app injector armado (`InjectorImpl.current`)
+     para que `inject()` en field initializers de `@Injectable` ande.
+   - `@Input` de `@Directive` que bindee sin `controllerAs`.
+3. Migrar las ~24 specs al helper, de a una por feature (junto con cada módulo).
+
 ### Próximos pasos de diagnóstico
 
 - [ ] ¿Por qué `$onInit` está en la instancia pero AngularJS no lo llama? Ver si
