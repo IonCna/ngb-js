@@ -69,6 +69,34 @@ rotos, después los viejos:
 
 Tras cada uno: `bunx vitest run src/<feature>` verde + suite completa sin nuevos rojos.
 
+## Hallazgo: el harness de specs está roto para directivas
+
+Diagnóstico de por qué `collapse` / `nav` / `tooltip` / `rating` (migradas) siguen
+en rojo — **no es la migración de cada módulo, es el harness de test**:
+
+- `@Directive` + `@Input` + `ngOnInit` **funcionan** bajo `bootstrapApplication`
+  (probado en `ngjs-core`).
+- Bajo el patrón actual de las specs — `angular.mock.module(NgbModule.name)` +
+  `angular.mock.inject(...)` — pasa esto:
+  - `ngOnInit` de una directiva **no dispara** (probado: contador quedó en 0).
+  - Los `@Input` de una directiva **no se inicializan**: AngularJS solo corre
+    `initializeDirectiveBindings` para `bindToController` si `controller.identifier`
+    está seteado, y eso requiere un `controllerAs`. Las `@Directive` de `ngb-js`
+    no lo tienen (real Angular no lo necesita).
+  - Servicios `@Injectable` que hacen `inject()` en field initializers no
+    alcanzan el app injector (`_RootSingletonRegistry.getFromAppInjector` tira).
+- `configureTestingModule({ imports: [...] })` de `ngjs-core/testing` instala
+  `CoreModule` y ahí `ngOnInit` sí dispara, pero el `@Input` sigue sin bindear
+  (mismo tema del `controllerAs`).
+
+→ **Antes de seguir módulo por módulo hay que arreglar el harness**: las specs
+deben pasar por un bootstrap/TestBed de `ngjs-core` de verdad (equivalente a
+`TestBed.configureTestingModule` de ng-bootstrap), y probablemente hace falta un
+fix en `ngjs-core` para que los `@Input` de `@Directive` bindeen sin `controllerAs`.
+Eso debería destrabar de una varias features "migradas pero rojas".
+
+Anotado también en `CORE_GAPS.md`.
+
 ## Receta por módulo
 
 1. Abrir la ref (`ng-bootstrap-master/src/<feature>/`), leer la(s) clase(s).

@@ -106,6 +106,25 @@ core: `ngb-typeahead-window.ts`, `ngb-tooltip-window.component.ts` y
 `@HostBinding`/`@HostListener` (getters para expresiones, atributos estaticos
 como propiedades `readonly`).
 
+### `@Directive` + `@Input` + `ngOnInit` en el harness de specs (2026-09-07)
+
+Con `bootstrapApplication` funcionan. Con el patron de las specs de `ngb-js`
+(`angular.mock.module(NgbModule.name)` + `angular.mock.inject`) fallan:
+
+- `ngOnInit` de una `@Directive` no dispara.
+- Los `@Input` de una `@Directive` no se inicializan: AngularJS solo corre
+  `initializeDirectiveBindings` para `bindToController` si `controller.identifier`
+  esta seteado (= hay `controllerAs`). Las `@Directive` no lo tienen; Angular real
+  no lo necesita. Candidato de fix en `ngjs-core`: `buildDirectiveDefinition`
+  deberia darle identidad al controller aunque no haya `controllerAs`, o el
+  binding path no deberia depender de eso.
+- `@Injectable` con `inject()` en field initializer no alcanza el app injector
+  desde `angular.mock.inject` (`_RootSingletonRegistry.getFromAppInjector`).
+
+Decision pendiente con el usuario: arreglar el harness (bootstrap/TestBed real de
+`ngjs-core` en las specs) y/o el fix de binding de `@Directive` en el core.
+Ver `MIGRATION.md`.
+
 ## Reglas del port
 
 - No modificar `ngjs-core` desde `ngb-js`.
