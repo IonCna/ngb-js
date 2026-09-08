@@ -1,6 +1,6 @@
 export {
-  type INgbCarousel,
   NgbCarousel,
+  type NgbSingleSlideEvent,
   type NgbSlideEvent,
   NgbSlideEventSource,
 } from "@ngb/carousel/ngb-carousel.component";

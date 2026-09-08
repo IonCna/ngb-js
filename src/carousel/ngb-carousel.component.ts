@@ -6,220 +6,223 @@ import {
   ngbCarouselTransitionIn,
   ngbCarouselTransitionOut,
 } from "@ngb/carousel/ngb-carousel-transition";
-
 import { NgbSlide } from "@ngb/carousel/ngb-slide.directive";
+import { type NgbTransitionOptions, ngbCompleteTransition, ngbRunTransition } from "@ngb/utils";
 import {
-  type INgbEvent,
-  type NgbTransitionOptions,
-  ngbCompleteTransition,
-  ngbRunTransition,
-  toNativeElement,
-} from "@ngb/utils";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions, IOnChangesObject, IScope } from "angular";
-import angular from "angular";
-import { ChangeDetectorRef, ContentChildren, NgZone, QueryList, TemplateRef } from "ngjs-core";
-import {
-  BehaviorSubject,
-  combineLatest,
-  distinctUntilChanged,
-  map,
-  NEVER,
-  type Observable,
-  Subject,
-  skip,
-  switchMap,
-  take,
-  takeUntil,
-  timer,
-  zip,
-} from "rxjs";
+  type AfterContentChecked,
+  type AfterContentInit,
+  type AfterViewInit,
+  afterNextRender,
+  ChangeDetectorRef,
+  Component,
+  ContentChildren,
+  DestroyRef,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  HostListener,
+  Injector,
+  Input,
+  inject,
+  NgZone,
+  Output,
+  PLATFORM_ID,
+  type QueryList,
+  takeUntilDestroyed,
+} from "ngjs-core";
+import { isPlatformBrowser } from "ngjs-core/common";
+import { BehaviorSubject, combineLatest, NEVER, type Observable, timer, zip } from "rxjs";
+import { distinctUntilChanged, map, startWith, switchMap, take } from "rxjs/operators";
 
-let carouselCounter = 0;
+let carouselId = 0;
 
-interface IPostDigestScope extends IScope {
-  $$postDigest(callback: () => void): void;
-}
+/**
+ * El carousel es un componente para crear y controlar slideshows.
+ *
+ * Permite configurar intervalos, cambiar la forma en que el usuario interactúa
+ * con los slides y expone una API programática.
+ */
+@Component({
+  selector: "ngb-carousel",
+  exportAs: "ngbCarousel",
+  transclude: true,
+  template,
+})
+export class NgbCarousel implements AfterContentChecked, AfterContentInit, AfterViewInit {
+  @ContentChildren(NgbSlide) slides!: QueryList<NgbSlide>;
 
-export interface INgbCarousel {
-  select(slideId: string, source: NgbSlideEventSource): void;
-  prev(source: unknown): void;
-  next(source: unknown): void;
-  pause(): void;
-  cycle(): void;
-  focus(): void;
-}
+  public NgbSlideEventSource = NgbSlideEventSource;
 
-export class NgbCarousel implements IComponentController, INgbCarousel {
-  public activeId?: string;
-  public animation!: boolean;
-  public interval!: number;
-  public keyboard!: boolean;
-  public pauseOnFocus!: boolean;
-  public pauseOnHover!: boolean;
-  public showNavigationArrows!: boolean;
-  public showNavigationIndicators!: boolean;
-  public wrap!: boolean;
-  public readonly NgbSlideEventSource = NgbSlideEventSource;
+  private _config = inject(NgbCarouselConfig);
+  private _platformId = inject(PLATFORM_ID);
+  private _ngZone = inject(NgZone);
+  private _cd = inject(ChangeDetectorRef);
+  private _container = inject(ElementRef);
+  private _destroyRef = inject(DestroyRef);
+  private _injector = inject(Injector);
 
-  public slide?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
-  public slid?: ({ $event }: INgbEvent<NgbSlideEvent>) => void;
-
-  public id!: string;
-
-  @ContentChildren(NgbSlide)
-  private contentSlides!: QueryList<NgbSlide>;
-
-  @ContentChildren(NgbSlide, { read: TemplateRef })
-  private slideTemplates!: QueryList<TemplateRef<unknown>>;
-
-  public readonly slides = new QueryList<NgbSlide>();
-
-  private _transitionIds: [string, string] | null = null;
-  private _container?: IAugmentedJQuery;
-
-  private _interval$ = new BehaviorSubject(0);
+  private _interval$ = new BehaviorSubject(this._config.interval);
   private _mouseHover$ = new BehaviorSubject(false);
   private _focused$ = new BehaviorSubject(false);
-  private _pauseOnHover$ = new BehaviorSubject(false);
-  private _pauseOnFocus$ = new BehaviorSubject(false);
+  private _pauseOnHover$ = new BehaviorSubject(this._config.pauseOnHover);
+  private _pauseOnFocus$ = new BehaviorSubject(this._config.pauseOnFocus);
   private _pause$ = new BehaviorSubject(false);
-  private _wrap$ = new BehaviorSubject(false);
-  private _activeId$ = new BehaviorSubject<string>("");
-  private _slides$ = new BehaviorSubject<readonly NgbSlide[]>([]);
-  private _destroy$ = new Subject<void>();
+  private _wrap$ = new BehaviorSubject(this._config.wrap);
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $scope: IPostDigestScope,
-    private readonly $ngbCarouselConfig: NgbCarouselConfig,
-    private readonly _ngZone: NgZone,
-    private readonly _changeDetector: ChangeDetectorRef,
-  ) {}
+  id = `ngb-carousel-${carouselId++}`;
 
-  $onInit(): void {
-    this.animation = this.animation ?? this.$ngbCarouselConfig.animation;
-    this.interval = this.interval ?? this.$ngbCarouselConfig.interval;
-    this.keyboard = this.keyboard ?? this.$ngbCarouselConfig.keyboard;
-    this.pauseOnFocus = this.pauseOnFocus ?? this.$ngbCarouselConfig.pauseOnFocus;
-    this.pauseOnHover = this.pauseOnHover ?? this.$ngbCarouselConfig.pauseOnHover;
-    this.showNavigationArrows = this.showNavigationArrows ?? this.$ngbCarouselConfig.showNavigationArrows;
-    this.showNavigationIndicators = this.showNavigationIndicators ?? this.$ngbCarouselConfig.showNavigationIndicators;
-    this.wrap = this.wrap ?? this.$ngbCarouselConfig.wrap;
+  // host: { class: 'carousel slide', '[style.display]': '"block"', tabIndex: '0' }
+  @HostBinding("class.carousel") readonly _hostClassCarousel = true;
+  @HostBinding("class.slide") readonly _hostClassSlide = true;
+  @HostBinding("style.display") readonly _hostDisplay = "block";
+  @HostBinding("attr.tabindex") readonly _hostTabindex = 0;
 
-    this._interval$.next(this.interval);
-    this._pauseOnHover$.next(this.pauseOnHover);
-    this._pauseOnFocus$.next(this.pauseOnFocus);
-    this._wrap$.next(this.wrap);
-    this._activeId$.next(this.activeId ?? "");
+  /**
+   * Flag para activar/desactivar las animaciones.
+   *
+   * @since 8.0.0
+   */
+  @Input() animation = this._config.animation;
 
-    this.id = `ngb-carousel-${carouselCounter++}`;
+  /**
+   * El id del slide que debe mostrarse **inicialmente**.
+   *
+   * Para interacciones posteriores usar `select()`, `next()`, etc. y el output `(slide)`.
+   *
+   * `binding: "@"`: `@Input()` con string literal (`active-id="slide-2"`) — ver CORE_GAPS.
+   */
+  @Input({ binding: "@" }) activeId!: string;
+
+  /**
+   * Tiempo en milisegundos antes de mostrar el siguiente slide.
+   */
+  @Input()
+  set interval(value: number) {
+    this._interval$.next(value);
   }
 
-  $onChanges(changes: IOnChangesObject): void {
-    if (changes.interval) this._interval$.next(this.interval);
-    if (changes.wrap) this._wrap$.next(this.wrap);
-    if (changes.pauseOnHover) this._pauseOnHover$.next(this.pauseOnHover);
-    if (changes.pauseOnFocus) this._pauseOnFocus$.next(this.pauseOnFocus);
+  get interval() {
+    return this._interval$.value;
   }
 
-  $postLink() {
-    this.$element.addClass("carousel slide");
-    this.$element.css("display", "block");
-    this.$element.attr("tabindex", 0);
-    this._container = this.$element;
-
-    this.$element.on("keydown", (event) => {
-      if (!this.keyboard) return;
-
-      const keys: Record<string, () => void> = {
-        ArrowRight: () => this.arrowRight(),
-        ArrowLeft: () => this.arrowLeft(),
-      };
-
-      const arrowTo = keys[event.key];
-      if (!arrowTo) return;
-
-      event.preventDefault();
-      arrowTo();
-    });
-
-    this.$element.on("mouseenter", () => this._mouseHover$.next(true));
-    this.$element.on("mouseleave", () => this._mouseHover$.next(false));
-    this.$element.on("focusin", () => this._focused$.next(true));
-    this.$element.on("focusout", () => this._focused$.next(false));
-
-    const hasNextSlide$ = combineLatest([this._activeId$, this._wrap$, this._slides$]).pipe(
-      map(([currentSlideId, wrap, slides]) => {
-        const currentSlideIdx = slides.findIndex((s) => s.id === currentSlideId);
-        return wrap ? slides.length > 1 : currentSlideIdx < slides.length - 1;
-      }),
-      distinctUntilChanged(),
-    );
-
-    combineLatest([
-      this._pause$,
-      this._pauseOnHover$,
-      this._mouseHover$,
-      this._pauseOnFocus$,
-      this._focused$,
-      this._interval$,
-      hasNextSlide$,
-    ])
-      .pipe(
-        map(([pause, pauseOnHover, mouseHover, pauseOnFocus, focused, interval, hasNextSlide]) =>
-          pause || (pauseOnHover && mouseHover) || (pauseOnFocus && focused) || !hasNextSlide ? 0 : interval,
-        ),
-        distinctUntilChanged(),
-        switchMap((interval) => (interval > 0 ? timer(interval, interval) : NEVER)),
-        takeUntil(this._destroy$),
-      )
-      .subscribe(() => {
-        this._ngZone.run(() => this.next(NgbSlideEventSource.TIMER));
-      });
-
-    this._slides$.pipe(skip(1), takeUntil(this._destroy$)).subscribe(() => {
-      this._transitionIds?.forEach((id) => {
-        ngbCompleteTransition(this._getSlideElement(id));
-      });
-      this._transitionIds = null;
-      this.$scope.$$postDigest(() => this._syncActiveSlideClass());
-    });
-
-    this._syncSlides();
-    this.contentSlides.changes.pipe(takeUntil(this._destroy$)).subscribe(() => this._syncSlides());
-    this.slides.changes.pipe(takeUntil(this._destroy$)).subscribe((slides) => {
-      this._slides$.next(slides.toArray());
-    });
-    this._slides$.next(this.slides.toArray());
-
-    this.$scope.$$postDigest(() => this._syncActiveSlideClass());
+  /**
+   * Si es `true`, el carousel 'envuelve' pasando del último slide al primero.
+   */
+  @Input()
+  set wrap(value: boolean) {
+    this._wrap$.next(value);
   }
 
-  $doCheck(): void {
-    const activeSlide = this._getSlideById(this.activeId);
-    const newActiveId = activeSlide ? activeSlide.id : (this.slides.first?.id ?? "");
-
-    if (newActiveId !== this.activeId) {
-      this.activeId = newActiveId;
-      this._activeId$.next(newActiveId);
-    }
+  get wrap() {
+    return this._wrap$.value;
   }
 
-  $onDestroy(): void {
-    this.$element.off("keydown");
-    this.$element.off("mouseenter");
-    this.$element.off("mouseleave");
-    this.$element.off("focusin");
-    this.$element.off("focusout");
+  /**
+   * Si es `true`, permite navegar con las flechas izquierda/derecha del teclado.
+   */
+  @Input() keyboard = this._config.keyboard;
 
-    this._destroy$.next();
-    this._destroy$.complete();
-    this.slides.destroy();
+  /**
+   * Si es `true`, pausa el cambio de slides cuando el mouse está sobre el slide.
+   *
+   * @since 2.2.0
+   */
+  @Input()
+  set pauseOnHover(value: boolean) {
+    this._pauseOnHover$.next(value);
   }
 
-  focus(): void {
-    if (!this._container) throw new Error("[ngb-carousel]: container do not exist");
-    toNativeElement(this._container).focus();
+  get pauseOnHover() {
+    return this._pauseOnHover$.value;
+  }
+
+  /**
+   * Si es `true`, pausa el cambio de slides cuando el foco está dentro del carousel.
+   */
+  @Input()
+  set pauseOnFocus(value: boolean) {
+    this._pauseOnFocus$.next(value);
+  }
+
+  get pauseOnFocus() {
+    return this._pauseOnFocus$.value;
+  }
+
+  /**
+   * Si es `true`, las flechas de navegación 'anterior'/'siguiente' son visibles.
+   *
+   * @since 2.2.0
+   */
+  @Input() showNavigationArrows = this._config.showNavigationArrows;
+
+  /**
+   * Si es `true`, los indicadores de navegación al pie del slide son visibles.
+   *
+   * @since 2.2.0
+   */
+  @Input() showNavigationIndicators = this._config.showNavigationIndicators;
+
+  /**
+   * Evento emitido justo antes de que empiece la transición del slide.
+   */
+  @Output() slide = new EventEmitter<NgbSlideEvent>();
+
+  /**
+   * Evento emitido justo después de completar la transición del slide.
+   *
+   * @since 8.0.0
+   */
+  @Output() slid = new EventEmitter<NgbSlideEvent>();
+
+  /*
+   * Guarda los ids de los paneles en transición para permitir sólo la reversión.
+   */
+  private _transitionIds: [string, string] | null = null;
+
+  @HostListener("mouseenter")
+  _onMouseEnter() {
+    this.mouseHover = true;
+  }
+
+  @HostListener("mouseleave")
+  _onMouseLeave() {
+    this.mouseHover = false;
+  }
+
+  @HostListener("focusin")
+  _onFocusIn() {
+    this.focused = true;
+  }
+
+  @HostListener("focusout")
+  _onFocusOut() {
+    this.focused = false;
+  }
+
+  @HostListener("keydown.arrowleft")
+  _onArrowLeftKey() {
+    if (this.keyboard) this.arrowLeft();
+  }
+
+  @HostListener("keydown.arrowright")
+  _onArrowRightKey() {
+    if (this.keyboard) this.arrowRight();
+  }
+
+  set mouseHover(value: boolean) {
+    this._mouseHover$.next(value);
+  }
+
+  get mouseHover() {
+    return this._mouseHover$.value;
+  }
+
+  set focused(value: boolean) {
+    this._focused$.next(value);
+  }
+
+  get focused() {
+    return this._focused$.value;
   }
 
   arrowLeft() {
@@ -232,226 +235,292 @@ export class NgbCarousel implements IComponentController, INgbCarousel {
     this.next(NgbSlideEventSource.ARROW_RIGHT);
   }
 
-  prev(source?: NgbSlideEventSource) {
-    this._cycleToSelected(this._getPrevSlide(this.activeId), NgbSlideEventDirection.END, source);
+  ngAfterContentInit() {
+    // setInterval() no funciona bien con SSR/protractor: sólo en el browser y
+    // fuera de Angular.
+    if (isPlatformBrowser(this._platformId)) {
+      this._ngZone.runOutsideAngular(() => {
+        const hasNextSlide$ = combineLatest([
+          this.slide.pipe(
+            map((slideEvent) => slideEvent.current),
+            startWith(this.activeId),
+          ),
+          this._wrap$,
+          this.slides.changes.pipe(startWith(null)),
+        ]).pipe(
+          map(([currentSlideId, wrap]) => {
+            const slideArr = this.slides.toArray();
+            const currentSlideIdx = this._getSlideIdxById(currentSlideId);
+            return wrap ? slideArr.length > 1 : currentSlideIdx < slideArr.length - 1;
+          }),
+          distinctUntilChanged(),
+        );
+        combineLatest([
+          this._pause$,
+          this._pauseOnHover$,
+          this._mouseHover$,
+          this._pauseOnFocus$,
+          this._focused$,
+          this._interval$,
+          hasNextSlide$,
+        ])
+          .pipe(
+            map(
+              ([pause, pauseOnHover, mouseHover, pauseOnFocus, focused, interval, hasNextSlide]: [
+                boolean,
+                boolean,
+                boolean,
+                boolean,
+                boolean,
+                number,
+                boolean,
+              ]) =>
+                pause || (pauseOnHover && mouseHover) || (pauseOnFocus && focused) || !hasNextSlide ? 0 : interval,
+            ),
+            distinctUntilChanged(),
+            switchMap((interval) => (interval > 0 ? timer(interval, interval) : NEVER)),
+            takeUntilDestroyed(this._destroyRef),
+          )
+          .subscribe(() => this._ngZone.run(() => this.next(NgbSlideEventSource.TIMER)));
+      });
+    }
+
+    this.slides.changes.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => {
+      this._transitionIds?.forEach((id) => {
+        ngbCompleteTransition(this._getSlideElement(id));
+      });
+      this._transitionIds = null;
+
+      this._cd.markForCheck();
+
+      // Esto tiene que hacerse asincrónicamente, después de que el DOM se
+      // estabilice, si no todos los cambios se deshacen.
+      afterNextRender(
+        {
+          mixedReadWrite: () => {
+            for (const { id } of this.slides) {
+              const element = this._getSlideElement(id);
+              if (id === this.activeId) {
+                element.classList.add("active");
+              } else {
+                element.classList.remove("active");
+              }
+            }
+          },
+        },
+        { injector: this._injector },
+      );
+    });
   }
 
-  next(source?: NgbSlideEventSource) {
-    this._cycleToSelected(this._getNextSlide(this.activeId), NgbSlideEventDirection.START, source);
+  ngAfterContentChecked() {
+    const activeSlide = this._getSlideById(this.activeId);
+    this.activeId = activeSlide ? activeSlide.id : this.slides.length ? this.slides.first.id : "";
   }
 
+  ngAfterViewInit() {
+    // Inicializa la clase 'active' (no la maneja el template)
+    if (this.activeId) {
+      const element = this._getSlideElement(this.activeId);
+      if (element) {
+        element.classList.add("active");
+      }
+    }
+  }
+
+  /**
+   * Navega al slide con el identificador dado.
+   */
   select(slideId: string, source?: NgbSlideEventSource) {
     this._cycleToSelected(slideId, this._getSlideEventDirection(this.activeId, slideId), source);
   }
 
-  cycle(): void {
-    this._pause$.next(false);
+  /**
+   * Navega al slide anterior.
+   */
+  prev(source?: NgbSlideEventSource) {
+    this._cycleToSelected(this._getPrevSlide(this.activeId), NgbSlideEventDirection.END, source);
   }
 
-  pause(): void {
+  /**
+   * Navega al slide siguiente.
+   */
+  next(source?: NgbSlideEventSource) {
+    this._cycleToSelected(this._getNextSlide(this.activeId), NgbSlideEventDirection.START, source);
+  }
+
+  /**
+   * Pausa el ciclado de slides.
+   */
+  pause() {
     this._pause$.next(true);
   }
 
-  getSlideTemplate(index: number): TemplateRef<unknown> | undefined {
-    const slide = this.slides.get(index);
-    const contentIndex = slide ? this.contentSlides.toArray().indexOf(slide) : -1;
-    return contentIndex >= 0 ? this.slideTemplates.get(contentIndex) : undefined;
+  /**
+   * Reinicia el ciclado de slides de principio a fin.
+   */
+  cycle() {
+    this._pause$.next(false);
   }
 
-  private _syncSlides(): void {
-    this.slides.reset(this.contentSlides.filter((slide) => slide.carousel === this));
-    this.slides.notifyOnChanges();
-  }
-
-  private _syncActiveSlideClass() {
-    if (this._transitionIds || !this.activeId) return;
-
-    for (const slide of this.slides) {
-      this._findSlideElement(slide.id)?.toggleClass("active", slide.id === this.activeId);
-    }
+  /**
+   * Pone el foco en el carousel.
+   */
+  focus() {
+    this._container.nativeElement.focus();
   }
 
   private _cycleToSelected(slideIdx: string, direction: NgbSlideEventDirection, source?: NgbSlideEventSource) {
     const transitionIds = this._transitionIds;
-    if (transitionIds && (transitionIds[0] !== slideIdx || transitionIds[1] !== this.activeId)) return;
+    if (transitionIds && (transitionIds[0] !== slideIdx || transitionIds[1] !== this.activeId)) {
+      // Reversión prevenida
+      return;
+    }
 
     const selectedSlide = this._getSlideById(slideIdx);
-
     if (selectedSlide && selectedSlide.id !== this.activeId) {
-      this._transitionIds = [this.activeId ?? "", slideIdx];
-      this.slide?.({
-        $event: {
-          prev: this.activeId ?? "",
-          current: selectedSlide.id,
-          direction,
-          paused: this._pause$.value,
-          source,
-        },
+      this._transitionIds = [this.activeId, slideIdx];
+      this.slide.emit({
+        prev: this.activeId,
+        current: selectedSlide.id,
+        direction: direction,
+        paused: this._pause$.value,
+        source,
       });
 
       const options: NgbTransitionOptions<NgbCarouselCtx> = {
-        animation: this.animation ?? this.$ngbCarouselConfig.animation,
+        animation: this.animation,
         runningTransition: "stop",
         context: { direction },
       };
 
-      const transitions: Observable<void>[] = [];
+      // biome-ignore lint/suspicious/noExplicitAny: port textual de @ng-bootstrap
+      const transitions: Array<Observable<any>> = [];
       const activeSlide = this._getSlideById(this.activeId);
-
       if (activeSlide) {
-        const activeTransition = ngbRunTransition(
+        const activeSlideTransition = ngbRunTransition(
           this._ngZone,
           this._getSlideElement(activeSlide.id),
           ngbCarouselTransitionOut,
           options,
         );
-
-        activeTransition.subscribe(() =>
-          activeSlide.slid?.({
-            $event: {
-              direction,
-              source,
-              isShown: false,
-            },
-          }),
-        );
-
-        transitions.push(activeTransition);
+        activeSlideTransition.subscribe(() => {
+          activeSlide.slid.emit({ isShown: false, direction, source });
+        });
+        transitions.push(activeSlideTransition);
       }
 
       const previousId = this.activeId;
       this.activeId = selectedSlide.id;
-      this._activeId$.next(this.activeId);
       const nextSlide = this._getSlideById(this.activeId);
-
       const transition = ngbRunTransition(
         this._ngZone,
         this._getSlideElement(selectedSlide.id),
         ngbCarouselTransitionIn,
         options,
       );
-
-      transition.subscribe(() =>
-        nextSlide?.slid?.({
-          $event: {
-            isShown: true,
-            direction,
-            source,
-          },
-        }),
-      );
-
+      transition.subscribe(() => {
+        nextSlide?.slid.emit({ isShown: true, direction, source });
+      });
       transitions.push(transition);
 
       zip(...transitions)
         .pipe(take(1))
         .subscribe(() => {
           this._transitionIds = null;
-
-          this.slid?.({
-            $event: {
-              prev: previousId ?? "",
-              current: selectedSlide.id,
-              direction,
-              paused: this._pause$.value,
-              source,
-            },
+          this.slid.emit({
+            prev: previousId,
+            // biome-ignore lint/style/noNonNullAssertion: garantizado por el `if (selectedSlide && ...)` de arriba (upstream)
+            current: selectedSlide!.id,
+            direction: direction,
+            paused: this._pause$.value,
+            source,
           });
         });
     }
 
-    this._changeDetector.markForCheck();
+    // Se llega acá después del intervalo o de cualquier llamada externa (next/prev/select)
+    this._cd.markForCheck();
   }
 
-  private _getSlideEventDirection(
-    currentActiveSlideId: string | undefined,
-    nextActiveSlideId: string,
-  ): NgbSlideEventDirection {
+  private _getSlideEventDirection(currentActiveSlideId: string, nextActiveSlideId: string): NgbSlideEventDirection {
     const currentActiveSlideIdx = this._getSlideIdxById(currentActiveSlideId);
     const nextActiveSlideIdx = this._getSlideIdxById(nextActiveSlideId);
 
     return currentActiveSlideIdx > nextActiveSlideIdx ? NgbSlideEventDirection.END : NgbSlideEventDirection.START;
   }
 
-  private _getNextSlide(currentSlideId: string | undefined): string {
-    const slides = this.slides.toArray();
-    const currentSlideIdx = this._getSlideIdxById(currentSlideId);
-    const isLastSlide = currentSlideIdx === slides.length - 1;
-
-    return isLastSlide ? (this.wrap ? slides[0].id : slides[slides.length - 1].id) : slides[currentSlideIdx + 1].id;
-  }
-
-  private _getPrevSlide(currentSlideId: string | undefined): string {
-    const slides = this.slides.toArray();
-    const currentSlideIdx = this._getSlideIdxById(currentSlideId);
-    const isFirstSlide = currentSlideIdx === 0;
-
-    return isFirstSlide ? (this.wrap ? slides[slides.length - 1].id : slides[0].id) : slides[currentSlideIdx - 1].id;
-  }
-
-  private _getSlideElement(slideId: string) {
-    const element = this._findSlideElement(slideId);
-    if (!element) throw new Error("[ngb-carousel]: ngb-slide id not found");
-    return element;
-  }
-
-  private _findSlideElement(slideId: string): IAugmentedJQuery | null {
-    if (!this._container) return null;
-    const element = toNativeElement(this._container).querySelector(`#slide-${slideId}`);
-    return element ? angular.element(element) : null;
-  }
-
-  private _getSlideById(slideId?: string): NgbSlide | null {
+  private _getSlideById(slideId: string): NgbSlide | null {
     return this.slides.find((slide) => slide.id === slideId) || null;
   }
 
-  private _getSlideIdxById(slideId: string | undefined): number {
+  private _getSlideIdxById(slideId: string): number {
     const slide = this._getSlideById(slideId);
     return slide != null ? this.slides.toArray().indexOf(slide) : -1;
   }
 
-  static get $name() {
-    return "ngbCarousel";
+  private _getNextSlide(currentSlideId: string): string {
+    const slideArr = this.slides.toArray();
+    const currentSlideIdx = this._getSlideIdxById(currentSlideId);
+    const isLastSlide = currentSlideIdx === slideArr.length - 1;
+
+    return isLastSlide
+      ? this.wrap
+        ? slideArr[0].id
+        : slideArr[slideArr.length - 1].id
+      : slideArr[currentSlideIdx + 1].id;
   }
 
-  static get $factory(): IComponentOptions {
-    return {
-      controllerAs: "$",
-      controller: NgbCarousel,
-      transclude: true,
-      bindings: {
-        activeId: "@?",
-        animation: "<?",
-        interval: "<?",
-        keyboard: "<?",
-        pauseOnFocus: "<?",
-        pauseOnHover: "<?",
-        showNavigationArrows: "<?",
-        showNavigationIndicators: "<?",
-        wrap: "<?",
-        slid: "&?",
-        slide: "&?",
-      },
-      template,
-    };
+  private _getPrevSlide(currentSlideId: string): string {
+    const slideArr = this.slides.toArray();
+    const currentSlideIdx = this._getSlideIdxById(currentSlideId);
+    const isFirstSlide = currentSlideIdx === 0;
+
+    return isFirstSlide
+      ? this.wrap
+        ? slideArr[slideArr.length - 1].id
+        : slideArr[0].id
+      : slideArr[currentSlideIdx - 1].id;
   }
 
-  static get $inject() {
-    return ["$element", "$scope", NgbCarouselConfig.$name, NgZone.$name, ChangeDetectorRef.$name];
+  private _getSlideElement(slideId: string): HTMLElement {
+    return this._container.nativeElement.querySelector(`#slide-${slideId}`);
   }
 }
 
+/**
+ * Evento de cambio de slide emitido justo después de completar la transición.
+ */
 export interface NgbSlideEvent {
+  /** El id del slide anterior. */
   prev: string;
+
+  /** El id del slide actual. */
   current: string;
+
+  /** La dirección del evento de slide. `'start' | 'end'`. */
   direction: NgbSlideEventDirection;
+
+  /** Si se llamó `pause()` (y no hubo `cycle()` después). @since 5.1.0 */
   paused: boolean;
+
+  /** Origen que disparó el cambio. `'timer' | 'arrowLeft' | 'arrowRight' | 'indicator'`. @since 5.1.0 */
   source?: NgbSlideEventSource;
 }
 
+/**
+ * Evento de cambio de un slide individual, emitido al completar la transición.
+ *
+ * @since 8.0.0
+ */
 export interface NgbSingleSlideEvent {
+  /** `true` si el slide se muestra, `false` si no. */
   isShown: boolean;
+
+  /** La dirección del evento de slide. `'start' | 'end'`. */
   direction: NgbSlideEventDirection;
+
+  /** Origen que disparó el cambio. */
   source?: NgbSlideEventSource;
 }
 

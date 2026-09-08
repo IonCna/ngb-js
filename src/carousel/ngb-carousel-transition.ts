@@ -1,6 +1,8 @@
 import { type NgbTransitionStartFn, reflow } from "@ngb/utils";
-import type { IAugmentedJQuery } from "angular";
 
+/**
+ * Dirección de la transición entre slides del carousel.
+ */
 export enum NgbSlideEventDirection {
   START = "start",
   END = "end",
@@ -8,66 +10,76 @@ export enum NgbSlideEventDirection {
 
 export interface NgbCarouselCtx {
   /**
-   * Possible values are 'start' | 'end'.
+   * Valores posibles: `'start' | 'end'`.
    */
   direction: "start" | "end";
 }
 
-export function isBeingAnimated(element: IAugmentedJQuery) {
-  return element.hasClass("carousel-item-start") || element.hasClass("carousel-item-end");
-}
+const isBeingAnimated = ({ classList }: HTMLElement) => {
+  return classList.contains("carousel-item-start") || classList.contains("carousel-item-end");
+};
 
-function removeDirectionClasses(element: IAugmentedJQuery) {
-  element.removeClass("carousel-item-start carousel-item-end");
-}
+const removeDirectionClasses = (classList: DOMTokenList) => {
+  classList.remove("carousel-item-start", "carousel-item-end");
+};
 
-function removeClasses(element: IAugmentedJQuery) {
-  removeDirectionClasses(element);
-  element.removeClass("carousel-item-prev carousel-item-next");
-}
+const removeClasses = (classList: DOMTokenList) => {
+  removeDirectionClasses(classList);
+  classList.remove("carousel-item-prev", "carousel-item-next");
+};
 
 export const ngbCarouselTransitionIn: NgbTransitionStartFn<NgbCarouselCtx> = (
-  element: IAugmentedJQuery,
+  element: HTMLElement,
   animation: boolean,
   { direction }: NgbCarouselCtx,
 ) => {
+  const { classList } = element;
+
   if (!animation) {
-    removeClasses(element);
-    element.addClass("active");
+    removeClasses(classList);
+    classList.add("active");
     return;
   }
 
-  if (isBeingAnimated(element)) removeDirectionClasses(element);
-  else {
-    // For the 'in' transition, a 'pre-class' is applied to the element to ensure its visibility
-    element.addClass(`carousel-item-${direction === NgbSlideEventDirection.START ? "next" : "prev"}`);
+  if (isBeingAnimated(element)) {
+    // Revierte la transición
+    removeDirectionClasses(classList);
+  } else {
+    // Para la transición 'in' se aplica una 'pre-class' para asegurar visibilidad
+    classList.add(`carousel-item-${direction === NgbSlideEventDirection.START ? "next" : "prev"}`);
     reflow(element);
-    element.addClass(`carousel-item-${direction}`);
+    classList.add(`carousel-item-${direction}`);
   }
 
   return () => {
-    removeClasses(element);
-    element.addClass("active");
+    removeClasses(classList);
+    classList.add("active");
   };
 };
 
 export const ngbCarouselTransitionOut: NgbTransitionStartFn<NgbCarouselCtx> = (
-  element: IAugmentedJQuery,
+  element: HTMLElement,
   animation: boolean,
   { direction }: NgbCarouselCtx,
 ) => {
+  const { classList } = element;
+
   if (!animation) {
-    removeClasses(element);
-    element.removeClass("active");
+    removeClasses(classList);
+    classList.remove("active");
     return;
   }
 
-  // direction is left or right, depending on the way the slide goes out.
-  if (isBeingAnimated(element)) removeDirectionClasses(element);
-  else element.addClass(`carousel-item-${direction}`);
+  //  direction es left o right, según hacia dónde sale el slide.
+  if (isBeingAnimated(element)) {
+    // Revierte la transición
+    removeDirectionClasses(classList);
+  } else {
+    classList.add(`carousel-item-${direction}`);
+  }
 
   return () => {
-    removeClasses(element);
-    element.removeClass("active");
+    removeClasses(classList);
+    classList.remove("active");
   };
 };

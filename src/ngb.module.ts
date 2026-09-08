@@ -36,7 +36,7 @@ import { PlatformBrowserModule } from "ngjs-core/platform-browser";
     NgbAlertModule,
     NgbProgressbarModule,
     NgbCollapseModule,
-    NgbCarouselModule.name,
+    NgbCarouselModule,
     NgbToastModule,
     NgbAccordionModule,
     NgbModalModule.name,

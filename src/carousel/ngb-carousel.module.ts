@@ -1,11 +1,16 @@
 import { NgbCarousel } from "@ngb/carousel/ngb-carousel.component";
-import { NgbCarouselConfig } from "@ngb/carousel/ngb-carousel-config.service";
 import { NgbSlide } from "@ngb/carousel/ngb-slide.directive";
-import angular from "angular";
+import { NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
 
-export const NgbCarouselModule = angular.module("ngb.carousel", [CommonModule.name]);
+export { NgbCarousel, type NgbSlideEvent, NgbSlideEventSource } from "@ngb/carousel/ngb-carousel.component";
+export { NgbCarouselConfig } from "@ngb/carousel/ngb-carousel-config.service";
+export { NgbSlideEventDirection } from "@ngb/carousel/ngb-carousel-transition";
+export { NgbSlide } from "@ngb/carousel/ngb-slide.directive";
 
-NgbCarouselModule.directive(NgbSlide.$name, NgbSlide.$factory);
-NgbCarouselModule.component(NgbCarousel.$name, NgbCarousel.$factory);
-NgbCarouselModule.service(NgbCarouselConfig.$name, NgbCarouselConfig);
+@NgModule({
+  id: "ngb.carousel",
+  imports: [CommonModule],
+  declarations: [NgbCarousel, NgbSlide],
+})
+export class NgbCarouselModule {}

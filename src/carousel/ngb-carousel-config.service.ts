@@ -1,31 +1,28 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
+import { inject, Service } from "ngjs-core";
 
+/**
+ * Servicio de configuración de [`NgbCarousel`](#/components/carousel/api#NgbCarousel).
+ * Inyectalo (normalmente en el componente raíz) y ajustá sus propiedades para
+ * fijar valores por defecto de todos los carousels de la app.
+ */
+@Service()
 export class NgbCarouselConfig {
+  private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;
 
-  public interval = 5000;
-  public wrap = true;
-  public keyboard = true;
-  public pauseOnFocus = true;
-  public pauseOnHover = true;
-  public showNavigationArrows = true;
-  public showNavigationIndicators = true;
+  interval = 5000;
+  wrap = true;
+  keyboard = true;
+  pauseOnHover = true;
+  pauseOnFocus = true;
+  showNavigationArrows = true;
+  showNavigationIndicators = true;
 
-  constructor(private readonly ngbConfig: NgbConfig) {}
-
-  public get animation() {
-    return this._animation ?? this.ngbConfig.animation;
+  get animation(): boolean {
+    return this._animation ?? this._ngbConfig.animation;
   }
-
-  public set animation(value: boolean) {
-    this._animation = value;
-  }
-
-  static get $inject() {
-    return [NgbConfig.$name];
-  }
-
-  static get $name() {
-    return "ngb.carousel.config.service";
+  set animation(animation: boolean) {
+    this._animation = animation;
   }
 }

@@ -1,27 +1,28 @@
-import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
-import { NgbCarousel } from "./ngb-carousel.component";
+import type { NgbCarousel } from "./ngb-carousel.component";
 
 describe("ngbCarousel", () => {
-  let $compile: ICompileService;
-  let $rootScope: IRootScopeService;
+  let tb: NgbTestBed;
+  let $compile: NgbTestBed["$compile"];
+  let $rootScope: NgbTestBed["$rootScope"];
 
-  beforeEach(() => {
-    angular.mock.module(NgbModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
 
   afterEach(() => {
+    tb.destroy();
     document.body.innerHTML = "";
   });
 
-  const tick = async (scope: IRootScopeService) => {
+  const tick = async (scope: angular.IRootScopeService) => {
     await new Promise((resolve) => setTimeout(resolve, 0));
+    tb.detectChanges();
     scope.$digest();
   };
 
@@ -153,7 +154,7 @@ describe("ngbCarousel", () => {
     `)($rootScope.$new());
     $rootScope.$digest();
 
-    const carousel = element.controller<NgbCarousel>(NgbCarousel.$name);
+    const carousel = element.controller<NgbCarousel>("ngbCarousel");
     expect(carousel.slides.map(({ id }) => id)).toEqual(["outer-slide"]);
   });
 
