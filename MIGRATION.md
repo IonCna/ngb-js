@@ -30,13 +30,13 @@ en field initializers no resuelve. `configureTestBed(NgbModule)` hace un
 `$compile`/`$rootScope`/`get` + `detectChanges()` (= `appRef.tick()`: digest +
 flush de `afterNextRender`). Se migran las specs a él **de a una, junto con su feature**.
 
-## Estado (suite: 104 pasan / 44 fallan, 16/26 archivos verdes)
+## Estado (suite: 106 pasan / 42 fallan, 16/26 archivos verdes)
 
 | Feature | Clases | `*.module.ts` | Spec | Ref |
 |---|---|---|---|---|
 | alert · pagination · progressbar · scrollspy | ✅ | ✅ | ✅ verde | — |
 | **collapse** · **rating** · **toast** · **nav** · **modal** · **carousel** | ✅ | ✅ | ✅ verde | — |
-| tooltip | ✅ | ✅ (sin `id:`) | 🟡 4/6 | `src/tooltip/tooltip.ts` |
+| tooltip | ✅ | ✅ | 🟡 4/6 (harness afterNextRender; 2 gaps) | `src/tooltip/tooltip.ts` |
 | dropdown | ⬜ (7) | ⬜ `angular.module` | 🟡 2/3 | `src/dropdown/dropdown.ts` |
 | accordion | ⬜ (8 directivas) | ⬜ (puente) | 🔴 2/2 | `src/accordion/accordion.directive.ts` |
 | offcanvas | ⬜ (5, service) | ⬜ | 🔴 4/4 | `src/offcanvas/offcanvas.ts` |
@@ -79,7 +79,8 @@ Leyenda: ✅ hecho/verde · ⬜ pendiente · 🟡 parcial · 🔴 rojo.
 ## Orden
 
 1. ~~collapse~~ · ~~rating~~ · ~~toast~~ · ~~modal~~ · ~~carousel~~ · ~~nav~~ ✅
-2. **tooltip** — 2 rojos. Homogeneizar `id:` del module a `"ngb.tooltip"`.
+2. ~~tooltip~~ 4/6 (module `id:` + declarar `NgbTooltipWindow` + `CommonModule`).
+   Quedan: rapid-switch `.show`, `@Input` literal de atributo (CORE_GAPS).
 3. **dropdown** — 2 rojos + migrar el module.
 4. **accordion** → **offcanvas** → **popover** → **typeahead** → **datepicker**.
 
