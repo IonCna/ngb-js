@@ -144,6 +144,28 @@ finas para compat de import, sin registrar. Un fix en el core tendría que
 detectar el solapamiento y correr la lógica de las secundarias por `link` sin
 reclamar el nombre del controller.
 
+### `TemplateRef` desde una directiva sobre `<ng-template>` (2026-09-07)
+
+`NgbNavContent` = `@Directive({ selector: "ng-template[ngbNavContent]" })`. En
+ng-bootstrap hace `templateRef = inject(TemplateRef)` y `NgbNavItem` lo lee con
+`@ContentChild(NgbNavContent, { read: TemplateRef })`. En `ngjs-core` ninguna de
+las dos resuelve: el directive `ngTemplate` (que crea el `TemplateRef`) tiene
+`transclude: 'element'`, así que su controller queda sobre el nodo-comentario, no
+sobre el `<ng-template>` donde está la directiva marcadora → distinta identidad
+de nodo. `inject(...)` corre en el field initializer (antes del link) y
+`@ContentChild({read})` busca un candidato co-ubicado que no coincide de nodo.
+
+Lo único que funciona hoy es `require: 'ngTemplate'` (AngularJS resuelve
+controllers del mismo elemento original pese al transclude) — es lo que usa
+`decorateNgRefDirective`.
+
+**Adaptado en `ngb-js`:** `NgbNavContent` queda como marcador vacío; falta que
+`@ContentChild(NgbNavContent, { read: TemplateRef })` en `NgbNavItem` devuelva el
+`TemplateRef`. **Bloquea nav** (el outlet no renderiza el contenido del tab).
+Fix en el core: rutear la resolución de `TemplateRef` para directivas sobre
+`<ng-template>` por `require: 'ngTemplate'` y registrar ese `TemplateRef` como
+candidato de query en el nodo del `<ng-template>`.
+
 ### Token `DOCUMENT` no es `providedIn: 'root'`
 
 `inject(DOCUMENT)` (patrón de `NgbNav`, `NgbTooltip`, `NgbTypeahead`, `ScrollSpy`,

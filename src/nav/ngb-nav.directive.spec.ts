@@ -25,8 +25,8 @@ describe("ngbNav", () => {
   };
 
   it("renders first tab as active and updates outlet on click", async () => {
-    const scope = $rootScope.$new() as IRootScopeService & { activeId: string };
-    scope.activeId = "0";
+    const scope = $rootScope.$new() as IRootScopeService & { activeId: number };
+    scope.activeId = 0;
 
     const element = $compile(`
             <div>
@@ -61,7 +61,7 @@ describe("ngbNav", () => {
     await tick(scope);
     await tick(scope);
 
-    expect(scope.activeId).toBe("1");
+    expect(scope.activeId).toBe(1);
     expect(buttons[1].classList.contains("active")).toBe(true);
     expect(outlet.textContent).toContain("Profile content");
     element.remove();
@@ -69,10 +69,10 @@ describe("ngbNav", () => {
 
   it("emits activeIdChange callback when selecting another tab", () => {
     const scope = $rootScope.$new() as IRootScopeService & {
-      activeId: string;
-      onActiveChange: (id: string) => void;
+      activeId: number;
+      onActiveChange: (id: number) => void;
     };
-    scope.activeId = "0";
+    scope.activeId = 0;
     const onActiveChange = vi.fn();
     scope.onActiveChange = onActiveChange;
 
@@ -99,7 +99,7 @@ describe("ngbNav", () => {
     scope.$digest();
 
     expect(onActiveChange).toHaveBeenCalledTimes(1);
-    expect(onActiveChange).toHaveBeenCalledWith("1");
+    expect(onActiveChange).toHaveBeenCalledWith(1);
     element.remove();
   });
 
@@ -114,11 +114,11 @@ describe("ngbNav", () => {
     const element = $compile(`
       <div>
         <ul ngb-nav ng-ref="$.nav" ng-ref-read="ngbNav" active-id="activeId" animation="false">
-          <li ngb-nav-item="first">
+          <li ngb-nav-item="'first'">
             <button ngb-nav-link>First</button>
             <ng-template ngb-nav-content>First content</ng-template>
           </li>
-          <li ngb-nav-item="second">
+          <li ngb-nav-item="'second'">
             <button ngb-nav-link>Second</button>
             <ng-template ngb-nav-content>Second content</ng-template>
           </li>
@@ -143,8 +143,8 @@ describe("ngbNav", () => {
 
     const element = $compile(`
       <ul ngb-nav active-id="activeId" animation="false">
-        <li ngb-nav-item="first"><button ngb-nav-link>First</button></li>
-        <li ngb-nav-item="second"><button ngb-nav-link>Second</button></li>
+        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
       </ul>
     `)(scope);
     angular.element(document.body).append(element);
