@@ -43,6 +43,21 @@ describe("ngbTooltip", () => {
   /** Vacía `afterNextRender` (la clase `.show` del popup la agrega una transición post-render). */
   const flushRender = () => appRef.tick();
 
+  /**
+   * Drena todo lo pendiente del ciclo de apertura/cierre de un popup: promesas
+   * (`$q` de `createComponent`), `$timeout` de su poll, microtasks, y
+   * `afterNextRender` (la transición que agrega/saca `.show`). `createComponent`
+   * resuelve por `$rootScope.$digest`, no por un scope hijo.
+   */
+  async function drain(): Promise<void> {
+    for (let i = 0; i < 15; i++) {
+      $rootScope.$digest();
+      flushTimeout();
+      flushRender();
+      await Promise.resolve();
+    }
+  }
+
   afterEach(() => {
     document.body.innerHTML = "";
   });
@@ -216,20 +231,11 @@ describe("ngbTooltip", () => {
     const [first, second] = Array.from(elements[0].querySelectorAll("button"));
 
     first.dispatchEvent(new MouseEvent("mouseenter"));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    scope.$digest();
-    flushTimeout();
-    flushRender();
-    scope.$digest();
+    await drain();
 
     first.dispatchEvent(new MouseEvent("mouseleave"));
     second.dispatchEvent(new MouseEvent("mouseenter"));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    scope.$digest();
-    flushTimeout();
-    scope.$digest();
-    flushRender();
-    scope.$digest();
+    await drain();
 
     const tooltipTexts = Array.from(document.body.querySelectorAll(".tooltip-inner")).map(
       (tooltip) => tooltip.textContent,
@@ -239,12 +245,15 @@ describe("ngbTooltip", () => {
     elements.remove();
   });
 
-  it("supports literal attribute values without expression bindings", async () => {
+  it("toma los inputs string como valor literal del atributo (binding: '@')", async () => {
     const scope = $rootScope.$new();
     const element = $compile(`
             <button
                 type="button"
-                ngb-tooltip="Tooltip"
+                ngb-tooltip="'Tooltip'"
+                placement="top left"
+                triggers="manual"
+                tooltip-class="my-tip"
                 open-delay="0"
                 close-delay="0"
                 animation="false">
@@ -257,7 +266,16 @@ describe("ngbTooltip", () => {
     const ctrl = element.controller("ngbTooltip") as {
       open: () => IPromise<void>;
       isOpen: () => boolean;
+      placement: unknown;
+      triggers: unknown;
+      tooltipClass: unknown;
     };
+
+    // Sin comillas y con espacios: `@` los pasa crudos, no los evalúa como expresión.
+    expect(ctrl.placement).toBe("top left");
+    expect(ctrl.triggers).toBe("manual");
+    expect(ctrl.tooltipClass).toBe("my-tip");
+
     const opening = ctrl.open();
     scope.$digest();
     await settle(opening);

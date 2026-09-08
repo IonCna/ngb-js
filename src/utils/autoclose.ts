@@ -3,8 +3,8 @@ import type { NgZone } from "ngjs-core";
 import { fromEvent, type Observable, race } from "rxjs";
 import { delay, filter, map, takeUntil, tap, withLatestFrom } from "rxjs/operators";
 
-const isContainedIn = (element: HTMLElement, array?: HTMLElement[]) =>
-  array ? array.some((item) => item.contains(element)) : false;
+const isContainedIn = (element: HTMLElement, array?: (HTMLElement | undefined)[]) =>
+  array ? array.some((item) => item?.contains(element)) : false;
 
 const matchesSelectorIfAny = (element: HTMLElement, selector?: string) =>
   !selector || closest(element, selector) != null;

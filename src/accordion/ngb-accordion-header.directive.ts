@@ -1,47 +1,25 @@
-import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
+import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
+import { Directive, HostBinding, inject } from "ngjs-core";
 
-export class NgbAccordionHeader implements IController {
-  private readonly item!: NgbAccordionItem;
-  private collapseWatcher?: () => void;
+/**
+ * Directiva que envuelve el header de un item del acordeón.
+ *
+ * @since 14.1.0
+ */
+@Directive({
+  selector: "[ngbAccordionHeader]",
+})
+export class NgbAccordionHeader {
+  item = inject(NgbAccordionItem);
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $scope: IScope,
-  ) {}
+  @HostBinding("attr.role")
+  readonly _role = "heading";
 
-  $postLink(): void {
-    this.$element.addClass("accordion-header");
-    this.$element.attr("role", "heading");
+  @HostBinding("class.accordion-header")
+  readonly _hostClass = true;
 
-    this.collapseWatcher = this.$scope.$watch(
-      () => this.item.collapsed,
-      (value) => {
-        this.$element.toggleClass("collapsed", value);
-      },
-    );
-  }
-
-  $onDestroy(): void {
-    this.collapseWatcher?.();
-  }
-
-  static get $name() {
-    return "ngbAccordionHeader";
-  }
-
-  static get $inject() {
-    return ["$element", "$scope"];
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      require: {
-        item: "^ngbAccordionItem",
-      },
-      controller: NgbAccordionHeader,
-      restrict: "A",
-    });
+  @HostBinding("class.collapsed")
+  get _collapsed(): boolean {
+    return this.item.collapsed;
   }
 }

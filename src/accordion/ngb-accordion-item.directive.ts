@@ -1,194 +1,201 @@
-import type { NgbAccordion } from "@ngb/accordion/ngb-accordion.directive";
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import angular from "angular";
-import { ContentChild, NgDisabled } from "ngjs-core";
-import type { Subscription } from "rxjs";
-import { NgbAccordionBody } from "./ngb-accordion-body.directive";
-import { NgbAccordionCollapse } from "./ngb-accordion-collapse.directive";
+import { NgbAccordionCollapse } from "@ngb/accordion/ngb-accordion-collapse.directive";
+import { NgbAccordionDirective } from "@ngb/accordion/ngb-accordion.directive";
+import { isString } from "@ngb/utils";
+import {
+  ChangeDetectorRef,
+  ContentChild,
+  DestroyRef,
+  Directive,
+  EventEmitter,
+  HostBinding,
+  inject,
+  Input,
+  Output,
+  takeUntilDestroyed,
+} from "ngjs-core";
 
-let accordionItemCounter = 0;
+let nextId = 0;
 
-export class NgbAccordionItem implements IController {
-  private readonly _accordion!: NgbAccordion;
+/**
+ * Directiva que envuelve un item del acordeón: header toggleable + body que
+ * colapsa.
+ *
+ * Se puede tomar la instancia de `NgbAccordionItem` en el template con
+ * `#item="ngbAccordionItem"`. Permite ver si el item está colapsado, alternarlo, etc.
+ *
+ * Cada item tiene un id string autogenerado con formato `ngb-accordion-item-XX`,
+ * salvo que se dé explícitamente.
+ *
+ * @since 14.1.0
+ */
+@Directive({
+  selector: "[ngbAccordionItem]",
+  exportAs: "ngbAccordionItem",
+})
+export class NgbAccordionItem {
+  private _accordion = inject(NgbAccordionDirective);
+  private _cd = inject(ChangeDetectorRef);
+  private _destroyRef = inject(DestroyRef);
+
   private _collapsed = true;
+  private _id = `ngb-accordion-item-${nextId++}`;
   private _destroyOnHide: boolean | undefined;
 
   private _collapseAnimationRunning = false;
-  private _collapseHiddenSubscription?: Subscription;
-  private _collapseShownSubscription?: Subscription;
-  private _id!: string;
-
-  public hidden?: () => void;
-  public hide?: () => void;
-  public show?: () => void;
-  public shown?: () => void;
-
-  public ngDisabled?: NgDisabled;
 
   @ContentChild(NgbAccordionCollapse, { static: true })
   private _collapse!: NgbAccordionCollapse;
 
-  @ContentChild(NgbAccordionBody, { static: true })
-  private _body?: NgbAccordionBody;
-
-  constructor(private readonly $element: IAugmentedJQuery) {}
-
-  $postLink(): void {
-    this._id = this._id ?? `ngb-accordion-item-${accordionItemCounter++}`;
-
-    this.$element.attr("id", this._id);
-    this.$element.addClass("accordion-item");
-
-    const { ngbCollapse } = this._collapse;
-
-    ngbCollapse.animation = false;
-    ngbCollapse.collapsed = this.collapsed;
-    ngbCollapse.animation = this._accordion.animation;
-
-    this._collapseHiddenSubscription = ngbCollapse.hidden.subscribe(() => this.onCollapseHidden());
-    this._collapseShownSubscription = ngbCollapse.shown.subscribe(() => this.onCollapseShown());
+  @HostBinding("id")
+  get _hostId(): string {
+    return this.id;
   }
 
-  $onDestroy(): void {
-    this._collapseHiddenSubscription?.unsubscribe();
-    this._collapseShownSubscription?.unsubscribe();
+  @HostBinding("class.accordion-item")
+  readonly _hostClass = true;
+
+  /**
+   * Setea el ID custom del item del acordeón. Debe ser único en el documento.
+   */
+  @Input("ngbAccordionItem") set id(id: string) {
+    if (isString(id) && id !== "") {
+      this._id = id;
+    }
   }
 
-  set id(id: string) {
-    if (!angular.isString(id) || id === "") return;
-    this._id = id;
-  }
-
-  set destroyOnHide(destroyOnHide: boolean) {
+  /**
+   * Si es `true`, el contenido del body del item se quita del DOM (si no, solo
+   * se oculta). Se puede setear también en la directiva `NgbAccordion` padre.
+   *
+   * @defaultValue `true` — se inicializa desde el `NgbAccordion` padre
+   */
+  @Input() set destroyOnHide(destroyOnHide: boolean) {
     this._destroyOnHide = destroyOnHide;
   }
 
-  get destroyOnHide() {
-    return angular.isUndefined(this._destroyOnHide)
-      ? Boolean(this._accordion.destroyOnHide)
-      : Boolean(this._destroyOnHide);
+  get destroyOnHide(): boolean {
+    return this._destroyOnHide === undefined ? this._accordion.destroyOnHide : this._destroyOnHide;
   }
 
-  set collapsed(collapsed: boolean) {
-    if (collapsed === undefined) return;
+  /**
+   * Si es `true`, el item del acordeón queda deshabilitado. No reacciona a los
+   * clicks del usuario, pero se puede alternar programáticamente.
+   */
+  @Input() disabled = false;
 
-    if (!this._accordion) {
-      this._collapsed = collapsed;
-      return;
-    }
-
+  /**
+   * Si es `true`, el item arranca colapsado. Si no, expandido.
+   *
+   * @defaultValue `true`
+   */
+  @Input() set collapsed(collapsed: boolean) {
     if (collapsed) {
       this.collapse();
-      return;
+    } else {
+      this.expand();
     }
-
-    this.expand();
   }
 
-  get collapsed() {
+  /** Evento emitido antes de arrancar la animación de expansión. Sin payload. @since 15.1.0 */
+  @Output() show = new EventEmitter<void>();
+
+  /** Evento emitido cuando termina la animación de expansión. Sin payload. */
+  @Output() shown = new EventEmitter<void>();
+
+  /** Evento emitido antes de arrancar la animación de colapso. Sin payload. @since 15.1.0 */
+  @Output() hide = new EventEmitter<void>();
+
+  /** Evento emitido al terminar el colapso y antes de sacar el contenido del DOM. Sin payload. */
+  @Output() hidden = new EventEmitter<void>();
+
+  get collapsed(): boolean {
     return this._collapsed;
   }
 
-  get id() {
+  get id(): string {
     return `${this._id}`;
   }
 
-  get toggleId() {
+  get toggleId(): string {
     return `${this.id}-toggle`;
   }
 
-  get collapseId() {
+  get collapseId(): string {
     return `${this.id}-collapse`;
   }
 
-  get _shouldBeInDOM() {
+  get _shouldBeInDOM(): boolean {
     return !this.collapsed || this._collapseAnimationRunning || !this.destroyOnHide;
   }
 
-  isDisabled(): boolean {
-    return this.ngDisabled?.disabled ?? false;
+  ngAfterContentInit(): void {
+    const { ngbCollapse } = this._collapse;
+    // hay que deshabilitar la animación en el primer init
+    ngbCollapse.animation = false;
+    ngbCollapse.collapsed = this.collapsed;
+    // seteamos la animación al default del acordeón
+    ngbCollapse.animation = this._accordion.animation;
+    // reenvío de eventos de 'ngbCollapse' a 'ngbAccordion'
+    ngbCollapse.hidden.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => {
+      // al terminar la animación podemos sacar el template del DOM
+      this._collapseAnimationRunning = false;
+      this.hidden.emit();
+      this._accordion.hidden.emit(this.id);
+      this._cd.markForCheck();
+    });
+    ngbCollapse.shown.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => {
+      this.shown.emit();
+      this._accordion.shown.emit(this.id);
+      this._cd.markForCheck();
+    });
   }
 
-  toggle() {
+  /** Alterna un item del acordeón. */
+  toggle(): void {
     this.collapsed = !this.collapsed;
   }
 
-  onCollapseHidden() {
-    this._collapseAnimationRunning = false;
-    this.hidden?.();
-    this._accordion.hidden?.({ $event: this.id });
-  }
+  /** Expande un item del acordeón. */
+  expand(): void {
+    if (this.collapsed) {
+      // chequeamos si el acordeón permite expandir respecto de 'closeOthers'
+      if (!this._accordion._ensureCanExpand(this)) {
+        return;
+      }
 
-  onCollapseShown() {
-    this.shown?.();
-    this._accordion.shown?.({ $event: this.id });
-  }
+      this._collapsed = false;
 
-  expand() {
-    if (!this.collapsed) return;
+      this._cd.markForCheck();
 
-    // checking if accordion allows to expand the panel in respect to 'closeOthers' flag
-    if (!this._accordion._ensureCanExpand(this)) {
-      return;
+      // forzamos CD para meter el template en el DOM antes de arrancar la
+      // animación y poder medir su alto correctamente
+      this._cd.detectChanges();
+
+      // disparamos eventos antes de las animaciones
+      this.show.emit();
+      this._accordion.show.emit(this.id);
+
+      // aseguramos que el flag 'animation' esté al día
+      this._collapse.ngbCollapse.animation = this._accordion.animation;
+      this._collapse.ngbCollapse.collapsed = false;
     }
-
-    this._collapsed = false;
-    this._body?.detectChanges();
-
-    // firing events before starting animations
-    this.show?.();
-    this._accordion.show?.({ $event: this.id });
-
-    // we also need to make sure 'animation' flag is up-to- date
-    this._collapse.ngbCollapse.animation = this._accordion.animation;
-    this._collapse.ngbCollapse.collapsed = false;
   }
 
-  collapse() {
-    if (this.collapsed) return;
-    this._collapsed = true;
-    this._collapseAnimationRunning = true;
+  /** Colapsa un item del acordeón. */
+  collapse(): void {
+    if (!this.collapsed) {
+      this._collapsed = true;
+      this._collapseAnimationRunning = true;
 
-    // need if the accordion is used inside a component having OnPush change detection strategy
-    //this._cd.markForCheck();
+      this._cd.markForCheck();
 
-    // firing events before starting animations
-    this.hide?.();
-    this._accordion.hide?.({ $event: this.id });
+      // disparamos eventos antes de las animaciones
+      this.hide.emit();
+      this._accordion.hide.emit(this.id);
 
-    // we also need to make sure 'animation' flag is up-to- date
-    this._collapse.ngbCollapse.animation = this._accordion.animation;
-    this._collapse.ngbCollapse.collapsed = true;
-  }
-
-  static get $inject() {
-    return ["$element"];
-  }
-
-  static get $name() {
-    return "ngbAccordionItem";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      controller: NgbAccordionItem,
-      require: {
-        _accordion: "^ngbAccordion",
-        ngDisabled: "?ngDisabled",
-      },
-      restrict: "A",
-      transclude: true,
-      template: "<ng-content></ng-content>",
-      scope: {
-        collapsed: "<?",
-        destroyOnHide: "<?",
-        id: "<?ngbAccordionItem",
-        hidden: "&?",
-        hide: "&?",
-        show: "&?",
-        shown: "&?",
-      },
-    });
+      // aseguramos que el flag 'animation' esté al día
+      this._collapse.ngbCollapse.animation = this._accordion.animation;
+      this._collapse.ngbCollapse.collapsed = true;
+    }
   }
 }

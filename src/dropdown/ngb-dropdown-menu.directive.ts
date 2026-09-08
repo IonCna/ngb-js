@@ -1,70 +1,35 @@
-import type { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
+import { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
 import { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
-import { toNativeElement } from "@ngb/utils";
-import type { IController, IDirective, IScope } from "angular";
-import { ContentChildren, type QueryList } from "ngjs-core";
+import { ContentChildren, Directive, ElementRef, HostBinding, HostListener, inject, type QueryList } from "ngjs-core";
 
-const ALLOWED_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Enter", " ", "Tab"]);
-
-export class NgbDropdownMenu implements IController {
-  public dropdown!: NgbDropdown;
-  public nativeElement!: HTMLElement;
+/**
+ * Envuelve el contenido del menú del dropdown y sus ítems.
+ */
+@Directive({ selector: "[ngbDropdownMenu]" })
+export class NgbDropdownMenu {
+  dropdown = inject(NgbDropdown);
+  nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   @ContentChildren(NgbDropdownItem)
-  public menuItems!: QueryList<NgbDropdownItem>;
+  menuItems!: QueryList<NgbDropdownItem>;
 
-  private keydownListener?: (event: JQueryEventObject) => void;
-  private unwatchOpenState?: () => void;
+  @HostBinding("class.dropdown-menu")
+  readonly _dropdownMenuClass = true;
 
-  constructor(
-    public $element: JQLite,
-    private readonly $scope: IScope,
-  ) {}
-
-  $postLink(): void {
-    this.$element.addClass("dropdown-menu");
-    this.nativeElement = toNativeElement(this.$element);
-
-    this.unwatchOpenState = this.$scope.$watch(
-      () => this.dropdown.isOpen(),
-      (isOpen) => this.$element.toggleClass("show", isOpen),
-    );
-
-    this.keydownListener = (event) => {
-      if (!ALLOWED_KEYS.has(event.key)) return;
-
-      this.dropdown.onKeyDown(event);
-    };
-
-    this.$element.on("keydown", this.keydownListener);
+  @HostBinding("class.show")
+  get _show(): boolean {
+    return this.dropdown.isOpen();
   }
 
-  $onDestroy(): void {
-    if (this.keydownListener) this.$element.off("keydown", this.keydownListener);
-    this.unwatchOpenState?.();
+  @HostListener("keydown.arrowup", ["$event"])
+  @HostListener("keydown.arrowdown", ["$event"])
+  @HostListener("keydown.home", ["$event"])
+  @HostListener("keydown.end", ["$event"])
+  @HostListener("keydown.enter", ["$event"])
+  @HostListener("keydown.space", ["$event"])
+  @HostListener("keydown.tab", ["$event"])
+  @HostListener("keydown.shift.tab", ["$event"])
+  _onKeyDown(event: KeyboardEvent): void {
+    this.dropdown.onKeyDown(event as unknown as JQueryEventObject);
   }
-
-  //#region $angular
-  static get $name() {
-    return "ngbDropdownMenu";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      controller: NgbDropdownMenu,
-      require: {
-        dropdown: "^ngbDropdown",
-      },
-      scope: true,
-      restrict: "A",
-      transclude: true,
-      template: "<ng-content></ng-content>",
-    });
-  }
-
-  static get $inject() {
-    return ["$element", "$scope"];
-  }
-  //#endregion
 }

@@ -1,22 +1,21 @@
-import type { ICompileService, IProvideService, IRootScopeService } from "angular";
-import angular from "angular";
-import { beforeEach, describe, expect, it } from "vitest";
+import type { ICompileService, IRootScopeService } from "angular";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 describe("ngbAccordion", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
-  beforeEach(() => {
-    angular.mock.module(NgbModule.name);
-    angular.mock.module(($provide: IProvideService) => {
-      $provide.value("ngb.config.service", { animation: false });
-    });
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
+    tb.get<{ animation: boolean }>("ngb.config.service").animation = false;
   });
+
+  afterEach(() => tb.destroy());
 
   it("respects close-others when toggling items", () => {
     const scope = $rootScope.$new() as IRootScopeService & {
@@ -47,7 +46,7 @@ describe("ngbAccordion", () => {
                 </div>
             </div>
         `)(scope);
-    scope.$digest();
+    tb.detectChanges();
 
     expect(element.hasClass("accordion")).toBe(true);
 
@@ -55,8 +54,8 @@ describe("ngbAccordion", () => {
     expect(buttons[0]?.getAttribute("aria-expanded")).toBe("true");
     expect(buttons[1]?.getAttribute("aria-expanded")).toBe("false");
 
-    angular.element(buttons[1]).triggerHandler("click");
-    scope.$digest();
+    buttons[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    tb.detectChanges();
 
     expect(buttons[0]?.getAttribute("aria-expanded")).toBe("false");
     expect(buttons[1]?.getAttribute("aria-expanded")).toBe("true");
@@ -80,7 +79,7 @@ describe("ngbAccordion", () => {
         </div>
       </div>
     `)(scope);
-    scope.$digest();
+    tb.detectChanges();
 
     const collapse = element[0].querySelector<HTMLElement>(".accordion-collapse");
     expect(collapse).not.toBeNull();
@@ -103,8 +102,8 @@ describe("ngbAccordion", () => {
     expect(button).not.toBeNull();
     if (!button) return;
 
-    angular.element(button).triggerHandler("click");
-    scope.$digest();
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    tb.detectChanges();
 
     expect(collapse.querySelector(".measured-body")).not.toBeNull();
     expect(collapse.style.height).toBe("42px");

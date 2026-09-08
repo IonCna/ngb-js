@@ -1,54 +1,27 @@
-import type { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
-import { toNativeElement } from "@ngb/utils";
-import type { IController, IDirective, IScope } from "angular";
+import { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
+import { Directive, ElementRef, HostBinding, inject } from "ngjs-core";
 
-export class NgbDropdownAnchor implements IController {
-  public dropdown!: NgbDropdown;
-  public nativeElement!: HTMLElement;
+/**
+ * Marca el elemento al que se ancla el menú del dropdown.
+ *
+ * Es la versión simple de `NgbDropdownToggle`: cumple el mismo rol pero no
+ * escucha `click`, así habilita disparadores que no sean el click.
+ */
+@Directive({ selector: "[ngbDropdownAnchor]" })
+export class NgbDropdownAnchor {
+  dropdown = inject(NgbDropdown);
+  nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  private unwatchOpenState?: () => void;
+  @HostBinding("class.dropdown-toggle")
+  readonly _dropdownToggleClass = true;
 
-  constructor(
-    protected readonly $element: JQLite,
-    protected readonly $scope: IScope,
-  ) {}
-
-  $postLink(): void {
-    this.nativeElement = toNativeElement(this.$element);
-    this.$element.addClass("dropdown-toggle");
-
-    this.unwatchOpenState = this.$scope.$watch(
-      () => this.dropdown.isOpen(),
-      (isOpen) => this._applyHostBindings(isOpen),
-    );
+  @HostBinding("class.show")
+  get _show(): boolean {
+    return this.dropdown.isOpen();
   }
 
-  $onDestroy(): void {
-    this.unwatchOpenState?.();
-  }
-
-  private _applyHostBindings(isOpen = this.dropdown.isOpen()) {
-    this.$element.toggleClass("show", isOpen);
-    this.$element.attr("aria-expanded", `${isOpen}`);
-  }
-
-  static get $inject() {
-    return ["$element", "$scope"];
-  }
-
-  static get $name() {
-    return "ngbDropdownAnchor";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      controller: NgbDropdownAnchor,
-      restrict: "A",
-      require: {
-        dropdown: "^ngbDropdown",
-      },
-      bindToController: true,
-      scope: true,
-    });
+  @HostBinding("attr.aria-expanded")
+  get _ariaExpanded(): string {
+    return `${this.dropdown.isOpen()}`;
   }
 }

@@ -1,132 +1,135 @@
 import { NgbAccordionConfig } from "@ngb/accordion/ngb-accordion-config.service";
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
-import type { INgbEvent } from "@ngb/utils";
-import type { IAugmentedJQuery, IController, IDirective } from "angular";
-import { ContentChildren, type QueryList } from "ngjs-core";
+import { ContentChildren, Directive, EventEmitter, HostBinding, inject, Input, Output, type QueryList } from "ngjs-core";
 
-export interface INgbAccordion {
-  toggle(itemId: string): void;
-  expand(itemId: string): void;
-  collapse(itemId: string): void;
-  isExpanded(itemId: string): void;
-
-  expandAll(): void;
-  collapseAll(): void;
-}
-
-export class NgbAccordion implements IController, INgbAccordion {
-  private _anItemWasAlreadyExpandedDuringInitialization = false;
+/**
+ * El acordeón es una pila de tarjetas con header y body colapsable.
+ *
+ * Esta directiva es el contenedor de esos items y expone una API para manejarlos.
+ *
+ * @since 14.1.0
+ */
+@Directive({
+  selector: "[ngbAccordion]",
+  exportAs: "ngbAccordion",
+})
+export class NgbAccordionDirective {
+  private _config = inject(NgbAccordionConfig);
+  private _anItemWasAlreadyExpandedDuringInitialisation = false;
 
   @ContentChildren(NgbAccordionItem, { descendants: false })
-  private _items!: QueryList<NgbAccordionItem>;
+  private _items?: QueryList<NgbAccordionItem>;
 
-  public animation!: boolean;
-  public closeOthers!: boolean;
-  public destroyOnHide!: boolean;
+  @HostBinding("class.accordion")
+  readonly _hostClass = true;
 
-  public show?: ({ $event }: INgbEvent<string>) => void;
-  public shown?: ({ $event }: INgbEvent<string>) => void;
+  /** Si es `true`, el acordeón se anima. */
+  @Input() animation = this._config.animation;
 
-  public hidden?: ({ $event }: INgbEvent<string>) => void;
-  public hide?: ({ $event }: INgbEvent<string>) => void;
+  /** Si es `true`, solo un item puede quedar abierto a la vez. */
+  @Input() closeOthers = this._config.closeOthers;
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly ngbAccordionConfig: NgbAccordionConfig,
-  ) {}
+  /**
+   * Si es `true`, el contenido del body de los items se quita del DOM (si no,
+   * solo se oculta). Se puede sobreescribir a nivel de `NgbAccordionItem`.
+   */
+  @Input() destroyOnHide = this._config.destroyOnHide;
 
-  $onInit(): void {
-    this.animation = this.animation ?? this.ngbAccordionConfig.animation;
-    this.closeOthers = this.closeOthers ?? this.ngbAccordionConfig.closeOthers;
-    this.destroyOnHide = this.destroyOnHide ?? this.ngbAccordionConfig.destroyOnHide;
-  }
+  /** Evento emitido antes de la animación de expansión. Payload: id del item mostrado. @since 15.1.0 */
+  @Output() show = new EventEmitter<string>();
 
-  $postLink(): void {
-    this.$element.addClass("accordion");
-  }
+  /** Evento emitido al terminar la animación de expansión. Payload: id del item mostrado. */
+  @Output() shown = new EventEmitter<string>();
 
-  public toggle(itemId: string) {
+  /** Evento emitido antes de la animación de colapso. Payload: id del item ocultado. @since 15.1.0 */
+  @Output() hide = new EventEmitter<string>();
+
+  /** Evento emitido al terminar el colapso y antes de sacar el contenido del DOM. Payload: id del item ocultado. */
+  @Output() hidden = new EventEmitter<string>();
+
+  /**
+   * Alterna el item con el id dado. Lo alterna aunque esté deshabilitado.
+   */
+  toggle(itemId: string): void {
     this._getItem(itemId)?.toggle();
   }
 
-  public expand(itemId: string) {
+  /**
+   * Expande el item con el id dado. Si `closeOthers` es `true`, colapsa los otros.
+   */
+  expand(itemId: string): void {
     this._getItem(itemId)?.expand();
   }
 
-  public expandAll() {
-    if (!this.closeOthers) {
-      this._items.forEach((item) => {
-        item.expand();
-      });
-      return;
-    }
-
-    const item = this._items.find((item) => !item.collapsed);
-
-    if (!item) {
-      this._items.first?.expand();
+  /**
+   * Expande todos los items.
+   *
+   * Si `closeOthers` es `true` y todos están cerrados, abre el primero. Si no,
+   * deja el que ya estaba abierto.
+   */
+  expandAll(): void {
+    if (this._items) {
+      if (this.closeOthers) {
+        if (!this._items.find((item) => !item.collapsed)) {
+          this._items.first.expand();
+        }
+      } else {
+        this._items.forEach((item) => item.expand());
+      }
     }
   }
 
-  public collapse(itemId: string) {
+  /**
+   * Colapsa el item con el id dado. No hace nada si `itemId` no corresponde a
+   * ningún item.
+   */
+  collapse(itemId: string): void {
     this._getItem(itemId)?.collapse();
   }
 
-  public collapseAll() {
-    this._items.forEach((item) => {
-      item.collapse();
-    });
+  /** Colapsa todos los items. */
+  collapseAll(): void {
+    this._items?.forEach((item) => item.collapse());
   }
 
-  public isExpanded(itemId: string) {
+  /**
+   * Chequea si el item con el id dado está expandido. Devuelve `false` si el
+   * `itemId` no corresponde a ningún item.
+   */
+  isExpanded(itemId: string): boolean {
     const item = this._getItem(itemId);
     return item ? !item.collapsed : false;
   }
 
-  public _ensureCanExpand(toExpand: NgbAccordionItem) {
-    if (!this.closeOthers) return true;
+  /**
+   * Chequea si el item se puede expandir en el estado actual del acordeón.
+   * Con `closeOthers` solo puede haber un item expandido a la vez.
+   *
+   * @internal
+   */
+  _ensureCanExpand(toExpand: NgbAccordionItem): boolean {
+    if (!this.closeOthers) {
+      return true;
+    }
 
-    if (this._items.length === 0) {
-      if (!this._anItemWasAlreadyExpandedDuringInitialization) {
-        this._anItemWasAlreadyExpandedDuringInitialization = true;
+    // caso especial durante la inicialización de los inputs [collapsed]="false":
+    // el QueryList `this._items` todavía no está inicializado, pero necesitamos
+    // asegurar que solo un item pueda expandirse a la vez
+    if (!this._items) {
+      if (!this._anItemWasAlreadyExpandedDuringInitialisation) {
+        this._anItemWasAlreadyExpandedDuringInitialisation = true;
         return true;
       }
-
       return false;
     }
 
+    // si hay un item expandido, hay que colapsarlo primero
     this._items.find((item) => !item.collapsed && toExpand !== item)?.collapse();
+
     return true;
   }
 
   private _getItem(itemId: string): NgbAccordionItem | undefined {
-    return this._items.find((item) => item.id === itemId);
-  }
-
-  static get $name() {
-    return "ngbAccordion";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      controller: NgbAccordion,
-      restrict: "A",
-      transclude: true,
-      template: "<ng-content></ng-content>",
-      scope: {
-        animation: "<?",
-        closeOthers: "<?",
-        destroyOnHide: "<?",
-        hidden: "&?",
-        hide: "&?",
-        show: "&?",
-        shown: "&?",
-      },
-    });
-  }
-
-  static get $inject() {
-    return ["$element", NgbAccordionConfig.$name];
+    return this._items?.find((item) => item.id === itemId);
   }
 }

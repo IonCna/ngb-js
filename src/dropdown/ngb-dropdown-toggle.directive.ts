@@ -1,50 +1,24 @@
 import { NgbDropdownAnchor } from "@ngb/dropdown/ngb-dropdown-anchor.directive";
-import type { IDirective } from "angular";
+import { Directive, HostListener } from "ngjs-core";
 
-const ALLOWED_KEYS = new Set(["ArrowUp", "ArrowDown", "Home", "End", "Tab"]);
-
+/**
+ * Marca el elemento que abre/cierra el dropdown con el evento `click`.
+ * `NgbDropdownAnchor` es la alternativa sin `click`.
+ */
+@Directive({ selector: "[ngbDropdownToggle]" })
 export class NgbDropdownToggle extends NgbDropdownAnchor {
-  private clickListener?: (event: JQueryEventObject) => void;
-  private keydownListener?: (event: JQueryEventObject) => void;
-
-  override $postLink(): void {
-    super.$postLink();
-
-    this.clickListener = () => {
-      this.$scope.$evalAsync(() => this.dropdown.toggle());
-    };
-
-    this.keydownListener = (event) => {
-      if (ALLOWED_KEYS.has(event.key)) this.dropdown.onKeyDown(event);
-    };
-
-    this.$element.on("click", this.clickListener);
-    this.$element.on("keydown", this.keydownListener);
+  @HostListener("click")
+  _onClick(): void {
+    this.dropdown.toggle();
   }
 
-  override $onDestroy(): void {
-    if (this.clickListener) this.$element.off("click", this.clickListener);
-    if (this.keydownListener) this.$element.off("keydown", this.keydownListener);
-    super.$onDestroy();
+  @HostListener("keydown.arrowup", ["$event"])
+  @HostListener("keydown.arrowdown", ["$event"])
+  @HostListener("keydown.home", ["$event"])
+  @HostListener("keydown.end", ["$event"])
+  @HostListener("keydown.tab", ["$event"])
+  @HostListener("keydown.shift.tab", ["$event"])
+  _onKeyDown(event: KeyboardEvent): void {
+    this.dropdown.onKeyDown(event as unknown as JQueryEventObject);
   }
-
-  //#region $angular
-
-  static get $name() {
-    return "ngbDropdownToggle";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      scope: true,
-      require: {
-        dropdown: "^ngbDropdown",
-      },
-      controller: NgbDropdownToggle,
-      restrict: "A",
-    });
-  }
-
-  //#endregion
 }

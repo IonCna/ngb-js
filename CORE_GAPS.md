@@ -13,6 +13,8 @@ contrato correspondiente.
 | `ChangeDetectionStrategy.Eager` | Decision: no se va a soportar (AngularJS no tiene CD por componente). Sacado de la ventana de typeahead. | Ventana de typeahead. |
 | `ControlValueAccessor` y `NG_VALUE_ACCESSOR` | No estan exportados por el core. | Rating y typeahead. |
 | Providers de directiva compatibles con `NG_VALUE_ACCESSOR` | Falta el token y el flujo completo de forms. | Rating y typeahead. |
+| `hostDirectives: [...]` (componer directiva sobre el host) | **Soportado** — `host-directives-bridge.ts` (ver abajo). Sin reenvío de `inputs`/`outputs` largos. | accordion. |
+| `@Input` de `@Directive` aplicado antes de resolver `@ContentChild`/`@ViewChild` estáticos | Timing: `ngjs-core` asigna el `<` en el link (pre-hijos); Angular en el CD del host (post-queries). Ver abajo. | **accordion** (`NgbAccordionItem.set collapsed`). |
 
 ## Diferencias soportadas
 
@@ -39,6 +41,13 @@ propiedad (ademas de `isFirstChange()`, que se mantiene); `EventEmitter`
 default a `any` como Angular real (antes `void`); `InjectionToken` acepta
 `providedIn: 'root'` (informativo — un `factory` ya se comporta como root
 singleton exista o no la opcion, via `RootSingletonRegistry`).
+
+### `ngAfterContentChecked` / `ngAfterViewChecked` (2026-09-07, RESUELTO)
+
+`ngjs-core` ahora reenvía los dos a `$doCheck` (una vez por digest, como
+`ngDoCheck`), en el orden de Angular: `ngDoCheck` → `ngAfterContentChecked` →
+`ngAfterViewChecked`, encadenados (no pisan un `$doCheck` del autor). Lo usa
+`NgbAccordionBody` para insertar/quitar el `<ng-template>` del DOM en cada ciclo.
 
 ### `afterEveryRender`/`afterNextRender` con fases y `{ injector }`
 
@@ -166,16 +175,85 @@ Fix en el core: rutear la resolución de `TemplateRef` para directivas sobre
 `<ng-template>` por `require: 'ngTemplate'` y registrar ese `TemplateRef` como
 candidato de query en el nodo del `<ng-template>`.
 
-### `@Input` no soporta valor literal de atributo (2026-09-07)
+### `@Input` valor literal de atributo → `@Input({ binding: "@" })` (2026-09-07, RESUELTO)
 
-Angular: `<btn ngbTooltip="texto">` pasa el string `"texto"` al `@Input()`;
-`<btn [ngbTooltip]="expr">` evalúa `expr`. `ngjs-core` traduce `@Input()` a un
-binding `<?` (one-way de expresión) — `ngb-tooltip="texto"` evalúa `scope.texto`
-(→ `undefined`). Solo `ngb-tooltip="'texto'"` (comilla) o `[ngb-tooltip]` andan.
+Angular: `<btn placement="top left">` pasa el string `"top left"` al `@Input()`;
+`<btn [placement]="expr">` evalúa `expr`. `ngjs-core` traducía `@Input()` SIEMPRE
+a un binding `<?` (one-way de expresión), así que `placement="top left"` se
+evaluaba como expresión y `$parse` tiraba con espacios/puntuación.
 
-Falla `tooltip > supports literal attribute values without expression bindings`.
-Fix en el core: `@Input` que acepte literal + expresión (¿`<?` + `@?` combinados,
-o un binding que detecte comillas?). Por ahora las specs usan `"'texto'"`.
+**Resuelto en el core** con una opción explícita (sin heurística de comillas ni
+de "parece expresión"): `@Input({ binding: "@" })` registra `@?` de AngularJS —
+string literal / interpolación (`attr="texto"`, `attr="{{ x }}"`), igual que
+`@Input()` de Angular usado como `attr="valor"`. `@Input()` a secas sigue `<?`.
+
+Residual (por diseño, no es gap): un input de tipo dual `string | TemplateRef`
+(`ngbTooltip`, `ngbPopover`, `positionTarget`) se deja en `<` y el string se
+pasa entrecomillado — necesita las dos formas y `@` solo daría el string.
+`ngb-js`: tooltip marca `placement`/`triggers`/`container`/`tooltipClass` como
+`binding: "@"`.
+
+### `hostDirectives` → soportado (2026-09-07, RESUELTO)
+
+ng-bootstrap v20 `accordion` usa `hostDirectives` en dos lados:
+
+- `NgbAccordionCollapse` → `hostDirectives: [NgbCollapse]` + `ngbCollapse = inject(NgbCollapse)`.
+- `NgbAccordionButton` → `hostDirectives: [NgbAccordionToggle]` (el `<button>`
+  hereda el click-handler y los ARIA del toggle sin escribirlos en el markup).
+
+**Resuelto en el core**: `runtime/bridges/host-directives-bridge.ts` — decorador
+de `$controller` (el más externo). Antes de construir el host, por cada entrada
+de `def.hostDirectives`:
+
+1. instancia esa directiva sobre el mismo `$element` pasando por TODA la cadena de
+   bridges (`inject()`, `@HostBinding`, `@HostListener`, `lifecycle`, queries);
+2. la publica en `$element.data("$<sel>Controller")` → `inject()` la encuentra
+   (mismo camino que el fallback estilo `require`);
+3. le corre `$onInit` / `$postLink` (diferido) / `$onDestroy` a mano (AngularJS no
+   conoce la instancia). `@HostBinding`/`@HostListener` ya quedaron cableados en el
+   paso 1 (esos bridges trabajan en `onInstance`).
+
+Limitaciones: no reenvía `inputs`/`outputs` de la forma larga
+`{ directive, inputs, outputs }`; no soporta `hostDirectives` en `@Component` de
+elemento (sí de atributo y `@Directive`).
+
+### `@Input` de `@Directive` que lee un `@ContentChild`/`@ViewChild` estático en su setter (2026-09-07)
+
+Angular aplica los `@Input` de una directiva durante la **detección de cambios**
+del host — después de crear la vista/el contenido y resolver las queries
+`{ static: true }`. `ngjs-core` (AngularJS) los asigna **sincrónicamente en el
+link**, ANTES de linkear los hijos → un `@Input set` que lee un `@ContentChild`/
+`@ViewChild` estático lo ve `undefined`.
+
+Rompe `NgbAccordionItem`: `@Input() set collapsed` llama `expand()`/`collapse()`,
+que tocan `this._collapse.ngbCollapse` (`@ContentChild(NgbAccordionCollapse,
+{ static: true })`). Con `[collapsed]="false"` inicial → `expand()` en el link →
+`_collapse` es `undefined` → `TypeError`.
+
+`ngAfterContentInit` del item YA re-sincroniza `ngbCollapse.collapsed = this.collapsed`,
+así que el estado final igual queda bien — el problema es solo el `TypeError` del
+setter inicial. Fix en el core: aplicar el valor inicial de los `<`/`=` de una
+`@Directive` en el primer `$digest` (post-link), no en `initializeDirectiveBindings`.
+
+**Estado accordion:** migrado 1:1 a v20 (7 clases, un archivo por directiva,
+`@Directive`/`@Component`, `inject()`, `@HostBinding`/`@HostListener`,
+`@ContentChild(ren)`, ciclo de vida Angular). `hostDirectives` ✅. Falla 2/2 por
+este gap de timing de `@Input` + revisar el `ViewContainerRef` del `NgbAccordionBody`.
+
+### `@HostListener` con pseudo-eventos de tecla → soportado (2026-09-07, RESUELTO)
+
+ng-bootstrap usa `host: { '(keydown.ArrowUp)': '...', '(keydown.Shift.Tab)': '...' }`
+(dropdown menu/toggle, nav, …). `ngjs-core` no tiene la sintaxis de objeto `host`
+(se adapta a `@HostListener`), y `@HostListener` traducía el nombre tal cual a
+`addEventListener("keydown.arrowup")` → nunca dispara.
+
+**Resuelto en el core**: `@HostListener("keydown.arrowdown")` /
+`@HostListener("keydown.shift.tab")` ahora se parsean con el mismo álgebra que el
+`KeyEventsPlugin` de Angular — `<evento>.<modificador...>.<tecla>`, modificadores
+(`alt`/`control`/`meta`/`shift`) en cualquier orden, `tecla` contra
+`KeyboardEvent.key` en minúsculas (`" "`→`space`, `"."`→`dot`). Ver
+`core/metadata/host-listener-key.ts` + `runtime/bridges/host-listener-bridge.ts`.
+Se pueden apilar varios `@HostListener` sobre el mismo método.
 
 ### Token `DOCUMENT` no es `providedIn: 'root'`
 

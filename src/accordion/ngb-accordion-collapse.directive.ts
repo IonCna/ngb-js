@@ -1,35 +1,36 @@
-import template from "@ngb/accordion/ngb-accordion-collapse.directive.html";
-import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
+import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
-import type { IController, IDirective } from "angular";
-import { ViewChild } from "ngjs-core";
+import { Directive, HostBinding, inject } from "ngjs-core";
 
-export class NgbAccordionCollapse implements IController {
-  item!: NgbAccordionItem;
+/**
+ * Envuelve el contenido colapsable del item del acordeón.
+ *
+ * Internamente reutiliza la [directiva `NgbCollapse`](#/components/collapse).
+ *
+ * @since 14.1.0
+ */
+@Directive({
+  exportAs: "ngbAccordionCollapse",
+  selector: "[ngbAccordionCollapse]",
+  hostDirectives: [NgbCollapse],
+})
+export class NgbAccordionCollapse {
+  item = inject(NgbAccordionItem);
+  ngbCollapse = inject(NgbCollapse);
 
-  @ViewChild(NgbCollapse, { static: true })
-  ngbCollapse!: NgbCollapse;
+  @HostBinding("attr.role")
+  readonly _role = "region";
 
-  static get $name() {
-    return "ngbAccordionCollapse";
+  @HostBinding("class.accordion-collapse")
+  readonly _hostClass = true;
+
+  @HostBinding("id")
+  get _id(): string {
+    return this.item.collapseId;
   }
 
-  static get $inject() {
-    return [];
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      scope: true,
-      require: {
-        item: "^ngbAccordionItem",
-      },
-      restrict: "A",
-      transclude: true,
-      controllerAs: "$",
-      template,
-      controller: NgbAccordionCollapse,
-    });
+  @HostBinding("attr.aria-labelledby")
+  get _ariaLabelledby(): string {
+    return this.item.toggleId;
   }
 }

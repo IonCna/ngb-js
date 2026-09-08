@@ -1,69 +1,47 @@
-import type { NgbAccordion } from "@ngb/accordion/ngb-accordion.directive";
-import type { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
-import type { IAugmentedJQuery, IController, IDirective, IScope } from "angular";
+import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
+import { NgbAccordionDirective } from "@ngb/accordion/ngb-accordion.directive";
+import { Directive, HostBinding, HostListener, inject } from "ngjs-core";
 
-export class NgbAccordionToggle implements IController {
-  private readonly item!: NgbAccordionItem;
-  private readonly accordion!: NgbAccordion;
-  private clickHandler?: () => void;
-  private stateWatcher?: () => void;
+/**
+ * Directiva para poner en un elemento toggle dentro del header del item del
+ * acordeón: registra el handler de click que alterna el panel y maneja los
+ * atributos de accesibilidad.
+ *
+ * La usa internamente la [directiva `NgbAccordionButton`](#/components/accordion/api#NgbAccordionButton).
+ *
+ * @since 14.1.0
+ */
+@Directive({
+  selector: "[ngbAccordionToggle]",
+})
+export class NgbAccordionToggle {
+  item = inject(NgbAccordionItem);
+  accordion = inject(NgbAccordionDirective);
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $scope: IScope,
-  ) {}
-
-  $postLink(): void {
-    this.$element.attr("id", this.item.toggleId);
-    this.$element.attr("aria-controls", this.item.collapseId);
-
-    const watchers = [() => this.item.collapsed, () => this.item.collapseId, () => this.item.isDisabled()];
-
-    this.stateWatcher = this.$scope.$watchGroup(watchers, (value) => {
-      const [collapsed, collapseId] = value;
-
-      this.$element.toggleClass("collapsed", !!collapsed);
-      this.$element.attr("aria-controls", `${collapseId}`);
-      this.$element.attr("aria-expanded", `${!collapsed}`);
-    });
-
-    this.clickHandler = () => {
-      this.$scope.$evalAsync(() => {
-        if (this.item.isDisabled()) return;
-        this.accordion.toggle(this.item.id);
-      });
-    };
-
-    this.$element.on("click", this.clickHandler);
+  @HostBinding("id")
+  get _id(): string {
+    return this.item.toggleId;
   }
 
-  $onDestroy(): void {
-    if (this.clickHandler) {
-      this.$element.off("click", this.clickHandler);
+  @HostBinding("class.collapsed")
+  get _collapsed(): boolean {
+    return this.item.collapsed;
+  }
+
+  @HostBinding("attr.aria-controls")
+  get _ariaControls(): string {
+    return this.item.collapseId;
+  }
+
+  @HostBinding("attr.aria-expanded")
+  get _ariaExpanded(): string {
+    return `${!this.item.collapsed}`;
+  }
+
+  @HostListener("click")
+  _onClick(): void {
+    if (!this.item.disabled) {
+      this.accordion.toggle(this.item.id);
     }
-
-    this.stateWatcher?.();
-  }
-
-  static get $name() {
-    return "ngbAccordionToggle";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: true,
-      controller: NgbAccordionToggle,
-      controllerAs: "$",
-      require: {
-        item: "^^ngbAccordionItem",
-        accordion: "^^ngbAccordion",
-      },
-      scope: true,
-      restrict: "A",
-    });
-  }
-
-  static get $inject() {
-    return ["$element", "$scope"];
   }
 }
