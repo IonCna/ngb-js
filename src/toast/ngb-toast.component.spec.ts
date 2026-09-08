@@ -1,24 +1,25 @@
 import type { ICompileService, IRootScopeService } from "angular";
-import angular from "angular";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NgbModule } from "../ngb.module";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 
 describe("ngbToast", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
-  beforeEach(() => {
-    angular.mock.module(NgbModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
+
+  afterEach(() => tb.destroy());
 
   it("sets bootstrap toast semantics on host element", () => {
     const scope = $rootScope.$new();
     const element = $compile(`<ngb-toast>Toast message</ngb-toast>`)(scope);
-    scope.$digest();
+    tb.detectChanges();
 
     expect(element.attr("role")).toBe("alert");
     expect(element.attr("aria-atomic")).toBe("true");
