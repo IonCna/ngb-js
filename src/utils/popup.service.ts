@@ -1,99 +1,77 @@
-import type { IPromise, IQService, ITimeoutService } from "angular";
-import angular from "angular";
 import {
+  afterNextRender,
   ApplicationRef,
   type ComponentRef,
-  type NgZone,
+  DOCUMENT,
+  inject,
+  Injector,
+  NgZone,
   TemplateRef,
-  type ViewContainerRef,
+  type Type,
+  ViewContainerRef,
   type ViewRef,
 } from "ngjs-core";
-import { mergeMap, type Observable, of, Subject, tap } from "rxjs";
-import { type NgbTransitionStartFn, ngbRunTransition } from ".";
+import { type Observable, of, Subject } from "rxjs";
+import { mergeMap, tap } from "rxjs/operators";
+import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
 
-export class ContentRef<T = any> {
+export class ContentRef {
   constructor(
     public nodes: Node[][],
     public viewRef?: ViewRef,
-    public componentRef?: ComponentRef<T>,
+    public componentRef?: ComponentRef<any>,
   ) {}
 }
-
-const popupTransition: NgbTransitionStartFn = (element) => {
-  element.removeClass("show");
-};
 
 export class PopupService<T> {
   private _windowRef: ComponentRef<T> | null = null;
   private _contentRef: ContentRef | null = null;
-  private readonly _applicationRef: ApplicationRef;
-  private readonly $q: IQService;
-  private readonly $timeout: ITimeoutService;
 
-  constructor(
-    private _componentType: string,
-    private _injector: angular.auto.IInjectorService,
-    private _viewContainerRef: ViewContainerRef,
-    private _ngZone: NgZone,
-  ) {
-    this._applicationRef = this._injector.get<ApplicationRef>(ApplicationRef.$name);
-    this.$q = this._injector.get<IQService>("$q");
-    this.$timeout = this._injector.get<ITimeoutService>("$timeout");
-  }
+  private _document = inject(DOCUMENT);
+  private _applicationRef = inject(ApplicationRef);
+  private _injector = inject(Injector);
+  private _viewContainerRef = inject(ViewContainerRef);
+  private _ngZone = inject(NgZone);
 
-  open(
+  constructor(private _componentType: Type<T>) {}
+
+  async open(
     content?: string | TemplateRef<any>,
-    context?: any,
+    templateContext?: any,
     animation = false,
-  ): IPromise<{ windowRef: ComponentRef<T>; transition$: Observable<void> }> {
-    if (this._windowRef) return this.$q.resolve(this._createOpenResult(this._windowRef, animation));
-
-    this._contentRef = this._getContentRef(content, context);
-    return this._viewContainerRef
-      .createComponent<T>(this._componentType, {
+  ): Promise<{ windowRef: ComponentRef<T>; transition$: Observable<void> }> {
+    if (!this._windowRef) {
+      this._contentRef = this._getContentRef(content, templateContext);
+      this._windowRef = await this._viewContainerRef.createComponent<T>(this._componentType, {
         injector: this._injector,
         projectableNodes: this._contentRef.nodes,
-      })
-      .then((windowRef) => {
-        this._windowRef = windowRef;
-        return this._createOpenResult(windowRef, animation);
       });
-  }
+    }
 
-  private _createOpenResult(windowRef: ComponentRef<T>, animation: boolean) {
-    const nativeElement = windowRef.location.nativeElement;
-    const $element = angular.element(nativeElement);
+    const { nativeElement } = this._windowRef.location;
 
     const nextRenderSubject = new Subject<void>();
-
-    this._ngZone.runOutsideAngular(() => {
-      this.$timeout(
-        () => {
+    afterNextRender(
+      {
+        mixedReadWrite: () => {
           nextRenderSubject.next();
           nextRenderSubject.complete();
         },
-        0,
-        false,
-      );
-    });
-
+      },
+      {
+        injector: this._injector,
+      },
+    );
     const transition$ = nextRenderSubject.pipe(
       mergeMap(() =>
-        ngbRunTransition(
-          this._ngZone,
-          $element,
-          (element) => {
-            element.addClass("show");
-          },
-          {
-            animation,
-            runningTransition: "continue",
-          },
-        ),
+        ngbRunTransition(this._ngZone, nativeElement, ({ classList }) => classList.add("show"), {
+          animation,
+          runningTransition: "continue",
+        }),
       ),
     );
 
-    return { windowRef, transition$ };
+    return { windowRef: this._windowRef, transition$ };
   }
 
   close(animation = false): Observable<void> {
@@ -101,28 +79,30 @@ export class PopupService<T> {
       return of(undefined);
     }
 
-    return ngbRunTransition(this._ngZone, angular.element(this._windowRef.location.nativeElement), popupTransition, {
-      animation,
-      runningTransition: "stop",
-    }).pipe(
+    return ngbRunTransition(
+      this._ngZone,
+      this._windowRef.location.nativeElement,
+      ({ classList }) => classList.remove("show"),
+      { animation, runningTransition: "stop" },
+    ).pipe(
       tap(() => {
         this._windowRef?.destroy();
         this._contentRef?.viewRef?.destroy();
-        this._contentRef = null;
         this._windowRef = null;
+        this._contentRef = null;
       }),
     );
   }
 
-  private _getContentRef(content?: string | TemplateRef<any>, context?: any): ContentRef {
-    if (!content) return new ContentRef([]);
-
-    if (content instanceof TemplateRef) {
-      const viewRef = content.createEmbeddedView(context ?? {});
+  private _getContentRef(content?: string | TemplateRef<any>, templateContext?: any): ContentRef {
+    if (!content) {
+      return new ContentRef([]);
+    } else if (content instanceof TemplateRef) {
+      const viewRef = content.createEmbeddedView(templateContext);
       this._applicationRef.attachView(viewRef);
       return new ContentRef([viewRef.rootNodes], viewRef);
+    } else {
+      return new ContentRef([[this._document.createTextNode(`${content}`)]]);
     }
-
-    return new ContentRef([[document.createTextNode(`${content}`)]]);
   }
 }

@@ -1,8 +1,8 @@
 import { reflow, type NgbTransitionStartFn } from "@ngb/utils";
 
 export const ngbNavFadeOutTransition: NgbTransitionStartFn = (element) => {
-  element.removeClass("show");
-  return () => element.removeClass("active");
+  element.classList.remove("show");
+  return () => element.classList.remove("active");
 };
 
 export const ngbNavFadeInTransition: NgbTransitionStartFn = (element, animation) => {
@@ -10,5 +10,5 @@ export const ngbNavFadeInTransition: NgbTransitionStartFn = (element, animation)
     reflow(element);
   }
 
-  element.addClass("show");
+  element.classList.add("show");
 };

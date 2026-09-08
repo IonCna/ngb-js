@@ -1,6 +1,10 @@
 import type { NgbScrollSpyFragment } from "@ngb/scrollspy/ngb-scrollspy-fragment.directive";
-import { NgbScrollSpyService, type NgbScrollSpyProcessChanges, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
-import { Directive, ElementRef, HostBinding, inject, Input, type AfterViewInit, type OnDestroy, Output } from "ngjs-core";
+import {
+  type NgbScrollSpyProcessChanges,
+  NgbScrollSpyService,
+  type NgbScrollToOptions,
+} from "@ngb/scrollspy/scrollspy.service";
+import { type AfterViewInit, Directive, ElementRef, HostBinding, Input, inject, Output } from "ngjs-core";
 import type { Observable } from "rxjs";
 import type { NgbScrollSpyRef } from "./ngb-scrollspy-item.directive";
 
@@ -9,7 +13,7 @@ import type { NgbScrollSpyRef } from "./ngb-scrollspy-item.directive";
   exportAs: "ngbScrollSpy",
   providers: [NgbScrollSpyService],
 })
-export class NgbScrollSpy implements NgbScrollSpyRef, AfterViewInit, OnDestroy {
+export class NgbScrollSpy implements NgbScrollSpyRef, AfterViewInit {
   static ngAcceptInputType_scrollBehavior: string;
 
   private _initialFragment: string | null = null;
@@ -51,10 +55,6 @@ export class NgbScrollSpy implements NgbScrollSpyRef, AfterViewInit, OnDestroy {
       threshold: this.threshold,
       ...(this._initialFragment && { initialFragment: this._initialFragment }),
     });
-  }
-
-  ngOnDestroy(): void {
-    this._service.ngOnDestroy();
   }
 
   /**

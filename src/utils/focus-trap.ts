@@ -1,5 +1,6 @@
 import type { NgZone } from "ngjs-core";
-import { filter, fromEvent, map, takeUntil, type Observable, withLatestFrom } from "rxjs";
+import { fromEvent, type Observable } from "rxjs";
+import { filter, map, takeUntil, withLatestFrom } from "rxjs/operators";
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = [
   "a[href]",
@@ -15,17 +16,16 @@ export function getFocusableBoundaryElements(element: HTMLElement): HTMLElement[
   const list: HTMLElement[] = Array.from(
     element.querySelectorAll(FOCUSABLE_ELEMENTS_SELECTOR) as NodeListOf<HTMLElement>,
   ).filter((el) => el.tabIndex !== -1);
-
   return [list[0], list[list.length - 1]];
 }
 
 export const ngbFocusTrap = (
-  ngZone: NgZone,
+  zone: NgZone,
   element: HTMLElement,
-  stopFocusTrap$: Observable<unknown>,
+  stopFocusTrap$: Observable<any>,
   refocusOnClick = false,
 ) => {
-  ngZone.runOutsideAngular(() => {
+  zone.runOutsideAngular(() => {
     const lastFocusedElement$ = fromEvent<FocusEvent>(element, "focusin").pipe(
       takeUntil(stopFocusTrap$),
       map((event) => event.target),
@@ -56,7 +56,7 @@ export const ngbFocusTrap = (
         .pipe(
           takeUntil(stopFocusTrap$),
           withLatestFrom(lastFocusedElement$),
-          map((arr) => arr[1] as HTMLElement),
+          map((array) => array[1] as HTMLElement),
         )
         .subscribe((lastFocusedElement) => lastFocusedElement.focus());
     }

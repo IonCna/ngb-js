@@ -1,19 +1,6 @@
-import type { IDirective } from "angular";
+import { Directive, inject, TemplateRef } from "ngjs-core";
 
+@Directive({ selector: "ng-template[ngbNavContent]" })
 export class NgbNavContent {
-  //#region $angular
-
-  static get $name() {
-    return "ngbNavContent";
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      controller: NgbNavContent,
-      bindToController: true,
-      restrict: "A",
-    });
-  }
-
-  //#endregion
+  templateRef = inject(TemplateRef);
 }

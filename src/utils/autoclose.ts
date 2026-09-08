@@ -1,90 +1,79 @@
-import { closest } from "@ngb/utils";
-import angular from "angular";
+import { closest } from "@ngb/utils/util";
 import type { NgZone } from "ngjs-core";
-import { delay, filter, fromEvent, map, type Observable, race, takeUntil, tap, withLatestFrom } from "rxjs";
+import { fromEvent, type Observable, race } from "rxjs";
+import { delay, filter, map, takeUntil, tap, withLatestFrom } from "rxjs/operators";
 
-export enum SOURCE {
-  ESCAPE,
-  CLICK,
-}
-
-type ContainmentElement = HTMLElement | null | undefined;
-
-const isContainedIn = (element: HTMLElement, array?: ContainmentElement[]) =>
-  array ? array.some((item) => item?.contains(element) ?? false) : false;
+const isContainedIn = (element: HTMLElement, array?: HTMLElement[]) =>
+  array ? array.some((item) => item.contains(element)) : false;
 
 const matchesSelectorIfAny = (element: HTMLElement, selector?: string) =>
-  !selector || closest(angular.element(element), selector) != null;
+  !selector || closest(element, selector) != null;
 
 const isMobile = (() => {
-  const isIOS = () => {
-    const isIOSMobile = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const hasTouch = navigator.maxTouchPoints != null && navigator.maxTouchPoints > 2;
-    const isMacintosh = /Macintosh/.test(navigator.userAgent);
-
-    return isIOSMobile || (isMacintosh && hasTouch);
-  };
-
+  const isIOS = () =>
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
   const isAndroid = () => /Android/.test(navigator.userAgent);
 
   return typeof navigator !== "undefined" ? !!navigator.userAgent && (isIOS() || isAndroid()) : false;
 })();
 
-const wrapAsyncForMobile = (fn: () => void): (() => void) => {
-  if (isMobile) return () => setTimeout(fn, 100);
-  return fn;
-};
+const wrapAsyncForMobile = (fn: () => void) => (isMobile ? () => setTimeout(() => fn(), 100) : fn);
+
+export const enum SOURCE {
+  ESCAPE,
+  CLICK,
+}
 
 export function ngbAutoClose(
-  ngZone: NgZone,
+  zone: NgZone,
+  document: any,
   type: boolean | "inside" | "outside",
-  closed$: Observable<unknown>,
   close: (source: SOURCE) => void,
-  insideElements: ContainmentElement[],
-  ignoreElements?: ContainmentElement[],
+  closed$: Observable<any>,
+  insideElements: HTMLElement[],
+  ignoreElements?: HTMLElement[],
   insideSelector?: string,
 ) {
-  if (!type) return;
+  if (type) {
+    zone.runOutsideAngular(
+      wrapAsyncForMobile(() => {
+        const shouldCloseOnClick = (event: MouseEvent) => {
+          const element = event.target as HTMLElement;
+          if (event.button === 2 || isContainedIn(element, ignoreElements)) {
+            return false;
+          }
+          if (type === "inside") {
+            return isContainedIn(element, insideElements) && matchesSelectorIfAny(element, insideSelector);
+          } else if (type === "outside") {
+            return !isContainedIn(element, insideElements);
+          } else {
+            return matchesSelectorIfAny(element, insideSelector) || !isContainedIn(element, insideElements);
+          }
+        };
 
-  ngZone.runOutsideAngular(
-    wrapAsyncForMobile(() => {
-      const shouldCloseOnClick = (event: MouseEvent) => {
-        const target = event.target as HTMLElement | null;
-        if (!target) return false;
+        const escapes$ = fromEvent<KeyboardEvent>(document, "keydown").pipe(
+          takeUntil(closed$),
+          filter((event) => event.key === "Escape"),
+          tap((event) => event.preventDefault()),
+        );
 
-        if (event.button === 2 || isContainedIn(target, ignoreElements)) {
-          return false;
-        }
+        const mouseDowns$ = fromEvent<MouseEvent>(document, "mousedown").pipe(
+          map(shouldCloseOnClick),
+          takeUntil(closed$),
+        );
 
-        if (type === "inside") {
-          return isContainedIn(target, insideElements) && matchesSelectorIfAny(target, insideSelector);
-        }
+        const closeableClicks$ = fromEvent<MouseEvent>(document, "mouseup").pipe(
+          withLatestFrom(mouseDowns$),
+          filter(([, shouldClose]) => shouldClose),
+          delay(0),
+          takeUntil(closed$),
+        ) as unknown as Observable<MouseEvent>;
 
-        if (type === "outside") {
-          return !isContainedIn(target, insideElements);
-        }
-
-        return matchesSelectorIfAny(target, insideSelector) || !isContainedIn(target, insideElements);
-      };
-
-      const escapes$ = fromEvent<KeyboardEvent>(document, "keydown").pipe(
-        takeUntil(closed$),
-        filter((event) => event.key === "Escape"),
-        tap((event) => event.preventDefault()),
-      );
-
-      const mouseDowns$ = fromEvent<MouseEvent>(document, "mousedown").pipe(map(shouldCloseOnClick), takeUntil(closed$));
-
-      const closeableClicks$ = fromEvent<MouseEvent>(document, "mouseup").pipe(
-        withLatestFrom(mouseDowns$),
-        filter(([, shouldClose]) => shouldClose),
-        delay(0),
-        takeUntil(closed$),
-      );
-
-      race(escapes$.pipe(map(() => SOURCE.ESCAPE)), closeableClicks$.pipe(map(() => SOURCE.CLICK)))
-        .pipe(takeUntil(closed$))
-        .subscribe((source) => ngZone.run(() => close(source)));
-    }),
-  );
+        race([escapes$.pipe(map(() => SOURCE.ESCAPE)), closeableClicks$.pipe(map(() => SOURCE.CLICK))]).subscribe(
+          (source: SOURCE) => zone.run(() => close(source)),
+        );
+      }),
+    );
+  }
 }

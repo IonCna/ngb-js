@@ -1,5 +1,7 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
+import { inject, Injectable } from "ngjs-core";
 
+// biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
 export interface NgbNavChangeEvent<T = any> {
   nextId: T;
   preventDefault: () => void;
@@ -10,29 +12,21 @@ export interface NgbNavContentContext {
   $implicit: boolean;
 }
 
+@Injectable({ providedIn: "root" })
 export class NgbNavConfig {
+  private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;
 
-  public destroyOnHide = true;
-  public orientation: "vertical" | "horizontal" = "horizontal";
-  public roles: "tablist" | false = "tablist";
-  public keyboard: boolean | "changeWithArrows" = true;
+  destroyOnHide = true;
+  orientation: "horizontal" | "vertical" = "horizontal";
+  roles: "tablist" | false = "tablist";
+  keyboard: boolean | "changeWithArrows" = true;
 
-  constructor(private ngbConfig: NgbConfig) {}
-
-  public get animation() {
-    return this._animation ?? this.ngbConfig.animation;
+  get animation(): boolean {
+    return this._animation ?? this._ngbConfig.animation;
   }
 
-  public set animation(value: boolean) {
-    this._animation = value;
-  }
-
-  static get $inject() {
-    return [NgbConfig.$name];
-  }
-
-  static get $name() {
-    return "ngb.nav.config.service";
+  set animation(animation: boolean) {
+    this._animation = animation;
   }
 }

@@ -1,4 +1,5 @@
-import { reflow } from "@ngb/utils";
+import { reflow } from "@ngb/utils/util";
+import type { NgbTransitionStartFn } from "@ngb/utils/transition/ngb-transition";
 
 type Dimension = "width" | "height";
 
@@ -29,13 +30,18 @@ function measureCollapsingElementDimensionPx(element: HTMLElement, dimension: Di
   return dimensionSize;
 }
 
-export function ngbCollapsingTransition(element: HTMLElement, animation: boolean, context: NgbCollapseCtx) {
-  const { classList, style } = element;
+export const ngbCollapsingTransition: NgbTransitionStartFn<NgbCollapseCtx> = (
+  element: HTMLElement,
+  animation: boolean,
+  context: NgbCollapseCtx,
+) => {
+  let { direction, maxSize, dimension } = context;
+  const { classList } = element;
 
   const setInitialClasses = () => {
     classList.add("collapse");
 
-    if (context.direction === "show") {
+    if (direction === "show") {
       classList.add("show");
       return;
     }
@@ -49,9 +55,10 @@ export function ngbCollapsingTransition(element: HTMLElement, animation: boolean
   }
 
   if (!context.maxSize) {
-    context.maxSize = measureCollapsingElementDimensionPx(element, context.dimension);
+    maxSize = measureCollapsingElementDimensionPx(element, dimension);
+    context.maxSize = maxSize;
 
-    style[context.dimension] = context.direction !== "show" ? context.maxSize : "0px";
+    element.style[dimension] = direction !== "show" ? maxSize : "0px";
 
     classList.remove("collapse", "collapsing", "show");
     reflow(element);
@@ -59,13 +66,11 @@ export function ngbCollapsingTransition(element: HTMLElement, animation: boolean
     classList.add("collapsing");
   }
 
-  if (!context.maxSize) throw new Error("[ngb-transition]: context.maxSize was undefined");
-
-  style[context.dimension] = context.direction === "show" ? context.maxSize : "0px";
+  element.style[dimension] = direction === "show" ? maxSize! : "0px";
 
   return () => {
     setInitialClasses();
     classList.remove("collapsing");
-    style[context.dimension] = "";
+    element.style[dimension] = "";
   };
-}
+};

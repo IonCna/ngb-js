@@ -1,40 +1,16 @@
-import type { NgbNav } from "@ngb/nav/ngb-nav.directive";
-import { assertAttribute } from "@ngb/utils";
-import type { IAttributes, IAugmentedJQuery, IController, IDirective } from "angular";
+import { NgbNav } from "@ngb/nav/ngb-nav.directive";
+import { Attribute, Directive, HostBinding, inject } from "ngjs-core";
 
-export class NgbNavItemRole implements IController {
-  public nav!: NgbNav;
-  constructor(
-    private $attributes: IAttributes,
-    private $element: IAugmentedJQuery,
-  ) {}
+@Directive({
+  selector: "[ngbNavItem]:not(ng-container)",
+})
+export class NgbNavItemRole {
+  nav = inject(NgbNav);
 
-  $onInit(): void {
-    this.$attributes.$observe("role", (role?: string) => {
-      assertAttribute(this.$element, "role", role, this.nav.roles ? "presentation" : undefined);
-    });
+  constructor(@Attribute("role") public role: string) {}
+
+  @HostBinding("attr.role")
+  get _role(): string | undefined {
+    return this.role || (this.nav.roles ? "presentation" : undefined);
   }
-
-  //#region $angular
-
-  static get $name() {
-    return "ngbNavItemRole";
-  }
-
-  static get $inject() {
-    return ["$attrs", "$element"];
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      controller: NgbNavItemRole,
-      bindToController: true,
-      require: {
-        nav: "^ngbNav",
-      },
-      restrict: "A",
-    });
-  }
-
-  //#endregion
 }

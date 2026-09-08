@@ -1,8 +1,18 @@
-import { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollspy-menu.directive";
 import { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
+import { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollspy-menu.directive";
 import { NgbScrollSpyService, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
-import { ChangeDetectorRef, Directive, HostBinding, HostListener, inject, Input, type OnDestroy, type OnInit } from "ngjs-core";
-import type { Observable, Subscription } from "rxjs";
+import {
+  ChangeDetectorRef,
+  DestroyRef,
+  Directive,
+  HostBinding,
+  HostListener,
+  Input,
+  inject,
+  type OnInit,
+  takeUntilDestroyed,
+} from "ngjs-core";
+import type { Observable } from "rxjs";
 
 export interface NgbScrollSpyRef {
   get active(): string;
@@ -16,11 +26,11 @@ type NgbScrollSpyItemData = NgbScrollSpy | string | [NgbScrollSpy, string, strin
   selector: "[ngbScrollSpyItem]",
   exportAs: "ngbScrollSpyItem",
 })
-export class NgbScrollSpyItem implements OnInit, OnDestroy {
+export class NgbScrollSpyItem implements OnInit {
   private _changeDetector = inject(ChangeDetectorRef);
   private _scrollSpyMenu = inject<NgbScrollSpyMenu>(NgbScrollSpyMenu, { optional: true });
   private _scrollSpyAPI: NgbScrollSpyRef = this._scrollSpyMenu ?? inject(NgbScrollSpyService);
-  private _activeSubscription?: Subscription;
+  private _destroyRef = inject(DestroyRef);
   private _isActive = false;
 
   @Input("ngbScrollSpyItem")
@@ -46,7 +56,7 @@ export class NgbScrollSpyItem implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this._scrollSpyMenu) {
-      this._activeSubscription = this._scrollSpyAPI.active$.subscribe((active: string) => {
+      this._scrollSpyAPI.active$.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((active: string) => {
         if (active === this.fragment) {
           this._activate();
         } else {
@@ -55,10 +65,6 @@ export class NgbScrollSpyItem implements OnInit, OnDestroy {
         this._changeDetector.markForCheck();
       });
     }
-  }
-
-  ngOnDestroy(): void {
-    this._activeSubscription?.unsubscribe();
   }
 
   /**

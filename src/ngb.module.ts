@@ -18,8 +18,6 @@ import { NgbTimepickerModule } from "@ngb/timepicker/ngb-timepicker.module";
 import { NgbToastModule } from "@ngb/toast/ngb-toast.module";
 import { NgbTooltipModule } from "@ngb/tooltip/ngb-tooltip.module";
 import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
-import { ARIA_LIVE_DELAY } from "@ngb/utils/accessibility/live.constant";
-import { LiveService } from "@ngb/utils/accessibility/live.service";
 import { NgbRTL } from "@ngb/utils/rtl.service";
 import { NgModule, registerNgModule } from "ngjs-core/runtime/core";
 
@@ -41,28 +39,24 @@ import { NgModule, registerNgModule } from "ngjs-core/runtime/core";
     NgbAccordionModule.name,
     NgbModalModule.name,
     NgbDropdownModule.name,
-    NgbTooltipModule.name,
-    NgbNavModule.name,
+    NgbTooltipModule,
+    NgbNavModule,
     NgbOffcanvasModule.name,
     NgbPopoverModule.name,
     NgbScrollSpyModule,
     NgbRatingModule,
     NgbTimepickerModule.name,
-    NgbTypeaheadModule.name,
+    NgbTypeaheadModule,
     NgbPaginationModule,
     NgbDatepickerModule.name,
   ],
   providers: [
     NgbConfig,
     NgbScrollbar,
-    LiveService,
     NgbRTL,
-    { provide: ARIA_LIVE_DELAY.$name, useValue: ARIA_LIVE_DELAY.$value },
   ],
 })
 class NgbRootModule {}
 
 /** El único `registerNgModule` — el borde público (`angular.module("app", [NgbModule.name])`). */
 export const NgbModule = registerNgModule(NgbRootModule);
-
-

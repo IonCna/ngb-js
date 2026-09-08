@@ -1,125 +1,122 @@
 import { type NgbNavChangeEvent, NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
 import { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
-import { assertAttribute, type INgbEvent, toNativeElement } from "@ngb/utils";
-import type { IAttributes, IAugmentedJQuery, IController, IDirective, IOnChangesObject, IScope } from "angular";
-import angular, { isDefined } from "angular";
-import { ContentChildren, type QueryList } from "ngjs-core";
-import { Subject, type Subscription } from "rxjs";
+import {
+  type AfterContentInit,
+  Attribute,
+  ChangeDetectorRef,
+  ContentChildren,
+  DestroyRef,
+  Directive,
+  DOCUMENT,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  HostListener,
+  inject,
+  Input,
+  type OnChanges,
+  Output,
+  type QueryList,
+  type SimpleChanges,
+  takeUntilDestroyed,
+} from "ngjs-core";
+import { Subject } from "rxjs";
 
-const isValidNavId = (id?: string | null): id is string => angular.isDefined(id) && id !== "";
+// biome-ignore lint/suspicious/noExplicitAny: los ids de nav aceptan cualquier tipo en ng-bootstrap
+const isValidNavId = (id: any): boolean => id !== undefined && id !== null && id !== "";
 
-export class NgbNav implements IController {
+@Directive({
+  selector: "[ngbNav]",
+  exportAs: "ngbNav",
+})
+export class NgbNav implements AfterContentInit, OnChanges {
   static readonly ngAcceptInputType_orientation: string;
   static readonly ngAcceptInputType_roles: boolean | string;
 
-  public _navigatingWithKeyboard = false;
+  private _config = inject(NgbNavConfig);
+  private _cd = inject(ChangeDetectorRef);
+  private _document = inject(DOCUMENT);
+  private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
-  public activeId!: string;
-  public activeIdChange?: (event: INgbEvent<string>) => void;
-  public animation!: boolean;
-  public destroyOnHide!: boolean;
-  public orientation!: "vertical" | "horizontal";
-  public roles!: false | "tablist";
-  public keyboard!: boolean | "changeWithArrows";
-  public shown?: (event: INgbEvent<unknown>) => void;
-  public hidden?: (event: INgbEvent<unknown>) => void;
+  readonly destroyRef = inject(DestroyRef);
+  _navigatingWithKeyboard = false;
 
-  public role?: string;
-
-  public navChange?: (event: INgbEvent<NgbNavChangeEvent>) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  @Input() activeId: any;
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  @Output() activeIdChange = new EventEmitter<any>();
+  @Input() animation = this._config.animation;
+  @Input() destroyOnHide = this._config.destroyOnHide;
+  @Input() orientation = this._config.orientation;
+  @Input() roles = this._config.roles;
+  @Input() keyboard = this._config.keyboard;
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  @Output() shown = new EventEmitter<any>();
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  @Output() hidden = new EventEmitter<any>();
+  @Output() navChange = new EventEmitter<NgbNavChangeEvent>();
 
   @ContentChildren(NgbNavItem)
-  public items!: QueryList<NgbNavItem>;
+  items!: QueryList<NgbNavItem>;
 
-  @ContentChildren(NgbNavLinkBase)
-  private links!: QueryList<NgbNavLinkBase>;
+  @ContentChildren(NgbNavLinkBase, { descendants: true })
+  links!: QueryList<NgbNavLinkBase>;
 
-  public navItemChange$ = new Subject<NgbNavItem | null>();
-  private itemsSubscription?: Subscription;
+  readonly navItemChange$ = new Subject<NgbNavItem | null>();
 
-  constructor(
-    private $element: IAugmentedJQuery,
-    private $attributes: IAttributes,
-    private $scope: IScope,
-    private config: NgbNavConfig,
-  ) {}
+  constructor(@Attribute("role") public role: string) {}
 
-  $onInit(): void {
-    this.animation ??= this.config.animation;
-    this.destroyOnHide ??= this.config.destroyOnHide;
-    this.keyboard ??= this.config.keyboard;
-    this.orientation ??= this.config.orientation;
-    this.roles ??= this.config.roles;
+  @HostBinding("class.nav")
+  readonly _navClass = true;
 
-    this._applyOrientationBindings();
+  @HostBinding("class.flex-column")
+  get _verticalClass(): boolean {
+    return this.orientation === "vertical";
   }
 
-  $postLink(): void {
-    this.$element.addClass("nav");
-
-    this.$element.on("keydown", this.onKeyDown.bind(this));
-    this.$element.on("focusout", this.onFocusout.bind(this));
-
-    const applyRole = (role?: string) => {
-      this.role = role;
-      assertAttribute(this.$element, "role", this.role ? this.role : this.roles ? "tablist" : undefined);
-    };
-    this.$attributes.$observe("role", applyRole);
-    applyRole(this.$attributes.role);
-
-    if (!isDefined(this.activeId)) {
-      const nextId = this.items.first?.id ?? null;
-
-      if (isValidNavId(nextId)) {
-        this.$scope.$applyAsync(() => this._updateActiveId(nextId, false));
-      }
-    }
-
-    this.itemsSubscription = this.items.changes.subscribe(() => this._notifyItemChanged(this.activeId));
+  @HostBinding("attr.aria-orientation")
+  get _ariaOrientation(): string | undefined {
+    return this.orientation === "vertical" && this.roles === "tablist" ? "vertical" : undefined;
   }
 
-  $onChanges(changes: IOnChangesObject): void {
-    this._applyOrientationBindings();
+  @HostBinding("attr.role")
+  get _role(): string | undefined {
+    return this.role || (this.roles ? "tablist" : undefined);
+  }
 
-    if (changes.activeId && !changes.activeId.isFirstChange()) {
-      this._notifyItemChanged(changes.activeId.currentValue);
+  click(item: NgbNavItem): void {
+    if (!item.disabled) {
+      this._updateActiveId(item.id);
     }
   }
 
-  private _applyOrientationBindings(): void {
-    this.$element.toggleClass("flex-column", this.orientation === "vertical");
-    assertAttribute(
-      this.$element,
-      "aria-orientation",
-      this.orientation === "vertical" && this.roles === "tablist" ? "vertical" : undefined,
-    );
+  @HostListener("focusout", ["$event"])
+  onFocusout({ relatedTarget }: FocusEvent): void {
+    if (!this._nativeElement.contains(relatedTarget as HTMLElement)) {
+      this._navigatingWithKeyboard = false;
+    }
   }
 
-  $onDestroy(): void {
-    this.itemsSubscription?.unsubscribe();
-    this.navItemChange$.complete();
-
-    this.$element.off("keydown");
-    this.$element.off("focusout");
-  }
-
-  public onKeyDown(event: JQueryEventObject) {
+  @HostListener("keydown", ["$event"])
+  onKeyDown(event: KeyboardEvent): void {
     if (this.roles !== "tablist" || !this.keyboard) {
       return;
     }
 
-    const enabledLinks = this.links.filter((link) => !link.ngbNavItem.isDisabled());
+    const enabledLinks = this.links.filter((link) => !link.navItem.disabled);
     const { length } = enabledLinks;
-
     let position = -1;
+
     enabledLinks.forEach((link, index) => {
-      if (link.nativeElement === document.activeElement) {
+      if (link.nativeElement === this._document.activeElement) {
         position = index;
       }
     });
 
-    if (!length) return;
+    if (!length) {
+      return;
+    }
 
     switch (event.key) {
       case "ArrowUp":
@@ -136,99 +133,79 @@ export class NgbNav implements IController {
       case "End":
         position = length - 1;
         break;
+      default:
+        return;
+    }
+
+    const link = enabledLinks[position];
+    if (!link) {
+      return;
     }
 
     if (this.keyboard === "changeWithArrows") {
-      this.select(enabledLinks[position].ngbNavItem.id);
+      this.select(link.navItem.id);
     }
 
-    enabledLinks[position].nativeElement.focus();
+    link.nativeElement.focus();
     this._navigatingWithKeyboard = true;
-
     event.preventDefault();
   }
 
-  public onFocusout({ relatedTarget }: JQueryEventObject) {
-    const native = toNativeElement(this.$element);
-
-    if (!native.contains(relatedTarget as HTMLElement)) {
-      this._navigatingWithKeyboard = false;
-    }
-  }
-
-  public click(item: NgbNavItem) {
-    if (!item.isDisabled()) {
-      this._updateActiveId(item.id);
-    }
-  }
-
-  public select(id: string) {
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  select(id: any): void {
     this._updateActiveId(id, false);
   }
 
-  private _updateActiveId(nextId: string, emitNavChange = true) {
-    if (this.activeId === nextId) return;
+  ngAfterContentInit(): void {
+    if (this.activeId === undefined || this.activeId === null) {
+      const nextId = this.items.first?.id ?? null;
+      if (isValidNavId(nextId)) {
+        this._updateActiveId(nextId, false);
+        this._cd.detectChanges();
+      }
+    }
 
-    let defaultPrevented = false;
+    this.items.changes
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this._notifyItemChanged(this.activeId));
+  }
 
-    if (emitNavChange) {
-      this.navChange?.({
-        $event: {
+  ngOnChanges({ activeId }: SimpleChanges): void {
+    if (activeId && !activeId.isFirstChange()) {
+      this._notifyItemChanged(activeId.currentValue);
+    }
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  private _updateActiveId(nextId: any, emitNavChange = true): void {
+    if (this.activeId !== nextId) {
+      let defaultPrevented = false;
+
+      if (emitNavChange) {
+        this.navChange.emit({
           activeId: this.activeId,
           nextId,
           preventDefault: () => {
             defaultPrevented = true;
           },
-        },
-      });
-    }
+        });
+      }
 
-    if (!defaultPrevented) {
-      this.activeId = nextId;
-      this.activeIdChange?.({ $event: nextId });
-      this._notifyItemChanged(nextId);
+      if (!defaultPrevented) {
+        this.activeId = nextId;
+        this.activeIdChange.emit(nextId);
+        this._notifyItemChanged(nextId);
+      }
     }
   }
 
-  private _notifyItemChanged(nextItemId: string) {
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  private _notifyItemChanged(nextItemId: any): void {
     this.navItemChange$.next(this._getItemById(nextItemId));
   }
 
-  private _getItemById(itemId: string): NgbNavItem | null {
-    return this.items?.find((item) => item.id === itemId) || null;
+  // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
+  private _getItemById(itemId: any): NgbNavItem | null {
+    return this.items.find((item) => item.id === itemId) ?? null;
   }
-
-  //#region $angular
-
-  static get $name() {
-    return "ngbNav";
-  }
-
-  static get $inject() {
-    return ["$element", "$attrs", "$scope", NgbNavConfig.$name];
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      restrict: "A",
-      scope: {
-        activeId: "=?",
-        animation: "<?",
-        destroyOnHide: "<?",
-        keyboard: "<?",
-        orientation: "<?",
-        roles: "<?",
-        activeIdChange: "&?",
-        hidden: "&?",
-        navChange: "&?",
-        shown: "&?",
-      },
-      bindToController: true,
-      controller: NgbNav,
-      transclude: true,
-      template: "<ng-content></ng-content>",
-    });
-  }
-
-  //#endregion
 }

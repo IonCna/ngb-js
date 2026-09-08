@@ -2,19 +2,20 @@ import template from "@ngb/rating/ngb-rating.component.html";
 import { NgbRatingConfig } from "@ngb/rating/ngb-rating-config.service";
 import { getValueInRange } from "@ngb/utils";
 import {
+  ChangeDetectorRef,
   Component,
   ContentChild,
   EventEmitter,
   HostBinding,
   HostListener,
-  inject,
   Input,
+  inject,
   type OnChanges,
   type OnInit,
   Output,
+  type SimpleChanges,
   TemplateRef,
   ViewChild,
-  type SimpleChanges,
 } from "ngjs-core";
 
 export interface StarTemplateContext {
@@ -32,6 +33,7 @@ export class NgbRating implements OnInit, OnChanges {
   nextRate!: number;
 
   private _config = inject(NgbRatingConfig);
+  private _changeDetectorRef = inject(ChangeDetectorRef);
 
   @Input() disabled = false;
   @Input() max = this._config.max;
@@ -191,6 +193,7 @@ export class NgbRating implements OnInit, OnChanges {
 
   writeValue(value: number): void {
     this.update(value, false);
+    this._changeDetectorRef.markForCheck();
   }
 
   private _updateState(nextValue: number): void {
@@ -211,4 +214,3 @@ export class NgbRating implements OnInit, OnChanges {
     this.contexts = Array.from({ length: this.max }, (_value, index) => ({ fill: 0, index }));
   }
 }
-
