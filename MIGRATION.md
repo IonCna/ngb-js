@@ -69,33 +69,110 @@ rotos, después los viejos:
 
 Tras cada uno: `bunx vitest run src/<feature>` verde + suite completa sin nuevos rojos.
 
-## Hallazgo: el harness de specs está roto para directivas
+## Análisis del harness (en curso — iterar acá)
 
-Diagnóstico de por qué `collapse` / `nav` / `tooltip` / `rating` (migradas) siguen
-en rojo — **no es la migración de cada módulo, es el harness de test**:
+Por qué las features **migradas** siguen rojas: no es la conversión de cada
+módulo, es cómo arrancan las specs. Patrón actual de toda spec de `ngb-js`:
 
-- `@Directive` + `@Input` + `ngOnInit` **funcionan** bajo `bootstrapApplication`
-  (probado en `ngjs-core`).
-- Bajo el patrón actual de las specs — `angular.mock.module(NgbModule.name)` +
-  `angular.mock.inject(...)` — pasa esto:
-  - `ngOnInit` de una directiva **no dispara** (probado: contador quedó en 0).
-  - Los `@Input` de una directiva **no se inicializan**: AngularJS solo corre
-    `initializeDirectiveBindings` para `bindToController` si `controller.identifier`
-    está seteado, y eso requiere un `controllerAs`. Las `@Directive` de `ngb-js`
-    no lo tienen (real Angular no lo necesita).
-  - Servicios `@Injectable` que hacen `inject()` en field initializers no
-    alcanzan el app injector (`_RootSingletonRegistry.getFromAppInjector` tira).
-- `configureTestingModule({ imports: [...] })` de `ngjs-core/testing` instala
-  `CoreModule` y ahí `ngOnInit` sí dispara, pero el `@Input` sigue sin bindear
-  (mismo tema del `controllerAs`).
+```ts
+angular.mock.module(NgbModule.name);            // NgbModule = registerNgModule(NgbRootModule)
+angular.mock.inject((_$compile_, _$rootScope_) => { ... });
+```
 
-→ **Antes de seguir módulo por módulo hay que arreglar el harness**: las specs
-deben pasar por un bootstrap/TestBed de `ngjs-core` de verdad (equivalente a
-`TestBed.configureTestingModule` de ng-bootstrap), y probablemente hace falta un
-fix en `ngjs-core` para que los `@Input` de `@Directive` bindeen sin `controllerAs`.
-Eso debería destrabar de una varias features "migradas pero rojas".
+### Qué funciona y qué no (probado)
 
-Anotado también en `CORE_GAPS.md`.
+| Escenario | `ngOnInit` | `@Input` de `@Directive` | `inject()` en field init de `@Injectable` |
+|---|---|---|---|
+| `bootstrapApplication(AppModule)` (en ngjs-core) | ✅ dispara | ✅ bindea | ✅ |
+| `configureTestingModule({imports:[Mod]})` + `angular.mock.module` | ✅ dispara | 🔴 queda en el default | 🔴 `_RootSingletonRegistry.getFromAppInjector` tira |
+| `angular.mock.module(NgbModule.name)` (el de las specs) | 🔴 no dispara | 🔴 | 🔴 |
+
+Síntoma por feature:
+- **collapse** — `ngOnInit` no corre → `_afterInit` nunca true → ninguna transición
+  (ni sync con `animation=false`) → sin clases `collapse`/`show`.
+- **rating** — click en estrella no actualiza el rate (host listener / `@Output`
+  no cableado) + `ngOnChanges` no recomputa.
+- **rating / carousel / nav** — proyección de `TemplateRef` con contexto de outlet
+  falla.
+- **nav** — `ng-ref` / `exportAs` read, herencia de token en queries, outlet.
+
+### Hipótesis (a confirmar)
+
+1. **Los decoradores de `$controller` de `ngjs-core` (lifecycle, HostBinding,
+   HostListener, ElementRef, queries, output-emitter) no se aplican** en el
+   injector que crea `angular.mock.module`.
+   - Se instalan en `installCoreModule()` vía `.decorator("$controller", …)` sobre
+     el `angular.module("ng.js.core")`.
+   - Hoy `installCoreModule()` corre solo como side-effect de importar
+     `src/dropdown/ngb-dropdown.module.ts` (`[installCoreModule().name]`). Cuando
+     `dropdown` se migre, ese import desaparece.
+   - `NgbRootModule` **no** tiene `CoreModule` en `imports` — depende de `ng.js.core`
+     solo transitivamente (módulos viejos → `ng.js.common` → `ng.js.core`).
+   - Sospecha: el `.decorator()` no llega a ese injector, o `coreInstalled`
+     (bool a nivel módulo en ngjs-core) interactúa mal con el aislamiento por
+     archivo de vitest.
+2. **`@Input` de `@Directive` sin `controllerAs`**: AngularJS solo corre
+   `initializeDirectiveBindings` para `bindToController` si `controller.identifier`
+   está seteado (= hay `controllerAs`). `buildDirectiveDefinition` de ngjs-core deja
+   `controllerAs: undefined` si ni la clase ni el `@NgModule` lo ponen. Vía
+   `NgbModule` (que tiene `controllerAs: "$"`) debería propagarse a las
+   declarations — **pero el probe con `configureTestingModule` sin `controllerAs`
+   de módulo confirmó que sin identifier no bindea.** Falta ver si vía `NgbModule`
+   sí llega el `"$"` heredado.
+3. **`inject()` en field initializers** necesita el app injector activo
+   (`InjectorImpl.current`), que hoy lo setea `bootstrapApplication` (el `.run`
+   que fuerza `Injector`). En `angular.mock` no se arma.
+
+### Probes hechos (2026-09-07)
+
+- [x] `@Component` (`ngb-rating`) con `ngOnInit` vía `angular.mock.module(NgbModule.name)`:
+      **el hook NO corre** (contador quedó en 0). El componente renderiza igual.
+      → No es componente-vs-directiva; `ngOnInit` no dispara para nada.
+- [x] `import { CoreModule }` en `NgbRootModule.imports` + `installCoreModule()`
+      explícito en `ngb.module.ts`: **sin cambio** (`installCoreModule()` ya corría).
+- [x] Inspección del injector tras `angular.mock.module(NgbModule.name)`:
+  - `$controller` **SÍ está decorado** (el wrapper de los bridges de ngjs-core está
+    en el injector). Así que los bridges se cargan.
+  - La instancia del controller de `ngb-rating` **tiene `$onInit` y `ngOnInit`**
+    (`typeof === "function"`), pero `$onInit` **no aparece en `Object.getOwnPropertyNames`**
+    → o está en el prototipo, o la instancia que decoró el bridge no es la que
+    AngularJS linkea. Y aun así `ngOnInit` no se llama.
+  - `angular.module("ngb").requires` = `["ngb.alert", "ngb.progressbar",
+    "ngb.collapse", …, "NgbTooltipModule", …, "NgbTypeaheadModule", "ngb-pagination",
+    "ngb.datepicker"]`.
+
+### Bug lateral: ids de módulo inconsistentes
+
+`src/tooltip/ngb-tooltip.module.ts` y `src/typeahead/ngb-typeahead.module.ts` **no
+tienen `id:`** en su `@NgModule` → se registran como `angular.module("NgbTooltipModule")`
+/ `"NgbTypeaheadModule"` (nombre de clase JS). El resto usa `"ngb.x"` (o
+`"ngb-pagination"`, también raro). Homogeneizar a `"ngb.tooltip"` / `"ngb.typeahead"`
+al migrar esos módulos.
+
+### Próximos pasos de diagnóstico
+
+- [ ] ¿Por qué `$onInit` está en la instancia pero AngularJS no lo llama? Ver si
+      la instancia decorada por el bridge de lifecycle == la que `nodeLinkFn`
+      guarda en `controller.instance` (posible desajuste entre las capas apiladas
+      de `decorateControllerWith` y el `later`-initializer de AngularJS).
+- [ ] Repetir el probe de `ngOnInit` con `bootstrapApplication` en un mini-módulo
+      idéntico → confirmar que ahí sí corre (ya visto en ngjs-core, reconfirmar
+      en el entorno de `ngb-js`).
+- [ ] Ver si `buildDirectiveDefinition` puede darle `identifier` al controller sin
+      `controllerAs` (Angular real no lo exige para bindear).
+- [ ] `configureTestingModule` que arme el app injector como `bootstrapApplication`
+      (para que `inject()` en field initializers ande).
+
+### Candidatos de fix
+
+- **Harness:** un helper de test en `ngb-js` (`test/`) que envuelva
+  `configureTestingModule` + arme el app injector, y migrar las specs a él
+  (equivale a `TestBed.configureTestingModule` de ng-bootstrap). O que
+  `ngb.module.ts` haga `installCoreModule()` + `imports: [CoreModule, …]`.
+- **Core:** `@Directive` `@Input` que bindee sin `controllerAs`; `configureTestingModule`
+  que deje `inject()` usable en field initializers.
+
+Anotado también en `CORE_GAPS.md`. No tocar `ngjs-core` hasta acordar el enfoque.
 
 ## Receta por módulo
 
