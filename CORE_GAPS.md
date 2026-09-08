@@ -125,6 +125,32 @@ Decision pendiente con el usuario: arreglar el harness (bootstrap/TestBed real d
 `ngjs-core` en las specs) y/o el fix de binding de `@Directive` en el core.
 Ver `MIGRATION.md`.
 
+### Varias `@Directive` con selector que normaliza al mismo nombre (2026-09-07)
+
+ng-bootstrap usa varias directivas para el mismo atributo, distinguidas por
+elemento o `:not()`:
+
+- `[ngbNavItem]` + `[ngbNavItem]:not(ng-container)` (`NgbNavItem` / `NgbNavItemRole`)
+- `[ngbNavLink]` + `a[ngbNavLink]` + `button[ngbNavLink]` (`NgbNavLinkBase` / `NgbNavLink` / `NgbNavLinkButton`)
+
+En AngularJS las tres normalizan al mismo nombre (`ngbNavItem` / `ngbNavLink`) y
+`ngjs-core` les pone `controller` a todas → `$compile:multidir` ("Multiple
+directives asking for 'X' controller"). No hay forma en AngularJS de registrar
+bajo un nombre y matchear por otro.
+
+**Adaptado en `ngb-js`** (no el core): se fusionan en una sola directiva que
+ramifica por `nativeElement.tagName`. Las clases sobrantes quedan como subclases
+finas para compat de import, sin registrar. Un fix en el core tendría que
+detectar el solapamiento y correr la lógica de las secundarias por `link` sin
+reclamar el nombre del controller.
+
+### Token `DOCUMENT` no es `providedIn: 'root'`
+
+`inject(DOCUMENT)` (patrón de `NgbNav`, `NgbTooltip`, `NgbTypeahead`, `ScrollSpy`,
+`Live`) tira `RootSingletonRegistry: no hay factory` salvo que el grafo importe
+`PlatformBrowserModule` de `ngjs-core/platform-browser`. Se agregó a
+`NgbRootModule.imports`. En Angular real `DOCUMENT` siempre está.
+
 ## Reglas del port
 
 - No modificar `ngjs-core` desde `ngb-js`.
