@@ -7,7 +7,7 @@ import { NgbInputDatepicker } from "@ngb/datepicker/ngb-input-datepicker.directi
 import { NgbModule } from "@ngb/ngb.module.ts";
 import type { ICompileService, IPromise, IRootScopeService } from "angular";
 import angular from "angular";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("NgbDatepickerModule", () => {
   let $compile: ICompileService;
@@ -280,6 +280,155 @@ describe("NgbDatepickerModule", () => {
     expect(element[0].querySelectorAll(".ngb-dp-day").length).toBeGreaterThan(0);
     element.remove();
     scope.$destroy();
+  });
+
+  it("uses startDate and corrects invalid start dates", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { startDate: NgbDateStruct };
+    scope.startDate = { year: 2024, month: 2, day: 29 };
+    const element = $compile('<ngb-datepicker start-date="startDate"></ngb-datepicker>')(scope);
+    scope.$digest();
+    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    expect(datepicker.state.firstDate.year).toBe(2024);
+    expect(datepicker.state.firstDate.month).toBe(2);
+
+    scope.startDate = { year: 2024, month: 20, day: 1 };
+    scope.$digest();
+    expect(datepicker.calendar.isValid(datepicker.state.focusedDate)).toBe(true);
+  });
+
+  it("rejects maxDate before minDate", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { max: NgbDateStruct; min: NgbDateStruct };
+    scope.min = { year: 2026, month: 12, day: 31 };
+    scope.max = { year: 2026, month: 1, day: 1 };
+    expect(() => {
+      $compile('<ngb-datepicker min-date="min" max-date="max"></ngb-datepicker>')(scope);
+      scope.$digest();
+    }).toThrow("should be greater than");
+  });
+
+  it("disables dates outside limits and dates rejected by markDisabled", () => {
+    const scope = $rootScope.$new() as IRootScopeService & {
+      max: NgbDateStruct;
+      min: NgbDateStruct;
+      markDisabled: (date: NgbDateStruct) => boolean;
+    };
+    scope.min = { year: 2026, month: 8, day: 10 };
+    scope.max = { year: 2026, month: 8, day: 20 };
+    scope.markDisabled = (date) => date.day === 15;
+    const element = $compile(
+      '<ngb-datepicker start-date="min" min-date="min" max-date="max" mark-disabled="markDisabled"></ngb-datepicker>',
+    )(scope);
+    scope.$digest();
+    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const month = datepicker.getMonth({ year: 2026, month: 8, day: 1 });
+    const days = month.weeks.flatMap((week) => week.days);
+    expect(days.find(({ date }) => date.equals({ year: 2026, month: 8, day: 9 }))?.context.disabled).toBe(true);
+    expect(days.find(({ date }) => date.equals({ year: 2026, month: 8, day: 15 }))?.context.disabled).toBe(true);
+    expect(days.find(({ date }) => date.equals({ year: 2026, month: 8, day: 16 }))?.context.disabled).toBe(false);
+  });
+
+  it("renders multiple months and switches navigation modes", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { displayMonths: number; navigation: string };
+    scope.displayMonths = 2;
+    scope.navigation = "select";
+    const element = $compile(
+      '<ngb-datepicker display-months="displayMonths" navigation="{{ navigation }}"></ngb-datepicker>',
+    )(scope);
+    scope.$digest();
+    expect(element[0].querySelectorAll(".ngb-dp-month")).toHaveLength(2);
+    expect(element[0].querySelector("ngb-datepicker-navigation-select")).not.toBeNull();
+    scope.navigation = "arrows";
+    scope.$digest();
+    expect(element[0].querySelector("ngb-datepicker-navigation-select")).toBeNull();
+    scope.navigation = "none";
+    scope.$digest();
+    expect(element[0].querySelector("ngb-datepicker-navigation")).toBeNull();
+  });
+
+  it("emits navigation and allows it to be prevented", () => {
+    const scope = $rootScope.$new() as IRootScopeService & {
+      onNavigate: (event: { next: { month: number }; preventDefault(): void }) => void;
+      start: NgbDateStruct;
+    };
+    scope.start = { year: 2026, month: 8, day: 1 };
+    scope.onNavigate = vi.fn((event) => event.next.month === 9 && event.preventDefault());
+    const element = $compile('<ngb-datepicker start-date="start" navigate="onNavigate($event)"></ngb-datepicker>')(
+      scope,
+    );
+    scope.$digest();
+    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    datepicker.navigateTo({ year: 2026, month: 9 });
+    scope.$digest();
+    expect(scope.onNavigate).toHaveBeenCalled();
+    expect(datepicker.state.firstDate.month).toBe(8);
+  });
+
+  it("emits dateSelect for repeated selection of the same date", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { onSelect: (date: NgbDate) => void };
+    scope.onSelect = vi.fn();
+    const element = $compile('<ngb-datepicker date-select="onSelect($event)"></ngb-datepicker>')(scope);
+    scope.$digest();
+    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const date = datepicker.state.focusedDate;
+    datepicker.onDateSelect(date);
+    datepicker.onDateSelect(date);
+    scope.$digest();
+    expect(scope.onSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["ArrowLeft", false],
+    ["ArrowRight", false],
+    ["ArrowUp", false],
+    ["ArrowDown", false],
+    ["PageUp", false],
+    ["PageDown", true],
+    ["Home", false],
+    ["End", true],
+  ])("handles %s keyboard navigation", (key, shiftKey) => {
+    const element = $compile(
+      '<ngb-datepicker start-date="{ year: 2026, month: 8, day: 13 }" min-date="{ year: 2026, month: 1, day: 1 }" max-date="{ year: 2027, month: 12, day: 31 }"></ngb-datepicker>',
+    )($rootScope.$new());
+    $rootScope.$digest();
+    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const previous = datepicker.state.focusedDate;
+    const event = new KeyboardEvent("keydown", { cancelable: true, key, shiftKey });
+    const stopPropagation = vi.spyOn(event, "stopPropagation");
+    datepicker.processKey(event);
+    $rootScope.$digest();
+    expect(datepicker.state.focusedDate.equals(previous)).toBe(false);
+    expect(event.defaultPrevented).toBe(true);
+    expect(stopPropagation).toHaveBeenCalled();
+  });
+
+  it("disables the inline picker and prevents model selection", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { date: NgbDateStruct; disabled: boolean };
+    scope.date = { year: 2026, month: 8, day: 13 };
+    scope.disabled = true;
+    const element = $compile('<ngb-datepicker ng-model="date" ng-disabled="disabled"></ngb-datepicker>')(scope);
+    scope.$digest();
+    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    datepicker.onDateSelect(new NgbDate(2026, 8, 20));
+    scope.$digest();
+    expect(scope.date).toEqual({ year: 2026, month: 8, day: 13 });
+    expect(element.hasClass("disabled")).toBe(true);
+  });
+
+  it("formats model values and toggles a popup with custom class", async () => {
+    const scope = $rootScope.$new() as IRootScopeService & { date: NgbDateStruct };
+    scope.date = { year: 2026, month: 8, day: 13 };
+    const element = $compile(
+      '<input ng-model="date" ngb-datepicker datepicker-class="custom-datepicker" auto-close="false">',
+    )(scope);
+    document.body.appendChild(element[0]);
+    scope.$digest();
+    expect((element[0] as HTMLInputElement).value).toBe("2026-08-13");
+    const input = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
+    await settle(input.open());
+    expect(document.querySelector("ngb-datepicker.custom-datepicker")).not.toBeNull();
+    input.toggle();
+    scope.$digest();
+    expect(input.isOpen()).toBe(false);
   });
 });
 

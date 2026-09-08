@@ -2,7 +2,7 @@ import { NgbPopover } from "@ngb/popover/ngb-popover.directive";
 import { NgbPopoverModule } from "@ngb/popover/ngb-popover.module";
 import type { ICompileService, IPromise, IRootScopeService } from "angular";
 import angular from "angular";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("ngbPopover", () => {
   let $compile: ICompileService;
@@ -177,5 +177,88 @@ describe("ngbPopover", () => {
     await settle(opening);
 
     expect(popover.isOpen()).toBe(false);
+  });
+
+  it("does not open without content or title", async () => {
+    const element = $compile(`<button ngb-popover triggers="'manual'" animation="false">Open</button>`)(
+      $rootScope.$new(),
+    );
+    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    await settle(popover.open());
+    expect(popover.isOpen()).toBe(false);
+    expect(document.body.querySelector(".popover")).toBeNull();
+  });
+
+  it("does not render a header for an empty title", async () => {
+    const element = $compile(
+      `<button ngb-popover="'Body'" popover-title="''" triggers="'manual'" animation="false">Open</button>`,
+    )($rootScope.$new());
+    angular.element(document.body).append(element);
+    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    await settle(popover.open());
+    expect(document.body.querySelector(".popover-header")).toBeNull();
+    expect(document.body.querySelector(".popover-body")?.textContent).toContain("Body");
+  });
+
+  it("toggles manually and can reopen after closing", async () => {
+    const element = $compile(`<button ngb-popover="'Body'" triggers="'manual'" animation="false">Open</button>`)(
+      $rootScope.$new(),
+    );
+    angular.element(document.body).append(element);
+    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    popover.toggle();
+    await Promise.resolve();
+    $rootScope.$digest();
+    expect(popover.isOpen()).toBe(true);
+    popover.toggle();
+    $rootScope.$digest();
+    expect(popover.isOpen()).toBe(false);
+    await settle(popover.open());
+    expect(popover.isOpen()).toBe(true);
+  });
+
+  it("emits shown and hidden only when visibility changes", async () => {
+    const scope = $rootScope.$new() as IRootScopeService & { hidden: () => void; shown: () => void };
+    scope.hidden = vi.fn();
+    scope.shown = vi.fn();
+    const element = $compile(`
+      <button ngb-popover="'Body'" triggers="'manual'" animation="false" shown="shown()" hidden="hidden()">Open</button>
+    `)(scope);
+    angular.element(document.body).append(element);
+    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    await settle(popover.open());
+    await settle(popover.open());
+    expect(scope.shown).toHaveBeenCalledOnce();
+    popover.close();
+    scope.$digest();
+    popover.close();
+    expect(scope.hidden).toHaveBeenCalledOnce();
+  });
+
+  it("applies custom classes and updates them while open", async () => {
+    const scope = $rootScope.$new() as IRootScopeService & { popoverClass: string };
+    scope.popoverClass = "first-class";
+    const element = $compile(`
+      <button ngb-popover="'Body'" popover-class="popoverClass" triggers="'manual'" animation="false">Open</button>
+    `)(scope);
+    angular.element(document.body).append(element);
+    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    await settle(popover.open());
+    expect(document.body.querySelector(".popover")?.classList.contains("first-class")).toBe(true);
+    scope.popoverClass = "second-class";
+    scope.$digest();
+    expect(document.body.querySelector(".popover")?.classList.contains("second-class")).toBe(true);
+  });
+
+  it("cleans the popup and aria-describedby on host destruction", async () => {
+    const scope = $rootScope.$new();
+    const element = $compile(`<button ngb-popover="'Body'" triggers="'manual'" animation="false">Open</button>`)(scope);
+    angular.element(document.body).append(element);
+    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    await settle(popover.open());
+    expect(element.attr("aria-describedby")).toBeDefined();
+    scope.$destroy();
+    expect(document.body.querySelector(".popover")).toBeNull();
+    expect(element.attr("aria-describedby")).toBeUndefined();
   });
 });

@@ -27,6 +27,30 @@ describe.each(calendars)("%s calendar", (_name, calendar) => {
     expect(calendar.getDaysPerWeek()).toBe(7);
     expect(calendar.getMonths(today.year).length).toBeGreaterThanOrEqual(12);
   });
+
+  it("returns valid weekdays and month boundaries", () => {
+    const today = calendar.getToday();
+    const first = new NgbDate(today.year, today.month, 1);
+    expect(calendar.getWeekday(first)).toBeGreaterThanOrEqual(1);
+    expect(calendar.getWeekday(first)).toBeLessThanOrEqual(7);
+    expect(calendar.getNext(calendar.getPrev(first, "m"), "m")).toEqual(first);
+  });
+
+  it("navigates reversibly by month and year", () => {
+    const today = calendar.getToday();
+    const date = new NgbDate(today.year, today.month, 1);
+    expect(calendar.getPrev(calendar.getNext(date, "m"), "m")).toEqual(date);
+    expect(calendar.getPrev(calendar.getNext(date, "y"), "y")).toEqual(date);
+  });
+
+  it("validates every advertised month", () => {
+    const today = calendar.getToday();
+    for (const month of calendar.getMonths(today.year)) {
+      expect(calendar.isValid(new NgbDate(today.year, month, 1))).toBe(true);
+    }
+    expect(calendar.isValid(new NgbDate(today.year, 0, 1))).toBe(false);
+    expect(calendar.isValid(new NgbDate(today.year, today.month, 0))).toBe(false);
+  });
 });
 
 describe("calendar-specific i18n", () => {

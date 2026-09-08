@@ -3,7 +3,7 @@ import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
 import type { NgZone } from "ngjs-core";
 import { Subject } from "rxjs";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbDropdown } from "./ngb-dropdown.directive";
@@ -102,5 +102,79 @@ describe("ngbDropdown", () => {
     expect(() => document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }))).not.toThrow();
     closed.next();
     closed.complete();
+  });
+
+  it("is closed with dropdown classes by default", () => {
+    const element = $compile(`
+      <div ngb-dropdown><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div></div>
+    `)($rootScope.$new());
+    tb.detectChanges();
+    expect(element.hasClass("dropdown")).toBe(true);
+    expect(element.hasClass("show")).toBe(false);
+    expect(element[0].querySelector(".dropdown-menu")?.classList.contains("show")).toBe(false);
+    expect(element[0].querySelector("[ngb-dropdown-toggle]")?.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("toggles on toggle clicks and emits open changes", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { onOpen: (open: boolean) => void };
+    scope.onOpen = vi.fn();
+    const element = $compile(`
+      <div ngb-dropdown open-change="onOpen($event)">
+        <button ngb-dropdown-toggle><span class="child">Toggle</span></button><div ngb-dropdown-menu>Menu</div>
+      </div>
+    `)(scope);
+    tb.detectChanges();
+    (element[0].querySelector(".child") as HTMLElement).click();
+    tb.detectChanges();
+    expect(element.hasClass("show")).toBe(true);
+    expect(scope.onOpen).toHaveBeenLastCalledWith(true);
+    (element[0].querySelector("[ngb-dropdown-toggle]") as HTMLElement).click();
+    tb.detectChanges();
+    expect(element.hasClass("show")).toBe(false);
+    expect(scope.onOpen).toHaveBeenLastCalledWith(false);
+  });
+
+  it("reacts to its open binding and imperative API", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { opened: boolean };
+    scope.opened = false;
+    const element = $compile(`
+      <div ngb-dropdown open="opened"><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div></div>
+    `)(scope);
+    tb.detectChanges();
+    const dropdown = element.controller<NgbDropdown>("ngbDropdown");
+    scope.opened = true;
+    tb.detectChanges();
+    expect(dropdown.isOpen()).toBe(true);
+    dropdown.close();
+    expect(dropdown.isOpen()).toBe(false);
+    dropdown.open();
+    expect(dropdown.isOpen()).toBe(true);
+    dropdown.toggle();
+    expect(dropdown.isOpen()).toBe(false);
+  });
+
+  it("sets disabled semantics and custom tabindex on items", () => {
+    const element = $compile(`
+      <div ngb-dropdown open="true"><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>
+        <button ngb-dropdown-item disabled="true">Disabled</button>
+        <a ngb-dropdown-item tabindex="7">Custom</a>
+      </div></div>
+    `)($rootScope.$new());
+    tb.detectChanges();
+    const items = element[0].querySelectorAll<HTMLElement>("[ngb-dropdown-item]");
+    expect(items[0].classList.contains("disabled")).toBe(true);
+    expect(items[0].getAttribute("aria-disabled")).toBe("true");
+    expect(items[1].getAttribute("tabindex")).toBe("7");
+  });
+
+  it("uses dropup class for top placement and preserves custom classes", () => {
+    const element = $compile(`
+      <div class="custom" ngb-dropdown placement="'top'">
+        <button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div>
+      </div>
+    `)($rootScope.$new());
+    tb.detectChanges();
+    expect(element.hasClass("dropup")).toBe(true);
+    expect(element.hasClass("custom")).toBe(true);
   });
 });

@@ -2,6 +2,7 @@ import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
+import type { NgbRating } from "./ngb-rating.component";
 
 describe("ngbRating", () => {
   let $compile: ICompileService;
@@ -102,5 +103,112 @@ describe("ngbRating", () => {
       "1:100",
     ]);
   });
-});
 
+  it("renders ten stars by default and reacts to max changes", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { max: number };
+    scope.max = 10;
+    const element = $compile(`<ngb-rating rate="3" max="max"></ngb-rating>`)(scope);
+    scope.$digest();
+    expect(element[0].querySelectorAll(":scope > span")).toHaveLength(10);
+
+    scope.max = 4;
+    scope.$digest();
+    expect(element[0].querySelectorAll(":scope > span")).toHaveLength(4);
+    expect(element.attr("aria-valuemax")).toBe("4");
+  });
+
+  it("clamps clicked and programmatic rates to zero through max", () => {
+    const element = $compile(`<ngb-rating rate="3" max="5"></ngb-rating>`)($rootScope.$new());
+    $rootScope.$digest();
+    const rating = element.controller<NgbRating>("ngbRating");
+
+    rating.update(-10);
+    expect(rating.rate).toBe(0);
+    rating.update(10);
+    expect(rating.rate).toBe(5);
+  });
+
+  it("supports resettable ratings", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { onRateChange: (value: number) => void };
+    scope.onRateChange = vi.fn();
+    const element = $compile(
+      `<ngb-rating rate="2" max="5" resettable="true" rate-change="onRateChange($event)"></ngb-rating>`,
+    )(scope);
+    scope.$digest();
+    const secondStar = element[0].querySelectorAll(":scope > span")[1].querySelector("span:last-child") as HTMLElement;
+    angular.element(secondStar).triggerHandler("click");
+    scope.$digest();
+    expect(element.attr("aria-valuenow")).toBe("0");
+    expect(scope.onRateChange).toHaveBeenCalledWith(0);
+  });
+
+  it("previews on hover and restores the committed rate on mouseleave", () => {
+    const scope = $rootScope.$new() as IRootScopeService & {
+      onHover: (value: number) => void;
+      onLeave: (value: number) => void;
+    };
+    scope.onHover = vi.fn();
+    scope.onLeave = vi.fn();
+    const element = $compile(
+      `<ngb-rating rate="2" max="5" hover="onHover($event)" leave="onLeave($event)"></ngb-rating>`,
+    )(scope);
+    scope.$digest();
+
+    const fourthStar = element[0].querySelectorAll(":scope > span")[3].querySelector("span:last-child") as HTMLElement;
+    angular.element(fourthStar).triggerHandler("mouseenter");
+    scope.$digest();
+    expect(element.attr("aria-valuenow")).toBe("4");
+    expect(scope.onHover).toHaveBeenCalledWith(4);
+
+    element.triggerHandler("mouseleave");
+    scope.$digest();
+    expect(scope.onLeave).toHaveBeenCalledWith(4);
+    expect(element.attr("aria-valuenow")).toBe("2");
+  });
+
+  it("uses default cursors and aria-readonly when readonly", () => {
+    const element = $compile(`<ngb-rating rate="2" max="3" readonly="true"></ngb-rating>`)($rootScope.$new());
+    $rootScope.$digest();
+    const interactiveStars = element[0].querySelectorAll<HTMLElement>(":scope > span > span:last-child");
+    expect(Array.from(interactiveStars, (star) => star.style.cursor)).toEqual(["default", "default", "default"]);
+    expect(element.attr("aria-readonly")).toBe("true");
+    expect(element.attr("aria-disabled")).toBeUndefined();
+  });
+
+  it("supports custom tabindex and removes disabled controls from tab order", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { disabled: boolean };
+    scope.disabled = false;
+    const element = $compile(`<ngb-rating rate="2" tabindex="7" disabled="disabled"></ngb-rating>`)(scope);
+    scope.$digest();
+    expect(element.attr("tabindex")).toBe("7");
+    scope.disabled = true;
+    scope.$digest();
+    expect(element.attr("tabindex")).toBe("-1");
+  });
+
+  it.each([
+    ["ArrowLeft", 2],
+    ["ArrowDown", 2],
+    ["ArrowRight", 4],
+    ["ArrowUp", 4],
+    ["Home", 0],
+    ["End", 5],
+  ])("handles %s keyboard navigation", (key, expectedRate) => {
+    const element = $compile(`<ngb-rating rate="3" max="5"></ngb-rating>`)($rootScope.$new());
+    $rootScope.$digest();
+    const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key });
+    element[0].dispatchEvent(event);
+    $rootScope.$digest();
+    expect(element.attr("aria-valuenow")).toBe(String(expectedRate));
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("exposes screen-reader state and a customizable aria value text", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { valueText: (current: number, max: number) => string };
+    scope.valueText = (current, max) => `${current} of ${max} points`;
+    const element = $compile(`<ngb-rating rate="2" max="3" aria-value-text="valueText"></ngb-rating>`)(scope);
+    scope.$digest();
+    expect(element.attr("aria-valuetext")).toBe("2 of 3 points");
+    expect(element[0].querySelectorAll(".visually-hidden")).toHaveLength(3);
+  });
+});

@@ -1,107 +1,89 @@
+import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
+import { isDefined, ngbRunTransition, reflow } from "@ngb/utils";
 import {
-  ngbModalBackdropFadeInTransition,
-  ngbModalBackdropFadeOutTransition,
-} from "@ngb/modal/ngb-modal-backdrop-transition";
-import { NgbModalConfig, type NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
-import { ngbRunTransition } from "@ngb/utils";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
-import angular from "angular";
-import { ChangeDetectorRef, NgZone } from "ngjs-core/core";
+  afterNextRender,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostBinding,
+  inject,
+  Injector,
+  Input,
+  NgZone,
+  type OnInit,
+} from "ngjs-core";
 import type { Observable } from "rxjs";
 
-const BACKDROP_ATTRIBUTES = [
-  "animation",
-  "backdropClass",
-] as const satisfies readonly (keyof NgbModalUpdatableOptions)[];
-type NgbModalBackdropAttribute = (typeof BACKDROP_ATTRIBUTES)[number];
-type BackdropOptions = Partial<Record<NgbModalBackdropAttribute, unknown>> & NgbModalUpdatableOptions;
+const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 
-export class NgbModalBackdrop implements IComponentController {
-  animation?: boolean;
-  backdropClass?: string;
+@Component({
+  selector: "ngb-modal-backdrop",
+  template: "",
+})
+export class NgbModalBackdrop implements OnInit {
+  private _nativeElement = inject(ElementRef).nativeElement as HTMLElement;
+  private _zone = inject(NgZone);
+  private _injector = inject(Injector);
+  private _cdRef = inject(ChangeDetectorRef);
 
-  private _appliedBackdropClass?: string;
+  @Input() animation!: boolean;
+  @Input({ binding: "@" }) backdropClass!: string;
 
-  constructor(
-    private $element: IAugmentedJQuery,
-    private $ngbModalConfig: NgbModalConfig,
-    private _ngZone: NgZone,
-    private _cdRef: ChangeDetectorRef,
-  ) {}
+  @HostBinding("class")
+  get _hostClass(): string {
+    return `modal-backdrop${this.backdropClass ? ` ${this.backdropClass}` : ""}`;
+  }
 
-  $postLink(): void {
-    const backdropClass = this.backdropClass ? this.backdropClass : "";
-    const animation = this.animation ?? this.$ngbModalConfig.animation;
+  @HostBinding("class.show")
+  get _show(): boolean {
+    return !this.animation;
+  }
 
-    this.$element.addClass(`modal-backdrop ${backdropClass}`);
-    this.$element.toggleClass("fade", animation);
-    this.$element.css({ "z-index": "1055" });
+  @HostBinding("class.fade")
+  get _fade(): boolean {
+    return this.animation;
+  }
 
-    this._ngZone.runOutsideAngular(() =>
-      queueMicrotask(() =>
-        ngbRunTransition(this._ngZone, this.$element, ngbModalBackdropFadeInTransition, {
-          animation,
-          runningTransition: "continue",
-        }),
-      ),
+  @HostBinding("style.z-index")
+  readonly _zIndex = 1055;
+
+  ngOnInit() {
+    afterNextRender(
+      {
+        mixedReadWrite: () =>
+          ngbRunTransition(
+            this._zone,
+            this._nativeElement,
+            (element: HTMLElement, animation: boolean) => {
+              if (animation) {
+                reflow(element);
+              }
+              element.classList.add("show");
+            },
+            { animation: this.animation, runningTransition: "continue" },
+          ),
+      },
+      { injector: this._injector },
     );
   }
 
-  $onChanges(): void {
-    if (this._appliedBackdropClass)
-      this._appliedBackdropClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.removeClass(className);
-        });
-
-    if (this.backdropClass)
-      this.backdropClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.addClass(className);
-        });
-
-    this._appliedBackdropClass = this.backdropClass;
-  }
-
   hide(): Observable<void> {
-    return ngbRunTransition(this._ngZone, this.$element, ngbModalBackdropFadeOutTransition, {
-      animation: this.animation ?? this.$ngbModalConfig.animation,
+    return ngbRunTransition(this._zone, this._nativeElement, ({ classList }) => classList.remove("show"), {
+      animation: this.animation,
       runningTransition: "stop",
     });
   }
 
   updateOptions(options: NgbModalUpdatableOptions) {
-    const source: BackdropOptions = options;
-
-    BACKDROP_ATTRIBUTES.forEach((attr) => {
-      if (angular.isDefined(source[attr])) {
-        Object.assign(this, { [attr]: source[attr] });
+    for (const optionName of BACKDROP_ATTRIBUTES) {
+      if (isDefined((options as Record<string, unknown>)[optionName])) {
+        (this as Record<string, unknown>)[optionName] = (options as Record<string, unknown>)[optionName];
       }
-    });
-    this.$onChanges();
+    }
     this._cdRef.markForCheck();
   }
 
   static get $name() {
     return "ngbModalBackdrop";
-  }
-
-  static get $inject() {
-    return ["$element", NgbModalConfig.$name, NgZone.$name, ChangeDetectorRef.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      controller: NgbModalBackdrop,
-      controllerAs: "$",
-      bindings: {
-        animation: "<?",
-        backdropClass: "@?",
-      },
-    };
   }
 }

@@ -157,4 +157,90 @@ describe("ngbNav", () => {
     expect(document.activeElement).toBe(buttons[1]);
     element.remove();
   });
+
+  it("selects the first item when activeId is omitted", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { selected?: string };
+    const element = $compile(`
+      <ul ngb-nav active-id-change="selected = $event" animation="false">
+        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
+      </ul>
+    `)(scope);
+    scope.$digest();
+    expect(scope.selected).toBe("first");
+    expect(element[0].querySelector("button")?.classList.contains("active")).toBe(true);
+  });
+
+  it("applies vertical orientation and can disable tab roles", () => {
+    const element = $compile(`
+      <ul ngb-nav orientation="'vertical'" roles="false" animation="false">
+        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
+      </ul>
+    `)($rootScope.$new());
+    $rootScope.$digest();
+    expect(element.hasClass("flex-column")).toBe(true);
+    expect(element.attr("role")).toBeUndefined();
+    expect(element.attr("aria-orientation")).toBeUndefined();
+    expect(element[0].querySelector("button")?.getAttribute("role")).toBeNull();
+  });
+
+  it("sets disabled item classes and ARIA attributes and ignores clicks", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { activeId: string };
+    scope.activeId = "first";
+    const element = $compile(`
+      <ul ngb-nav active-id="activeId" active-id-change="activeId = $event" animation="false">
+        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="'second'" disabled="true"><button ngb-nav-link>Second</button></li>
+      </ul>
+    `)(scope);
+    scope.$digest();
+    const second = element[0].querySelectorAll<HTMLElement>("button")[1];
+    expect(second.classList.contains("disabled")).toBe(true);
+    expect(second.getAttribute("aria-disabled")).toBe("true");
+    second.click();
+    scope.$digest();
+    expect(scope.activeId).toBe("first");
+  });
+
+  it("allows navChange to cancel user selection", () => {
+    const scope = $rootScope.$new() as IRootScopeService & {
+      activeId: string;
+      cancel: (event: { preventDefault(): void }) => void;
+    };
+    scope.activeId = "first";
+    scope.cancel = vi.fn((event) => event.preventDefault());
+    const element = $compile(`
+      <ul ngb-nav active-id="activeId" active-id-change="activeId = $event" nav-change="cancel($event)" animation="false">
+        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
+      </ul>
+    `)(scope);
+    scope.$digest();
+    element[0].querySelectorAll<HTMLElement>("button")[1].click();
+    scope.$digest();
+    expect(scope.cancel).toHaveBeenCalledOnce();
+    expect(scope.activeId).toBe("first");
+  });
+
+  it.each([
+    ["ArrowRight", 1],
+    ["ArrowLeft", 2],
+    ["Home", 0],
+    ["End", 2],
+  ])("moves focus with %s while skipping disabled tabs", (key, expectedIndex) => {
+    const element = $compile(`
+      <ul ngb-nav animation="false">
+        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
+        <li ngb-nav-item="'disabled'" disabled="true"><button ngb-nav-link>Disabled</button></li>
+      </ul>
+    `)($rootScope.$new());
+    angular.element(document.body).append(element);
+    $rootScope.$digest();
+    const buttons = element[0].querySelectorAll<HTMLElement>("button");
+    buttons[0].focus();
+    element[0].dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key }));
+    const expected = expectedIndex === 2 ? buttons[1] : buttons[expectedIndex];
+    expect(document.activeElement).toBe(expected);
+  });
 });

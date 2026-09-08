@@ -1,13 +1,14 @@
 <div
-    ng-ref="dialog"
-    role="document"
-    class="modal-dialog"
-    ng-class="[
-        $.fullscreen === true ? 'modal-fullscreen' : ($.fullscreen ? 'modal-fullscreen-' + $.fullscreen + '-down' : ''),
-        $.size ? 'modal-' + $.size : '',
-        $.centered ? 'modal-dialog-centered' : '',
-        $.scrollable ? 'modal-dialog-scrollable' : '',
-        $.modalDialogClass || ''
-    ]">
-    <div class="modal-content"><ng-content></ng-content></div>
+  ng-ref="dialog"
+  ng-class="
+    'modal-dialog' +
+    ($.size ? ' modal-' + $.size : '') +
+    ($.centered ? ' modal-dialog-centered' : '') +
+    $.fullscreenClass +
+    ($.scrollable ? ' modal-dialog-scrollable' : '') +
+    ($.modalDialogClass ? ' ' + $.modalDialogClass : '')
+  "
+  role="document"
+>
+  <div class="modal-content"><ng-content></ng-content></div>
 </div>

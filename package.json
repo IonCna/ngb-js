@@ -37,6 +37,8 @@
   "scripts": {
     "build": "bun esbuild.config.ts",
     "serve": "bun demo/esbuild.config.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "bunx --bun @biomejs/biome format --write",
     "format": "bunx --bun @biomejs/biome check --write src/"
   },

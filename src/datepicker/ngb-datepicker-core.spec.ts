@@ -113,4 +113,79 @@ describe("NgbDatepickerService", () => {
     expect(selections).toHaveBeenCalledWith(new NgbDate(2026, 8, 20));
     expect(service.getMonth({ year: 2026, month: 8, day: 1 }).weeks).toHaveLength(6);
   });
+
+  it("normalizes valid and invalid dates", () => {
+    const service = new NgbDatepickerService($locale, $filter);
+    const fallback = new NgbDate(2026, 1, 1);
+    expect(service.toValidDate({ year: 2024, month: 2, day: 29 })).toEqual(new NgbDate(2024, 2, 29));
+    expect(service.toValidDate({ year: 2023, month: 2, day: 29 }, fallback)).toBe(fallback);
+    expect(service.toValidDate(null, null)).toBeNull();
+  });
+
+  it("ignores invalid display and weekday options", () => {
+    const service = new NgbDatepickerService($locale, $filter);
+    const models = vi.fn();
+    service.model$.subscribe(models);
+    service.open(new NgbDate(2026, 8, 1));
+    service.set({ displayMonths: 0, firstDayOfWeek: -1 });
+    expect(models.mock.lastCall?.[0]).toMatchObject({ displayMonths: 1, firstDayOfWeek: 1 });
+  });
+
+  it("prevents focus, navigation and selection while disabled", () => {
+    const service = new NgbDatepickerService($locale, $filter);
+    const models = vi.fn();
+    const selected = vi.fn();
+    service.model$.subscribe(models);
+    service.dateSelect$.subscribe(selected);
+    service.open(new NgbDate(2026, 8, 1));
+    const before = models.mock.lastCall?.[0];
+    service.set({ disabled: true });
+    service.focus(new NgbDate(2026, 8, 10));
+    service.open(new NgbDate(2026, 9, 1));
+    service.select(new NgbDate(2026, 8, 10), { emitEvent: true });
+    const after = models.mock.lastCall?.[0];
+    expect(after.firstDate).toEqual(before.firstDate);
+    expect(after.selectedDate).toBeNull();
+    expect(selected).not.toHaveBeenCalled();
+  });
+
+  it("clamps focused and opened dates to configured limits", () => {
+    const service = new NgbDatepickerService($locale, $filter);
+    const models = vi.fn();
+    service.model$.subscribe(models);
+    service.set({ minDate: new NgbDate(2026, 8, 10), maxDate: new NgbDate(2026, 8, 20) });
+    service.open(new NgbDate(2026, 1, 1));
+    expect(models.mock.lastCall?.[0].focusDate).toEqual(new NgbDate(2026, 8, 10));
+    service.focus(new NgbDate(2026, 12, 1));
+    expect(models.mock.lastCall?.[0].focusDate).toEqual(new NgbDate(2026, 8, 20));
+  });
+
+  it("emits repeated date selections when requested", () => {
+    const service = new NgbDatepickerService($locale, $filter);
+    const selected = vi.fn();
+    service.dateSelect$.subscribe(selected);
+    const date = new NgbDate(2026, 8, 13);
+    service.open(date);
+    service.select(date, { emitEvent: true });
+    service.select(date, { emitEvent: true });
+    expect(selected).toHaveBeenCalledTimes(2);
+  });
+
+  it("marks every day disabled and removes it from tab order", () => {
+    const service = new NgbDatepickerService($locale, $filter);
+    const models = vi.fn();
+    service.model$.subscribe(models);
+    service.open(new NgbDate(2026, 8, 1));
+    service.set({ disabled: true });
+    const model = models.mock.lastCall?.[0];
+    const days = model.months.flatMap((month) => month.weeks.flatMap((week) => week.days));
+    expect(days.every((day) => day.context.disabled)).toBe(true);
+    expect(days.every((day) => day.tabindex === -1)).toBe(true);
+  });
+
+  it("throws when requesting a month outside the current view", () => {
+    const service = new NgbDatepickerService($locale, $filter);
+    service.open(new NgbDate(2026, 8, 1));
+    expect(() => service.getMonth({ year: 2030, month: 1, day: 1 })).toThrow("not found");
+  });
 });

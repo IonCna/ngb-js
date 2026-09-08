@@ -29,6 +29,7 @@ import {
   PLATFORM_ID,
   type QueryList,
   takeUntilDestroyed,
+  TemplateRef,
 } from "ngjs-core";
 import { isPlatformBrowser } from "ngjs-core/common";
 import { BehaviorSubject, combineLatest, NEVER, type Observable, timer, zip } from "rxjs";
@@ -50,6 +51,11 @@ let carouselId = 0;
 })
 export class NgbCarousel implements AfterContentChecked, AfterContentInit, AfterViewInit {
   @ContentChildren(NgbSlide) slides!: QueryList<NgbSlide>;
+
+  // WORKAROUND (Gap B, ver CORE_GAPS): `NgbSlide.templateRef` no se obtiene con
+  // `inject(TemplateRef)` en la directiva; se lee acá con `{ read: TemplateRef }`
+  // (patrón nav) y se asigna a cada slide en `_bindSlideTemplates()`.
+  @ContentChildren(NgbSlide, { read: TemplateRef }) private _slideTemplates!: QueryList<TemplateRef<unknown>>;
 
   public NgbSlideEventSource = NgbSlideEventSource;
 
@@ -235,7 +241,18 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
     this.next(NgbSlideEventSource.ARROW_RIGHT);
   }
 
+  /** WORKAROUND (Gap B): empareja cada `NgbSlide` con su `TemplateRef` por índice. */
+  private _bindSlideTemplates() {
+    const templates = this._slideTemplates.toArray();
+    this.slides.forEach((slide, index) => {
+      slide.templateRef = templates[index];
+    });
+  }
+
   ngAfterContentInit() {
+    this._bindSlideTemplates();
+    this.slides.changes.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => this._bindSlideTemplates());
+
     // setInterval() no funciona bien con SSR/protractor: sólo en el browser y
     // fuera de Angular.
     if (isPlatformBrowser(this._platformId)) {

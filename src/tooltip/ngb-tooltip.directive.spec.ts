@@ -1,6 +1,6 @@
 import type { ICompileService, IPromise, IRootScopeService, ITimeoutService } from "angular";
 import angular from "angular";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
 
 type MockTimeoutService = ITimeoutService & {
@@ -285,5 +285,72 @@ describe("ngbTooltip", () => {
 
     expect(ctrl.isOpen()).toBe(true);
     element.remove();
+  });
+
+  it("does not open for empty content and closes when content becomes empty", async () => {
+    const scope = $rootScope.$new() as IRootScopeService & { content: string };
+    scope.content = "";
+    const element = $compile(`<button ngb-tooltip="content" triggers="manual" animation="false">Host</button>`)(scope);
+    angular.element(document.body).append(element);
+    scope.$digest();
+    const tooltip = element.controller("ngbTooltip") as { close(): void; isOpen(): boolean; open(): IPromise<void> };
+    await settle(tooltip.open());
+    expect(tooltip.isOpen()).toBe(false);
+    scope.content = "Visible";
+    scope.$digest();
+    await settle(tooltip.open());
+    expect(tooltip.isOpen()).toBe(true);
+    scope.content = "";
+    scope.$digest();
+    expect(tooltip.isOpen()).toBe(false);
+  });
+
+  it("toggles manually and supports reopening", async () => {
+    const element = $compile(`<button ngb-tooltip="'Tip'" triggers="manual" animation="false">Host</button>`)(
+      $rootScope.$new(),
+    );
+    angular.element(document.body).append(element);
+    $rootScope.$digest();
+    const tooltip = element.controller("ngbTooltip") as { isOpen(): boolean; toggle(): void };
+    tooltip.toggle();
+    await drain();
+    expect(tooltip.isOpen()).toBe(true);
+    tooltip.toggle();
+    await drain();
+    expect(tooltip.isOpen()).toBe(false);
+    tooltip.toggle();
+    await drain();
+    expect(tooltip.isOpen()).toBe(true);
+  });
+
+  it("emits shown and hidden only for actual visibility changes", async () => {
+    const scope = $rootScope.$new() as IRootScopeService & { hidden: () => void; shown: () => void };
+    scope.hidden = vi.fn();
+    scope.shown = vi.fn();
+    const element = $compile(`
+      <button ngb-tooltip="'Tip'" triggers="manual" animation="false" shown="shown()" hidden="hidden()">Host</button>
+    `)(scope);
+    angular.element(document.body).append(element);
+    scope.$digest();
+    const tooltip = element.controller("ngbTooltip") as { close(): void; open(): IPromise<void> };
+    await settle(tooltip.open());
+    await settle(tooltip.open());
+    expect(scope.shown).toHaveBeenCalledOnce();
+    tooltip.close();
+    scope.$digest();
+    tooltip.close();
+    expect(scope.hidden).toHaveBeenCalledOnce();
+  });
+
+  it("applies a custom class and appends to the requested container", async () => {
+    const host = $compile(`
+      <div><div id="tooltip-container"></div><button ngb-tooltip="'Tip'" tooltip-class="custom-tip"
+        container="#tooltip-container" triggers="manual" animation="false">Host</button></div>
+    `)($rootScope.$new());
+    angular.element(document.body).append(host);
+    $rootScope.$digest();
+    const button = angular.element(host[0].querySelector("button") as HTMLElement);
+    await settle((button.controller("ngbTooltip") as { open(): IPromise<void> }).open());
+    expect(host[0].querySelector("#tooltip-container .tooltip.custom-tip")).not.toBeNull();
   });
 });

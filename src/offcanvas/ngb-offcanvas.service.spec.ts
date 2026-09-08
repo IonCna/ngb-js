@@ -179,4 +179,171 @@ describe("NgbOffcanvas", () => {
 
     expect(dismissed).toHaveBeenCalledWith(OffcanvasDismissReasons.BACKDROP_CLICK);
   });
+
+  it("renders default panel, backdrop and accessibility semantics", async () => {
+    await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false }));
+    const panel = document.body.querySelector("ngb-offcanvas-panel");
+    const backdrop = document.body.querySelector("ngb-offcanvas-backdrop");
+    expect(panel?.classList.contains("offcanvas")).toBe(true);
+    expect(panel?.classList.contains("offcanvas-start")).toBe(true);
+    expect(panel?.getAttribute("role")).toBe("dialog");
+    expect(panel?.getAttribute("aria-modal")).toBe("true");
+    expect(panel?.getAttribute("tabindex")).toBe("-1");
+    expect(backdrop?.classList.contains("offcanvas-backdrop")).toBe(true);
+  });
+
+  it("supports no backdrop and static backdrop", async () => {
+    const withoutBackdrop = await resolveOpen(
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false, backdrop: false }),
+    );
+    expect(document.body.querySelector("ngb-offcanvas-backdrop")).toBeNull();
+    withoutBackdrop.close();
+    await flush();
+
+    await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false, backdrop: "static" }));
+    angular.element(document.body.querySelector("ngb-offcanvas-backdrop") as Element).triggerHandler("mousedown");
+    await flush();
+    expect(ngbOffcanvas.hasOpenOffcanvas()).toBe(true);
+  });
+
+  it("applies position, panel, backdrop and aria options", async () => {
+    await resolveOpen(
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, {
+        animation: false,
+        ariaDescribedBy: "offcanvas-description",
+        ariaLabelledBy: "offcanvas-title",
+        backdropClass: "custom-backdrop",
+        panelClass: "custom-panel another-panel-class",
+        position: "top",
+      }),
+    );
+    const panel = document.body.querySelector("ngb-offcanvas-panel");
+    expect(panel?.classList.contains("offcanvas-top")).toBe(true);
+    expect(panel?.classList.contains("custom-panel")).toBe(true);
+    expect(panel?.classList.contains("another-panel-class")).toBe(true);
+    expect(panel?.getAttribute("aria-labelledby")).toBe("offcanvas-title");
+    expect(panel?.getAttribute("aria-describedby")).toBe("offcanvas-description");
+    expect(document.body.querySelector("ngb-offcanvas-backdrop")?.classList.contains("custom-backdrop")).toBe(true);
+  });
+
+  it("attaches panel and backdrop to selector and jqLite containers", async () => {
+    const selectorContainer = document.createElement("section");
+    selectorContainer.id = "offcanvas-container";
+    document.body.appendChild(selectorContainer);
+    const first = await resolveOpen(
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, {
+        animation: false,
+        container: "#offcanvas-container",
+      }),
+    );
+    expect(selectorContainer.querySelector("ngb-offcanvas-panel")).not.toBeNull();
+    expect(selectorContainer.querySelector("ngb-offcanvas-backdrop")).not.toBeNull();
+    first.close();
+    await flush();
+
+    const elementContainer = document.createElement("section");
+    document.body.appendChild(elementContainer);
+    await resolveOpen(
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, {
+        animation: false,
+        container: angular.element(elementContainer),
+      }),
+    );
+    expect(elementContainer.querySelector("ngb-offcanvas-panel")).not.toBeNull();
+  });
+
+  it("throws for a missing container", () => {
+    expect(() =>
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { container: "#missing-offcanvas-container" }),
+    ).toThrow("was not found in the DOM");
+  });
+
+  it("tracks the active instance and dismisses it through the service", async () => {
+    const active = vi.fn();
+    ngbOffcanvas.activeInstance.subscribe(active);
+    const ref = await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false }));
+    expect(ngbOffcanvas.hasOpenOffcanvas()).toBe(true);
+    expect(active).toHaveBeenLastCalledWith(ref);
+    const dismissed = vi.fn();
+    ref.dismissed.subscribe(dismissed);
+    ngbOffcanvas.dismiss("service reason");
+    await flush();
+    expect(dismissed).toHaveBeenCalledWith("service reason");
+    expect(ngbOffcanvas.hasOpenOffcanvas()).toBe(false);
+    expect(active).toHaveBeenLastCalledWith(undefined);
+    expect(() => ngbOffcanvas.dismiss()).not.toThrow();
+  });
+
+  it("ignores repeated close and dismiss calls", async () => {
+    const closing = await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false }));
+    expect(() => {
+      closing.close("first");
+      closing.close("second");
+      closing.dismiss("late");
+    }).not.toThrow();
+    await flush();
+
+    const dismissing = await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false }));
+    expect(() => {
+      dismissing.dismiss("first");
+      dismissing.dismiss("second");
+      dismissing.close("late");
+    }).not.toThrow();
+  });
+
+  it("honors asynchronous beforeDismiss outcomes", async () => {
+    const blocked = await resolveOpen(
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, {
+        animation: false,
+        beforeDismiss: () => Promise.resolve(false),
+      }),
+    );
+    blocked.dismiss("blocked");
+    await flush();
+    expect(ngbOffcanvas.hasOpenOffcanvas()).toBe(true);
+    blocked.close();
+    await flush();
+
+    const accepted = await resolveOpen(
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, {
+        animation: false,
+        beforeDismiss: () => Promise.resolve(true),
+      }),
+    );
+    const dismissed = vi.fn();
+    accepted.dismissed.subscribe(dismissed);
+    accepted.dismiss("accepted");
+    await flush();
+    expect(dismissed).toHaveBeenCalledWith("accepted");
+  });
+
+  it("dismisses on Escape only when keyboard handling is enabled", async () => {
+    const animationFrame = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    const enabled = await resolveOpen(
+      ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false, keyboard: true }),
+    );
+    const dismissed = vi.fn();
+    enabled.dismissed.subscribe(dismissed);
+    document.body
+      .querySelector("ngb-offcanvas-panel")
+      ?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+    await flush();
+    expect(dismissed).toHaveBeenCalledWith(OffcanvasDismissReasons.ESC);
+
+    await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false, keyboard: false }));
+    document.body
+      .querySelector("ngb-offcanvas-panel")
+      ?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+    await flush();
+    expect(ngbOffcanvas.hasOpenOffcanvas()).toBe(true);
+    animationFrame.mockRestore();
+  });
+
+  it("keeps document scrolling enabled when scroll is true", async () => {
+    await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false, scroll: true }));
+    expect(document.body.style.overflow).not.toBe("hidden");
+  });
 });

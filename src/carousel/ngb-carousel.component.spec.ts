@@ -1,5 +1,5 @@
 import angular from "angular";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbCarousel } from "./ngb-carousel.component";
@@ -25,6 +25,25 @@ describe("ngbCarousel", () => {
     tb.detectChanges();
     scope.$digest();
   };
+
+  function createCarousel(attributes = "") {
+    const scope = $rootScope.$new() as angular.IRootScopeService & {
+      onSlide: (event: unknown) => void;
+      onSlid: (event: unknown) => void;
+    };
+    scope.onSlide = vi.fn();
+    scope.onSlid = vi.fn();
+    const element = $compile(`
+      <ngb-carousel animation="false" interval="0" ${attributes} slide="onSlide($event)" slid="onSlid($event)">
+        <ng-template ngb-slide id="one">One</ng-template>
+        <ng-template ngb-slide id="two">Two</ng-template>
+        <ng-template ngb-slide id="three">Three</ng-template>
+      </ngb-carousel>
+    `)(scope);
+    angular.element(document.body).append(element);
+    tb.detectChanges();
+    return { carousel: element.controller<NgbCarousel>("ngbCarousel"), element, scope };
+  }
 
   it("renders with active slide from activeId and indicators", async () => {
     const scope = $rootScope.$new();
@@ -174,5 +193,80 @@ describe("ngbCarousel", () => {
 
     const image = element[0].querySelector<HTMLImageElement>(".carousel-item img");
     expect(image?.getAttribute("src")).toBe(imageUrl);
+  });
+
+  it("selects the first slide by default and tolerates an empty carousel", () => {
+    const { carousel, element } = createCarousel();
+    expect(carousel.activeId).toBe("one");
+    expect(element[0].querySelector(".carousel-item.active")?.id).toBe("slide-one");
+
+    const empty = $compile(`<ngb-carousel animation="false" interval="0"></ngb-carousel>`)($rootScope.$new());
+    tb.detectChanges();
+    expect(empty.controller<NgbCarousel>("ngbCarousel").activeId).toBe("");
+    expect(empty[0].querySelectorAll(".carousel-item")).toHaveLength(0);
+  });
+
+  it("corrects an unknown active id to the first slide", () => {
+    const { carousel } = createCarousel(`active-id="missing"`);
+    expect(carousel.activeId).toBe("one");
+  });
+
+  it("navigates with next, previous and select", () => {
+    const { carousel } = createCarousel(`active-id="one"`);
+    carousel.next();
+    expect(carousel.activeId).toBe("two");
+    carousel.prev();
+    expect(carousel.activeId).toBe("one");
+    carousel.select("three");
+    expect(carousel.activeId).toBe("three");
+    carousel.select("missing");
+    expect(carousel.activeId).toBe("three");
+  });
+
+  it("wraps by default and stops at boundaries when wrap is false", () => {
+    const wrapping = createCarousel(`active-id="three"`);
+    wrapping.carousel.next();
+    expect(wrapping.carousel.activeId).toBe("one");
+
+    const bounded = createCarousel(`active-id="three" wrap="false"`);
+    bounded.carousel.next();
+    expect(bounded.carousel.activeId).toBe("three");
+    bounded.carousel.select("one");
+    bounded.carousel.prev();
+    expect(bounded.carousel.activeId).toBe("one");
+  });
+
+  it("emits direction, source and pause state for slide transitions", () => {
+    const { carousel, scope } = createCarousel(`active-id="one"`);
+    carousel.pause();
+    carousel.next(carousel.NgbSlideEventSource.ARROW_RIGHT);
+    expect(scope.onSlide).toHaveBeenCalledWith(
+      expect.objectContaining({ current: "two", direction: "start", paused: true, prev: "one", source: "arrowRight" }),
+    );
+    expect(scope.onSlid).toHaveBeenCalledWith(expect.objectContaining({ current: "two" }));
+    carousel.cycle();
+    carousel.prev(carousel.NgbSlideEventSource.ARROW_LEFT);
+    expect(scope.onSlide).toHaveBeenLastCalledWith(expect.objectContaining({ direction: "end", paused: false }));
+  });
+
+  it("honors arrow-key navigation and the keyboard flag", () => {
+    const enabled = createCarousel(`active-id="one" keyboard="true"`);
+    enabled.element[0].dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight" }));
+    expect(enabled.carousel.activeId).toBe("two");
+    expect(document.activeElement).toBe(enabled.element[0]);
+
+    const disabled = createCarousel(`active-id="one" keyboard="false"`);
+    disabled.element[0].dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight" }));
+    expect(disabled.carousel.activeId).toBe("one");
+  });
+
+  it("renders navigation controls according to their flags", () => {
+    const hidden = createCarousel(`show-navigation-arrows="false" show-navigation-indicators="false"`);
+    expect(hidden.element[0].querySelector(".carousel-control-next")).toBeNull();
+    expect(hidden.element[0].querySelector(".carousel-indicators")).toBeNull();
+
+    const visible = createCarousel(`show-navigation-arrows="true" show-navigation-indicators="true"`);
+    expect(visible.element[0].querySelectorAll(".carousel-control-prev, .carousel-control-next")).toHaveLength(2);
+    expect(visible.element[0].querySelectorAll(".carousel-indicators button")).toHaveLength(3);
   });
 });

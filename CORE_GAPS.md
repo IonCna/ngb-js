@@ -119,25 +119,22 @@ directiva de formulario). Limitación: un `@Service` (como los config) no se pue
 pisar por `providers` en un test — no aplica a CVA, pero es la misma restricción
 de fondo. `ngb-js`: `src/typeahead/ngb-typeahead-cva.spec.ts` cubre el flujo.
 
-### carousel (2026-09-08) — portado 1:1, ROJO por gaps del core
+### carousel (2026-09-08) — portado 1:1, en progreso (4/6)
 
 `src/carousel/*` está portado **1:1 con `carousel.ts` de upstream** — `@Component`
 (`NgbCarousel`) + `@Directive` (`NgbSlide`), `inject()`, `@ContentChildren`,
 `@HostBinding`/`@HostListener`, `afterNextRender`, `takeUntilDestroyed`, ciclo de
-vida Angular. **Sin workarounds en `ngb-js`**. Spec migrado a `configureTestBed`.
+vida Angular. Spec migrado a `configureTestBed`.
 
-**Estado: 🔴 0/6** — falla por gaps del core sin resolver (abajo). Se deja así a
-propósito para que el diseño del fix se haga en el core, no acá.
+**Estado: 🟡 4/6.** Gaps encontrados:
 
-Gaps que lo tiran (por diseñar):
-
-| # | Upstream usa | Qué falta en `ngjs-core` | Le pega también a |
+| # | Upstream usa | Qué falta en `ngjs-core` | Resolución |
 |---|---|---|---|
-| A | `@ContentChildren(NgbSlide) slides` en un `@Component` cuyo template NO tiene `<ng-content>` | La query no ve el contenido transcluido si el template no lo proyecta (`ng-ref-bridge.ts` línea ~48: "Un `@Component` NO — su contenido va por `<ng-content>`"). Resultado: `slides` vacío → falla todo. | cualquier `@Component` con content queries y template sin `<ng-content>` |
-| B | `inject(TemplateRef)` en `NgbSlide` (`@Directive` sobre `ng-template[ngbSlide]`) | Tira `no se encontró provider para "ngTemplate"`: el `ngTemplate` es `transclude: 'element'`, su controller queda en el nodo-comentario; `fromElementController` (`$element.controller('ngTemplate')`) no lo alcanza. (Hoy tapado por A.) | ya le pegó a **nav** (`NgbNavContent`, workaround con `{ read: TemplateRef }`) |
-| C | `@ContentChildren(NgbSlide)` (descendants, corta en borde de componente) | La query **cruza** hacia adentro de un `<ngb-carousel>` anidado. Angular frena la recolección en el borde de proyección de otro componente. | cualquier `@ContentChildren` + anidamiento de componentes |
-| D | `ngAfterViewInit` con la vista renderizada | El `lifecycle-bridge` lo reenvía a `$postLink`, que corre **antes** de que el `ng-repeat`/estructurales del template rendericen → el `querySelector` de los slides falla. | cualquier `@Component` que en `ngAfterViewInit` toque el DOM de su template |
-| E | `@Input() id` / `@Input() activeId` string, aplicado síncrono antes de `ngAfterContentInit` | La traducción `@Input({ binding: "@" })` = `@?` de AngularJS resuelve la interpolación en el **siguiente** digest (`$observe`), no en el primer link. Ventana con el valor default. | cualquier `@Input` string leído en `ngOnInit`/`ngAfterContentInit` |
+| A | `@ContentChildren` en un `@Component` cuyo template NO tiene `<ng-content>` | La query no veía el contenido transcluido si el template no lo proyectaba: AngularJS solo linkea el contenido cuando alguien invoca `$transclude()` (lo hacía `<ng-content>`). | **RESUELTO EN EL CORE (Opción 2 — proyección eager):** `content-projection-bridge.ts` transcluye+linkea el contenido de todo `@Component` con `transclude` al `$onInit`; `<ng-content>` pasa a mover ese clone ya vivo. Suite `ngjs-core` 575/575. |
+| B | `inject(TemplateRef)` en `NgbSlide` (`@Directive` sobre `ng-template[ngbSlide]`) | 🔴 **No resuelto.** El `ngTemplate` es `transclude:'element'` → su controller queda en el nodo-comentario. Probado: en el constructor de la directiva `$element` es el `#comment`, `.controller('ngTemplate')`/`.data()`/`.inheritedData()` → `undefined`. `require: { ngTemplate: '?ngTemplate' }` + pre-link **sí** entrega el `TemplateRef` real, pero el constructor corre antes del link. | **WORKAROUND (patrón nav):** `NgbSlide` sin `inject(TemplateRef)`; `NgbCarousel` lo lee con `@ContentChildren(NgbSlide, { read: TemplateRef })` y lo asigna (`_bindSlideTemplates`). Fix real pendiente = B1-a (placeholder `TemplateRef` back-filleado en el pre-link) — no se hizo para no arriesgar el `transclude:'element'` existente. Le pega también a **nav**. |
+| C | `@ContentChildren(NgbSlide)` corta en el borde de un componente anidado | 🔴 La query **cruza** hacia adentro de un `<ngb-carousel>` anidado. Angular frena la recolección en el borde de proyección de otro componente. | por diseñar |
+| D | `ngAfterViewInit` con la vista renderizada | 🔴 El `lifecycle-bridge` lo reenvía a `$postLink`, que corre **antes** de que el `ng-repeat`/estructurales del template rendericen → el `querySelector` de los slides falla. | por diseñar |
+| E | `@Input() id` / `@Input() activeId` string, síncrono antes de `ngAfterContentInit` | La traducción `@Input({ binding: "@" })` = `@?` de AngularJS resuelve la interpolación en el **siguiente** digest (`$observe`). Ventana con el valor default. | por diseñar (hoy no bloquea ningún test) |
 
 Menores (ya conocidos, no bloquean): objeto `host` → `@HostBinding`/`@HostListener`;
 `@for` → template AngularJS (`ng-repeat`); `NgbCarouselConfig` ya pasado a

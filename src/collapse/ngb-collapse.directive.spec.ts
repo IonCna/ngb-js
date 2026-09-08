@@ -3,7 +3,7 @@ import angular from "angular";
 import { Injector } from "ngjs-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
-import { NgbCollapse } from "./ngb-collapse.directive";
+import type { NgbCollapse } from "./ngb-collapse.directive";
 import { NgbCollapseConfig } from "./ngb-collapse-config.service";
 
 describe("ngbCollapse", () => {
@@ -113,5 +113,51 @@ describe("ngbCollapse", () => {
 
     expect(element.hasClass("collapse-horizontal")).toBe(true);
   });
-});
 
+  it.each([
+    [false, true],
+    [true, false],
+  ])("initializes collapsed=%s with show=%s", (collapsed, shown) => {
+    const scope = $rootScope.$new() as IRootScopeService & { collapsed: boolean };
+    scope.collapsed = collapsed;
+    const element = $compile(`<div ngb-collapse="collapsed" animation="false">content</div>`)(scope);
+    scope.$digest();
+    expect(element.hasClass("collapse")).toBe(true);
+    expect(element.hasClass("show")).toBe(shown);
+    expect(element.text().trim()).toBe("content");
+  });
+
+  it("works without an input binding", () => {
+    const element = $compile(`<div ngb-collapse animation="false">content</div>`)($rootScope.$new());
+    $rootScope.$digest();
+    expect(element.hasClass("show")).toBe(true);
+  });
+
+  it("reacts to horizontal input changes", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { horizontal: boolean };
+    scope.horizontal = false;
+    const element = $compile(`<div ngb-collapse="false" animation="false" horizontal="horizontal"></div>`)(scope);
+    scope.$digest();
+    expect(element.hasClass("collapse-horizontal")).toBe(false);
+    scope.horizontal = true;
+    scope.$digest();
+    expect(element.hasClass("collapse-horizontal")).toBe(true);
+  });
+
+  it("honors the explicit state passed to toggle", () => {
+    const scope = $rootScope.$new() as IRootScopeService & { onChange: (collapsed: boolean) => void };
+    scope.onChange = vi.fn();
+    const element = $compile(
+      `<div ngb-collapse="false" animation="false" ngb-collapse-change="onChange($event)"></div>`,
+    )(scope);
+    scope.$digest();
+    const collapse = element.controller<NgbCollapse>("ngbCollapse");
+
+    collapse.toggle(true);
+    expect(element.hasClass("show")).toBe(false);
+    expect(scope.onChange).toHaveBeenLastCalledWith(true);
+    collapse.toggle(false);
+    expect(element.hasClass("show")).toBe(true);
+    expect(scope.onChange).toHaveBeenLastCalledWith(false);
+  });
+});

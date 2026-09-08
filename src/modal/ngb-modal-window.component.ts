@@ -1,17 +1,33 @@
-import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { ModalDismissReasons } from "@ngb/modal/ngb-modal-dismiss-reasons";
 import template from "@ngb/modal/ngb-modal-window.component.html";
+import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import {
-  ngbModalBumpBackdropTransition,
-  ngbModalWindowFadeInTransition,
-  ngbModalWindowFadeOutTransition,
-} from "@ngb/modal/ngb-modal-window-transition";
-import { type NgbTransitionOptions, type NgbTransitionStartFn, ngbRunTransition, toNativeElement } from "@ngb/utils";
-import { getFocusableBoundaryElements } from "@ngb/utils/focus-trap";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
-import angular from "angular";
-import { ChangeDetectorRef, ElementRef, NgZone, ViewChild } from "ngjs-core";
-import { filter, fromEvent, type Observable, Subject, switchMap, take, takeUntil, tap, zip } from "rxjs";
+  getFocusableBoundaryElements,
+  isDefined,
+  isString,
+  type NgbTransitionOptions,
+  ngbRunTransition,
+  reflow,
+} from "@ngb/utils";
+import {
+  afterNextRender,
+  ChangeDetectorRef,
+  Component,
+  DOCUMENT,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  inject,
+  Injector,
+  Input,
+  NgZone,
+  type OnDestroy,
+  type OnInit,
+  Output,
+  ViewChild,
+} from "ngjs-core";
+import { fromEvent, type Observable, Subject, zip } from "rxjs";
+import { filter, switchMap, take, takeUntil, tap } from "rxjs/operators";
 
 const WINDOW_ATTRIBUTES = [
   "animation",
@@ -28,117 +44,104 @@ const WINDOW_ATTRIBUTES = [
   "modalDialogClass",
 ] as const;
 
-type WindowAttribute = (typeof WINDOW_ATTRIBUTES)[number];
-type WindowOptions = Partial<Record<WindowAttribute, unknown>> & NgbModalUpdatableOptions;
-const noopTransition: NgbTransitionStartFn = () => {};
+@Component({
+  selector: "ngb-modal-window",
+  transclude: true,
+  template,
+})
+export class NgbModalWindow implements OnInit, OnDestroy {
+  private _document = inject(DOCUMENT);
+  private _elRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private _zone = inject(NgZone);
+  private _injector = inject(Injector);
+  private _cdRef = inject(ChangeDetectorRef);
 
-export class NgbModalWindow implements IComponentController {
-  public animation?: boolean;
-  public ariaLabelledBy?: string;
-  public ariaDescribedBy?: string;
-  public backdrop: boolean | string = true;
-  public centered?: string;
-  public fullscreen?: string | boolean;
-  public keyboard = true;
-  public role: string = "dialog";
-  public scrollable?: string;
-  public size?: string;
-  public windowClass?: string;
-  public modalDialogClass?: string;
-
-  private _elWithFocus: Element | null = null;
-  @ViewChild("dialog", { read: ElementRef, static: true })
-  private _dialogRef!: ElementRef<HTMLElement>;
-
-  private get _dialogEl(): IAugmentedJQuery {
-    return angular.element(this._dialogRef.nativeElement);
-  }
   private _closed$ = new Subject<void>();
-  public shown = new Subject<void>();
-  public hidden = new Subject<void>();
-  private _dismissListener?: (reason: any) => void;
-  private _appliedWindowClass?: string;
+  private _elWithFocus: Element | null = null;
 
-  constructor(
-    private $element: IAugmentedJQuery,
-    private _ngZone: NgZone,
-    private _cdRef: ChangeDetectorRef,
-  ) {}
+  @ViewChild("dialog", { read: ElementRef, static: true }) private _dialogEl!: ElementRef<HTMLElement>;
 
-  $onInit(): void {
-    this._elWithFocus = document.activeElement;
+  @Input() animation!: boolean;
+  @Input({ binding: "@" }) ariaLabelledBy!: string;
+  @Input({ binding: "@" }) ariaDescribedBy!: string;
+  @Input() backdrop: boolean | string = true;
+  @Input({ binding: "@" }) centered!: string;
+  @Input() fullscreen!: string | boolean;
+  @Input() keyboard = true;
+  @Input({ binding: "@" }) role = "dialog";
+  @Input({ binding: "@" }) scrollable!: string;
+  @Input({ binding: "@" }) size!: string;
+  @Input({ binding: "@" }) windowClass!: string;
+  @Input({ binding: "@" }) modalDialogClass!: string;
+
+  @Output("dismiss") dismissEvent = new EventEmitter();
+
+  shown = new Subject<void>();
+  hidden = new Subject<void>();
+
+  @HostBinding("class")
+  get _hostClass(): string {
+    return `modal d-block${this.windowClass ? ` ${this.windowClass}` : ""}`;
   }
 
-  $onDestroy(): void {
+  @HostBinding("class.fade")
+  get _fade(): boolean {
+    return this.animation;
+  }
+
+  @HostBinding("attr.tabindex") readonly _tabindex = -1;
+  @HostBinding("attr.aria-modal") readonly _ariaModal = true;
+
+  @HostBinding("attr.aria-labelledby")
+  get _ariaLabelledBy() {
+    return this.ariaLabelledBy;
+  }
+
+  @HostBinding("attr.aria-describedby")
+  get _ariaDescribedBy() {
+    return this.ariaDescribedBy;
+  }
+
+  @HostBinding("attr.role")
+  get _role() {
+    return this.role;
+  }
+
+  get fullscreenClass(): string {
+    return this.fullscreen === true
+      ? " modal-fullscreen"
+      : isString(this.fullscreen)
+        ? ` modal-fullscreen-${this.fullscreen}-down`
+        : "";
+  }
+
+  dismiss(reason: unknown): void {
+    this.dismissEvent.emit(reason);
+  }
+
+  ngOnInit() {
+    this._elWithFocus = this._document.activeElement;
+    afterNextRender({ mixedReadWrite: () => this._show() }, { injector: this._injector });
+  }
+
+  ngOnDestroy() {
     this._disableEventHandling();
   }
 
-  $postLink(): void {
-    this.$element.addClass("modal d-block");
-    this.$element.attr("tabindex", -1);
-    this.$element.attr("aria-modal", "true");
+  hide(): Observable<unknown> {
+    const { nativeElement } = this._elRef;
+    const context: NgbTransitionOptions<unknown> = { animation: this.animation, runningTransition: "stop" };
 
-    this._ngZone.runOutsideAngular(() => queueMicrotask(() => this._show()));
-  }
-
-  $onChanges(): void {
-    this.$element.toggleClass("fade", this.animation);
-
-    if (this._appliedWindowClass)
-      this._appliedWindowClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.removeClass(className);
-        });
-
-    if (this.windowClass)
-      this.windowClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.addClass(className);
-        });
-
-    this._appliedWindowClass = this.windowClass;
-
-    if (this.ariaLabelledBy) this.$element.attr("aria-labelledby", this.ariaLabelledBy);
-    else this.$element.removeAttr("aria-labelledby");
-
-    if (this.ariaDescribedBy) this.$element.attr("aria-describedby", this.ariaDescribedBy);
-    else this.$element.removeAttr("aria-describedby");
-
-    if (this.role) this.$element.attr("role", this.role);
-    else this.$element.removeAttr("role");
-  }
-
-  public dismiss(reason: any): void {
-    this._dismissListener?.(reason);
-  }
-
-  public onDismiss(listener: (reason: any) => void): void {
-    this._dismissListener = listener;
-  }
-
-  public hide(): Observable<[void, void]> {
-    const context: NgbTransitionOptions<any> = {
-      animation: Boolean(this.animation),
-      runningTransition: "stop",
-    };
-
-    const windowTransition = ngbRunTransition(
-      this._ngZone,
-      this.$element,
-      ngbModalWindowFadeOutTransition,
+    const windowTransition$ = ngbRunTransition(
+      this._zone,
+      nativeElement,
+      () => nativeElement.classList.remove("show"),
       context,
     );
+    const dialogTransition$ = ngbRunTransition(this._zone, this._dialogEl.nativeElement, () => {}, context);
 
-    if (!this._dialogEl) throw new Error("dialog element is undefined");
-
-    const dialogTransition = ngbRunTransition(this._ngZone, this._dialogEl, noopTransition, context);
-
-    const transitions = zip(windowTransition, dialogTransition);
-    transitions.subscribe(() => {
+    const transitions$ = zip(windowTransition$, dialogTransition$);
+    transitions$.subscribe(() => {
       this.hidden.next();
       this.hidden.complete();
     });
@@ -146,42 +149,35 @@ export class NgbModalWindow implements IComponentController {
     this._disableEventHandling();
     this._restoreFocus();
 
-    return transitions;
+    return transitions$;
   }
 
-  public updateOptions(options: NgbModalUpdatableOptions) {
-    const source: WindowOptions = options;
-
-    this._ngZone.run(() => {
-      WINDOW_ATTRIBUTES.forEach((option) => {
-        if (angular.isDefined(source[option])) {
-          Object.assign(this, { [option]: source[option] });
-        }
-      });
-
-      this.$onChanges();
-      this._cdRef.markForCheck();
-    });
+  updateOptions(options: NgbModalUpdatableOptions): void {
+    for (const optionName of WINDOW_ATTRIBUTES) {
+      if (isDefined((options as Record<string, unknown>)[optionName])) {
+        (this as Record<string, unknown>)[optionName] = (options as Record<string, unknown>)[optionName];
+      }
+    }
+    this._cdRef.markForCheck();
   }
 
   private _show() {
-    const context: NgbTransitionOptions<any> = {
-      animation: Boolean(this.animation),
-      runningTransition: "continue",
-    };
+    const context: NgbTransitionOptions<unknown> = { animation: this.animation, runningTransition: "continue" };
 
-    const windowTransition = ngbRunTransition(
-      this._ngZone,
-      this.$element,
-      ngbModalWindowFadeInTransition,
+    const windowTransition$ = ngbRunTransition(
+      this._zone,
+      this._elRef.nativeElement,
+      (element: HTMLElement, animation: boolean) => {
+        if (animation) {
+          reflow(element);
+        }
+        element.classList.add("show");
+      },
       context,
     );
+    const dialogTransition$ = ngbRunTransition(this._zone, this._dialogEl.nativeElement, () => {}, context);
 
-    if (!this._dialogEl) throw new Error("dialog element is undefined");
-
-    const dialogTransition = ngbRunTransition(this._ngZone, this._dialogEl, noopTransition, context);
-
-    zip(windowTransition, dialogTransition).subscribe(() => {
+    zip(windowTransition$, dialogTransition$).subscribe(() => {
       this.shown.next();
       this.shown.complete();
     });
@@ -190,131 +186,99 @@ export class NgbModalWindow implements IComponentController {
     this._setFocus();
   }
 
-  private _setFocus() {
-    const native = toNativeElement(this.$element);
-    if (!native.contains(document.activeElement)) {
-      const autoFocusable = native.querySelector("[ngbAutofocus]") as HTMLElement;
-      const [firstFocusable] = getFocusableBoundaryElements(native);
-
-      const elementToFocus = autoFocusable || firstFocusable || native;
-      elementToFocus.focus();
-    }
-  }
-
   private _enableEventHandling() {
-    this._disableEventHandling();
-    const native = toNativeElement(this.$element);
-    if (!this._dialogEl) throw new Error("dialog element is undefined");
-    const dialog = toNativeElement(this._dialogEl);
-    let preventClose = false;
-
-    fromEvent<KeyboardEvent>(native, "keydown")
-      .pipe(
-        takeUntil(this._closed$),
-        filter((event) => event.key === "Escape"),
-      )
-      .subscribe((event) => {
-        if (this.keyboard) {
-          requestAnimationFrame(() => {
-            if (!event.defaultPrevented) {
-              this._ngZone.run(() => {
-                this.dismiss(ModalDismissReasons.ESC);
-              });
-            }
-          });
-          return;
-        }
-
-        if (this.backdrop === "static") {
-          this._bumpBackdrop();
-        }
-      });
-
-    fromEvent<MouseEvent>(dialog, "mousedown")
-      .pipe(
-        takeUntil(this._closed$),
-        tap(() => {
-          preventClose = false;
-        }),
-        switchMap(() => fromEvent<MouseEvent>(native, "mouseup").pipe(takeUntil(this._closed$), take(1))),
-        filter(({ target }) => target === native),
-      )
-      .subscribe(() => {
-        preventClose = true;
-      });
-
-    fromEvent<MouseEvent>(native, "click")
-      .pipe(takeUntil(this._closed$))
-      .subscribe((event) => {
-        if (event.target === native) {
-          if (this.backdrop === "static") {
+    const { nativeElement } = this._elRef;
+    this._zone.runOutsideAngular(() => {
+      fromEvent<KeyboardEvent>(nativeElement, "keydown")
+        .pipe(
+          takeUntil(this._closed$),
+          filter((e) => e.key === "Escape"),
+        )
+        .subscribe((event) => {
+          if (this.keyboard) {
+            requestAnimationFrame(() => {
+              if (!event.defaultPrevented) {
+                this._zone.run(() => this.dismiss(ModalDismissReasons.ESC));
+              }
+            });
+          } else if (this.backdrop === "static") {
             this._bumpBackdrop();
           }
+        });
 
-          if (this.backdrop === true && !preventClose) {
-            this._ngZone.run(() => {
-              this.dismiss(ModalDismissReasons.BACKDROP_CLICK);
-            });
+      let preventClose = false;
+      fromEvent<MouseEvent>(this._dialogEl.nativeElement, "mousedown")
+        .pipe(
+          takeUntil(this._closed$),
+          tap(() => (preventClose = false)),
+          switchMap(() => fromEvent<MouseEvent>(nativeElement, "mouseup").pipe(takeUntil(this._closed$), take(1))),
+          filter(({ target }) => nativeElement === target),
+        )
+        .subscribe(() => {
+          preventClose = true;
+        });
+
+      fromEvent<MouseEvent>(nativeElement, "click")
+        .pipe(takeUntil(this._closed$))
+        .subscribe(({ target }) => {
+          if (nativeElement === target) {
+            if (this.backdrop === "static") {
+              this._bumpBackdrop();
+            } else if (this.backdrop === true && !preventClose) {
+              this._zone.run(() => this.dismiss(ModalDismissReasons.BACKDROP_CLICK));
+            }
           }
-        }
-
-        preventClose = false;
-      });
+          preventClose = false;
+        });
+    });
   }
 
   private _disableEventHandling() {
     this._closed$.next();
   }
 
+  private _setFocus() {
+    const { nativeElement } = this._elRef;
+    if (!nativeElement.contains(document.activeElement)) {
+      const autoFocusable = nativeElement.querySelector("[ngbAutofocus]") as HTMLElement;
+      const firstFocusable = getFocusableBoundaryElements(nativeElement)[0];
+
+      const elementToFocus = autoFocusable || firstFocusable || nativeElement;
+      elementToFocus.focus();
+    }
+  }
+
   private _restoreFocus() {
-    const body = document.body as HTMLBodyElement;
-
+    const body = this._document.body;
     const elWithFocus = this._elWithFocus;
-    const validElementToFocus = elWithFocus instanceof HTMLElement && body.contains(elWithFocus);
-    const elementToFocus: HTMLElement = validElementToFocus ? elWithFocus : body;
 
-    this._ngZone.runOutsideAngular(() => setTimeout(() => elementToFocus.focus()));
-
-    this._elWithFocus = null;
+    let elementToFocus: HTMLElement;
+    if (elWithFocus instanceof HTMLElement && body.contains(elWithFocus)) {
+      elementToFocus = elWithFocus;
+    } else {
+      elementToFocus = body;
+    }
+    this._zone.runOutsideAngular(() => {
+      setTimeout(() => elementToFocus.focus());
+      this._elWithFocus = null;
+    });
   }
 
   private _bumpBackdrop() {
-    if (this.backdrop !== "static") return;
-
-    ngbRunTransition(this._ngZone, this.$element, ngbModalBumpBackdropTransition, {
-      animation: Boolean(this.animation),
-      runningTransition: "continue",
-    });
+    if (this.backdrop === "static") {
+      ngbRunTransition(
+        this._zone,
+        this._elRef.nativeElement,
+        ({ classList }) => {
+          classList.add("modal-static");
+          return () => classList.remove("modal-static");
+        },
+        { animation: this.animation, runningTransition: "continue" },
+      );
+    }
   }
 
   static get $name() {
     return "ngbModalWindow";
-  }
-
-  static get $inject() {
-    return ["$element", NgZone.$name, ChangeDetectorRef.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      controller: NgbModalWindow,
-      controllerAs: "$",
-      transclude: true,
-      template,
-      bindings: {
-        animation: "<?",
-        ariaLabelledBy: "<?",
-        ariaDescribedBy: "<?",
-        backdrop: "<?",
-        centered: "<?",
-        fullscreen: "<?",
-        keyboard: "<?",
-        role: "<?",
-        scrollable: "<?",
-        size: "<?",
-        windowClass: "<?",
-        modalDialogClass: "<?",
-      },
-    };
   }
 }
