@@ -30,23 +30,18 @@ en field initializers no resuelve. `configureTestBed(NgbModule)` hace un
 `$compile`/`$rootScope`/`get` + `detectChanges()` (= `appRef.tick()`: digest +
 flush de `afterNextRender`). Se migran las specs a él **de a una, junto con su feature**.
 
-## Estado (suite: 90 pasan / 58 fallan, 13/26 archivos verdes)
+## Estado (suite: 104 pasan / 44 fallan, 16/26 archivos verdes)
 
 | Feature | Clases | `*.module.ts` | Spec | Ref |
 |---|---|---|---|---|
 | alert · pagination · progressbar · scrollspy | ✅ | ✅ | ✅ verde | — |
-| **collapse** | ✅ | ✅ | ✅ 4/4 | `src/collapse/collapse.ts` |
-| **rating** | ✅ | ✅ | ✅ 4/4 | `src/rating/rating.ts` |
-| **toast** | ✅ | ✅ | ✅ 2/2 (testbed) | `src/toast/toast.ts` |
-| nav | ✅ | ✅ | 🔴 4/4 | `src/nav/nav.ts` |
-| tooltip | ✅ | ✅ | 🔴 6/6 | `src/tooltip/tooltip.ts` |
-| typeahead | ✅ | ✅ | 🔴 22/22 | `src/typeahead/typeahead.ts` |
-| **carousel** | ⬜ `static $factory` | ⬜ `angular.module` | 🔴 6/6 | `src/carousel/carousel.ts` |
-| **popover** | ⬜ | ⬜ | 🔴 5/5 | `src/popover/popover.ts` |
-| **accordion** | ⬜ (8 directivas) | ⬜ (puente) | 🔴 2/2 | `src/accordion/accordion.directive.ts` |
-| **dropdown** | ⬜ (7) | ⬜ | 🔴 3/3 | `src/dropdown/dropdown.ts` |
-| **modal** | ⬜ (5, service) | ⬜ | 🟡 1/4 | `src/modal/modal.ts` |
-| **offcanvas** | ⬜ (5, service) | ⬜ | 🔴 4/4 | `src/offcanvas/offcanvas.ts` |
+| **collapse** · **rating** · **toast** · **nav** · **modal** · **carousel** | ✅ | ✅ | ✅ verde | — |
+| tooltip | ✅ | ✅ (sin `id:`) | 🟡 4/6 | `src/tooltip/tooltip.ts` |
+| dropdown | ⬜ (7) | ⬜ `angular.module` | 🟡 2/3 | `src/dropdown/dropdown.ts` |
+| accordion | ⬜ (8 directivas) | ⬜ (puente) | 🔴 2/2 | `src/accordion/accordion.directive.ts` |
+| offcanvas | ⬜ (5, service) | ⬜ | 🔴 4/4 | `src/offcanvas/offcanvas.ts` |
+| popover | ⬜ | ⬜ | 🔴 5/5 | `src/popover/popover.ts` |
+| typeahead | ✅ (module sin `id:`) | ✅ | 🔴 22/22 (highlight, window, directiva) | `src/typeahead/typeahead.ts` |
 | **timepicker** | ⬜ (1 componente grande) | ⬜ | ✅ verde (lógica) | `src/timepicker/timepicker.ts` |
 | **datepicker** | ⬜ (10) | ⬜ | 🟡 5/13 | `src/datepicker/datepicker.ts` |
 
@@ -54,26 +49,39 @@ Leyenda: ✅ hecho/verde · ⬜ pendiente · 🟡 parcial · 🔴 rojo.
 
 ## Bugs de `ngjs-core` encontrados y arreglados
 
-1. **`ngOnInit` no disparaba con `@Output` presente** (`ngjs-core` 5c99a27) —
-   `output-emitter-bridge` dejaba `$onInit` puesto antes que `lifecycle-bridge`, que
-   entonces lo salteaba. Afectaba a casi todo ng-bootstrap. Fix: encadenar.
-2. **`TemplateRef`/`NgTemplateOutlet` copiaban el contexto por valor** (`ngjs-core`
-   9835b30) — una mutación in-place del objeto de contexto (`NgbRating._updateState`,
-   `NgbCarousel`) no se reflejaba. Fix: `let-x` son getters en vivo, el outlet pasa
-   por referencia.
+1. **`ngOnInit` no disparaba con `@Output` presente** (`5c99a27`) —
+   `output-emitter-bridge` dejaba `$onInit` puesto antes que `lifecycle-bridge`,
+   que lo salteaba. Fix: encadenar.
+2. **`TemplateRef`/`NgTemplateOutlet` copiaban el contexto por valor** (`9835b30`)
+   — mutación in-place del contexto (`NgbRating`, `NgbCarousel`) no se reflejaba.
+   Fix: `let-x` son getters en vivo, el outlet pasa por referencia.
+3. **`inject()` sin fallback estilo `require`** (`41725c8`) — ahora una directiva
+   del host o un ancestro se resuelve con `$element.controller(name)`.
+4. **`@ContentChild`/`@ContentChildren` sobre `@Directive` sin template** (`e577104`)
+   — antes solo para componentes con `<ng-content>`. Ahora light DOM del host.
+5. **`controllerAs` de `@Directive` compartido** (`e577104`) — heredaba el `"$"` del
+   `@NgModule`, colisión en el scope. Ahora nombre de registro único por directiva
+   (sin template propio).
+6. **`exportAs` era metadata muerta** (`ca0ad2b`) — `ng-ref-read` ahora resuelve
+   `exportAs` + tokens sintéticos (`ElementRef`/`TemplateRef`/`ViewContainerRef`),
+   `$element`/`ngTemplate` deprecados.
+
+## Adaptaciones en `ngb-js` (no en el core)
+
+- **Directivas con selector solapado fusionadas** (AngularJS no admite dos con el
+  mismo nombre y controller): `NgbNavItemRole`→`NgbNavItem`,
+  `NgbNavLink`/`NgbNavLinkButton`→`NgbNavLinkBase` (ramifica por `tagName`).
+- **`NgbRootModule` importa `PlatformBrowserModule`** → token `DOCUMENT`.
+- **`toNativeElement`** restaurado en `utils` (9 componentes viejos lo usan).
+- **`@HostListener` usa `addEventListener`**, no jqLite `.on()` — las specs deben
+  disparar con `dispatchEvent(new MouseEvent(...))`, no `triggerHandler`.
 
 ## Orden
 
-Migrados con pocos rojos primero, después los migrados rotos, después los viejos:
-
-1. ~~collapse~~ ✅ · ~~rating~~ ✅ · ~~toast~~ ✅
-2. **modal** — 1 rojo (razón de dismiss con Escape); después migrar el module.
-3. **nav** — 4 rojos (`ng-ref-read`, herencia de token, outlet).
-4. **tooltip** — 6 rojos (popup lifecycle, transiciones).
-5. **typeahead** — 22 rojos (highlight, window, directiva). Ids de módulo
-   `NgbTooltipModule`/`NgbTypeaheadModule` sin `id:` → homogeneizar a `"ngb.x"`.
-6. **carousel** → **popover** → **accordion** → **dropdown** → **offcanvas** →
-   **timepicker** (componente) → **datepicker** — old→new completo.
+1. ~~collapse~~ · ~~rating~~ · ~~toast~~ · ~~modal~~ · ~~carousel~~ · ~~nav~~ ✅
+2. **tooltip** — 2 rojos. Homogeneizar `id:` del module a `"ngb.tooltip"`.
+3. **dropdown** — 2 rojos + migrar el module.
+4. **accordion** → **offcanvas** → **popover** → **typeahead** → **datepicker**.
 
 Tras cada uno: `bunx vitest run src/<feature>` verde + suite completa sin nuevos rojos.
 
