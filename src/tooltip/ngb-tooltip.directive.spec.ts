@@ -12,15 +12,36 @@ describe("ngbTooltip", () => {
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let $timeout: MockTimeoutService;
+  let appRef: { tick: () => void };
 
   beforeEach(() => {
     angular.mock.module(NgbModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService, _$timeout_: ITimeoutService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-      $timeout = _$timeout_ as MockTimeoutService;
-    });
+    angular.mock.inject(
+      (
+        _$compile_: ICompileService,
+        _$rootScope_: IRootScopeService,
+        _$timeout_: ITimeoutService,
+        _$injector_: angular.auto.IInjectorService,
+      ) => {
+        $compile = _$compile_;
+        $rootScope = _$rootScope_;
+        $timeout = _$timeout_ as MockTimeoutService;
+        appRef = _$injector_.get("ApplicationRef");
+      },
+    );
   });
+
+  /** `$timeout.flush()` tira si no hay tareas pendientes; acá eso no es error. */
+  const flushTimeout = () => {
+    try {
+      $timeout.flush();
+    } catch (error) {
+      if (!(error as Error)?.message?.includes("No deferred tasks")) throw error;
+    }
+  };
+
+  /** Vacía `afterNextRender` (la clase `.show` del popup la agrega una transición post-render). */
+  const flushRender = () => appRef.tick();
 
   afterEach(() => {
     document.body.innerHTML = "";
@@ -78,7 +99,7 @@ describe("ngbTooltip", () => {
     scope.$digest();
     await settle(opening);
     scope.$digest();
-    $timeout.flush();
+    flushTimeout();
     scope.$digest();
 
     expect((ctrl as { isOpen: () => boolean }).isOpen()).toBe(true);
@@ -139,7 +160,7 @@ describe("ngbTooltip", () => {
     scope.$digest();
     await settle(opening);
     scope.$digest();
-    $timeout.flush();
+    flushTimeout();
     scope.$digest();
 
     expect(document.body.querySelector(".template-tooltip")?.textContent).toContain("Hello ngjs-core");
@@ -166,14 +187,14 @@ describe("ngbTooltip", () => {
     await Promise.resolve();
     await Promise.resolve();
     scope.$digest();
-    $timeout.flush();
+    flushTimeout();
 
     button.dispatchEvent(new MouseEvent("mouseleave"));
     button.dispatchEvent(new MouseEvent("mouseenter"));
     await Promise.resolve();
     await Promise.resolve();
     scope.$digest();
-    $timeout.flush();
+    flushTimeout();
     scope.$digest();
 
     expect(ctrl.isOpen()).toBe(true);
@@ -185,8 +206,8 @@ describe("ngbTooltip", () => {
     const scope = $rootScope.$new();
     const elements = $compile(`
             <div>
-                <button type="button" ngb-tooltip="'First tooltip'" open-delay="0" close-delay="0">First</button>
-                <button type="button" ngb-tooltip="'Second tooltip'" open-delay="0" close-delay="0">Second</button>
+                <button type="button" ngb-tooltip="'First tooltip'" open-delay="0" close-delay="0" animation="false">First</button>
+                <button type="button" ngb-tooltip="'Second tooltip'" open-delay="0" close-delay="0" animation="false">Second</button>
             </div>
         `)(scope);
     angular.element(document.body).append(elements);
@@ -197,13 +218,17 @@ describe("ngbTooltip", () => {
     first.dispatchEvent(new MouseEvent("mouseenter"));
     await new Promise((resolve) => setTimeout(resolve, 0));
     scope.$digest();
-    $timeout.flush();
+    flushTimeout();
+    flushRender();
+    scope.$digest();
 
     first.dispatchEvent(new MouseEvent("mouseleave"));
     second.dispatchEvent(new MouseEvent("mouseenter"));
     await new Promise((resolve) => setTimeout(resolve, 0));
     scope.$digest();
-    $timeout.flush();
+    flushTimeout();
+    scope.$digest();
+    flushRender();
     scope.$digest();
 
     const tooltipTexts = Array.from(document.body.querySelectorAll(".tooltip-inner")).map(
@@ -237,7 +262,7 @@ describe("ngbTooltip", () => {
     scope.$digest();
     await settle(opening);
     scope.$digest();
-    $timeout.flush();
+    flushTimeout();
     scope.$digest();
 
     expect(ctrl.isOpen()).toBe(true);

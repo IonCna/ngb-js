@@ -166,6 +166,17 @@ Fix en el core: rutear la resolución de `TemplateRef` para directivas sobre
 `<ng-template>` por `require: 'ngTemplate'` y registrar ese `TemplateRef` como
 candidato de query en el nodo del `<ng-template>`.
 
+### `@Input` no soporta valor literal de atributo (2026-09-07)
+
+Angular: `<btn ngbTooltip="texto">` pasa el string `"texto"` al `@Input()`;
+`<btn [ngbTooltip]="expr">` evalúa `expr`. `ngjs-core` traduce `@Input()` a un
+binding `<?` (one-way de expresión) — `ngb-tooltip="texto"` evalúa `scope.texto`
+(→ `undefined`). Solo `ngb-tooltip="'texto'"` (comilla) o `[ngb-tooltip]` andan.
+
+Falla `tooltip > supports literal attribute values without expression bindings`.
+Fix en el core: `@Input` que acepte literal + expresión (¿`<?` + `@?` combinados,
+o un binding que detecte comillas?). Por ahora las specs usan `"'texto'"`.
+
 ### Token `DOCUMENT` no es `providedIn: 'root'`
 
 `inject(DOCUMENT)` (patrón de `NgbNav`, `NgbTooltip`, `NgbTypeahead`, `ScrollSpy`,
