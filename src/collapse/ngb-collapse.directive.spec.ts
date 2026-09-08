@@ -41,7 +41,7 @@ describe("ngbCollapse", () => {
     const element = $compile(`
             <div ngb-collapse="isCollapsed"
                  animation="false"
-                 ngb-hidden="onHidden()"
+                 hidden="onHidden()"
                  shown="onShown()"
                  ngb-collapse-change="onChange()">
                 content
