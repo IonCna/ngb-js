@@ -1,6 +1,6 @@
 import { NgbCollapseConfig } from "@ngb/collapse/ngb-collapse-config.service";
 import { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
-import { NgModule } from "ngjs-core/runtime/core";
+import { NgModule } from "ngjs-core";
 
 @NgModule({
   id: "ngb.collapse",

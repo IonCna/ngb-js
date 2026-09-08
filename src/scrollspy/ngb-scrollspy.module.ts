@@ -4,7 +4,7 @@ import { NgbScrollSpyItem } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
 import { NgbScrollSpyMenu } from "@ngb/scrollspy/ngb-scrollspy-menu.directive";
 import { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyService } from "@ngb/scrollspy/scrollspy.service";
-import { NgModule } from "ngjs-core/runtime/core";
+import { NgModule } from "ngjs-core";
 
 @NgModule({
   id: "ngb.scrollspy",

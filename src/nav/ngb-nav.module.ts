@@ -8,8 +8,8 @@ import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
 import { NgbNavLinkButton } from "@ngb/nav/ngb-nav-link-button.directive";
 import { NgbNavOutlet } from "@ngb/nav/ngb-nav-outlet.directive";
 import { NgbNavPane } from "@ngb/nav/ngb-nav-pane.directive";
-import { CommonModule } from "ngjs-core/runtime/common";
-import { NgModule } from "ngjs-core/runtime/core";
+import { CommonModule } from "ngjs-core/common";
+import { NgModule } from "ngjs-core";
 
 @NgModule({
   id: "ngb.nav",

@@ -6,8 +6,7 @@ import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
 import angular, { type IAugmentedJQuery, type IDeferred, type IPromise, type IQService } from "angular";
-import { ApplicationRef, type ComponentRef, NgZone, TemplateRef } from "ngjs-core";
-import { createComponent } from "ngjs-core/runtime";
+import { ApplicationRef, type ComponentRef, createComponent, NgZone, TemplateRef } from "ngjs-core";
 import { Subject, take } from "rxjs";
 
 export class NgbModalStack {

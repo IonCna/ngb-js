@@ -1,8 +1,8 @@
 import { NgbToast } from "@ngb/toast/ngb-toast.component";
 import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
 import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
-import { CommonModule } from "ngjs-core/runtime/common";
-import { NgModule } from "ngjs-core/runtime/core";
+import { CommonModule } from "ngjs-core/common";
+import { NgModule } from "ngjs-core";
 
 @NgModule({
   id: "ngb.toast",

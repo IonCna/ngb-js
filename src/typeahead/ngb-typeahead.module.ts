@@ -1,7 +1,7 @@
 import { NgbHighlight } from "@ngb/typeahead/ngb-highlight.component";
 import { NgbTypeahead } from "@ngb/typeahead/ngb-typeahead.directive";
-import { CommonModule } from "ngjs-core/runtime/common";
-import { NgModule } from "ngjs-core/runtime/core";
+import { CommonModule } from "ngjs-core/common";
+import { NgModule } from "ngjs-core";
 
 export { NgbHighlight } from "@ngb/typeahead/ngb-highlight.component";
 export { NgbTypeaheadConfig } from "@ngb/typeahead/ngb-typeahead-config.service";

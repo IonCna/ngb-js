@@ -1,7 +1,7 @@
 import { NgbAlert } from "@ngb/alert/ngb-alert.component";
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
-import { CommonModule } from "ngjs-core/runtime/common";
-import { NgModule } from "ngjs-core/runtime/core";
+import { CommonModule } from "ngjs-core/common";
+import { NgModule } from "ngjs-core";
 
 @NgModule({
   id: "ngb.alert",

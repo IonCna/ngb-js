@@ -7,8 +7,8 @@ import { NgbPaginationNext } from "@ngb/pagination/ngb-pagination-next.directive
 import { NgbPaginationNumber } from "@ngb/pagination/ngb-pagination-number.directive";
 import { NgbPaginationPages } from "@ngb/pagination/ngb-pagination-pages.directive";
 import { NgbPaginationPrevious } from "@ngb/pagination/ngb-pagination-previous.directive";
-import { CommonModule } from "ngjs-core/runtime/common";
-import { NgModule } from "ngjs-core/runtime/core";
+import { CommonModule } from "ngjs-core/common";
+import { NgModule } from "ngjs-core";
 
 const NGB_PAGINATION_DIRECTIVES = [
   NgbPagination,

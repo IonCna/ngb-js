@@ -4,7 +4,7 @@ import { NgbModalConfig } from "@ngb/modal/ngb-modal-config.service";
 import { NgbModalStack } from "@ngb/modal/ngb-modal-stack.service";
 import { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
 import angular, {type IModule} from "angular";
-import { CommonModule } from "ngjs-core/runtime/common";
+import { CommonModule } from "ngjs-core/common";
 
 export const NgbModalModule: IModule = angular.module("ngb.modal", [CommonModule.name]);
 NgbModalModule.service(NgbModal.$name, NgbModal);

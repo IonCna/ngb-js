@@ -12,10 +12,10 @@ import {
   Input,
   NgZone,
   type QueryList,
+  takeUntilDestroyed,
   ViewChildren,
 } from "ngjs-core";
 import { distinctUntilChanged, skip, startWith } from "rxjs";
-import { takeUntilDestroyed } from "ngjs-core";
 
 @Component({
   selector: "[ngbNavOutlet]",
