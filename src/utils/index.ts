@@ -12,6 +12,7 @@ export {
   regExpEscape,
   removeAccents,
   toInteger,
+  toNativeElement,
   toString,
 } from "@ngb/utils/util";
 export {

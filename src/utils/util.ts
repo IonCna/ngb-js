@@ -1,5 +1,16 @@
+import type { IAugmentedJQuery } from "angular";
 import type { NgZone } from "ngjs-core";
 import { Observable, type OperatorFunction } from "rxjs";
+
+/**
+ * Desenvuelve un `jqLite`/`IAugmentedJQuery` al primer nodo DOM real. Los
+ * componentes ya migrados inyectan `ElementRef` y usan `.nativeElement`
+ * directamente; los que todavía reciben `$element` crudo pasan por acá.
+ */
+export function toNativeElement<T = HTMLElement>(element: IAugmentedJQuery): T {
+  const [native] = Array.from(element);
+  return native as T;
+}
 
 export function toInteger(value: any): number {
   return parseInt(`${value}`, 10);
