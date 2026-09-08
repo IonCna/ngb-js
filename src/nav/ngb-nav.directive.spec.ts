@@ -30,7 +30,7 @@ describe("ngbNav", () => {
 
     const element = $compile(`
             <div>
-                <ul ngb-nav ng-ref="nav" ng-ref-read="ngbNav" active-id="activeId" animation="false">
+                <ul ngb-nav ng-ref="nav" ng-ref-read="ngbNav" active-id="activeId" active-id-change="activeId = $event" animation="false">
                     <li ngb-nav-item="0">
                         <button ngb-nav-link>Home</button>
                         <ng-template ngb-nav-content>Home content</ng-template>
@@ -56,7 +56,7 @@ describe("ngbNav", () => {
     expect(buttons[0].classList.contains("active")).toBe(true);
     expect(outlet.textContent).toContain("Home content");
 
-    angular.element(buttons[1]).triggerHandler("click");
+    buttons[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
     scope.$digest();
     await tick(scope);
     await tick(scope);
@@ -95,7 +95,7 @@ describe("ngbNav", () => {
     scope.$digest();
 
     const secondButton = (element[0] as HTMLElement).querySelectorAll("[ngb-nav-link]")[1] as HTMLElement;
-    angular.element(secondButton).triggerHandler("click");
+    secondButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     scope.$digest();
 
     expect(onActiveChange).toHaveBeenCalledTimes(1);
@@ -105,15 +105,15 @@ describe("ngbNav", () => {
 
   it("exports its controller through ng-ref-read", () => {
     const scope = $rootScope.$new() as IRootScopeService & {
-      $: { nav?: { select(id: string): void } };
+      refs: { nav?: { select(id: string): void } };
       activeId: string;
     };
-    scope.$ = {};
+    scope.refs = {};
     scope.activeId = "first";
 
     const element = $compile(`
       <div>
-        <ul ngb-nav ng-ref="$.nav" ng-ref-read="ngbNav" active-id="activeId" animation="false">
+        <ul ngb-nav ng-ref="refs.nav" ng-ref-read="ngbNav" active-id="activeId" active-id-change="activeId = $event" animation="false">
           <li ngb-nav-item="'first'">
             <button ngb-nav-link>First</button>
             <ng-template ngb-nav-content>First content</ng-template>
@@ -123,13 +123,13 @@ describe("ngbNav", () => {
             <ng-template ngb-nav-content>Second content</ng-template>
           </li>
         </ul>
-        <div ngb-nav-outlet="$.nav"></div>
+        <div ngb-nav-outlet="refs.nav"></div>
       </div>
     `)(scope);
     scope.$digest();
 
-    expect(scope.$.nav).toBeDefined();
-    scope.$.nav?.select("second");
+    expect(scope.refs.nav).toBeDefined();
+    scope.refs.nav?.select("second");
     scope.$digest();
 
     expect(scope.activeId).toBe("second");
