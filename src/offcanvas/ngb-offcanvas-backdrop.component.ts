@@ -1,118 +1,101 @@
-import { ngbRunTransition } from "@ngb/utils";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
-import angular from "angular";
-import { NgZone } from "ngjs-core";
-import { defaultIfEmpty } from "rxjs";
-import { ngbOffcanvasFadeInTransition, ngbOffcanvasFadeOutTransition } from "@ngb/offcanvas/ngb-offcanvas-transition";
-import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 import type { NgbOffcanvasUpdatableOptions } from "@ngb/offcanvas/ngb-offcanvas-config.service";
+import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
+import { ngbOffcanvasFadeInTransition, ngbOffcanvasFadeOutTransition } from "@ngb/offcanvas/ngb-offcanvas-transition";
+import { isDefined, ngbRunTransition } from "@ngb/utils";
+import {
+  afterNextRender,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostBinding,
+  inject,
+  Injector,
+  Input,
+  NgZone,
+  type OnDestroy,
+  type OnInit,
+} from "ngjs-core";
+import { defaultIfEmpty, fromEvent, type Observable, Subject, takeUntil } from "rxjs";
 
-const BACKDROP_ATTRIBUTES = [
-  "animation",
-  "backdropClass",
-] as const satisfies readonly (keyof NgbOffcanvasUpdatableOptions)[];
+const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 
-type BackdropAttribute = (typeof BACKDROP_ATTRIBUTES)[number];
-type BackdropOptions = Partial<Record<BackdropAttribute, unknown>> & NgbOffcanvasUpdatableOptions;
+@Component({
+  selector: "ngb-offcanvas-backdrop",
+  template: "",
+})
+export class NgbOffcanvasBackdrop implements OnInit, OnDestroy {
+  private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private _zone = inject(NgZone);
+  private _injector = inject(Injector);
+  private _cdRef = inject(ChangeDetectorRef);
 
-export class NgbOffcanvasBackdrop implements IComponentController {
-  animation?: boolean;
-  backdropClass?: string;
+  @Input() animation?: boolean;
+  @Input({ binding: "@" }) backdropClass?: string;
+
+  /** Lo pone `NgbOffcanvasStack` según `options.backdrop === "static"`. */
   static?: boolean;
-  onDismiss?: ({ $event }: { $event: OffcanvasDismissReasons }) => void;
+  /** Lo asigna `NgbOffcanvasRef`. */
+  onDismiss?: (arg: { $event: OffcanvasDismissReasons }) => void;
 
-  private _appliedBackdropClass?: string;
+  private _destroyed$ = new Subject<void>();
 
-  constructor(
-    private $element: IAugmentedJQuery,
-    private _ngZone: NgZone,
-  ) {}
+  @HostBinding("class")
+  get _hostClass(): string {
+    return `offcanvas-backdrop${this.backdropClass ? ` ${this.backdropClass}` : ""}`;
+  }
 
-  $postLink(): void {
+  @HostBinding("class.fade")
+  get _fade(): boolean {
+    return this.animation ?? true;
+  }
+
+  ngOnInit(): void {
     const animation = this.animation ?? true;
-
-    this._ngZone.runOutsideAngular(() =>
-      queueMicrotask(() =>
-        ngbRunTransition(this._ngZone, this.$element, ngbOffcanvasFadeInTransition, {
-          animation,
-          runningTransition: "continue",
-        }),
-      ),
+    afterNextRender(
+      {
+        mixedReadWrite: () =>
+          ngbRunTransition(this._zone, this._nativeElement, ngbOffcanvasFadeInTransition, {
+            animation,
+            runningTransition: "continue",
+          }),
+      },
+      { injector: this._injector },
     );
 
-    this.$element.addClass("offcanvas-backdrop");
-    this.$element.toggleClass("fade", animation);
-
-    this.$element.on("mousedown", this.dismiss.bind(this));
+    this._zone.runOutsideAngular(() => {
+      fromEvent<MouseEvent>(this._nativeElement, "mousedown")
+        .pipe(takeUntil(this._destroyed$))
+        .subscribe(() => this._zone.run(() => this.dismiss()));
+    });
   }
 
-  $onChanges(): void {
-    if (this._appliedBackdropClass)
-      this._appliedBackdropClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.removeClass(className);
-        });
-
-    if (this.backdropClass)
-      this.backdropClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.addClass(className);
-        });
-
-    this._appliedBackdropClass = this.backdropClass;
+  ngOnDestroy(): void {
+    this._destroyed$.next();
+    this._destroyed$.complete();
   }
 
-  $onDestroy(): void {
-    this.$element.off("mousedown");
-  }
-
-  hide() {
-    return ngbRunTransition(this._ngZone, this.$element, ngbOffcanvasFadeOutTransition, {
+  hide(): Observable<void> {
+    return ngbRunTransition(this._zone, this._nativeElement, ngbOffcanvasFadeOutTransition, {
       animation: this.animation ?? true,
       runningTransition: "stop",
-    }).pipe(defaultIfEmpty(undefined));
+    }).pipe(defaultIfEmpty(undefined)) as Observable<void>;
   }
 
-  dismiss() {
+  dismiss(): void {
     if (this.static) return;
     this.onDismiss?.({ $event: OffcanvasDismissReasons.BACKDROP_CLICK });
   }
 
-  updateOptions(options: NgbOffcanvasUpdatableOptions) {
-    const source: BackdropOptions = options;
-
-    this._ngZone.run(() => {
-      BACKDROP_ATTRIBUTES.forEach((attr) => {
-        if (angular.isDefined(source[attr])) {
-          Object.assign(this, { [attr]: source[attr] });
-        }
-      });
-      this.$onChanges();
-    });
+  updateOptions(options: NgbOffcanvasUpdatableOptions): void {
+    for (const attr of BACKDROP_ATTRIBUTES) {
+      if (isDefined((options as Record<string, unknown>)[attr])) {
+        (this as Record<string, unknown>)[attr] = (options as Record<string, unknown>)[attr];
+      }
+    }
+    this._cdRef.markForCheck();
   }
 
   static get $name() {
     return "ngbOffcanvasBackdrop";
-  }
-
-  static get $inject() {
-    return ["$element", NgZone.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        animation: "<?",
-        backdropClass: "@?",
-        static: "<?",
-        onDismiss: "&?",
-      },
-      controller: NgbOffcanvasBackdrop,
-      template: "",
-    };
   }
 }

@@ -1,15 +1,22 @@
-import { NgbOffcanvas } from "@ngb/offcanvas/ngb-offcanvas.service";
 import { NgbOffcanvasBackdrop } from "@ngb/offcanvas/ngb-offcanvas-backdrop.component";
-import { NgbOffcanvasConfig } from "@ngb/offcanvas/ngb-offcanvas-config.service";
-import { NgbOffcanvasStack } from "@ngb/offcanvas/ngb-offcanvas-stack.service";
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
-import angular, {type IModule} from "angular";
+import { NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
 
-export const NgbOffcanvasModule: IModule = angular.module("ngb.offcanvas", [CommonModule.name]);
-NgbOffcanvasModule.service(NgbOffcanvas.$name, NgbOffcanvas);
-NgbOffcanvasModule.service(NgbOffcanvasStack.$name, NgbOffcanvasStack);
-NgbOffcanvasModule.service(NgbOffcanvasConfig.$name, NgbOffcanvasConfig);
+export { NgbOffcanvas } from "@ngb/offcanvas/ngb-offcanvas.service";
+export {
+  NgbOffcanvasConfig,
+  type NgbOffcanvasOptions,
+  type NgbOffcanvasUpdatableOptions,
+} from "@ngb/offcanvas/ngb-offcanvas-config.service";
+export { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanvas-ref";
+export { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 
-NgbOffcanvasModule.component(NgbOffcanvasBackdrop.$name, NgbOffcanvasBackdrop.$factory);
-NgbOffcanvasModule.component(NgbOffcanvasPanel.$name, NgbOffcanvasPanel.$factory);
+// `NgbOffcanvas` / `NgbOffcanvasStack` / `NgbOffcanvasConfig` son `@Service()` →
+// se auto-registran (no van en `providers`). Ver CORE_GAPS.
+@NgModule({
+  id: "ngb.offcanvas",
+  imports: [CommonModule],
+  declarations: [NgbOffcanvasPanel, NgbOffcanvasBackdrop],
+})
+export class NgbOffcanvasModule {}

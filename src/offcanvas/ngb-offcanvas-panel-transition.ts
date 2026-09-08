@@ -5,18 +5,18 @@ export const ngbOffcanvasPanelShowTransition: NgbTransitionStartFn = (element, a
     reflow(element);
   }
 
-  element.addClass("show showing");
+  element.classList.add("show", "showing");
 
   return () => {
-    element.removeClass("showing");
+    element.classList.remove("showing");
   };
 };
 
 export const ngbOffcanvasPanelHideTransition: NgbTransitionStartFn = (element) => {
-  element.removeClass("showing");
-  element.addClass("hiding");
+  element.classList.remove("showing");
+  element.classList.add("hiding");
 
   return () => {
-    element.removeClass("show hiding");
+    element.classList.remove("show", "hiding");
   };
 };

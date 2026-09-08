@@ -43,7 +43,7 @@ import { PlatformBrowserModule } from "ngjs-core/platform-browser";
     NgbDropdownModule,
     NgbTooltipModule,
     NgbNavModule,
-    NgbOffcanvasModule.name,
+    NgbOffcanvasModule,
     NgbPopoverModule.name,
     NgbScrollSpyModule,
     NgbRatingModule,

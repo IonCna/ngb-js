@@ -1,13 +1,13 @@
-import { reflow, type NgbTransitionStartFn } from "@ngb/utils";
+import { type NgbTransitionStartFn, reflow } from "@ngb/utils";
 
 export const ngbOffcanvasFadeInTransition: NgbTransitionStartFn = (element, animation) => {
   if (animation) {
     reflow(element);
   }
 
-  element.addClass("show");
+  element.classList.add("show");
 };
 
 export const ngbOffcanvasFadeOutTransition: NgbTransitionStartFn = (element) => {
-  element.removeClass("show");
+  element.classList.remove("show");
 };

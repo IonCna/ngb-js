@@ -4,11 +4,21 @@ import {
   ngbOffcanvasPanelHideTransition,
   ngbOffcanvasPanelShowTransition,
 } from "@ngb/offcanvas/ngb-offcanvas-panel-transition";
-import { assertAttribute, type NgbTransitionOptions, ngbRunTransition, toNativeElement } from "@ngb/utils";
-import { getFocusableBoundaryElements } from "@ngb/utils/focus-trap";
-import type { IAugmentedJQuery, IComponentController, IComponentOptions } from "angular";
-import angular from "angular";
-import { NgZone } from "ngjs-core";
+import { getFocusableBoundaryElements, isDefined, type NgbTransitionOptions, ngbRunTransition } from "@ngb/utils";
+import {
+  afterNextRender,
+  ChangeDetectorRef,
+  Component,
+  DOCUMENT,
+  ElementRef,
+  HostBinding,
+  inject,
+  Injector,
+  Input,
+  NgZone,
+  type OnDestroy,
+  type OnInit,
+} from "ngjs-core";
 import { defaultIfEmpty, filter, fromEvent, type Observable, Subject, takeUntil } from "rxjs";
 
 const PANEL_ATTRIBUTES = [
@@ -20,107 +30,86 @@ const PANEL_ATTRIBUTES = [
   "position",
 ] as const;
 
-type PanelAttribute = (typeof PANEL_ATTRIBUTES)[number];
-type PanelOptions = Partial<Record<PanelAttribute, unknown>> & NgbOffcanvasUpdatableOptions;
+@Component({
+  selector: "ngb-offcanvas-panel",
+  transclude: true,
+  template: "<ng-content></ng-content>",
+})
+export class NgbOffcanvasPanel implements OnInit, OnDestroy {
+  private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private _zone = inject(NgZone);
+  private _injector = inject(Injector);
+  private _cdRef = inject(ChangeDetectorRef);
+  private _document = inject(DOCUMENT);
 
-export class NgbOffcanvasPanel implements IComponentController {
-  animation?: boolean;
-  ariaLabelledBy?: string;
-  ariaDescribedBy?: string;
-  keyboard = true;
-  panelClass?: string;
-  position: "start" | "end" | "top" | "bottom" = "start";
+  @Input() animation?: boolean;
+  @Input({ binding: "@" }) ariaLabelledBy?: string;
+  @Input({ binding: "@" }) ariaDescribedBy?: string;
+  @Input() keyboard = true;
+  @Input({ binding: "@" }) panelClass?: string;
+  @Input({ binding: "@" }) position: "start" | "end" | "top" | "bottom" = "start";
 
-  onDismiss?: ({ $event }: { $event: any }) => void;
+  /** Lo asigna `NgbOffcanvasRef` — descarta el offcanvas. */
+  onDismiss?: (arg: { $event: unknown }) => void;
 
   shown = new Subject<void>();
   hidden = new Subject<void>();
 
-  private _elWithFocus: Element | null = null; // element that is focused prior to offcanvas opening
+  private _elWithFocus: Element | null = null;
   private _closed$ = new Subject<void>();
-  private _appliedPositionClass?: string;
-  private _appliedPanelClass?: string;
 
-  constructor(
-    private $element: IAugmentedJQuery,
-    private _ngZone: NgZone,
-  ) {}
-
-  $onInit(): void {
-    this._elWithFocus = document.activeElement;
+  @HostBinding("class")
+  get _hostClass(): string {
+    return `offcanvas offcanvas-${this.position}${this.panelClass ? ` ${this.panelClass}` : ""}`;
   }
 
-  $postLink(): void {
-    this.$element.addClass("offcanvas");
-    this.$element.attr("role", "dialog");
-    this.$element.attr("tabindex", "-1");
-    this.$element.attr("aria-modal", "true");
+  @HostBinding("attr.role") readonly _role = "dialog";
+  @HostBinding("attr.tabindex") readonly _tabindex = -1;
+  @HostBinding("attr.aria-modal") readonly _ariaModal = true;
 
-    this._ngZone.runOutsideAngular(() => queueMicrotask(() => this._show()));
+  @HostBinding("attr.aria-labelledby")
+  get _ariaLabelledBy() {
+    return this.ariaLabelledBy;
   }
 
-  $onChanges(): void {
-    const positionClass = `offcanvas-${this.position}`;
-
-    if (this._appliedPositionClass) this.$element.removeClass(this._appliedPositionClass);
-    this.$element.addClass(positionClass);
-    this._appliedPositionClass = positionClass;
-
-    if (this._appliedPanelClass)
-      this._appliedPanelClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.removeClass(className);
-        });
-
-    if (this.panelClass)
-      this.panelClass
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => {
-          this.$element.addClass(className);
-        });
-
-    this._appliedPanelClass = this.panelClass;
-
-    assertAttribute(this.$element, "aria-labelledby", this.ariaLabelledBy);
-    assertAttribute(this.$element, "aria-describedby", this.ariaDescribedBy);
+  @HostBinding("attr.aria-describedby")
+  get _ariaDescribedBy() {
+    return this.ariaDescribedBy;
   }
 
-  $onDestroy(): void {
+  ngOnInit(): void {
+    this._elWithFocus = this._document.activeElement;
+    afterNextRender({ mixedReadWrite: () => this._show() }, { injector: this._injector });
+  }
+
+  ngOnDestroy(): void {
     this._disableEventHandling();
   }
 
-  dismiss(reason: any): void {
+  dismiss(reason: unknown): void {
     this.onDismiss?.({ $event: reason });
   }
 
-  updateOptions(options: NgbOffcanvasUpdatableOptions) {
-    const source: PanelOptions = options;
-
-    this._ngZone.run(() => {
-      PANEL_ATTRIBUTES.forEach((option) => {
-        if (angular.isDefined(source[option])) {
-          Object.assign(this, { [option]: source[option] });
-        }
-      });
-
-      this.$onChanges();
-    });
+  updateOptions(options: NgbOffcanvasUpdatableOptions): void {
+    for (const optionName of PANEL_ATTRIBUTES) {
+      if (isDefined((options as Record<string, unknown>)[optionName])) {
+        (this as Record<string, unknown>)[optionName] = (options as Record<string, unknown>)[optionName];
+      }
+    }
+    this._cdRef.markForCheck();
   }
 
   hide(): Observable<void> {
     const context: NgbTransitionOptions<unknown> = { animation: Boolean(this.animation), runningTransition: "stop" };
 
-    const offcanvasTransition = ngbRunTransition(
-      this._ngZone,
-      this.$element,
+    const offcanvasTransition$ = ngbRunTransition(
+      this._zone,
+      this._nativeElement,
       ngbOffcanvasPanelHideTransition,
       context,
     ).pipe(defaultIfEmpty(undefined));
 
-    offcanvasTransition.subscribe(() => {
+    offcanvasTransition$.subscribe(() => {
       this.hidden.next();
       this.hidden.complete();
     });
@@ -128,7 +117,7 @@ export class NgbOffcanvasPanel implements IComponentController {
     this._disableEventHandling();
     this._restoreFocus();
 
-    return offcanvasTransition;
+    return offcanvasTransition$ as Observable<void>;
   }
 
   private _show(): void {
@@ -137,14 +126,14 @@ export class NgbOffcanvasPanel implements IComponentController {
       runningTransition: "continue",
     };
 
-    const offcanvasTransition = ngbRunTransition(
-      this._ngZone,
-      this.$element,
+    const offcanvasTransition$ = ngbRunTransition(
+      this._zone,
+      this._nativeElement,
       ngbOffcanvasPanelShowTransition,
       context,
     ).pipe(defaultIfEmpty(undefined));
 
-    offcanvasTransition.subscribe(() => {
+    offcanvasTransition$.subscribe(() => {
       this.shown.next();
       this.shown.complete();
     });
@@ -154,22 +143,22 @@ export class NgbOffcanvasPanel implements IComponentController {
   }
 
   private _enableEventHandling(): void {
-    const native = toNativeElement(this.$element);
-
-    fromEvent<KeyboardEvent>(native, "keydown")
-      .pipe(
-        takeUntil(this._closed$),
-        filter((event) => event.key === "Escape"),
-      )
-      .subscribe((event) => {
-        if (this.keyboard) {
-          requestAnimationFrame(() => {
-            if (!event.defaultPrevented) {
-              this._ngZone.run(() => this.dismiss(OffcanvasDismissReasons.ESC));
-            }
-          });
-        }
-      });
+    this._zone.runOutsideAngular(() => {
+      fromEvent<KeyboardEvent>(this._nativeElement, "keydown")
+        .pipe(
+          takeUntil(this._closed$),
+          filter((event) => event.key === "Escape"),
+        )
+        .subscribe((event) => {
+          if (this.keyboard) {
+            requestAnimationFrame(() => {
+              if (!event.defaultPrevented) {
+                this._zone.run(() => this.dismiss(OffcanvasDismissReasons.ESC));
+              }
+            });
+          }
+        });
+    });
   }
 
   private _disableEventHandling(): void {
@@ -177,10 +166,9 @@ export class NgbOffcanvasPanel implements IComponentController {
   }
 
   private _setFocus(): void {
-    const native = toNativeElement(this.$element);
-
+    const native = this._nativeElement;
     if (!native.contains(document.activeElement)) {
-      const autoFocusable = native.querySelector("[ngbAutofocus]") as HTMLElement;
+      const autoFocusable = native.querySelector("[ngbAutofocus]") as HTMLElement | null;
       const [firstFocusable] = getFocusableBoundaryElements(native);
 
       const elementToFocus = autoFocusable || firstFocusable || native;
@@ -189,39 +177,16 @@ export class NgbOffcanvasPanel implements IComponentController {
   }
 
   private _restoreFocus(): void {
-    const body = document.body as HTMLBodyElement;
+    const body = this._document.body;
     const elWithFocus = this._elWithFocus;
     const validElementToFocus = elWithFocus instanceof HTMLElement && body.contains(elWithFocus);
     const elementToFocus: HTMLElement = validElementToFocus ? elWithFocus : body;
 
-    this._ngZone.runOutsideAngular(() => setTimeout(() => elementToFocus.focus()));
-
+    this._zone.runOutsideAngular(() => setTimeout(() => elementToFocus.focus()));
     this._elWithFocus = null;
   }
 
   static get $name() {
     return "ngbOffcanvasPanel";
-  }
-
-  static get $inject() {
-    return ["$element", NgZone.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        animation: "<?",
-        ariaLabelledBy: "<?",
-        ariaDescribedBy: "<?",
-        keyboard: "<?",
-        panelClass: "<?",
-        position: "<?",
-        onDismiss: "&?",
-      },
-      controller: NgbOffcanvasPanel,
-      controllerAs: "$",
-      transclude: true,
-      template: "<ng-content></ng-content>",
-    };
   }
 }

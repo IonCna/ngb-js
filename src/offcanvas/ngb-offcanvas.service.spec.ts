@@ -1,66 +1,59 @@
 import { NgbOffcanvas } from "@ngb/offcanvas/ngb-offcanvas.service";
 import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 import type { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanvas-ref";
-import type { ICompileService, IComponentOptions, IInjectorService, IRootScopeService } from "angular";
+import type { IRootScopeService } from "angular";
 import angular from "angular";
-import type { TemplateRef } from "ngjs-core";
+import { Component, Injector, Input, NgModule, type TemplateRef } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
+@Component({
+  selector: "ngb-offcanvas-spec-content",
+  controllerAs: "$",
+  template: `
+    <div class="offcanvas-spec-content">{{ $.value }}</div>
+    <button class="offcanvas-spec-close" ng-click="$.ngbActiveOffcanvas.close('component result')">Close</button>
+  `,
+})
 class NgbOffcanvasSpecContent {
-  value?: string;
-  ngbActiveOffcanvas!: NgbActiveOffcanvas;
+  @Input() value?: string;
+  @Input() ngbActiveOffcanvas!: NgbActiveOffcanvas;
 
   static get $name() {
     return "ngbOffcanvasSpecContent";
   }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        ngbActiveOffcanvas: "<",
-        value: "<",
-      },
-      controller: NgbOffcanvasSpecContent,
-      controllerAs: "$",
-      template: `
-        <div class="offcanvas-spec-content">{{ $.value }}</div>
-        <button class="offcanvas-spec-close" ng-click="$.ngbActiveOffcanvas.close('component result')">Close</button>
-      `,
-    };
-  }
 }
 
-const NgbOffcanvasSpecModule = angular.module("ngb.offcanvas.spec", []);
-NgbOffcanvasSpecModule.component(NgbOffcanvasSpecContent.$name, NgbOffcanvasSpecContent.$factory);
+@NgModule({ id: "ngb.offcanvas.spec", imports: [NgbModule], declarations: [NgbOffcanvasSpecContent] })
+class NgbOffcanvasSpecModule {}
 
 describe("NgbOffcanvas", () => {
-  let $compile: ICompileService;
+  let tb: NgbTestBed;
+  let $compile: NgbTestBed["$compile"];
   let $rootScope: IRootScopeService;
   let ngbOffcanvas: NgbOffcanvas;
 
-  beforeEach(() => {
-    angular.mock.module(NgbModule.name, NgbOffcanvasSpecModule.name);
-    angular.mock.inject(
-      (_$compile_: ICompileService, _$rootScope_: IRootScopeService, _$injector_: IInjectorService) => {
-        $compile = _$compile_;
-        $rootScope = _$rootScope_;
-        ngbOffcanvas = _$injector_.get<NgbOffcanvas>(NgbOffcanvas.$name);
-      },
-    );
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbOffcanvasSpecModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
+    ngbOffcanvas = tb.get<Injector>(Injector.$name).get(NgbOffcanvas);
   });
 
   afterEach(async () => {
     ngbOffcanvas?.dismiss("test cleanup");
     await flush();
+    tb.destroy();
     document.body.innerHTML = "";
     document.body.style.overflow = "";
   });
 
   async function flush(): Promise<void> {
-    for (let index = 0; index < 20; index++) {
+    for (let index = 0; index < 60; index++) {
+      tb.detectChanges();
       $rootScope.$digest();
-      await Promise.resolve();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
     }
   }
 
@@ -174,7 +167,11 @@ describe("NgbOffcanvas", () => {
     const dismissed = vi.fn();
     offcanvasRef.dismissed.subscribe(dismissed);
 
-    angular.element(document.body.querySelector("ngb-offcanvas-backdrop") as Element).triggerHandler("mousedown");
+    // El backdrop escucha con `addEventListener` (RxJS `fromEvent`): `triggerHandler`
+    // de jqLite no lo alcanza, hay que despachar un evento real.
+    (document.body.querySelector("ngb-offcanvas-backdrop") as HTMLElement).dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true }),
+    );
     await flush();
 
     expect(dismissed).toHaveBeenCalledWith(OffcanvasDismissReasons.BACKDROP_CLICK);
