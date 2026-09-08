@@ -1,5 +1,4 @@
 import { NgbPagination } from "@ngb/pagination/ngb-pagination.component";
-import { NgbPaginationConfig } from "@ngb/pagination/ngb-pagination-config.service";
 import { NgbPaginationEllipsis } from "@ngb/pagination/ngb-pagination-ellipsis.directive";
 import { NgbPaginationFirst } from "@ngb/pagination/ngb-pagination-first.directive";
 import { NgbPaginationLast } from "@ngb/pagination/ngb-pagination-last.directive";
@@ -25,6 +24,5 @@ const NGB_PAGINATION_DIRECTIVES = [
   id: "ngb-pagination",
   imports: [CommonModule],
   declarations: NGB_PAGINATION_DIRECTIVES,
-  providers: [NgbPaginationConfig],
 })
 export class NgbPaginationModule {}

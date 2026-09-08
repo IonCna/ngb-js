@@ -1,5 +1,4 @@
 import { NgbNav } from "@ngb/nav/ngb-nav.directive";
-import { NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
 import { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
 import { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
@@ -19,6 +18,5 @@ import { NgModule } from "ngjs-core";
     NgbNavOutlet,
     NgbNavPane,
   ],
-  providers: [NgbNavConfig],
 })
 export class NgbNavModule {}

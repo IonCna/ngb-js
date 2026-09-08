@@ -1,5 +1,5 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
-import { inject, Injectable } from "ngjs-core";
+import { inject, Service } from "ngjs-core";
 
 /**
  * Servicio de configuración de
@@ -7,7 +7,7 @@ import { inject, Injectable } from "ngjs-core";
  * Inyectalo (normalmente en el componente raíz) y ajustá sus propiedades para
  * fijar valores por defecto de todos los acordeones de la app.
  */
-@Injectable({ providedIn: "root" })
+@Service()
 export class NgbAccordionConfig {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

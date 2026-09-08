@@ -6,11 +6,11 @@ import { Component, HostBinding, HostListener, Input } from "ngjs-core";
   template,
 })
 export class NgbTooltipWindow {
-  @Input() animation: boolean;
-  @Input() id: string;
-  @Input() tooltipClass: string;
-  @Input() onMouseEnter: () => void;
-  @Input() onMouseLeave: () => void;
+  @Input() animation?: boolean;
+  @Input() id?: string;
+  @Input() tooltipClass?: string;
+  @Input() onMouseEnter?: () => void;
+  @Input() onMouseLeave?: () => void;
 
   @HostBinding("attr.role") readonly role = "tooltip";
   @HostBinding("id") get hostId() {
@@ -25,11 +25,11 @@ export class NgbTooltipWindow {
 
   @HostListener("mouseenter")
   handleMouseEnter() {
-    this.onMouseEnter();
+    this.onMouseEnter?.();
   }
 
   @HostListener("mouseleave")
   handleMouseLeave() {
-    this.onMouseLeave();
+    this.onMouseLeave?.();
   }
 }

@@ -1,6 +1,6 @@
-import { Injectable } from "ngjs-core";
+import { Service } from "ngjs-core";
 
-@Injectable({ providedIn: "root" })
+@Service()
 export class NgbRatingConfig {
   max = 10;
   readonly = false;

@@ -1,5 +1,6 @@
 import type { ICompileService, IInjectorService, IRootScopeService } from "angular";
 import angular from "angular";
+import { Injector } from "ngjs-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
 import { NgbCollapse } from "./ngb-collapse.directive";
@@ -16,7 +17,7 @@ describe("ngbCollapse", () => {
       (_$compile_: ICompileService, _$rootScope_: IRootScopeService, _$injector_: IInjectorService) => {
         $compile = _$compile_;
         $rootScope = _$rootScope_;
-        config = _$injector_.get<NgbCollapseConfig>("NgbCollapseConfig");
+        config = _$injector_.get<Injector>(Injector.$name).get(NgbCollapseConfig);
       },
     );
   });

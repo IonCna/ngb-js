@@ -1,5 +1,5 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
-import { inject, Injectable } from "ngjs-core";
+import { inject, Service } from "ngjs-core";
 
 // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
 export interface NgbNavChangeEvent<T = any> {
@@ -12,7 +12,7 @@ export interface NgbNavContentContext {
   $implicit: boolean;
 }
 
-@Injectable({ providedIn: "root" })
+@Service()
 export class NgbNavConfig {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

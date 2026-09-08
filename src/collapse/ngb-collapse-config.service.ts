@@ -1,7 +1,7 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
-import { inject, Injectable } from "ngjs-core";
+import { inject, Service } from "ngjs-core";
 
-@Injectable({ providedIn: "root" })
+@Service()
 export class NgbCollapseConfig {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

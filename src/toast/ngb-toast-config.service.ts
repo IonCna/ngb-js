@@ -1,5 +1,5 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
-import { inject, Injectable } from "ngjs-core";
+import { inject, Service } from "ngjs-core";
 
 export interface NgbToastOptions {
   autohide?: boolean;
@@ -7,7 +7,7 @@ export interface NgbToastOptions {
   ariaLive?: "polite" | "assertive";
 }
 
-@Injectable({ providedIn: "root" })
+@Service()
 export class NgbToastConfig implements NgbToastOptions {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

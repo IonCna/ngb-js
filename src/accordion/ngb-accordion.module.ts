@@ -1,4 +1,3 @@
-import { NgbAccordionConfig } from "@ngb/accordion/ngb-accordion-config.service";
 import { NgbAccordionBody } from "@ngb/accordion/ngb-accordion-body.directive";
 import { NgbAccordionButton } from "@ngb/accordion/ngb-accordion-button.directive";
 import { NgbAccordionCollapse } from "@ngb/accordion/ngb-accordion-collapse.directive";
@@ -22,6 +21,5 @@ import { CommonModule } from "ngjs-core/common";
     NgbAccordionBody,
     NgbAccordionCollapse,
   ],
-  providers: [NgbAccordionConfig],
 })
 export class NgbAccordionModule {}
