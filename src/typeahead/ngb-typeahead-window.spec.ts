@@ -1,22 +1,32 @@
 import angular, { type IAugmentedJQuery, type ICompileService, type IRootScopeService, type IScope } from "angular";
+import { NgModule } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { NgbTypeaheadModule } from "./ngb-typeahead.module";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
+import { NgbModule } from "../ngb.module";
 import { NgbTypeaheadWindow } from "./ngb-typeahead-window";
 
+// `NgbTypeaheadWindow` no está en `declarations` de ningún módulo (lo crea el
+// directive de forma dinámica, como el standalone de upstream). Para compilarlo
+// como markup estático en el spec se declara en un módulo de test.
+@NgModule({ imports: [NgbModule], declarations: [NgbTypeaheadWindow], controllerAs: "$" })
+class TypeaheadWindowTestModule {}
+
 describe("NgbTypeaheadWindow", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let element: IAugmentedJQuery | undefined;
 
-  beforeEach(() => {
-    angular.mock.module(NgbTypeaheadModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(TypeaheadWindowTestModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
 
-  afterEach(() => element?.remove());
+  afterEach(() => {
+    element?.remove();
+    tb.destroy();
+  });
 
   function setup(focusFirst = true, formatter?: (result: string) => string, popupClass?: string) {
     const scope = $rootScope.$new() as IScope & {
@@ -35,13 +45,20 @@ describe("NgbTypeaheadWindow", () => {
     scope.popupClass = popupClass;
     scope.selected = vi.fn();
     scope.activeChanged = vi.fn();
+    // `formatter`/`popup-class` solo si se pasan: bindear `undefined` pisaría los
+    // defaults del `@Input()` (`formatter = toString`).
+    const optionalAttrs = [
+      formatter !== undefined ? 'formatter="formatter"' : "",
+      popupClass !== undefined ? 'popup-class="popupClass"' : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
     element = $compile(`
       <ngb-typeahead-window
         id="test-typeahead"
         results="results"
         term="term"
-        formatter="formatter"
-        popup-class="popupClass"
+        ${optionalAttrs}
         focus-first="focusFirst"
         select="selected($event)"
         active-change="activeChanged($event)">
@@ -52,7 +69,7 @@ describe("NgbTypeaheadWindow", () => {
     return {
       scope,
       root: element[0] as HTMLElement,
-      controller: element.controller(NgbTypeaheadWindow.$name) as NgbTypeaheadWindow,
+      controller: element.controller("ngbTypeaheadWindow") as NgbTypeaheadWindow,
     };
   }
 
@@ -116,14 +133,17 @@ describe("NgbTypeaheadWindow", () => {
       "test-typeahead-1",
     ]);
 
-    root.id = "changed-at-runtime";
+    // El directive fija el id con `setInput("id", …)` (propiedad de la instancia),
+    // no tocando el atributo del host; ese es el origen de verdad.
+    controller.id = "changed-at-runtime";
     controller.markActive(1);
     expect(scope.activeChanged).toHaveBeenLastCalledWith("changed-at-runtime-1");
   });
 
-  it("writes id assignments to the host through its setter", () => {
-    const { root, controller } = setup();
+  it("reflects id assignments to the host", () => {
+    const { scope, root, controller } = setup();
     controller.id = "assigned-by-popup";
+    scope.$digest();
     expect(root.id).toBe("assigned-by-popup");
     expect(controller.id).toBe("assigned-by-popup");
   });
@@ -150,7 +170,9 @@ describe("NgbTypeaheadWindow", () => {
     const rows = Array.from(root.querySelectorAll<HTMLButtonElement>("button"));
     expect(rows.every(({ type }) => type === "button")).toBe(true);
     expect(rows.map((row) => row.getAttribute("role"))).toEqual(["option", "option"]);
-    expect(rows.map((row) => row.getAttribute("aria-selected"))).toEqual(["true", "false"]);
+    // El estado activo se refleja con la clase `.active` (igual que upstream: el
+    // template no pone `aria-selected` en los `<button role="option">`).
+    expect(rows.map((row) => row.classList.contains("active"))).toEqual([true, false]);
   });
 
   it("applies and updates a custom popup class", () => {

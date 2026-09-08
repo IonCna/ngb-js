@@ -8,9 +8,8 @@ import {
   inject,
   NgZone,
   type OnDestroy,
-  takeUntilDestroyed,
 } from "ngjs-core";
-import { distinctUntilChanged, type Observable, Subject } from "rxjs";
+import { distinctUntilChanged, type Observable, Subject, takeUntil } from "rxjs";
 import type { NgbScrollSpyRef } from "./ngb-scrollspy-item.directive";
 
 const MATCH_THRESHOLD = 3;
@@ -53,7 +52,12 @@ export class NgbScrollSpyService implements NgbScrollSpyRef, OnDestroy {
   private _active = "";
 
   private _config = inject(NgbScrollSpyConfig);
-  private _destroyRef = inject(DestroyRef);
+  // `inject(DestroyRef)` solo resuelve en contexto de controller (necesita `$scope`).
+  // Como `@Injectable` service se instancia sin `$scope`, se toma opcional y el
+  // teardown de la subscripción va por `_destroyed$` (disparado en `ngOnDestroy`,
+  // y también desde el `DestroyRef` si existe).
+  private _destroyRef = inject(DestroyRef, { optional: true });
+  private _destroyed$ = new Subject<void>();
   private _document = inject(DOCUMENT);
   private _scrollBehavior = this._config.scrollBehavior;
   private _diChangeDetectorRef = inject<ChangeDetectorRef>(ChangeDetectorRef, { optional: true });
@@ -61,7 +65,8 @@ export class NgbScrollSpyService implements NgbScrollSpyRef, OnDestroy {
   private _zone = inject(NgZone);
 
   constructor() {
-    this._distinctActive$.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((active) => {
+    this._destroyRef?.onDestroy(() => this._destroyed$.next());
+    this._distinctActive$.pipe(takeUntil(this._destroyed$)).subscribe((active) => {
       this._active = active;
       this._changeDetectorRef?.markForCheck();
     });
@@ -191,6 +196,8 @@ export class NgbScrollSpyService implements NgbScrollSpyRef, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this._destroyed$.next();
+    this._destroyed$.complete();
     this._cleanup();
   }
 

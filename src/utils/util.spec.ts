@@ -77,8 +77,13 @@ describe("utility functions", () => {
   });
 
   it("removes combining accents", () => {
-    expect(removeAccents("Ã Ã¢Ã¤Ã©Ã¨ÃªÃ«Ã®Ã¯Ã´Ã¶Ã»Ã¼Ã¹Ã§Ã‚ÃŠÃŽÃ”Ã›Ã„Ã‹ÃÃ–ÃœÃ€")).toBe("aaaeeeeiioouuucAEIOUAEIOUA");
+    // `\u` escapes para que el encoding del archivo no corrompa los acentos.
+    const accented =
+      "àâäéèêëîïôöûüùç" +
+      "ÂÊÎÔÛÄËÏÖÜÁ";
+    expect(removeAccents(accented)).toBe("aaaeeeeiioouuucAEIOUAEIOUA");
   });
+
 
   it("returns the deepest focused element, including shadow DOM", () => {
     const host = document.createElement("div");

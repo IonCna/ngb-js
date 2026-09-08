@@ -1,5 +1,4 @@
 import { NgbTypeahead } from "@ngb/typeahead/ngb-typeahead.directive";
-import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
 import angular, {
   type IAugmentedJQuery,
   type ICompileService,
@@ -7,12 +6,14 @@ import angular, {
   type IRootScopeService,
   type IScope,
 } from "angular";
-import { type Observable, of, Subject } from "rxjs";
+import { map, type Observable, of, Subject, switchMap } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
+import { NgbModule } from "../ngb.module";
 
 interface TestScope extends IScope {
   model: unknown;
-  search: (text: string) => Observable<readonly unknown[]>;
+  search: (text$: Observable<string>) => Observable<readonly unknown[]>;
   inputFormatter?: (item: unknown) => string;
   resultFormatter?: (item: unknown) => string;
   selected?: ReturnType<typeof vi.fn>;
@@ -26,16 +27,15 @@ interface TypeaheadInternals extends NgbTypeahead {
 }
 
 describe("NgbTypeahead", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   const mounted: IAugmentedJQuery[] = [];
 
-  beforeEach(() => {
-    angular.mock.module(NgbTypeaheadModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
 
   afterEach(() => {
@@ -43,17 +43,18 @@ describe("NgbTypeahead", () => {
       element.remove();
     });
     mounted.length = 0;
+    tb.destroy();
   });
 
   function setup(template = '<input ng-model="model" ngb-typeahead="search">', values: Partial<TestScope> = {}) {
     const scope = $rootScope.$new() as TestScope;
-    Object.assign(scope, { model: null, search: () => of(["Alaska", "Alabama"]) }, values);
+    Object.assign(scope, { model: null, search: (text$: Observable<string>) => text$.pipe(map(() => ["Alaska", "Alabama"])) }, values);
     const element = $compile(template)(scope);
     angular.element(document.body).append(element);
     mounted.push(element);
     scope.$digest();
     const input = element[0] as HTMLInputElement;
-    const controller = element.controller(NgbTypeahead.$name) as unknown as TypeaheadInternals;
+    const controller = element.controller("ngbTypeahead") as unknown as TypeaheadInternals;
     const modelController = element.controller("ngModel") as INgModelController;
     return { scope, input, controller, modelController };
   }
@@ -132,7 +133,7 @@ describe("NgbTypeahead", () => {
 
   it("closes the popup when the source emits no results", async () => {
     const results = new Subject<readonly string[]>();
-    const { scope, input, controller } = setup(undefined, { search: () => results });
+    const { scope, input, controller } = setup(undefined, { search: (text$: Observable<string>) => text$.pipe(switchMap(() => results)) });
     input.value = "a";
     input.dispatchEvent(new Event("input", { bubbles: true }));
     results.next(["Alaska"]);
@@ -195,7 +196,7 @@ describe("NgbTypeahead", () => {
   it("selects a sole exact result without opening the popup", async () => {
     const { scope, input, controller } = setup(
       '<input ng-model="model" ngb-typeahead="search" select-on-exact="true">',
-      { search: () => of(["Alaska"]) },
+      { search: (text$: Observable<string>) => text$.pipe(map(() => ["Alaska"])) },
     );
     input.value = "Alaska";
     input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -207,7 +208,7 @@ describe("NgbTypeahead", () => {
   it("does not select a sole result when its formatted value is not exact", async () => {
     const { scope, input, controller } = setup(
       '<input ng-model="model" ngb-typeahead="search" select-on-exact="true">',
-      { search: () => of(["Alaska"]) },
+      { search: (text$: Observable<string>) => text$.pipe(map(() => ["Alaska"])) },
     );
     await enter(input, scope, "ala");
     expect(scope.model).toBe("ala");
@@ -239,7 +240,7 @@ describe("NgbTypeahead", () => {
 
   it("supports hint completion and restores the typed value when dismissed", async () => {
     const { scope, input, controller } = setup('<input ng-model="model" ngb-typeahead="search" show-hint="true">', {
-      search: () => of(["Alaska"]),
+      search: (text$: Observable<string>) => text$.pipe(map(() => ["Alaska"])),
     });
     await enter(input, scope, "ala");
     expect(input.value).toBe("alaska");
@@ -289,7 +290,7 @@ describe("NgbTypeahead", () => {
     const first = new Subject<readonly string[]>();
     const second = new Subject<readonly string[]>();
     const { input, controller } = setup(undefined, {
-      search: (text) => (text === "a" ? first : second),
+      search: (text$: Observable<string>) => text$.pipe(switchMap((text) => (text === "a" ? first : second))),
     });
     input.value = "a";
     input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -308,7 +309,7 @@ describe("NgbTypeahead", () => {
     const selected = vi.fn();
     const { scope, input, controller } = setup(
       '<input ng-model="model" ngb-typeahead="search" input-formatter="inputFormatter" select-on-exact="true" select-item="selected($event)">',
-      { search: () => of([alaska]), inputFormatter: (item) => (item as { name: string }).name, selected },
+      { search: (text$: Observable<string>) => text$.pipe(map(() => [alaska])), inputFormatter: (item) => (item as { name: string }).name, selected },
     );
     input.value = "Alaska";
     input.dispatchEvent(new Event("input", { bubbles: true }));

@@ -261,7 +261,7 @@ describe("NgbPaginationConfig", () => {
       maxSize: 0,
       pageSize: 10,
       rotate: false,
-      size: undefined,
     });
+    expect(config.size).toBeUndefined();
   });
 });

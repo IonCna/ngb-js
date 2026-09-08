@@ -46,6 +46,7 @@ export class NgbPopover implements IController {
   protected hidden?: () => void;
 
   private _nativeElement: HTMLElement;
+  private readonly _document: Document;
   private _ngbPopoverWindowId = `ngb-popover-${nextId++}`;
   private readonly _popupService: PopupService<NgbPopoverWindow>;
   private readonly $q: IQService;
@@ -73,6 +74,7 @@ export class NgbPopover implements IController {
     private readonly _changeDetector: ChangeDetectorRef,
   ) {
     this.$q = $injector.get<IQService>("$q");
+    this._document = $injector.get<Document[]>("$document")[0];
     this._nativeElement = toNativeElement(this.$element);
     this._popupService = new PopupService<NgbPopoverWindow>(
       NgbPopoverWindow.$name,
@@ -133,7 +135,7 @@ export class NgbPopover implements IController {
         this._afterRenderRef = this.$scope.$watch(() => this._positioning.update());
       });
 
-      ngbAutoClose(this._ngZone, this.autoClose, this._hidden$, () => this.close(), [popupElement]);
+      ngbAutoClose(this._ngZone, this._document, this.autoClose, () => this.close(), this._hidden$, [popupElement]);
 
         transition$.subscribe(() => {
           if (this._transitioning) {
@@ -196,7 +198,6 @@ export class NgbPopover implements IController {
     this.closeDelay = this.closeDelay ?? this._config.closeDelay;
 
     this._unregisterListenersFn = listenToTriggers(
-      this.$timeout,
       this._nativeElement,
       this.triggers,
       this.isOpen.bind(this),

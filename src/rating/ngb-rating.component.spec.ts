@@ -160,7 +160,9 @@ describe("ngbRating", () => {
     expect(element.attr("aria-valuenow")).toBe("4");
     expect(scope.onHover).toHaveBeenCalledWith(4);
 
-    element.triggerHandler("mouseleave");
+    // `@HostListener("mouseleave")` se registra con `addEventListener` nativo:
+    // `triggerHandler` de jqLite no lo alcanza, hay que despachar un evento real.
+    element[0].dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     scope.$digest();
     expect(scope.onLeave).toHaveBeenCalledWith(4);
     expect(element.attr("aria-valuenow")).toBe("2");

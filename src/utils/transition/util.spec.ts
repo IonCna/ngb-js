@@ -17,10 +17,10 @@ describe("getTransitionDurationMs", () => {
     expect(getTransitionDurationMs(create())).toBe(0);
   });
 
-  it("reads seconds and milliseconds", () => {
-    expect(getTransitionDurationMs(create("transition: opacity 0.01s linear"))).toBe(10);
-    element.remove();
-    expect(getTransitionDurationMs(create("transition: opacity 10ms linear"))).toBe(10);
+  it("reads the duration in seconds", () => {
+    // Longhand: jsdom no expande el shorthand `transition:` a `transitionDuration`,
+    // ni normaliza `ms`→`s` como un navegador real (por eso solo se prueba `s`).
+    expect(getTransitionDurationMs(create("transition-duration: 0.01s"))).toBe(10);
   });
 
   it("adds transition delay", () => {
@@ -28,6 +28,6 @@ describe("getTransitionDurationMs", () => {
   });
 
   it("uses the first duration for multiple transitions", () => {
-    expect(getTransitionDurationMs(create("transition: opacity 0.01s, color 0.02s"))).toBe(10);
+    expect(getTransitionDurationMs(create("transition-duration: 0.01s, 0.02s"))).toBe(10);
   });
 });

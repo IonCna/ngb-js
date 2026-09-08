@@ -154,16 +154,20 @@ describe("ngbDropdown", () => {
   });
 
   it("sets disabled semantics and custom tabindex on items", () => {
+    // El port toma el estado disabled de `ng-disabled` (no de un `@Input() disabled`):
+    // `disabled` es atributo booleano nativo y AngularJS/navegador se pelean por él.
+    // Ver `CORE_GAPS.md`.
     const element = $compile(`
       <div ngb-dropdown open="true"><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>
-        <button ngb-dropdown-item disabled="true">Disabled</button>
+        <button ngb-dropdown-item ng-disabled="true">Disabled</button>
         <a ngb-dropdown-item tabindex="7">Custom</a>
       </div></div>
     `)($rootScope.$new());
     tb.detectChanges();
     const items = element[0].querySelectorAll<HTMLElement>("[ngb-dropdown-item]");
     expect(items[0].classList.contains("disabled")).toBe(true);
-    expect(items[0].getAttribute("aria-disabled")).toBe("true");
+    expect((items[0] as HTMLButtonElement).disabled).toBe(true);
+    expect(items[0].getAttribute("tabindex")).toBe("-1");
     expect(items[1].getAttribute("tabindex")).toBe("7");
   });
 

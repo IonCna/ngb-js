@@ -74,6 +74,9 @@ describe("ngbTooltip", () => {
       },
     );
     for (let index = 0; index < 20; index++) {
+      // `appRef.tick()` además del digest: vacía los `afterNextRender` de los que
+      // depende `transition$` (y por ende los callbacks `shown`/`hidden`).
+      appRef.tick();
       $rootScope.$digest();
       await Promise.resolve();
     }
@@ -342,15 +345,17 @@ describe("ngbTooltip", () => {
     expect(scope.hidden).toHaveBeenCalledOnce();
   });
 
-  it("applies a custom class and appends to the requested container", async () => {
+  it("applies a custom class and appends to the body container", async () => {
+    // El `container` solo soporta `"body"` (igual que upstream: "Currently only supports 'body'").
     const host = $compile(`
-      <div><div id="tooltip-container"></div><button ngb-tooltip="'Tip'" tooltip-class="custom-tip"
-        container="#tooltip-container" triggers="manual" animation="false">Host</button></div>
+      <div><button ngb-tooltip="'Tip'" tooltip-class="custom-tip"
+        container="body" triggers="manual" animation="false">Host</button></div>
     `)($rootScope.$new());
     angular.element(document.body).append(host);
     $rootScope.$digest();
     const button = angular.element(host[0].querySelector("button") as HTMLElement);
     await settle((button.controller("ngbTooltip") as { open(): IPromise<void> }).open());
-    expect(host[0].querySelector("#tooltip-container .tooltip.custom-tip")).not.toBeNull();
+    const tip = document.body.querySelector(":scope > .tooltip.custom-tip");
+    expect(tip).not.toBeNull();
   });
 });

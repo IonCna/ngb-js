@@ -49,8 +49,15 @@ export class NgbScrollSpyItem implements OnInit {
   @Input() fragment!: string;
   @Input() parent?: string;
 
-  @HostBinding("class.active")
   isActive(): boolean {
+    return this._isActive;
+  }
+
+  // `@HostBinding` sobre un método observa la referencia de la función (constante):
+  // el `$watch` nunca dispararía el cambio. Va sobre un getter, como en el resto
+  // del port. Upstream usa `host: { '[class.active]': 'isActive()' }`.
+  @HostBinding("class.active")
+  get _activeClass(): boolean {
     return this._isActive;
   }
 

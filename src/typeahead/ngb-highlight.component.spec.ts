@@ -1,28 +1,39 @@
 import angular, { type IAugmentedJQuery, type ICompileService, type IRootScopeService, type IScope } from "angular";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { NgbTypeaheadModule } from "./ngb-typeahead.module";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
+import { NgbModule } from "../ngb.module";
 
 describe("NgbHighlight", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let element: IAugmentedJQuery | undefined;
 
-  beforeEach(() => {
-    angular.mock.module(NgbTypeaheadModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
 
-  afterEach(() => element?.remove());
+  afterEach(() => {
+    element?.remove();
+    tb.destroy();
+  });
 
   function setup(result: unknown, term: unknown, highlightClass?: string, accentSensitive?: boolean) {
     const scope = $rootScope.$new() as IScope & Record<string, unknown>;
     Object.assign(scope, { result, term, highlightClass, accentSensitive });
-    element = $compile(
-      '<ngb-highlight result="result" term="term" highlight-class="highlightClass" accent-sensitive="accentSensitive"></ngb-highlight>',
-    )(scope);
+    // Solo se bindean los inputs opcionales cuando se pasan: bindear `undefined`
+    // pisaría el default del `@Input()` (`highlightClass = "ngb-highlight"`).
+    const attrs = [
+      'result="result"',
+      'term="term"',
+      highlightClass !== undefined ? 'highlight-class="highlightClass"' : "",
+      accentSensitive !== undefined ? 'accent-sensitive="accentSensitive"' : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    element = $compile(`<ngb-highlight ${attrs}></ngb-highlight>`)(scope);
     angular.element(document.body).append(element);
     scope.$digest();
     return element[0] as HTMLElement;

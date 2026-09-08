@@ -28,8 +28,8 @@
                 class="page-link"
                 href
                 ng-click="$.selectPage(1); $event.preventDefault()"
-                ng-attr-tabindex="$.previousDisabled() ? '-1' : null"
-                ng-attr-aria-disabled="$.previousDisabled() ? 'true' : null">
+                ng-attr-tabindex="{{ $.previousDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.previousDisabled() ? 'true' : undefined }}">
             <ng-template
                     ng-template-outlet="($.tplFirst && $.tplFirst.templateRef) || first"
                     ng-template-outlet-context="{ disabled: $.previousDisabled(), currentPage: $.page }">
@@ -44,8 +44,8 @@
                 class="page-link"
                 href
                 ng-click="$.selectPage($.page - 1); $event.preventDefault()"
-                ng-attr-tabindex="$.previousDisabled() ? '-1' : null"
-                ng-attr-aria-disabled="$.previousDisabled() ? 'true' : null">
+                ng-attr-tabindex="{{ $.previousDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.previousDisabled() ? 'true' : undefined }}">
             <ng-template
                     ng-template-outlet="($.tplPrevious && $.tplPrevious.templateRef) || previous"
                     ng-template-outlet-context="{ disabled: $.previousDisabled() }">
@@ -69,9 +69,9 @@
                 class="page-link"
                 href
                 ng-click="$.selectPage(pageNumber); $event.preventDefault()"
-                ng-attr-tabindex="$.isDisabled() ? '-1' : null"
-                ng-attr-aria-disabled="$.isDisabled() ? 'true' : null"
-                ng-attr-aria-current="pageNumber === $.page ? 'page' : null">
+                ng-attr-tabindex="{{ $.isDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.isDisabled() ? 'true' : undefined }}"
+                ng-attr-aria-current="{{ pageNumber === $.page ? 'page' : undefined }}">
             <ng-template
                     ng-template-outlet="($.tplNumber && $.tplNumber.templateRef) || defaultNumber"
                     ng-template-outlet-context="{ disabled: $.isDisabled(), $implicit: pageNumber, currentPage: $.page }">
@@ -92,8 +92,8 @@
                 class="page-link"
                 href
                 ng-click="$.selectPage($.page + 1); $event.preventDefault()"
-                ng-attr-tabindex="$.nextDisabled() ? '-1' : null"
-                ng-attr-aria-disabled="$.nextDisabled() ? 'true' : null">
+                ng-attr-tabindex="{{ $.nextDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.nextDisabled() ? 'true' : undefined }}">
             <ng-template
                     ng-template-outlet="($.tplNext && $.tplNext.templateRef) || next"
                     ng-template-outlet-context="{ disabled: $.nextDisabled(), currentPage: $.page }">
@@ -108,8 +108,8 @@
                 class="page-link"
                 href
                 ng-click="$.selectPage($.pageCount); $event.preventDefault()"
-                ng-attr-tabindex="$.nextDisabled() ? '-1' : null"
-                ng-attr-aria-disabled="$.nextDisabled() ? 'true' : null"
+                ng-attr-tabindex="{{ $.nextDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.nextDisabled() ? 'true' : undefined }}"
         >
             <ng-template
                     ng-template-outlet="($.tplLast && $.tplLast.templateRef) || last"

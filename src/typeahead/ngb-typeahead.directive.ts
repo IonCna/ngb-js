@@ -73,7 +73,8 @@ export class NgbTypeahead implements ControlValueAccessor, OnInit, OnChanges, On
   private _windowRef: ComponentRef<NgbTypeaheadWindow> | null = null;
   private _afterRenderRef!: AfterRenderRef;
 
-  @Input() @HostBinding("autocomplete") autocomplete = "off";
+  // String literal (`autocomplete="off"` / `"postal-code"`): binding `@`.
+  @Input({ binding: "@" }) @HostBinding("autocomplete") autocomplete = "off";
   @Input() container = this._config.container;
   @Input() editable = this._config.editable;
   @Input() focusFirst = this._config.focusFirst;

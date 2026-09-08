@@ -1,22 +1,23 @@
 import { NgbPopover } from "@ngb/popover/ngb-popover.directive";
-import { NgbPopoverModule } from "@ngb/popover/ngb-popover.module";
 import type { ICompileService, IPromise, IRootScopeService } from "angular";
 import angular from "angular";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
+import { NgbModule } from "../ngb.module";
 
 describe("ngbPopover", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
-  beforeEach(() => {
-    angular.mock.module(NgbPopoverModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
 
   afterEach(() => {
+    tb.destroy();
     document.body.innerHTML = "";
   });
 
@@ -32,6 +33,10 @@ describe("ngbPopover", () => {
       },
     );
     for (let index = 0; index < 20; index++) {
+      // `tb.detectChanges()` (appRef.tick) además del digest: vacía los
+      // `afterNextRender` de los que depende `transition$` (y por ende los
+      // callbacks `shown`/`hidden`).
+      tb.detectChanges();
       $rootScope.$digest();
       await Promise.resolve();
     }
@@ -206,9 +211,13 @@ describe("ngbPopover", () => {
     );
     angular.element(document.body).append(element);
     const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    // `toggle()` devuelve void: no se puede `settle` su promesa; se corren los
+    // ciclos digest/microtask a mano para vaciar el `open()` que dispara.
     popover.toggle();
-    await Promise.resolve();
-    $rootScope.$digest();
+    for (let i = 0; i < 20; i++) {
+      $rootScope.$digest();
+      await Promise.resolve();
+    }
     expect(popover.isOpen()).toBe(true);
     popover.toggle();
     $rootScope.$digest();
@@ -238,8 +247,9 @@ describe("ngbPopover", () => {
   it("applies custom classes and updates them while open", async () => {
     const scope = $rootScope.$new() as IRootScopeService & { popoverClass: string };
     scope.popoverClass = "first-class";
+    // `popover-class` es binding `@?` (literal). Para un valor dinámico va con interpolación.
     const element = $compile(`
-      <button ngb-popover="'Body'" popover-class="popoverClass" triggers="'manual'" animation="false">Open</button>
+      <button ngb-popover="'Body'" popover-class="{{ popoverClass }}" triggers="'manual'" animation="false">Open</button>
     `)(scope);
     angular.element(document.body).append(element);
     const popover = element.controller(NgbPopover.$name) as NgbPopover;

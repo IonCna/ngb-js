@@ -21,8 +21,9 @@ export class NgbScrollSpy implements NgbScrollSpyRef, AfterViewInit {
   private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   @Input() processChanges?: NgbScrollSpyProcessChanges;
-  @Input() rootMargin?: string;
-  @Input() scrollBehavior?: "auto" | "smooth";
+  // String literal (`root-margin="10px"`): binding `@` — ver CORE_GAPS (`@Input` literal).
+  @Input({ binding: "@" }) rootMargin?: string;
+  @Input({ binding: "@" }) scrollBehavior?: "auto" | "smooth";
   @Input() threshold?: number | number[];
 
   @Input()

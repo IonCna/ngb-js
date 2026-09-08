@@ -63,7 +63,9 @@ describe("positioning mappings", () => {
       { isRTL: () => false } as never,
     );
     expect(options.placement).toBe("bottom-start");
-    expect(options.modifiers?.find(({ name }) => name === "flip")?.options).toMatchObject({
+    // Hay dos modifiers `flip` (el importado aporta el `fn`, el segundo las `options`);
+    // Popper los mergea por nombre. El que trae `fallbackPlacements` es el último.
+    expect(options.modifiers?.findLast(({ name }) => name === "flip")?.options).toMatchObject({
       fallbackPlacements: ["top-start"],
     });
     expect(options.modifiers?.find(({ name }) => name === "bootstrapClasses")?.enabled).toBe(true);

@@ -1,6 +1,6 @@
 import { NgbModule } from "@ngb/ngb.module";
 import type { IAugmentedJQuery, INgModelController, IScope } from "angular";
-import { of } from "rxjs";
+import { map, type Observable } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 
@@ -19,7 +19,7 @@ describe("NgbTypeahead ↔ ngModel (ControlValueAccessor)", () => {
 
   it("pinta el valor del modelo en el input (writeValue via $render)", () => {
     const scope = tb.$rootScope.$new() as IScope & Record<string, unknown>;
-    scope.search = () => of<string[]>([]);
+    scope.search = (text$: Observable<string>) => text$.pipe(map(() => [] as string[]));
     scope.model = "Alaska";
     element = tb.$compile('<input ng-model="model" ngb-typeahead="search">')(scope);
     scope.$digest();
@@ -29,7 +29,7 @@ describe("NgbTypeahead ↔ ngModel (ControlValueAccessor)", () => {
 
   it("propaga lo tipeado al modelo (registerOnChange → $setViewValue)", () => {
     const scope = tb.$rootScope.$new() as IScope & Record<string, unknown>;
-    scope.search = () => of<string[]>([]);
+    scope.search = (text$: Observable<string>) => text$.pipe(map(() => [] as string[]));
     scope.model = "";
     element = tb.$compile('<input ng-model="model" ngb-typeahead="search">')(scope);
     scope.$digest();
@@ -44,7 +44,7 @@ describe("NgbTypeahead ↔ ngModel (ControlValueAccessor)", () => {
 
   it("marca $touched en blur (registerOnTouched → $setTouched)", () => {
     const scope = tb.$rootScope.$new() as IScope & Record<string, unknown>;
-    scope.search = () => of<string[]>([]);
+    scope.search = (text$: Observable<string>) => text$.pipe(map(() => [] as string[]));
     scope.model = "";
     element = tb.$compile('<input ng-model="model" ngb-typeahead="search">')(scope);
     scope.$digest();

@@ -1,20 +1,21 @@
 import { NgbTypeahead } from "@ngb/typeahead/ngb-typeahead.directive";
-import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
 import type { ICompileService, IRootScopeService } from "angular";
-import angular from "angular";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
+import { NgbModule } from "../ngb.module";
 
 describe("NgbTypeaheadModule", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
-  beforeEach(() => {
-    angular.mock.module(NgbTypeaheadModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
+
+  afterEach(() => tb.destroy());
 
   it("registers the typeahead directive with all of its providers", () => {
     const scope = $rootScope.$new();
@@ -22,7 +23,7 @@ describe("NgbTypeaheadModule", () => {
 
     scope.$digest();
 
-    expect(element.controller(NgbTypeahead.$name)).toBeInstanceOf(NgbTypeahead);
+    expect(element.controller("ngbTypeahead")).toBeInstanceOf(NgbTypeahead);
 
     element.remove();
     scope.$destroy();

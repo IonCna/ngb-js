@@ -1,6 +1,9 @@
 import template from "@ngb/typeahead/ngb-typeahead-window.html";
 import { toString } from "@ngb/utils";
 import { Component, EventEmitter, HostBinding, HostListener, Input, type OnInit, Output, type TemplateRef } from "ngjs-core";
+// `id` como binding `@` (string literal): en el DOM `id="x"` es atributo nativo y
+// `<?` lo parsearía como expresión. El directive lo pasa por `setInput`, que no
+// parsea. Ver CORE_GAPS (`@Input` literal).
 
 export interface ResultTemplateContext {
   result: any;
@@ -11,12 +14,15 @@ export interface ResultTemplateContext {
 @Component({
   selector: "ngb-typeahead-window",
   exportAs: "ngbTypeaheadWindow",
+  // Se crea de forma dinámica (`createComponent`), fuera de las `declarations` de
+  // un módulo: necesita su propio `controllerAs` — el template usa `$.`.
+  controllerAs: "$",
   template,
 })
 export class NgbTypeaheadWindow implements OnInit {
   activeIdx = 0;
 
-  @Input() id!: string;
+  @Input({ binding: "@" }) id!: string;
   @Input() focusFirst = true;
   @Input() results: any;
   @Input() term!: string;
