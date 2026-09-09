@@ -1,3 +1,8 @@
+export type {
+  NgbPaginationLinkContext,
+  NgbPaginationNumberContext,
+  NgbPaginationPagesContext,
+} from "@ngb/pagination/ngb-pagination.component";
 export { NgbPagination } from "@ngb/pagination/ngb-pagination.component";
 export { NgbPaginationModule } from "@ngb/pagination/ngb-pagination.module";
 export { NgbPaginationConfig } from "@ngb/pagination/ngb-pagination-config.service";
@@ -8,8 +13,4 @@ export { NgbPaginationNext } from "@ngb/pagination/ngb-pagination-next.directive
 export { NgbPaginationNumber } from "@ngb/pagination/ngb-pagination-number.directive";
 export { NgbPaginationPages } from "@ngb/pagination/ngb-pagination-pages.directive";
 export { NgbPaginationPrevious } from "@ngb/pagination/ngb-pagination-previous.directive";
-export type {
-  NgbPaginationLinkContext,
-  NgbPaginationNumberContext,
-  NgbPaginationPagesContext,
-} from "@ngb/pagination/ngb-pagination.component";
+export { NGB_PAGINATION_CONFIG } from "@ngb/pagination/tokens";

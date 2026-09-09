@@ -30,7 +30,7 @@ export class NgbNavItem implements OnInit {
   @Input() disabled = false;
   @Input() domId!: string;
   // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
-  @Input("ngbNavItem") _id: any;
+  @Input({ alias: "ngbNavItem", binding: "@" }) _id: any;
 
   @Output() shown = new EventEmitter<void>();
   @Output() hidden = new EventEmitter<void>();

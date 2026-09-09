@@ -10,8 +10,8 @@ import {
   Input,
   inject,
   type OnInit,
-  takeUntilDestroyed,
 } from "ngjs-core";
+import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 import type { Observable } from "rxjs";
 
 export interface NgbScrollSpyRef {
@@ -33,7 +33,7 @@ export class NgbScrollSpyItem implements OnInit {
   private _destroyRef = inject(DestroyRef);
   private _isActive = false;
 
-  @Input("ngbScrollSpyItem")
+  @Input({ alias: "ngbScrollSpyItem", binding: "@" })
   set data(data: NgbScrollSpyItemData) {
     if (Array.isArray(data)) {
       this._scrollSpyAPI = data[0];

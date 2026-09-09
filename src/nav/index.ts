@@ -10,3 +10,4 @@ export { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
 export { NgbNavLinkButton } from "@ngb/nav/ngb-nav-link-button.directive";
 export { NgbNavOutlet } from "@ngb/nav/ngb-nav-outlet.directive";
 export { NgbNavPane } from "@ngb/nav/ngb-nav-pane.directive";
+export { NGB_NAV_CONFIG } from "@ngb/nav/tokens";

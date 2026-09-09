@@ -11,7 +11,7 @@ export interface INgbDropdownAnchor {
  * Inyectalo (normalmente en el componente raíz) y ajustá sus propiedades para
  * fijar valores por defecto de todos los dropdowns de la app.
  */
-@Service()
+@Service({ id: "ngb.dropdown.config.service" })
 export class NgbDropdownConfig {
   autoClose: boolean | "inside" | "outside" = true;
   placement: PlacementArray = ["bottom-start", "bottom-end", "top-start", "top-end"];

@@ -1,11 +1,7 @@
 import { NgbDateAdapter } from "@ngb/datepicker/adapters/ngb-date-adapter.ts";
 import { NgbCalendar } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
-import type {
-  NgbDatepickerNavigateEvent,
-  NgbDatepickerState,
-  NgbDateStruct,
-} from "@ngb/datepicker/ngb-date-struct.ts";
+import type { NgbDatepickerNavigateEvent, NgbDatepickerState, NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
 import template from "@ngb/datepicker/ngb-datepicker.component.html";
 import { type DatepickerServiceInputs, NgbDatepickerService } from "@ngb/datepicker/ngb-datepicker.service.ts";
 import { NgbDatepickerConfig } from "@ngb/datepicker/ngb-datepicker-config.service.ts";
@@ -14,10 +10,7 @@ import type { ContentTemplateContext } from "@ngb/datepicker/ngb-datepicker-cont
 import type { DayTemplateContext } from "@ngb/datepicker/ngb-datepicker-day-template-context.ts";
 import { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import { isChangedDate, isChangedMonth } from "@ngb/datepicker/ngb-datepicker-tools.ts";
-import {
-  type DatepickerViewModel,
-  NavigationEvent,
-} from "@ngb/datepicker/ngb-datepicker-view-model.ts";
+import { type DatepickerViewModel, NavigationEvent } from "@ngb/datepicker/ngb-datepicker-view-model.ts";
 import {
   type AfterContentInit,
   type AfterViewInit,
@@ -25,25 +18,24 @@ import {
   ChangeDetectorRef,
   Component,
   ContentChild,
-  type ControlValueAccessor,
   DestroyRef,
   ElementRef,
   EventEmitter,
   forwardRef,
   HostBinding,
-  inject,
   Injector,
   Input,
-  NG_VALUE_ACCESSOR,
+  inject,
   NgZone,
   type OnChanges,
   type OnInit,
   Output,
   type SimpleChanges,
-  takeUntilDestroyed,
   TemplateRef,
   ViewChild,
 } from "ngjs-core";
+import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
+import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 import { fromEvent, merge } from "rxjs";
 import { filter } from "rxjs/operators";
 

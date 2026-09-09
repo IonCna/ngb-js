@@ -2,14 +2,199 @@
   "name": "ngb-js",
   "version": "0.0.0",
   "license": "MIT",
-  "main": "./dist/ngb-js.cjs",
-  "module": "./dist/ngb-js.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/ngb-js.js",
-      "require": "./dist/ngb-js.cjs"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./compat": {
+      "types": "./dist/types/compat.d.ts",
+      "import": "./dist/compat.js",
+      "require": "./dist/compat.cjs"
+    },
+    "./accordion": {
+      "types": "./dist/types/accordion/index.d.ts",
+      "import": "./dist/accordion/index.js",
+      "require": "./dist/accordion/index.cjs"
+    },
+    "./accordion/compat": {
+      "types": "./dist/types/accordion/compat.d.ts",
+      "import": "./dist/accordion/compat.js",
+      "require": "./dist/accordion/compat.cjs"
+    },
+    "./alert": {
+      "types": "./dist/types/alert/index.d.ts",
+      "import": "./dist/alert/index.js",
+      "require": "./dist/alert/index.cjs"
+    },
+    "./alert/compat": {
+      "types": "./dist/types/alert/compat.d.ts",
+      "import": "./dist/alert/compat.js",
+      "require": "./dist/alert/compat.cjs"
+    },
+    "./carousel": {
+      "types": "./dist/types/carousel/index.d.ts",
+      "import": "./dist/carousel/index.js",
+      "require": "./dist/carousel/index.cjs"
+    },
+    "./carousel/compat": {
+      "types": "./dist/types/carousel/compat.d.ts",
+      "import": "./dist/carousel/compat.js",
+      "require": "./dist/carousel/compat.cjs"
+    },
+    "./collapse": {
+      "types": "./dist/types/collapse/index.d.ts",
+      "import": "./dist/collapse/index.js",
+      "require": "./dist/collapse/index.cjs"
+    },
+    "./collapse/compat": {
+      "types": "./dist/types/collapse/compat.d.ts",
+      "import": "./dist/collapse/compat.js",
+      "require": "./dist/collapse/compat.cjs"
+    },
+    "./datepicker": {
+      "types": "./dist/types/datepicker/index.d.ts",
+      "import": "./dist/datepicker/index.js",
+      "require": "./dist/datepicker/index.cjs"
+    },
+    "./datepicker/compat": {
+      "types": "./dist/types/datepicker/compat.d.ts",
+      "import": "./dist/datepicker/compat.js",
+      "require": "./dist/datepicker/compat.cjs"
+    },
+    "./dropdown": {
+      "types": "./dist/types/dropdown/index.d.ts",
+      "import": "./dist/dropdown/index.js",
+      "require": "./dist/dropdown/index.cjs"
+    },
+    "./dropdown/compat": {
+      "types": "./dist/types/dropdown/compat.d.ts",
+      "import": "./dist/dropdown/compat.js",
+      "require": "./dist/dropdown/compat.cjs"
+    },
+    "./modal": {
+      "types": "./dist/types/modal/index.d.ts",
+      "import": "./dist/modal/index.js",
+      "require": "./dist/modal/index.cjs"
+    },
+    "./modal/compat": {
+      "types": "./dist/types/modal/compat.d.ts",
+      "import": "./dist/modal/compat.js",
+      "require": "./dist/modal/compat.cjs"
+    },
+    "./nav": {
+      "types": "./dist/types/nav/index.d.ts",
+      "import": "./dist/nav/index.js",
+      "require": "./dist/nav/index.cjs"
+    },
+    "./nav/compat": {
+      "types": "./dist/types/nav/compat.d.ts",
+      "import": "./dist/nav/compat.js",
+      "require": "./dist/nav/compat.cjs"
+    },
+    "./offcanvas": {
+      "types": "./dist/types/offcanvas/index.d.ts",
+      "import": "./dist/offcanvas/index.js",
+      "require": "./dist/offcanvas/index.cjs"
+    },
+    "./offcanvas/compat": {
+      "types": "./dist/types/offcanvas/compat.d.ts",
+      "import": "./dist/offcanvas/compat.js",
+      "require": "./dist/offcanvas/compat.cjs"
+    },
+    "./pagination": {
+      "types": "./dist/types/pagination/index.d.ts",
+      "import": "./dist/pagination/index.js",
+      "require": "./dist/pagination/index.cjs"
+    },
+    "./pagination/compat": {
+      "types": "./dist/types/pagination/compat.d.ts",
+      "import": "./dist/pagination/compat.js",
+      "require": "./dist/pagination/compat.cjs"
+    },
+    "./popover": {
+      "types": "./dist/types/popover/index.d.ts",
+      "import": "./dist/popover/index.js",
+      "require": "./dist/popover/index.cjs"
+    },
+    "./popover/compat": {
+      "types": "./dist/types/popover/compat.d.ts",
+      "import": "./dist/popover/compat.js",
+      "require": "./dist/popover/compat.cjs"
+    },
+    "./progressbar": {
+      "types": "./dist/types/progressbar/index.d.ts",
+      "import": "./dist/progressbar/index.js",
+      "require": "./dist/progressbar/index.cjs"
+    },
+    "./progressbar/compat": {
+      "types": "./dist/types/progressbar/compat.d.ts",
+      "import": "./dist/progressbar/compat.js",
+      "require": "./dist/progressbar/compat.cjs"
+    },
+    "./rating": {
+      "types": "./dist/types/rating/index.d.ts",
+      "import": "./dist/rating/index.js",
+      "require": "./dist/rating/index.cjs"
+    },
+    "./rating/compat": {
+      "types": "./dist/types/rating/compat.d.ts",
+      "import": "./dist/rating/compat.js",
+      "require": "./dist/rating/compat.cjs"
+    },
+    "./scrollspy": {
+      "types": "./dist/types/scrollspy/index.d.ts",
+      "import": "./dist/scrollspy/index.js",
+      "require": "./dist/scrollspy/index.cjs"
+    },
+    "./scrollspy/compat": {
+      "types": "./dist/types/scrollspy/compat.d.ts",
+      "import": "./dist/scrollspy/compat.js",
+      "require": "./dist/scrollspy/compat.cjs"
+    },
+    "./timepicker": {
+      "types": "./dist/types/timepicker/index.d.ts",
+      "import": "./dist/timepicker/index.js",
+      "require": "./dist/timepicker/index.cjs"
+    },
+    "./timepicker/compat": {
+      "types": "./dist/types/timepicker/compat.d.ts",
+      "import": "./dist/timepicker/compat.js",
+      "require": "./dist/timepicker/compat.cjs"
+    },
+    "./toast": {
+      "types": "./dist/types/toast/index.d.ts",
+      "import": "./dist/toast/index.js",
+      "require": "./dist/toast/index.cjs"
+    },
+    "./toast/compat": {
+      "types": "./dist/types/toast/compat.d.ts",
+      "import": "./dist/toast/compat.js",
+      "require": "./dist/toast/compat.cjs"
+    },
+    "./tooltip": {
+      "types": "./dist/types/tooltip/index.d.ts",
+      "import": "./dist/tooltip/index.js",
+      "require": "./dist/tooltip/index.cjs"
+    },
+    "./tooltip/compat": {
+      "types": "./dist/types/tooltip/compat.d.ts",
+      "import": "./dist/tooltip/compat.js",
+      "require": "./dist/tooltip/compat.cjs"
+    },
+    "./typeahead": {
+      "types": "./dist/types/typeahead/index.d.ts",
+      "import": "./dist/typeahead/index.js",
+      "require": "./dist/typeahead/index.cjs"
+    },
+    "./typeahead/compat": {
+      "types": "./dist/types/typeahead/compat.d.ts",
+      "import": "./dist/typeahead/compat.js",
+      "require": "./dist/typeahead/compat.cjs"
     },
     "./package.json": "./package.json"
   },

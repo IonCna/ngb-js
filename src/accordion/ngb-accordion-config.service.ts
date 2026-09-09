@@ -7,7 +7,7 @@ import { inject, Service } from "ngjs-core";
  * Inyectalo (normalmente en el componente raíz) y ajustá sus propiedades para
  * fijar valores por defecto de todos los acordeones de la app.
  */
-@Service()
+@Service({ id: "ngb.accordion.config.service" })
 export class NgbAccordionConfig {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

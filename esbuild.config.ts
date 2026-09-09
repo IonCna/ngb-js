@@ -10,7 +10,46 @@ import * as esbuild from "esbuild";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const outDir = join(rootDir, "dist");
 const typesDir = join(outDir, "types");
-const entryPoint = "./src/index.ts";
+
+/**
+ * Features con subpath propio: cada una emite `<feature>/index` (barrel de
+ * clases sueltas → `ngb-js/<feature>`) y `<feature>/compat` (variante
+ * `angular.IModule` → `ngb-js/<feature>/compat`).
+ */
+const features = [
+  "accordion",
+  "alert",
+  "carousel",
+  "collapse",
+  "datepicker",
+  "dropdown",
+  "modal",
+  "nav",
+  "offcanvas",
+  "pagination",
+  "popover",
+  "progressbar",
+  "rating",
+  "scrollspy",
+  "timepicker",
+  "toast",
+  "tooltip",
+  "typeahead",
+];
+
+/**
+ * Una entrada por superficie pública. Clave = ruta de salida bajo `dist/`
+ * (`dist/<clave>.js` + `.cjs`). Root global (`index`) + `compat` general, y por
+ * feature `<feature>/index` + `<feature>/compat`.
+ */
+const entryPoints: Record<string, string> = {
+  index: "./src/index.ts",
+  compat: "./src/compat.ts",
+};
+for (const feature of features) {
+  entryPoints[`${feature}/index`] = `./src/${feature}/index.ts`;
+  entryPoints[`${feature}/compat`] = `./src/${feature}/compat.ts`;
+}
 
 const external = ["angular", "rxjs", "rxjs/*", "@popperjs/core", "ngjs-core", "ngjs-core/*"];
 
@@ -29,12 +68,12 @@ await mkdir(outDir, { recursive: true });
 
 const commonOptions: esbuild.BuildOptions = {
   absWorkingDir: rootDir,
-  entryPoints: [entryPoint],
+  entryPoints,
+  outdir: outDir,
   bundle: true,
   platform: "browser",
   target: "es2022",
-  sourcemap: true,
-  sourcesContent: true,
+  sourcemap: false,
   external,
   plugins: [htmlLoader],
   tsconfig: join(rootDir, "tsconfig.json"),
@@ -46,12 +85,11 @@ await Promise.all([
   esbuild.build({
     ...commonOptions,
     format: "esm",
-    outfile: join(outDir, "ngb-js.js"),
   }),
   esbuild.build({
     ...commonOptions,
     format: "cjs",
-    outfile: join(outDir, "ngb-js.cjs"),
+    outExtension: { ".js": ".cjs" },
   }),
 ]);
 
@@ -104,4 +142,4 @@ for (const declaration of await listDeclarations(typesDir)) {
   await writeFile(declaration, rewritten);
 }
 
-console.log("Build completed: dist/ngb-js.js, dist/ngb-js.cjs and dist/types/index.d.ts");
+console.log(`Build completed: ${Object.keys(entryPoints).length} entries (.js/.cjs) + dist/types/`);

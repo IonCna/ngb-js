@@ -6,3 +6,4 @@ export { NgbDropdownConfig } from "@ngb/dropdown/ngb-dropdown-config.service";
 export { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
 export { NgbDropdownMenu } from "@ngb/dropdown/ngb-dropdown-menu.directive";
 export { NgbDropdownToggle } from "@ngb/dropdown/ngb-dropdown-toggle.directive";
+export { NGB_DROPDOWN_CONFIG } from "@ngb/dropdown/tokens";

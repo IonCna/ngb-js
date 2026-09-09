@@ -1,5 +1,5 @@
-import template from "@ngb/timepicker/ngb-timepicker.component.html";
 import { NgbTime } from "@ngb/timepicker/ngb-time.ts";
+import template from "@ngb/timepicker/ngb-timepicker.component.html";
 import { NgbTimeAdapter } from "@ngb/timepicker/ngb-timepicker-adapter.service.ts";
 import { NgbTimepickerConfig } from "@ngb/timepicker/ngb-timepicker-config.service.ts";
 import { NgbTimepickerI18n } from "@ngb/timepicker/ngb-timepicker-i18n.ts";
@@ -8,16 +8,15 @@ import {
   type AfterViewInit,
   ChangeDetectorRef,
   Component,
-  type ControlValueAccessor,
   DestroyRef,
   ElementRef,
   forwardRef,
-  inject,
   Input,
-  NG_VALUE_ACCESSOR,
+  inject,
   type OnChanges,
   type SimpleChanges,
 } from "ngjs-core";
+import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
 
 const FILTER_REGEX = /[^0-9]/g;
 

@@ -26,7 +26,7 @@ export type NgbOffcanvasUpdatableOptions = Pick<
 /**
  * Servicio de configuración de [`NgbOffcanvas`](#/components/offcanvas/api#NgbOffcanvas).
  */
-@Service()
+@Service({ id: "ngb.offcanvas.config.service" })
 export class NgbOffcanvasConfig implements NgbOffcanvasOptions {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

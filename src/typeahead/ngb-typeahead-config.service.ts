@@ -2,7 +2,7 @@ import type { PlacementArray } from "@ngb/utils";
 import type { Options } from "@popperjs/core";
 import { Service } from "ngjs-core";
 
-@Service()
+@Service({ id: "ngb.typeahead.config.service" })
 export class NgbTypeaheadConfig {
   container: any;
   editable = true;

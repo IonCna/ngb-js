@@ -4,7 +4,7 @@ import type { Options } from "@popperjs/core";
 import { inject, Service } from "ngjs-core";
 
 /** Defaults for `NgbPopover`. Parity with `@ng-bootstrap` (`popover-config.ts`). */
-@Service()
+@Service({ id: "ngb.popover.config.service" })
 export class NgbPopoverConfig {
   private readonly _config = inject(NgbConfig);
   private _animation?: boolean;

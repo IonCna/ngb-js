@@ -94,14 +94,17 @@ describe("configuration service defaults", () => {
   });
 
   it("provides modal and offcanvas defaults", () => {
-    expect(angularInjector.get<NgbModalConfig>(NgbModalConfig.$name)).toMatchObject({
+    // `@Service` → se pide por el `Injector` de ngjs-core (como el resto de los
+    // configs). El acceso por string vía `$injector` es cosa del modo compat
+    // (`ngb-js/modal/compat` lo expone con `exposeServices`).
+    expect(injector.get(NgbModalConfig)).toMatchObject({
       animation: true,
       backdrop: true,
       fullscreen: false,
       keyboard: true,
       role: "dialog",
     });
-    expect(angularInjector.get<NgbOffcanvasConfig>(NgbOffcanvasConfig.$name)).toMatchObject({
+    expect(injector.get(NgbOffcanvasConfig)).toMatchObject({
       animation: true,
       backdrop: true,
       keyboard: true,

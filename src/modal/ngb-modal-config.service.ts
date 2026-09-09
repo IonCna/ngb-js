@@ -1,5 +1,5 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
-import { inject, type Injector, Service } from "ngjs-core";
+import { type Injector, inject, Service } from "ngjs-core";
 
 /**
  * Opciones al abrir un modal con `NgbModal.open()`.
@@ -47,7 +47,7 @@ export type NgbModalUpdatableOptions = Pick<
  *
  * @since 3.1.0
  */
-@Service()
+@Service({ id: "ngb.modal.config.service" })
 export class NgbModalConfig implements Required<Omit<NgbModalOptions, "bindings">> {
   private _ngbConfig = inject(NgbConfig);
   private _animation!: boolean;

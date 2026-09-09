@@ -13,14 +13,14 @@ import {
   EventEmitter,
   HostBinding,
   HostListener,
-  inject,
   Input,
+  inject,
   type OnChanges,
   Output,
   type QueryList,
   type SimpleChanges,
-  takeUntilDestroyed,
 } from "ngjs-core";
+import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 import { Subject } from "rxjs";
 
 // biome-ignore lint/suspicious/noExplicitAny: los ids de nav aceptan cualquier tipo en ng-bootstrap

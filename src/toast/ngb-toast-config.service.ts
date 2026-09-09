@@ -7,7 +7,7 @@ export interface NgbToastOptions {
   ariaLive?: "polite" | "assertive";
 }
 
-@Service()
+@Service({ id: "ngb.toast.config.service" })
 export class NgbToastConfig implements NgbToastOptions {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

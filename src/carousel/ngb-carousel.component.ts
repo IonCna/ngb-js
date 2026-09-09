@@ -28,10 +28,10 @@ import {
   Output,
   PLATFORM_ID,
   type QueryList,
-  takeUntilDestroyed,
   TemplateRef,
 } from "ngjs-core";
 import { isPlatformBrowser } from "ngjs-core/common";
+import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 import { BehaviorSubject, combineLatest, NEVER, type Observable, timer, zip } from "rxjs";
 import { distinctUntilChanged, map, startWith, switchMap, take } from "rxjs/operators";
 

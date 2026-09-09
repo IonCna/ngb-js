@@ -11,12 +11,11 @@ import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-c
 import { addPopperOffset, isString, ngbAutoClose, ngbFocusTrap, ngbPositioning } from "@ngb/utils";
 import type { INgModelController } from "angular";
 import {
-  type AfterViewInit,
   type AfterRenderRef,
+  type AfterViewInit,
   afterEveryRender,
   ChangeDetectorRef,
   type ComponentRef,
-  type ControlValueAccessor,
   Directive,
   DOCUMENT,
   ElementRef,
@@ -24,10 +23,9 @@ import {
   forwardRef,
   HostBinding,
   HostListener,
-  inject,
   Injector,
   Input,
-  NG_VALUE_ACCESSOR,
+  inject,
   NgDisabled,
   NgZone,
   type OnChanges,
@@ -37,6 +35,7 @@ import {
   type TemplateRef,
   ViewContainerRef,
 } from "ngjs-core";
+import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
 import { Subject } from "rxjs";
 
 /**

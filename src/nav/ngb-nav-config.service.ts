@@ -12,7 +12,7 @@ export interface NgbNavContentContext {
   $implicit: boolean;
 }
 
-@Service()
+@Service({ id: "ngb.nav.config.service" })
 export class NgbNavConfig {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

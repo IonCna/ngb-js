@@ -8,13 +8,13 @@ import {
   ChangeDetectorRef,
   Component,
   HostBinding,
-  inject,
   Input,
+  inject,
   NgZone,
   type QueryList,
-  takeUntilDestroyed,
   ViewChildren,
 } from "ngjs-core";
+import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 import { distinctUntilChanged, skip, startWith } from "rxjs";
 
 @Component({

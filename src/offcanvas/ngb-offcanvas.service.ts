@@ -1,14 +1,14 @@
 import { NgbOffcanvasConfig, type NgbOffcanvasOptions } from "@ngb/offcanvas/ngb-offcanvas-config.service";
 import type { NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanvas-ref";
 import { NgbOffcanvasStack } from "@ngb/offcanvas/ngb-offcanvas-stack.service";
-import { inject, Injector, Service } from "ngjs-core";
+import { Injector, inject, Service } from "ngjs-core";
 
 /**
  * Servicio para abrir offcanvas.
  *
  * Crear un offcanvas: armá un componente o un `TemplateRef` y pasalo a `.open()`.
  */
-@Service()
+@Service({ id: "ngb.offcanvas.service" })
 export class NgbOffcanvas {
   private _injector = inject(Injector);
   private _offcanvasStack = inject(NgbOffcanvasStack);

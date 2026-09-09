@@ -1,12 +1,11 @@
 import { NgbTypeaheadConfig } from "@ngb/typeahead/ngb-typeahead-config.service";
-import { type ResultTemplateContext, NgbTypeaheadWindow } from "@ngb/typeahead/ngb-typeahead-window";
+import { NgbTypeaheadWindow, type ResultTemplateContext } from "@ngb/typeahead/ngb-typeahead-window";
 import { addPopperOffset, isDefined, Live, ngbAutoClose, ngbPositioning, PopupService, toString } from "@ngb/utils";
 import {
-  afterEveryRender,
   type AfterRenderRef,
+  afterEveryRender,
   ChangeDetectorRef,
   type ComponentRef,
-  type ControlValueAccessor,
   Directive,
   DOCUMENT,
   ElementRef,
@@ -14,10 +13,9 @@ import {
   forwardRef,
   HostBinding,
   HostListener,
-  inject,
   Injector,
   Input,
-  NG_VALUE_ACCESSOR,
+  inject,
   NgZone,
   type OnChanges,
   type OnDestroy,
@@ -26,6 +24,7 @@ import {
   type SimpleChanges,
   type TemplateRef,
 } from "ngjs-core";
+import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
 import {
   BehaviorSubject,
   fromEvent,

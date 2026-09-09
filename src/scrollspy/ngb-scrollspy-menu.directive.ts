@@ -1,16 +1,8 @@
 import type { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyItem, type NgbScrollSpyRef } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
 import { NgbScrollSpyService, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
-import {
-  type AfterViewInit,
-  ContentChildren,
-  DestroyRef,
-  Directive,
-  Input,
-  inject,
-  type QueryList,
-  takeUntilDestroyed,
-} from "ngjs-core";
+import { type AfterViewInit, ContentChildren, DestroyRef, Directive, Input, inject, type QueryList } from "ngjs-core";
+import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 import type { Observable } from "rxjs";
 
 /**

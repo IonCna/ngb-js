@@ -1,6 +1,6 @@
 import { Service } from "ngjs-core";
 
-@Service()
+@Service({ id: "ngb.progressbar.config.service" })
 export class NgbProgressbarConfig {
   max = 100;
   animated = false;

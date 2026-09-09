@@ -6,7 +6,7 @@ import { inject, Service } from "ngjs-core";
  * Inyectalo (normalmente en el componente raíz) y ajustá sus propiedades para
  * fijar valores por defecto de todos los carousels de la app.
  */
-@Service()
+@Service({ id: "ngb.carousel.config.service" })
 export class NgbCarouselConfig {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

@@ -1,20 +1,8 @@
-export * from "@ngb/accordion";
-export * from "@ngb/alert";
-export * from "@ngb/carousel";
-export * from "@ngb/collapse";
-export * from "@ngb/dropdown";
-export * from "@ngb/modal";
-export * from "@ngb/nav";
+/**
+ * `ngb-js` (root) — solo lo **global**. Cada feature se importa por su propio
+ * subpath en **clases sueltas** (`ngb-js/alert`, `ngb-js/modal`, …); la variante
+ * `angular.IModule` para AngularJS 1.x clásico vive en `…/compat`
+ * (`ngb-js/compat`, `ngb-js/alert/compat`, …).
+ */
 export { NgbModule } from "@ngb/ngb.module";
 export { NgbConfig } from "@ngb/ngb-config.service";
-export * from "@ngb/offcanvas";
-export * from "@ngb/popover";
-export * from "@ngb/progressbar";
-export * from "@ngb/rating";
-export * from "@ngb/scrollspy";
-export * from "@ngb/timepicker";
-export * from "@ngb/toast";
-export * from "@ngb/tooltip";
-export * from "@ngb/typeahead";
-export * from "@ngb/pagination";
-export * from "@ngb/datepicker";

@@ -3,7 +3,7 @@ import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
 import { inject, Service } from "ngjs-core";
 
-@Service()
+@Service({ id: "ngb.tooltip.config.service" })
 export class NgbTooltipConfig {
   private _ngbConfig = inject(NgbConfig);
   private _animation?: boolean;

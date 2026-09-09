@@ -1,5 +1,5 @@
-import { NgbAccordionCollapse } from "@ngb/accordion/ngb-accordion-collapse.directive";
 import { NgbAccordionDirective } from "@ngb/accordion/ngb-accordion.directive";
+import { NgbAccordionCollapse } from "@ngb/accordion/ngb-accordion-collapse.directive";
 import { isString } from "@ngb/utils";
 import {
   ChangeDetectorRef,
@@ -8,11 +8,11 @@ import {
   Directive,
   EventEmitter,
   HostBinding,
-  inject,
   Input,
+  inject,
   Output,
-  takeUntilDestroyed,
 } from "ngjs-core";
+import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 
 let nextId = 0;
 

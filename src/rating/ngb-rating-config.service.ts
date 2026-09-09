@@ -1,6 +1,6 @@
 import { Service } from "ngjs-core";
 
-@Service()
+@Service({ id: "ngb.rating.config.service" })
 export class NgbRatingConfig {
   max = 10;
   readonly = false;
