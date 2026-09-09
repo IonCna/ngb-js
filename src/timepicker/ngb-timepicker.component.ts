@@ -1,42 +1,93 @@
-import angular, {type IAugmentedJQuery, type IComponentController, type IComponentOptions} from "angular";
 import template from "@ngb/timepicker/ngb-timepicker.component.html";
-import {NgbTime} from "@ngb/timepicker/ngb-time.ts";
-import {isInteger, isNumber, padNumber, toInteger} from "@ngb/utils";
-import {NgbTimepickerConfig} from "@ngb/timepicker/ngb-timepicker-config.service";
-import {ChangeDetectorRef, NgDisabled} from "ngjs-core";
-import {NgbTimeAdapter} from "@ngb/timepicker/ngb-timepicker-adapter.service.ts";
-import {NgbTimepickerI18n} from "@ngb/timepicker/ngb-timepicker-i18n";
+import { NgbTime } from "@ngb/timepicker/ngb-time.ts";
+import { NgbTimeAdapter } from "@ngb/timepicker/ngb-timepicker-adapter.service.ts";
+import { NgbTimepickerConfig } from "@ngb/timepicker/ngb-timepicker-config.service.ts";
+import { NgbTimepickerI18n } from "@ngb/timepicker/ngb-timepicker-i18n.ts";
+import { isInteger, isNumber, padNumber, toInteger } from "@ngb/utils";
+import {
+  type AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  type ControlValueAccessor,
+  DestroyRef,
+  ElementRef,
+  forwardRef,
+  inject,
+  Input,
+  NG_VALUE_ACCESSOR,
+  type OnChanges,
+  type SimpleChanges,
+} from "ngjs-core";
 
 const FILTER_REGEX = /[^0-9]/g;
 
-export class NgbTimepicker implements IComponentController {
-  static ngAcceptInputType_size: string
+/**
+ * A directive that helps with picking hours, minutes and seconds.
+ *
+ * ngjs-core: `ControlValueAccessor` + `NG_VALUE_ACCESSOR` → el bridge lo conecta a
+ * `ngModel` (upstream 1-1). El template sigue en AngularJS: los inputs usan
+ * `ng-model` interno (`updateOn: 'change'`) en vez de `[value]`/`(change)`.
+ */
+@Component({
+  exportAs: "ngbTimepicker",
+  selector: "ngb-timepicker",
+  controllerAs: "$",
+  template,
+  providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbTimepicker), multi: true }],
+})
+export class NgbTimepicker implements ControlValueAccessor, OnChanges, AfterViewInit {
+  static ngAcceptInputType_size: string;
 
-  ngDisabled?: NgDisabled
-  private formsDisabled?: boolean
+  private readonly _config = inject(NgbTimepickerConfig);
+  private readonly _ngbTimeAdapter = inject<NgbTimeAdapter<any>>(NgbTimeAdapter);
+  private readonly _cd = inject(ChangeDetectorRef);
+  private readonly _nativeElement = inject(ElementRef).nativeElement as HTMLElement;
+  private readonly _destroyRef = inject(DestroyRef);
+
+  readonly i18n = inject(NgbTimepickerI18n);
+
+  disabled = this._config.disabled;
   model?: NgbTime;
 
-  private _hourStep!: number
-  private _minuteStep!: number
-  private _secondStep!: number
+  hourInput = "";
+  minuteInput = "";
+  secondInput = "";
 
-  public meridian!: boolean
-  public spinners!: boolean
-  public seconds!: boolean
-  public hourInput = ""
-  public minuteInput = ""
-  public secondInput = ""
+  private _hourStep = this._config.hourStep;
+  private _minuteStep = this._config.minuteStep;
+  private _secondStep = this._config.secondStep;
 
-  private ngModelCtrl?: angular.INgModelController
+  /**
+   * Whether to display 12H or 24H mode.
+   */
+  @Input() meridian = this._config.meridian;
 
-  set hourStep(value: number) {
-    this._hourStep = isInteger(value) ? value : this._config.hourStep;
+  /**
+   * If `true`, the spinners above and below inputs are visible.
+   */
+  @Input() spinners = this._config.spinners;
+
+  /**
+   * If `true`, it is possible to select seconds.
+   */
+  @Input() seconds = this._config.seconds;
+
+  /**
+   * The number of hours to add/subtract when clicking hour spinners.
+   */
+  @Input()
+  set hourStep(step: number) {
+    this._hourStep = isInteger(step) ? step : this._config.hourStep;
   }
 
-  get hourStep() {
+  get hourStep(): number {
     return this._hourStep;
   }
 
+  /**
+   * The number of minutes to add/subtract when clicking minute spinners.
+   */
+  @Input()
   set minuteStep(step: number) {
     this._minuteStep = isInteger(step) ? step : this._config.minuteStep;
   }
@@ -45,6 +96,10 @@ export class NgbTimepicker implements IComponentController {
     return this._minuteStep;
   }
 
+  /**
+   * The number of seconds to add/subtract when clicking second spinners.
+   */
+  @Input()
   set secondStep(step: number) {
     this._secondStep = isInteger(step) ? step : this._config.secondStep;
   }
@@ -53,95 +108,77 @@ export class NgbTimepicker implements IComponentController {
     return this._secondStep;
   }
 
-  public readonlyInputs!: boolean
-  public size!: 'small' | 'medium' | 'large'
+  /**
+   * If `true`, the timepicker is readonly and can't be changed.
+   */
+  @Input() readonlyInputs = this._config.readonlyInputs;
 
-  constructor(
-      private $element: IAugmentedJQuery,
-      private _config: NgbTimepickerConfig,
-      private _cd: ChangeDetectorRef,
-      private _ngbTimeAdapter: NgbTimeAdapter<any>,
-      public readonly i18n: NgbTimepickerI18n,
-  ) {}
+  /**
+   * The size of inputs and buttons.
+   */
+  @Input() size: "small" | "medium" | "large" = this._config.size;
 
-  $onInit() {
-    this.meridian = this.meridian ?? this._config.meridian
-    this.spinners = this.spinners ?? this._config.spinners
-    this.seconds = this.seconds ?? this._config.seconds;
-    this.hourStep = this.hourStep ?? this._config.hourStep
-    this.minuteStep = this.minuteStep ?? this._config.minuteStep
-    this.secondStep = this.secondStep ?? this._config.secondStep
-    this.readonlyInputs = this.readonlyInputs ?? this._config.readonlyInputs
-    this.size = this.size ?? this._config.size
+  onChange = (_: any) => {};
+  onTouched = () => {};
 
-    if(!this.ngModelCtrl) {
-      return
-    }
-
-    const ngModelCtrl = this.ngModelCtrl
-
-    ngModelCtrl.$render = () => this.writeValue(ngModelCtrl.$viewValue)
-    this.registerOnChange((value) => ngModelCtrl.$setViewValue(value))
-    this.registerOnTouched(() => ngModelCtrl.$setTouched())
-    ngModelCtrl.$render()
+  ngAfterViewInit() {
+    this._nativeElement.classList.add("d-inline-block", "fs-6");
+    this._nativeElement.addEventListener("input", this._handleInputEvent);
+    this._destroyRef.onDestroy(() => this._nativeElement.removeEventListener("input", this._handleInputEvent));
+    this._renderInputValues();
   }
 
-  onChange = angular.noop
-  onTouched = angular.noop
-
-  $postLink() {
-    this.$element.addClass("d-inline-block fs-6");
-    this.$element.on("input", this.handleInputEvent)
-    this.renderInputValues()
-  }
-
-  $onDestroy() {
-    this.$element.off("input", this.handleInputEvent)
-  }
-
-  public writeValue(value: any) {
+  writeValue(value: any) {
     const structValue = this._ngbTimeAdapter.fromModel(value);
     this.model = structValue ? new NgbTime(structValue.hour, structValue.minute, structValue.second) : new NgbTime();
 
-    if(!this.seconds && (!structValue || !isNumber(structValue.second))) {
-      this.model.second = 0
+    if (!this.seconds && (!structValue || !isNumber(structValue.second))) {
+      this.model.second = 0;
     }
 
-    this.renderInputValues()
+    this._renderInputValues();
     this._cd.markForCheck();
   }
 
-  registerOnChange(fn: (value: any) => any) {
+  registerOnChange(fn: (value: any) => any): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: () => any) {
+  registerOnTouched(fn: () => any): void {
     this.onTouched = fn;
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.formsDisabled = isDisabled;
+    this.disabled = isDisabled;
   }
 
-  isDisabled(): boolean {
-    return this.ngDisabled?.disabled ?? this.formsDisabled ?? this._config.disabled;
-  }
-
+  /**
+   * Increments the hours by the given step.
+   */
   changeHour(step: number) {
     this.model?.changeHour(step);
-    this.propagateModelChange();
+    this._propagateModelChange();
   }
 
+  /**
+   * Increments the minutes by the given step.
+   */
   changeMinute(step: number) {
     this.model?.changeMinute(step);
-    this.propagateModelChange();
+    this._propagateModelChange();
   }
 
+  /**
+   * Increments the seconds by the given step.
+   */
   changeSecond(step: number) {
     this.model?.changeSecond(step);
-    this.propagateModelChange();
+    this._propagateModelChange();
   }
 
+  /**
+   * Update hours with the new value.
+   */
   updateHour(newVal: string) {
     const isPM = this.model ? this.model.hour >= 12 : false;
     const enteredHour = toInteger(newVal);
@@ -150,17 +187,23 @@ export class NgbTimepicker implements IComponentController {
     } else {
       this.model?.updateHour(enteredHour);
     }
-    this.propagateModelChange();
+    this._propagateModelChange();
   }
 
+  /**
+   * Update minutes with the new value.
+   */
   updateMinute(newVal: string) {
     this.model?.updateMinute(toInteger(newVal));
-    this.propagateModelChange();
+    this._propagateModelChange();
   }
 
+  /**
+   * Update seconds with the new value.
+   */
   updateSecond(newVal: string) {
     this.model?.updateSecond(toInteger(newVal));
-    this.propagateModelChange();
+    this._propagateModelChange();
   }
 
   toggleMeridian() {
@@ -170,17 +213,15 @@ export class NgbTimepicker implements IComponentController {
   }
 
   formatInput(input: HTMLInputElement) {
-    input.value = input.value.replace(FILTER_REGEX, '');
+    input.value = input.value.replace(FILTER_REGEX, "");
   }
 
   formatHour(value?: number) {
-    if(!isNumber(value)) {
-      return padNumber(NaN)
+    if (!isNumber(value)) {
+      return padNumber(NaN);
     }
 
-    return this.meridian
-        ? padNumber(value % 12 === 0 ? 12 : value % 12)
-        : padNumber(value % 24)
+    return this.meridian ? padNumber(value % 12 === 0 ? 12 : value % 12) : padNumber(value % 24);
   }
 
   formatMinSec(value?: number) {
@@ -192,86 +233,53 @@ export class NgbTimepicker implements IComponentController {
   }
 
   get isSmallSize(): boolean {
-    return this.size === 'small';
+    return this.size === "small";
   }
 
   get isLargeSize(): boolean {
-    return this.size === 'large';
+    return this.size === "large";
   }
 
-  $onChanges(onChangesObj: angular.IOnChangesObject) {
-    if(onChangesObj["seconds"] && !this.seconds && this.model && !isNumber(this.model.second)) {
-      this.model.second = 0
-      this.propagateModelChange(false);
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes["seconds"] && !this.seconds && this.model && !isNumber(this.model.second)) {
+      this.model.second = 0;
+      this._propagateModelChange(false);
     }
 
-    this.renderInputValues()
+    this._renderInputValues();
   }
 
-  private propagateModelChange(touched = true) {
-    this.renderInputValues()
+  private _propagateModelChange(touched = true) {
+    this._renderInputValues();
 
-    if(touched) {
+    if (touched) {
       this.onTouched();
     }
 
-    if(!this.model?.isValid(this.seconds)) {
-      this.onChange(this._ngbTimeAdapter.toModel(null))
-      return
-    }
-
-    this.onChange(
-        this._ngbTimeAdapter.toModel({ hour: this.model.hour, minute: this.model.minute, second: this.model.second })
-    )
-  }
-
-  private renderInputValues() {
-    this.hourInput = this.formatHour(this.model?.hour)
-    this.minuteInput = this.formatMinSec(this.model?.minute)
-    this.secondInput = this.formatMinSec(this.model?.second)
-  }
-
-  private readonly handleInputEvent = (event: JQueryEventObject) => {
-    const input = event.target
-
-    if(input instanceof HTMLInputElement) {
-      this.formatInput(input)
+    if (this.model?.isValid(this.seconds)) {
+      this.onChange(
+        this._ngbTimeAdapter.toModel({
+          hour: this.model.hour,
+          minute: this.model.minute,
+          second: this.model.second,
+        }),
+      );
+    } else {
+      this.onChange(this._ngbTimeAdapter.toModel(null));
     }
   }
 
-  static get $name() {
-    return "ngbTimepicker";
+  private _renderInputValues() {
+    this.hourInput = this.formatHour(this.model?.hour);
+    this.minuteInput = this.formatMinSec(this.model?.minute);
+    this.secondInput = this.formatMinSec(this.model?.second);
   }
 
-  static get $inject() {
-    return [
-      "$element",
-      NgbTimepickerConfig.$name,
-      ChangeDetectorRef.$name,
-      NgbTimeAdapter.$name,
-      NgbTimepickerI18n.$name,
-    ];
-  }
+  private readonly _handleInputEvent = (event: Event) => {
+    const input = event.target;
 
-  static get $factory(): IComponentOptions {
-    return {
-      controller: NgbTimepicker,
-      controllerAs: "$",
-      require: {
-        ngModelCtrl: "?ngModel",
-        ngDisabled: "?ngDisabled",
-      },
-      bindings: {
-        meridian: "<?",
-        spinners: "<?",
-        seconds: "<?",
-        hourStep: "<?",
-        minuteStep: "<?",
-        secondStep: "<?",
-        readonlyInputs: "<?",
-        size: "<?",
-      },
-      template,
-    };
-  }
+    if (input instanceof HTMLInputElement) {
+      this.formatInput(input);
+    }
+  };
 }

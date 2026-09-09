@@ -1,11 +1,11 @@
-<fieldset ng-disabled="$.isDisabled()" ng-class="{ disabled: $.isDisabled() }">
+<fieldset ng-disabled="$.disabled" ng-class="{ disabled: $.disabled }">
     <div class="d-flex align-items-center">
         <div class="d-flex flex-column align-items-center">
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeHour($.hourStep)"
-                ng-disabled="$.isDisabled()"
-                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.isDisabled() }"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
                 type="button">
@@ -24,7 +24,7 @@
                 ng-blur="$.handleBlur()"
                 ng-keydown="$event.key === 'ArrowUp' && $.changeHour($.hourStep); $event.key === 'ArrowDown' && $.changeHour(-$.hourStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
                 ng-readonly="$.readonlyInputs"
-                ng-disabled="$.isDisabled()"
+                ng-disabled="$.disabled"
                 ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
                 class="form-control text-center w-auto px-1"
                 type="text"
@@ -37,8 +37,8 @@
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeHour(-$.hourStep)"
-                ng-disabled="$.isDisabled()"
-                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.isDisabled() }"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
                 type="button">
@@ -57,8 +57,8 @@
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeMinute($.minuteStep)"
-                ng-disabled="$.isDisabled()"
-                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.isDisabled() }"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
                 type="button">
@@ -77,7 +77,7 @@
                 ng-blur="$.handleBlur()"
                 ng-keydown="$event.key === 'ArrowUp' && $.changeMinute($.minuteStep); $event.key === 'ArrowDown' && $.changeMinute(-$.minuteStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
                 ng-readonly="$.readonlyInputs"
-                ng-disabled="$.isDisabled()"
+                ng-disabled="$.disabled"
                 ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
                 class="form-control text-center w-auto px-1"
                 type="text"
@@ -90,8 +90,8 @@
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeMinute(-$.minuteStep)"
-                ng-disabled="$.isDisabled()"
-                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.isDisabled() }"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
                 type="button">
@@ -111,8 +111,8 @@
                 <button
                     ng-if="$.spinners"
                     ng-click="$.changeSecond($.secondStep)"
-                    ng-disabled="$.isDisabled()"
-                    ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.isDisabled() }"
+                    ng-disabled="$.disabled"
+                    ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                     class="btn btn-link px-2 py-0 lh-1"
                     tabindex="-1"
                     type="button">
@@ -131,7 +131,7 @@
                     ng-blur="$.handleBlur()"
                     ng-keydown="$event.key === 'ArrowUp' && $.changeSecond($.secondStep); $event.key === 'ArrowDown' && $.changeSecond(-$.secondStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
                     ng-readonly="$.readonlyInputs"
-                    ng-disabled="$.isDisabled()"
+                    ng-disabled="$.disabled"
                     ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
                     class="form-control text-center w-auto px-1"
                     type="text"
@@ -144,8 +144,8 @@
                 <button
                     ng-if="$.spinners"
                     ng-click="$.changeSecond(-$.secondStep)"
-                    ng-disabled="$.isDisabled()"
-                    ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.isDisabled() }"
+                    ng-disabled="$.disabled"
+                    ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                     class="btn btn-link px-2 py-0 lh-1"
                     tabindex="-1"
                     type="button">
@@ -162,8 +162,8 @@
         <div ng-if="$.meridian" class="ms-2">
             <button
                 ng-click="$.toggleMeridian()"
-                ng-disabled="$.isDisabled()"
-                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.isDisabled() }"
+                ng-disabled="$.disabled"
+                ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-outline-primary"
                 type="button">
                 {{

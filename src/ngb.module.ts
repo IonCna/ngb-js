@@ -19,7 +19,7 @@ import { NgbToastModule } from "@ngb/toast/ngb-toast.module";
 import { NgbTooltipModule } from "@ngb/tooltip/ngb-tooltip.module";
 import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
 import { NgbRTL } from "@ngb/utils/rtl.service";
-import { NgModule, registerNgModule } from "ngjs-core";
+import { NgModule } from "ngjs-core";
 import { PlatformBrowserModule } from "ngjs-core/platform-browser";
 
 /**
@@ -47,14 +47,12 @@ import { PlatformBrowserModule } from "ngjs-core/platform-browser";
     NgbPopoverModule,
     NgbScrollSpyModule,
     NgbRatingModule,
-    NgbTimepickerModule.name,
+    NgbTimepickerModule,
     NgbTypeaheadModule,
     NgbPaginationModule,
-    NgbDatepickerModule.name,
+    NgbDatepickerModule,
   ],
   providers: [NgbConfig, NgbScrollbar, NgbRTL],
 })
-class NgbRootModule {}
 
-/** El único `registerNgModule` — el borde público (`angular.module("app", [NgbModule.name])`). */
-export const NgbModule = registerNgModule(NgbRootModule);
+export class NgbModule {}

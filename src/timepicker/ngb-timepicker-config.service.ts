@@ -1,3 +1,12 @@
+import { Injectable } from "ngjs-core";
+
+/**
+ * A configuration service for the [`NgbTimepicker`](#/components/timepicker/api#NgbTimepicker) component.
+ *
+ * You can inject this service, typically in your root component, and customize the values of its properties in
+ * order to provide default values for all the timepickers used in the application.
+ */
+@Injectable({ providedIn: "root" })
 export class NgbTimepickerConfig {
   meridian = false;
   spinners = true;
@@ -8,12 +17,4 @@ export class NgbTimepickerConfig {
   disabled = false;
   readonlyInputs = false;
   size: "small" | "medium" | "large" = "medium";
-
-  static get $name() {
-    return "ngb.timepicker.config.service";
-  }
-
-  static get $inject() {
-    return [];
-  }
 }

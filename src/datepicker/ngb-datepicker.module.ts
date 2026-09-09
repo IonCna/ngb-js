@@ -16,8 +16,7 @@ import { NgbDatepickerNavigationSelect } from "@ngb/datepicker/ngb-datepicker-na
 import { NgbInputDatepicker } from "@ngb/datepicker/ngb-input-datepicker.directive.ts";
 import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-config.service.ts";
 import { NgbRTL } from "@ngb/utils/rtl.service";
-import type { IModule } from "angular";
-import { NgModule, registerNgModule } from "ngjs-core";
+import { NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
 import { PlatformBrowserModule } from "ngjs-core/platform-browser";
 
@@ -53,7 +52,11 @@ const NGB_DATEPICKER_DIRECTIVES = [
  * upstream:
  * ```
  * @NgModule({ exports: NGB_DATEPICKER_DIRECTIVES, imports: NGB_DATEPICKER_DIRECTIVES })
+ * export class NgbDatepickerModule {}
  * ```
+ * Se exporta como **clase** `@NgModule` (estilo Angular): el registro /
+ * `bootstrapApplication` lo hace la app consumidora (o `configureTestBed` en specs).
+ *
  * ngjs-core: `imports`/`exports` de standalone → `declarations`. Los servicios
  * `@Injectable({ providedIn: 'root' [, useFactory] })` no se auto-registran en
  * ngjs-core (informativo) → van en `providers`.
@@ -74,6 +77,4 @@ const NGB_DATEPICKER_DIRECTIVES = [
     { provide: NgbDatepickerI18n, useClass: NgbDatepickerI18nDefault },
   ],
 })
-class NgbDatepickerModuleDef {}
-
-export const NgbDatepickerModule: IModule = registerNgModule(NgbDatepickerModuleDef);
+export class NgbDatepickerModule {}

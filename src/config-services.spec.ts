@@ -1,6 +1,6 @@
 import type { IInjectorService } from "angular";
 import angular from "angular";
-import { Injector } from "ngjs-core";
+import { getNgModuleName, Injector } from "ngjs-core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { NgbAccordionConfig } from "./accordion/ngb-accordion-config.service";
 import { NgbAlertConfig } from "./alert/ngb-alert-config.service";
@@ -28,7 +28,7 @@ describe("configuration service defaults", () => {
   let angularInjector: IInjectorService;
 
   beforeEach(() => {
-    angular.mock.module(NgbModule.name);
+    angular.mock.module(getNgModuleName(NgbModule));
     angular.mock.inject((_$injector_: IInjectorService) => {
       angularInjector = _$injector_;
       injector = angularInjector.get<Injector>(Injector.$name);

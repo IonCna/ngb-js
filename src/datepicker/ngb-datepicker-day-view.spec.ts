@@ -1,7 +1,9 @@
 import { NgbDate } from "@ngb/datepicker/ngb-date";
 import { NgbDatepickerModule } from "@ngb/datepicker/ngb-datepicker.module";
-import angular, { type IAugmentedJQuery, type ICompileService, type IRootScopeService, type IScope } from "angular";
+import type { IAugmentedJQuery, ICompileService, IRootScopeService, IScope } from "angular";
+import angular from "angular";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed.ts";
 
 interface TestScope extends IScope {
   currentMonth: number;
@@ -12,19 +14,21 @@ interface TestScope extends IScope {
 }
 
 describe("NgbDatepickerDayView", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let element: IAugmentedJQuery | undefined;
 
-  beforeEach(() => {
-    angular.mock.module(NgbDatepickerModule.name);
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbDatepickerModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
   });
 
-  afterEach(() => element?.remove());
+  afterEach(() => {
+    element?.remove();
+    tb.destroy();
+  });
 
   function setup(values: Partial<TestScope> = {}) {
     const scope = $rootScope.$new() as TestScope;
@@ -50,10 +54,9 @@ describe("NgbDatepickerDayView", () => {
   it("renders the day numeral with the Bootstrap day-button styling", () => {
     const { day } = setup();
     expect(day.textContent?.trim()).toBe("13");
-    expect(day.classList.contains("btn")).toBe(true);
+    // upstream host: `class: 'btn-light'`. El sizing (`width/height: 2rem`) vive en
+    // `datepicker-day-view.css` (global), no en el host.
     expect(day.classList.contains("btn-light")).toBe(true);
-    expect(day.style.width).toBe("2rem");
-    expect(day.style.height).toBe("2rem");
   });
 
   it("marks selected and focused dates", () => {
@@ -69,9 +72,10 @@ describe("NgbDatepickerDayView", () => {
     { date: new NgbDate(2026, 8, 13), disabled: true },
   ])("mutes outside or disabled days", (values) => {
     const { day } = setup(values);
+    // upstream host: `[class.text-muted]='isMuted()'`, `[class.outside]='isMuted()'`.
+    // El `opacity: .5` de `.outside` vive en `datepicker-day-view.css`.
     expect(day.classList.contains("text-muted")).toBe(true);
     expect(day.classList.contains("outside")).toBe(true);
-    expect(day.classList.contains("opacity-50")).toBe(true);
   });
 
   it("updates its state classes when bindings change", () => {

@@ -1,5 +1,6 @@
 import type { IAugmentedJQuery, ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
+import { getNgModuleName } from "ngjs-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
 import type { NgbPagination } from "./ngb-pagination.component";
@@ -23,7 +24,7 @@ describe("ngbPagination", () => {
   let $rootScope: IRootScopeService;
 
   beforeEach(() => {
-    angular.mock.module(NgbModule.name);
+    angular.mock.module(getNgModuleName(NgbModule));
     angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
       $compile = _$compile_;
       $rootScope = _$rootScope_;

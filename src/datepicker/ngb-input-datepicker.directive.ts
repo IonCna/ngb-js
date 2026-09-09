@@ -28,6 +28,7 @@ import {
   Injector,
   Input,
   NG_VALUE_ACCESSOR,
+  NgDisabled,
   NgZone,
   type OnChanges,
   type OnDestroy,
@@ -231,12 +232,17 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
    */
   @Output() closed = new EventEmitter<void>();
 
-  // upstream: `host: { '[disabled]': 'disabled' }` + `@Input() get disabled()`.
+  // upstream: `@Input() get disabled()` + `host: { '[disabled]': 'disabled' }`.
+  // ngjs-core: un `@Input()` sobre un accessor lo pisa `bindToController`. El
+  // estado `disabled` entra por (a) el `control-value-accessor-bridge` que observa
+  // el atributo `disabled` y llama `setDisabledState` (forms + `disabled="…"`),
+  // y (b) la directiva `ngDisabled` (`ng-disabled="expr"`) vía `inject(NgDisabled)`.
+  private _ngDisabled = inject(NgDisabled, { optional: true });
+
   @HostBinding("disabled") get _hostDisabled() {
     return this._disabled;
   }
 
-  @Input()
   get disabled() {
     return this._disabled;
   }
@@ -463,6 +469,11 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
     if (this._ngModelCtrl) {
       this._ngModelCtrl.$validators.ngbDate = (modelValue: unknown) => this.validate({ value: modelValue }) === null;
       this.registerOnValidatorChange(() => this._ngModelCtrl?.$validate());
+    }
+    // `ng-disabled="expr"` → estado disabled (el atributo `disabled` plano lo cubre el CVA bridge).
+    if (this._ngDisabled) {
+      this.setDisabledState(this._ngDisabled.disabled);
+      this._ngDisabled.onChange((d) => this.setDisabledState(d));
     }
   }
 

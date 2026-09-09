@@ -1,5 +1,8 @@
 import {describe, expect, it} from "vitest";
-import {NgbTimeStructAdapter} from "@ngb/timepicker/ngb-timepicker-adapter.service";
+import {
+  NGB_TIMEPICKER_TIME_ADAPTER_FACTORY,
+  NgbTimeStructAdapter,
+} from "@ngb/timepicker/ngb-timepicker-adapter.service";
 
 describe("NgbTimeStructAdapter", () => {
   const adapter = new NgbTimeStructAdapter();
@@ -26,6 +29,6 @@ describe("NgbTimeStructAdapter", () => {
   });
 
   it("creates the default adapter instance", () => {
-    expect(NgbTimeStructAdapter.$factory()).toBeInstanceOf(NgbTimeStructAdapter);
+    expect(NGB_TIMEPICKER_TIME_ADAPTER_FACTORY()).toBeInstanceOf(NgbTimeStructAdapter);
   });
 });

@@ -12,7 +12,6 @@ import {
   afterEveryRender,
   ChangeDetectorRef,
   type ComponentRef,
-  DestroyRef,
   Directive,
   DOCUMENT,
   ElementRef,
@@ -22,6 +21,7 @@ import {
   inject,
   NgZone,
   type OnChanges,
+  type OnDestroy,
   type OnInit,
   Output,
   type SimpleChanges,
@@ -35,7 +35,7 @@ let nextId = 0;
  * A lightweight and extensible directive for fancy popover creation.
  */
 @Directive({ selector: "[ngbPopover]", exportAs: "ngbPopover" })
-export class NgbPopover implements OnInit, OnChanges {
+export class NgbPopover implements OnInit, OnDestroy, OnChanges {
   static ngAcceptInputType_autoClose: boolean | string;
 
   private _config = inject(NgbPopoverConfig);
@@ -145,7 +145,6 @@ export class NgbPopover implements OnInit, OnChanges {
   private _document = inject(DOCUMENT);
   private _changeDetector = inject(ChangeDetectorRef);
   private _injector = inject(Injector);
-  private _destroyRef = inject(DestroyRef);
 
   private _ngbPopoverWindowId = `ngb-popover-${nextId++}`;
   private _popupService = new PopupService(NgbPopoverWindow);
@@ -212,8 +211,8 @@ export class NgbPopover implements OnInit, OnChanges {
         });
         this._afterRenderRef = afterEveryRender(
           {
-            write: () => {
-              this._ngZone.runOutsideAngular(() => this._positioning.update());
+            mixedReadWrite: () => {
+              this._positioning.update();
             },
           },
           { injector: this._injector },
@@ -281,15 +280,6 @@ export class NgbPopover implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    // Teardown goes through `DestroyRef` instead of `ngOnDestroy`: this directive
-    // also declares `@Output`s, and the output-emitter bridge installs its own
-    // `$onDestroy` first, which currently makes the lifecycle bridge skip the
-    // `ngOnDestroy` -> `$onDestroy` alias. `DestroyRef` is chained, so it fires.
-    this._destroyRef.onDestroy(() => {
-      this.close(false);
-      this._unregisterListenersFn?.();
-    });
-
     this._unregisterListenersFn = listenToTriggers(
       this._nativeElement,
       this.triggers,
@@ -311,6 +301,13 @@ export class NgbPopover implements OnInit, OnChanges {
     if ((ngbPopover || popoverTitle || disablePopover) && this._isDisabled()) {
       this.close();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.close(false);
+    // This check is needed as it might happen that ngOnDestroy is called before ngOnInit
+    // under certain conditions, see: https://github.com/ng-bootstrap/ng-bootstrap/issues/2199
+    this._unregisterListenersFn?.();
   }
 
   private _isDisabled(): boolean {

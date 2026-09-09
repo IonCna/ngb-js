@@ -2,12 +2,13 @@ import angular, {
   type IAugmentedJQuery,
   type ICompileService,
   type IFormController,
-  type IInjectorService,
   type INgModelController,
   type IRootScopeService,
   type IScope,
 } from "angular";
+import { Injector } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbTimepicker } from "./ngb-timepicker.component";
 import { NgbTimepickerModule } from "./ngb-timepicker.module";
 import { NgbTimepickerConfig } from "./ngb-timepicker-config.service";
@@ -33,20 +34,17 @@ interface TestScope extends IScope {
 }
 
 describe("NgbTimepicker", () => {
+  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let config: NgbTimepickerConfig;
   const mounted: IAugmentedJQuery[] = [];
 
-  beforeEach(() => {
-    angular.mock.module(NgbTimepickerModule.name);
-    angular.mock.inject(
-      (_$compile_: ICompileService, _$rootScope_: IRootScopeService, _$injector_: IInjectorService) => {
-        $compile = _$compile_;
-        $rootScope = _$rootScope_;
-        config = _$injector_.get<NgbTimepickerConfig>(NgbTimepickerConfig.$name);
-      },
-    );
+  beforeEach(async () => {
+    tb = await configureTestBed(NgbTimepickerModule);
+    $compile = tb.$compile;
+    $rootScope = tb.$rootScope;
+    config = tb.$injector.get<Injector>(Injector.$name).get(NgbTimepickerConfig);
   });
 
   afterEach(() => {
@@ -54,6 +52,7 @@ describe("NgbTimepicker", () => {
       element.remove();
     });
     mounted.length = 0;
+    tb.destroy();
   });
 
   function setup(
@@ -331,10 +330,11 @@ describe("NgbTimepicker", () => {
 
   it("changes the active time through the exported component controller", () => {
     const { scope, element } = setup(undefined, { time: { hour: 1, minute: 2, second: 3 } });
-    const controller = element.controller(NgbTimepicker.$name) as NgbTimepicker;
+    const controller = element.controller("ngbTimepicker") as NgbTimepicker;
     controller.changeHour(2);
     controller.changeMinute(3);
     controller.changeSecond(4);
+    scope.$digest();
     expect(scope.time).toEqual({ hour: 3, minute: 5, second: 7 });
   });
 });

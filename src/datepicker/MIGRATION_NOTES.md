@@ -1,7 +1,15 @@
 # Datepicker → decoradores: pendientes ("resolver al final")
 
 Estado: 8 archivos migrados a `@Component`/`@Directive`/`@Injectable`/`@NgModule`,
-1-1 con ng-bootstrap-master en lo posible. Suite: 468/480 (antes 463/480).
+1-1 con ng-bootstrap-master en lo posible.
+
+**Estado: datepicker 105/105 (0 skip). ngb-js 478/480** (2 fallos pre-existentes en
+`config-services.spec.ts` — modal/offcanvas, ajenos al datepicker). **ngjs-core 575/575.**
+
+Módulo como clase `@NgModule` (estilo Angular) + specs con `configureTestBed`.
+Gap H (`@Input() get/set disabled`) → resuelto vía `NgDisabled` + CVA bridge.
+Gap L (contenido proyectado no ve la DI del ancestro) → **resuelto en el core**:
+`EmbeddedViewRefImpl` linkea la vista embebida en su posición real del DOM.
 
 ## 0. `ngb-datepicker.component.ts` — reescrito al idioma ngjs-core (HECHO)
 

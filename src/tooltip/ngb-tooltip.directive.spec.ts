@@ -1,5 +1,6 @@
 import type { ICompileService, IPromise, IRootScopeService, ITimeoutService } from "angular";
 import angular from "angular";
+import { getNgModuleName } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
 
@@ -15,7 +16,7 @@ describe("ngbTooltip", () => {
   let appRef: { tick: () => void };
 
   beforeEach(() => {
-    angular.mock.module(NgbModule.name);
+    angular.mock.module(getNgModuleName(NgbModule));
     angular.mock.inject(
       (
         _$compile_: ICompileService,

@@ -14,8 +14,8 @@ import {
   isChangedDate,
 } from "@ngb/datepicker/ngb-datepicker-tools.ts";
 import type { IFilterService, ILocaleService } from "angular";
-import angular from "angular";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureTestBed, type NgbTestBed } from "../../test/testbed.ts";
 
 describe("datepicker core", () => {
   it("compares and orders NgbDate values", () => {
@@ -86,19 +86,19 @@ describe("datepicker core", () => {
 });
 
 describe("NgbDatepickerService", () => {
-  let $locale: ILocaleService;
-  let $filter: IFilterService;
+  let tb: NgbTestBed;
 
-  beforeEach(() => {
-    angular.mock.module(NgbDatepickerModule.name);
-    angular.mock.inject((_$locale_: ILocaleService, _$filter_: IFilterService) => {
-      $locale = _$locale_;
-      $filter = _$filter_;
-    });
+  beforeEach(async () => {
+    // Bootstrapea `NgbDatepickerModule` → `NgbCalendar` / `NgbDatepickerI18n`
+    // quedan resolubles vía `InjectorImpl.current`, así que `new
+    // NgbDatepickerService()` (que usa `inject()` en fields, como upstream) anda.
+    tb = await configureTestBed(NgbDatepickerModule);
   });
 
+  afterEach(() => tb.destroy());
+
   it("opens, focuses and emits selectable dates without UI", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     const models = vi.fn();
     const selections = vi.fn();
     service.model$.subscribe(models);
@@ -115,7 +115,7 @@ describe("NgbDatepickerService", () => {
   });
 
   it("normalizes valid and invalid dates", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     const fallback = new NgbDate(2026, 1, 1);
     expect(service.toValidDate({ year: 2024, month: 2, day: 29 })).toEqual(new NgbDate(2024, 2, 29));
     expect(service.toValidDate({ year: 2023, month: 2, day: 29 }, fallback)).toBe(fallback);
@@ -123,7 +123,7 @@ describe("NgbDatepickerService", () => {
   });
 
   it("ignores invalid display and weekday options", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     const models = vi.fn();
     service.model$.subscribe(models);
     service.open(new NgbDate(2026, 8, 1));
@@ -132,7 +132,7 @@ describe("NgbDatepickerService", () => {
   });
 
   it("prevents focus, navigation and selection while disabled", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     const models = vi.fn();
     const selected = vi.fn();
     service.model$.subscribe(models);
@@ -150,7 +150,7 @@ describe("NgbDatepickerService", () => {
   });
 
   it("clamps focused and opened dates to configured limits", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     const models = vi.fn();
     service.model$.subscribe(models);
     service.set({ minDate: new NgbDate(2026, 8, 10), maxDate: new NgbDate(2026, 8, 20) });
@@ -161,7 +161,7 @@ describe("NgbDatepickerService", () => {
   });
 
   it("emits repeated date selections when requested", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     const selected = vi.fn();
     service.dateSelect$.subscribe(selected);
     const date = new NgbDate(2026, 8, 13);
@@ -172,7 +172,7 @@ describe("NgbDatepickerService", () => {
   });
 
   it("marks every day disabled and removes it from tab order", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     const models = vi.fn();
     service.model$.subscribe(models);
     service.open(new NgbDate(2026, 8, 1));
@@ -184,7 +184,7 @@ describe("NgbDatepickerService", () => {
   });
 
   it("throws when requesting a month outside the current view", () => {
-    const service = new NgbDatepickerService($locale, $filter);
+    const service = new NgbDatepickerService();
     service.open(new NgbDate(2026, 8, 1));
     expect(() => service.getMonth({ year: 2030, month: 1, day: 1 })).toThrow("not found");
   });
