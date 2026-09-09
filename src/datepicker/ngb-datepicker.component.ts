@@ -1,35 +1,55 @@
-import { type NgbDateAdapter, NgbDateStructAdapter } from "@ngb/datepicker/adapters/ngb-date-adapter.ts";
-import { type NgbCalendar, NgbCalendarGregorian } from "@ngb/datepicker/ngb-calendar.service.ts";
+import { NgbDateAdapter } from "@ngb/datepicker/adapters/ngb-date-adapter.ts";
+import { NgbCalendar } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
-import type { NgbDatepickerNavigateEvent, NgbDatepickerState, NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
+import type {
+  NgbDatepickerNavigateEvent,
+  NgbDatepickerState,
+  NgbDateStruct,
+} from "@ngb/datepicker/ngb-date-struct.ts";
 import template from "@ngb/datepicker/ngb-datepicker.component.html";
 import { type DatepickerServiceInputs, NgbDatepickerService } from "@ngb/datepicker/ngb-datepicker.service.ts";
 import { NgbDatepickerConfig } from "@ngb/datepicker/ngb-datepicker-config.service.ts";
 import { NgbDatepickerContent } from "@ngb/datepicker/ngb-datepicker-content.component.ts";
 import type { ContentTemplateContext } from "@ngb/datepicker/ngb-datepicker-content-template-context.ts";
 import type { DayTemplateContext } from "@ngb/datepicker/ngb-datepicker-day-template-context.ts";
-import { type NgbDatepickerI18n, NgbDatepickerI18nDefault } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
-import { NgbDatepickerKeyboardService } from "@ngb/datepicker/ngb-datepicker-keyboard.service.ts";
+import { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import { isChangedDate, isChangedMonth } from "@ngb/datepicker/ngb-datepicker-tools.ts";
 import {
   type DatepickerViewModel,
-  type MonthViewModel,
   NavigationEvent,
 } from "@ngb/datepicker/ngb-datepicker-view-model.ts";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  IFilterService,
-  ILocaleService,
-  INgModelController,
-  IOnChangesObject,
-  IScope,
-} from "angular";
-import { ChangeDetectorRef, ContentChild, type NgDisabled, type TemplateRef, ViewChild } from "ngjs-core";
-import type { Subscription } from "rxjs";
+import {
+  type AfterContentInit,
+  type AfterViewInit,
+  afterNextRender,
+  ChangeDetectorRef,
+  Component,
+  ContentChild,
+  type ControlValueAccessor,
+  DestroyRef,
+  ElementRef,
+  EventEmitter,
+  forwardRef,
+  HostBinding,
+  inject,
+  Injector,
+  Input,
+  NG_VALUE_ACCESSOR,
+  NgZone,
+  type OnChanges,
+  type OnInit,
+  Output,
+  type SimpleChanges,
+  takeUntilDestroyed,
+  TemplateRef,
+  ViewChild,
+} from "ngjs-core";
+import { fromEvent, merge } from "rxjs";
+import { filter } from "rxjs/operators";
 
-const SERVICE_INPUTS = [
+// upstream inlinea este array en `ngOnInit`/`ngOnChanges`; acá va arriba para
+// tiparlo (ngb-js corre con `strict` — ver notas).
+const SERVICE_INPUT_NAMES: (keyof DatepickerServiceInputs)[] = [
   "dayTemplateData",
   "displayMonths",
   "markDisabled",
@@ -39,319 +59,363 @@ const SERVICE_INPUTS = [
   "maxDate",
   "outsideDays",
   "weekdays",
-] as const;
+];
 
-export class NgbDatepicker implements IComponentController {
-  public model!: DatepickerViewModel;
-  public calendar!: NgbCalendar;
-  public dateAdapter?: NgbDateAdapter<unknown>;
-  public i18n!: NgbDatepickerI18n;
-  public contentTemplate?: TemplateRef<ContentTemplateContext>;
-  public dayTemplate?: TemplateRef<DayTemplateContext>;
-  public dayTemplateData?: DatepickerServiceInputs["dayTemplateData"];
-  public displayMonths!: number;
-  public firstDayOfWeek!: number;
-  public footerTemplate?: TemplateRef<unknown>;
-  public markDisabled?: DatepickerServiceInputs["markDisabled"];
-  public maxDate?: NgbDateStruct;
-  public minDate?: NgbDateStruct;
-  public navigation!: "select" | "arrows" | "none";
-  public outsideDays!: "visible" | "collapsed" | "hidden";
-  public showWeekNumbers!: boolean;
-  public startDate?: { year: number; month: number; day?: number };
-  public weekdays!: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined> | boolean;
-  public dateSelect?: (locals: { $event: NgbDate }) => void;
-  public navigate?: (locals: { $event: NgbDatepickerNavigateEvent }) => void;
-  public ngDisabled?: NgDisabled;
+/**
+ * A highly configurable component that helps you with selecting calendar dates.
+ *
+ * `NgbDatepicker` is meant to be displayed inline on a page or put inside a popup.
+ */
+@Component({
+  exportAs: "ngbDatepicker",
+  selector: "ngb-datepicker",
+  controllerAs: "$",
+  template,
+  transclude: true,
+  providers: [
+    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbDatepicker), multi: true },
+    NgbDatepickerService,
+  ],
+})
+export class NgbDatepicker implements AfterContentInit, AfterViewInit, OnChanges, OnInit, ControlValueAccessor {
+  static ngAcceptInputType_autoClose: boolean | string;
+  static ngAcceptInputType_navigation: string;
+  static ngAcceptInputType_outsideDays: string;
+  static ngAcceptInputType_weekdays: boolean | string;
 
-  @ViewChild("defaultDayTemplate", { read: undefined, static: true })
-  private _defaultDayTemplate!: TemplateRef<DayTemplateContext>;
+  model!: DatepickerViewModel;
 
-  @ContentChild(NgbDatepickerContent, { static: true })
-  public contentTemplateFromContent?: NgbDatepickerContent;
+  @ViewChild("defaultDayTemplate", { static: true }) private _defaultDayTemplate!: TemplateRef<DayTemplateContext>;
+  @ViewChild("content", { read: ElementRef, static: true }) private _contentEl!: ElementRef<HTMLElement>;
 
-  private ngModelCtrl?: INgModelController;
-  private _service!: NgbDatepickerService;
-  private readonly _keyboardService = new NgbDatepickerKeyboardService();
+  protected injector = inject(Injector);
+
+  private _service = inject(NgbDatepickerService);
+  private _calendar = inject(NgbCalendar);
+  private _i18n = inject(NgbDatepickerI18n);
+  private _config = inject(NgbDatepickerConfig);
+  private _nativeElement = inject(ElementRef).nativeElement as HTMLElement;
+  private _ngbDateAdapter = inject<NgbDateAdapter<any>>(NgbDateAdapter);
+  private _ngZone = inject(NgZone);
+  private _destroyRef = inject(DestroyRef);
+  private _injector = inject(Injector);
+
   private _controlValue: NgbDate | null = null;
-  private _publicState!: NgbDatepickerState;
+  private _publicState: NgbDatepickerState = <any>{};
   private _initialized = false;
-  private _modelSubscription?: Subscription;
-  private _dateSelectSubscription?: Subscription;
-  private _removeDisabledListener?: () => void;
-  public onChange: (value: unknown) => void = () => undefined;
-  public onTouched: () => void = () => undefined;
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $scope: IScope,
-    private readonly $locale: ILocaleService,
-    private readonly $filter: IFilterService,
-    private readonly _config: NgbDatepickerConfig,
-    private readonly _changeDetector: ChangeDetectorRef,
-  ) {}
+  /**
+   * The reference to a custom content template.
+   *
+   * Allows to completely override the way datepicker displays months.
+   *
+   * @since 14.2.0
+   */
+  @Input() contentTemplate?: TemplateRef<ContentTemplateContext>;
+  @ContentChild(NgbDatepickerContent, { read: TemplateRef, static: true })
+  contentTemplateFromContent?: TemplateRef<ContentTemplateContext>;
 
-  private _subscribeToService(): void {
-    this._dateSelectSubscription = this._service.dateSelect$.subscribe((date) => {
-      this.$scope.$evalAsync(() => this.dateSelect?.({ $event: date }));
+  /**
+   * The reference to a custom template for the day.
+   */
+  @Input() dayTemplate = this._config.dayTemplate;
+
+  /**
+   * The callback to pass any arbitrary data to the template cell via the
+   * [`DayTemplateContext`](#/components/datepicker/api#DayTemplateContext)'s `data` parameter.
+   *
+   * @since 3.3.0
+   */
+  @Input() dayTemplateData = this._config.dayTemplateData;
+
+  /**
+   * The number of months to display.
+   */
+  @Input() displayMonths = this._config.displayMonths;
+
+  /**
+   * The first day of the week.
+   */
+  @Input() firstDayOfWeek = this._config.firstDayOfWeek;
+
+  /**
+   * The reference to the custom template for the datepicker footer.
+   *
+   * @since 3.3.0
+   */
+  @Input() footerTemplate = this._config.footerTemplate;
+
+  /**
+   * The callback to mark some dates as disabled.
+   */
+  @Input() markDisabled = this._config.markDisabled;
+
+  /**
+   * The latest date that can be displayed or selected.
+   */
+  @Input() maxDate = this._config.maxDate;
+
+  /**
+   * The earliest date that can be displayed or selected.
+   */
+  @Input() minDate = this._config.minDate;
+
+  /**
+   * Navigation type.
+   */
+  @Input() navigation = this._config.navigation;
+
+  /**
+   * The way of displaying days that don't belong to the current month.
+   */
+  @Input() outsideDays = this._config.outsideDays;
+
+  /**
+   * If `true`, week numbers will be displayed.
+   */
+  @Input() showWeekNumbers = this._config.showWeekNumbers;
+
+  /**
+   * The date to open calendar with.
+   */
+  @Input() startDate = this._config.startDate;
+
+  /**
+   * The way weekdays should be displayed.
+   *
+   * @since 9.1.0
+   */
+  @Input() weekdays = this._config.weekdays;
+
+  /**
+   * An event emitted right before the navigation happens and displayed month changes.
+   */
+  @Output() navigate = new EventEmitter<NgbDatepickerNavigateEvent>();
+
+  /**
+   * An event emitted when user selects a date using keyboard or mouse.
+   *
+   * @since 5.2.0
+   */
+  @Output() dateSelect = new EventEmitter<NgbDate>();
+
+  onChange = (_: any) => {};
+  onTouched = () => {};
+
+  @HostBinding("class.disabled") get _hostDisabled(): boolean {
+    return !!this.model?.disabled;
+  }
+
+  constructor() {
+    const cd = inject(ChangeDetectorRef);
+
+    this._service.dateSelect$.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((date) => {
+      this.dateSelect.emit(date);
     });
-    this._modelSubscription = this._service.model$.subscribe((model) => {
-      this.$scope.$evalAsync(() => this._applyModel(model));
+
+    this._service.model$.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((model) => {
+      const newDate = model.firstDate!;
+      const oldDate = this.model ? this.model.firstDate : null;
+
+      // update public state
+      this._publicState = {
+        maxDate: model.maxDate,
+        minDate: model.minDate,
+        firstDate: model.firstDate!,
+        lastDate: model.lastDate!,
+        focusedDate: model.focusDate!,
+        months: model.months.map((viewModel) => viewModel.firstDate),
+      };
+
+      let navigationPrevented = false;
+      // emitting navigation event if the first month changes
+      if (!newDate.equals(oldDate)) {
+        this.navigate.emit({
+          current: oldDate ? { year: oldDate.year, month: oldDate.month } : null,
+          next: { year: newDate.year, month: newDate.month },
+          preventDefault: () => (navigationPrevented = true),
+        });
+
+        // can't prevent the very first navigation
+        if (navigationPrevented && oldDate !== null) {
+          this._service.open(oldDate);
+          return;
+        }
+      }
+
+      const newSelectedDate = model.selectedDate;
+      const newFocusedDate = model.focusDate;
+      const oldFocusedDate = this.model ? this.model.focusDate : null;
+
+      this.model = model;
+
+      // handling selection change
+      if (isChangedDate(newSelectedDate, this._controlValue)) {
+        this._controlValue = newSelectedDate;
+        this.onTouched();
+        this.onChange(this._ngbDateAdapter.toModel(newSelectedDate));
+      }
+
+      // handling focus change
+      if (isChangedDate(newFocusedDate, oldFocusedDate) && oldFocusedDate && model.focusVisible) {
+        this.focus();
+      }
+
+      cd.markForCheck();
     });
   }
 
-  $onInit(): void {
-    this.calendar = this.calendar ?? new NgbCalendarGregorian();
-    this.dateAdapter = this.dateAdapter ?? new NgbDateStructAdapter();
-    this.i18n = this.i18n ?? new NgbDatepickerI18nDefault(this.$locale, this.$filter);
-    this._createService();
-
-    this.dayTemplate = this.dayTemplate ?? this._config.dayTemplate;
-    this.dayTemplateData = this.dayTemplateData ?? this._config.dayTemplateData;
-    this.displayMonths = this.displayMonths ?? this._config.displayMonths;
-    this.firstDayOfWeek = this.firstDayOfWeek ?? this._config.firstDayOfWeek;
-    this.footerTemplate = this.footerTemplate ?? this._config.footerTemplate;
-    this.markDisabled = this.markDisabled ?? this._config.markDisabled;
-    this.maxDate = this.maxDate ?? this._config.maxDate;
-    this.minDate = this.minDate ?? this._config.minDate;
-    this.navigation = this.navigation ?? this._config.navigation;
-    this.outsideDays = this.outsideDays ?? this._config.outsideDays;
-    this.showWeekNumbers = this.showWeekNumbers ?? this._config.showWeekNumbers;
-    this.startDate = this.startDate ?? this._config.startDate;
-    this.weekdays = this.weekdays ?? this._config.weekdays;
-
-    this._service.set(this._collectInputs());
-
-    if (this.ngModelCtrl) {
-      this.registerOnChange((value) => this.ngModelCtrl?.$setViewValue(value));
-      this.registerOnTouched(() => this.ngModelCtrl?.$setTouched());
-      this.ngModelCtrl.$render = () => this.writeValue(this.ngModelCtrl?.$viewValue);
-      this.ngModelCtrl.$render();
-    }
-
-    this.navigateTo(this.startDate ?? this._controlValue);
-    this._initialized = true;
-  }
-
-  $postLink(): void {
-    this.dayTemplate = this.dayTemplate ?? this._defaultDayTemplate;
-    this.$element.addClass("d-inline-block border rounded-1");
-    this.$element.toggleClass("disabled", !!this.model?.disabled);
-    this.$element.on("focusin focusout", this._handleFocusChange);
-    this._removeDisabledListener = this.ngDisabled?.onChange((disabled) => this.setDisabledState(disabled));
-    if (this.ngDisabled) this.setDisabledState(this.ngDisabled.disabled);
-  }
-
-  $onChanges(changes: IOnChangesObject): void {
-    if (!this._initialized) return;
-
-    if (changes.calendar || changes.i18n) {
-      this.calendar = this.calendar ?? new NgbCalendarGregorian();
-      this.i18n = this.i18n ?? new NgbDatepickerI18nDefault(this.$locale, this.$filter);
-      this._createService();
-      this._service.set(this._collectInputs());
-      this._service.select(this._controlValue);
-      this.navigateTo(this.startDate ?? this._controlValue);
-      return;
-    }
-
-    const inputs = this._collectInputs(SERVICE_INPUTS.filter((name) => name in changes));
-    this._service.set(inputs);
-
-    const startDateChange = changes.startDate;
-    if (startDateChange && isChangedMonth(startDateChange.previousValue, startDateChange.currentValue)) {
-      this.navigateTo(this.startDate);
-    }
-  }
-
-  $onDestroy(): void {
-    this.$element.off("focusin focusout", this._handleFocusChange);
-    this._removeDisabledListener?.();
-    this._modelSubscription?.unsubscribe();
-    this._dateSelectSubscription?.unsubscribe();
-  }
-
+  /**
+   *  Returns the readonly public state of the datepicker
+   *
+   * @since 5.2.0
+   */
   get state(): NgbDatepickerState {
     return this._publicState;
   }
 
-  getMonth(struct: NgbDateStruct): MonthViewModel {
-    return this._service.getMonth(struct);
+  /**
+   *  Returns the calendar service used in the specific datepicker instance.
+   *
+   *  @since 5.3.0
+   */
+  get calendar(): NgbCalendar {
+    return this._calendar;
   }
 
-  processKey(event: KeyboardEvent | JQueryEventObject): void {
-    this._keyboardService.processKey(event, this);
+  /**
+   * Returns the i18n service used in the specific datepicker instance.
+   *
+   * @since 14.2.0
+   */
+  get i18n(): NgbDatepickerI18n {
+    return this._i18n;
   }
 
+  /**
+   *  Focuses on given date.
+   */
   focusDate(date?: NgbDateStruct | null): void {
     this._service.focus(NgbDate.from(date));
   }
 
+  /**
+   *  Selects focused date.
+   */
   focusSelect(): void {
     this._service.focusSelect();
   }
 
-  focus(): void {
-    queueMicrotask(() => {
-      this.$element[0].querySelector<HTMLElement>('div.ngb-dp-day[tabindex="0"]')?.focus();
+  focus() {
+    afterNextRender(
+      {
+        read: () => {
+          this._nativeElement.querySelector<HTMLElement>('div.ngb-dp-day[tabindex="0"]')?.focus();
+        },
+      },
+      { injector: this._injector },
+    );
+  }
+
+  /**
+   * Navigates to the provided date.
+   */
+  navigateTo(date?: { year: number; month: number; day?: number }) {
+    this._service.open(NgbDate.from(date ? (date.day ? (date as NgbDateStruct) : { ...date, day: 1 }) : null));
+  }
+
+  ngAfterContentInit() {
+    // `@ViewChild({ static: true })` en ngjs-core resuelve en el `$postLink`, no
+    // antes de `ngOnInit` (Angular). El fallback del template va acá.
+    if (!this.dayTemplate) {
+      this.dayTemplate = this._defaultDayTemplate;
+    }
+  }
+
+  ngAfterViewInit() {
+    this._ngZone.runOutsideAngular(() => {
+      const focusIns$ = fromEvent<FocusEvent>(this._contentEl.nativeElement, "focusin");
+      const focusOuts$ = fromEvent<FocusEvent>(this._contentEl.nativeElement, "focusout");
+
+      // we're changing 'focusVisible' only when entering or leaving months view
+      // and ignoring all focus events where both 'target' and 'related' target are day cells
+      merge(focusIns$, focusOuts$)
+        .pipe(
+          filter((focusEvent) => {
+            const target = focusEvent.target as HTMLElement | null;
+            const relatedTarget = focusEvent.relatedTarget as HTMLElement | null;
+
+            return !(
+              target?.classList.contains("ngb-dp-day") &&
+              relatedTarget?.classList.contains("ngb-dp-day") &&
+              this._nativeElement.contains(target) &&
+              this._nativeElement.contains(relatedTarget)
+            );
+          }),
+          takeUntilDestroyed(this._destroyRef),
+        )
+        .subscribe(({ type }) => this._ngZone.run(() => this._service.set({ focusVisible: type === "focusin" })));
     });
   }
 
-  navigateTo(date?: { year: number; month: number; day?: number } | null): void {
-    const target = date ? NgbDate.from(date.day ? (date as NgbDateStruct) : { ...date, day: 1 }) : null;
-    this._service.open(target);
+  ngOnInit() {
+    if (this.model === undefined) {
+      const inputs: DatepickerServiceInputs = {};
+      SERVICE_INPUT_NAMES.forEach((name) => (inputs[name] = (this as any)[name]));
+      this._service.set(inputs);
+
+      this.navigateTo(this.startDate);
+    }
+    this._initialized = true;
   }
 
-  onDateSelect(date: NgbDate): void {
+  ngOnChanges(changes: SimpleChanges) {
+    const inputs: DatepickerServiceInputs = {};
+    SERVICE_INPUT_NAMES.filter((name) => name in changes).forEach((name) => (inputs[name] = (this as any)[name]));
+    this._service.set(inputs);
+
+    if ("startDate" in changes && this._initialized) {
+      const { currentValue, previousValue } = changes.startDate;
+      if (isChangedMonth(previousValue as NgbDate, currentValue as NgbDate)) {
+        this.navigateTo(this.startDate);
+      }
+    }
+  }
+
+  onDateSelect(date: NgbDate) {
     this._service.focus(date);
     this._service.select(date, { emitEvent: true });
   }
 
-  onNavigateDateSelect(date: NgbDate): void {
+  onNavigateDateSelect(date: NgbDate) {
     this._service.open(date);
   }
 
-  onNavigateEvent(event: NavigationEvent): void {
-    const firstDate = this.model.firstDate;
-    if (!firstDate) return;
-    if (event === NavigationEvent.PREV) {
-      this._service.open(this.calendar.getPrev(firstDate, "m", 1));
-    } else if (event === NavigationEvent.NEXT) {
-      this._service.open(this.calendar.getNext(firstDate, "m", 1));
+  onNavigateEvent(event: NavigationEvent) {
+    switch (event) {
+      case NavigationEvent.PREV:
+        this._service.open(this._calendar.getPrev(this.model.firstDate!, "m", 1));
+        break;
+      case NavigationEvent.NEXT:
+        this._service.open(this._calendar.getNext(this.model.firstDate!, "m", 1));
+        break;
     }
   }
 
-  setDisabledState(disabled: boolean): void {
-    this._service.set({ disabled });
-  }
-
-  registerOnChange(fn: (value: unknown) => void): void {
+  registerOnChange(fn: (value: any) => any): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: () => void): void {
+  registerOnTouched(fn: () => any): void {
     this.onTouched = fn;
   }
 
-  writeValue(value: unknown): void {
-    if (!this.dateAdapter) return;
-    this._controlValue = NgbDate.from(this.dateAdapter.fromModel(value));
+  setDisabledState(disabled: boolean) {
+    this._service.set({ disabled });
+  }
+
+  writeValue(value: any) {
+    this._controlValue = NgbDate.from(this._ngbDateAdapter.fromModel(value));
     this._service.select(this._controlValue);
-  }
-
-  private _collectInputs(names: readonly (keyof DatepickerServiceInputs)[] = SERVICE_INPUTS): DatepickerServiceInputs {
-    const inputs: DatepickerServiceInputs = {};
-    for (const name of names) {
-      const value = this[name as keyof this];
-      (inputs as Record<string, unknown>)[name] = value;
-    }
-    return inputs;
-  }
-
-  private _createService(): void {
-    this._modelSubscription?.unsubscribe();
-    this._dateSelectSubscription?.unsubscribe();
-    this._service = new NgbDatepickerService(this.$locale, this.$filter, this.calendar, this.i18n);
-    this._subscribeToService();
-  }
-
-  private _applyModel(model: DatepickerViewModel): void {
-    const newDate = model.firstDate;
-    const lastDate = model.lastDate;
-    const focusedDate = model.focusDate;
-    if (!newDate || !lastDate || !focusedDate) return;
-    const oldDate = this.model?.firstDate ?? null;
-    let navigationPrevented = false;
-
-    if (!newDate.equals(oldDate)) {
-      this.navigate?.({
-        $event: {
-          current: oldDate ? { year: oldDate.year, month: oldDate.month } : null,
-          next: { year: newDate.year, month: newDate.month },
-          preventDefault: () => {
-            navigationPrevented = true;
-          },
-        },
-      });
-      if (navigationPrevented && oldDate) {
-        this._service.open(oldDate);
-        return;
-      }
-    }
-
-    const oldFocusedDate = this.model?.focusDate ?? null;
-    this.model = model;
-    this._publicState = {
-      maxDate: model.maxDate,
-      minDate: model.minDate,
-      firstDate: newDate,
-      lastDate,
-      focusedDate,
-      months: model.months.map((month) => month.firstDate),
-    };
-
-    if (isChangedDate(model.selectedDate, this._controlValue)) {
-      this._controlValue = model.selectedDate;
-      this.onTouched();
-      this.onChange(this.dateAdapter?.toModel(model.selectedDate));
-    }
-
-    if (isChangedDate(model.focusDate, oldFocusedDate) && oldFocusedDate && model.focusVisible) this.focus();
-
-    this.$element.toggleClass("disabled", model.disabled);
-    this._changeDetector.markForCheck();
-  }
-
-  private readonly _handleFocusChange = (event: JQueryEventObject) => {
-    const target = event.target as HTMLElement | null;
-    const relatedTarget = event.relatedTarget as HTMLElement | null;
-    const bothDays =
-      target?.classList.contains("ngb-dp-day") &&
-      relatedTarget?.classList.contains("ngb-dp-day") &&
-      this.$element[0].contains(target) &&
-      this.$element[0].contains(relatedTarget);
-    if (!bothDays) this.$scope.$evalAsync(() => this._service.set({ focusVisible: event.type === "focusin" }));
-  };
-
-  static get $name() {
-    return "ngbDatepicker";
-  }
-
-  static get $inject() {
-    return ["$element", "$scope", "$locale", "$filter", NgbDatepickerConfig.$name, ChangeDetectorRef.$name];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        contentTemplate: "<?",
-        calendar: "<?",
-        dateAdapter: "<?",
-        dayTemplate: "<?",
-        dayTemplateData: "<?",
-        displayMonths: "<?",
-        firstDayOfWeek: "<?",
-        footerTemplate: "<?",
-        i18n: "<?",
-        markDisabled: "<?",
-        maxDate: "<?",
-        minDate: "<?",
-        navigation: "@?",
-        outsideDays: "@?",
-        showWeekNumbers: "<?",
-        startDate: "<?",
-        weekdays: "<?",
-        dateSelect: "&?",
-        navigate: "&?",
-      },
-      controller: NgbDatepicker,
-      controllerAs: "$",
-      require: {
-        ngModelCtrl: "?ngModel",
-        ngDisabled: "?ngDisabled",
-      },
-      transclude: true,
-      template,
-    };
   }
 }

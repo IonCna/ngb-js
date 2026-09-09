@@ -9,7 +9,6 @@
     ngb-datepicker-day-view
     date="date"
     current-month="currentMonth"
-    i18n="$.i18n"
     selected="selected"
     disabled="disabled"
     focused="focused"
@@ -30,7 +29,7 @@
       style="height: 2rem; line-height: 2rem">
       {{ $.i18n.getMonthLabel(month.firstDate) }}
     </div>
-    <ngb-datepicker-month class="d-block pe-auto" month="month.firstDate" datepicker="$"></ngb-datepicker-month>
+    <ngb-datepicker-month class="d-block pe-auto" month="month.firstDate"></ngb-datepicker-month>
   </div>
 </ng-template>
 
@@ -38,7 +37,6 @@
   <ngb-datepicker-navigation
     ng-if="$.navigation !== 'none' && $.model"
     date="$.model.firstDate"
-    i18n="$.i18n"
     months="$.model.months"
     disabled="$.model.disabled"
     show-select="$.model.navigation === 'select'"
@@ -57,7 +55,7 @@
   ng-ref="content">
   <ng-template
     ng-if="$.model"
-    ng-template-outlet="$.contentTemplate || ($.contentTemplateFromContent && $.contentTemplateFromContent.templateRef) || defaultContentTemplate"
+    ng-template-outlet="$.contentTemplate || $.contentTemplateFromContent || defaultContentTemplate"
     ng-template-outlet-context="{ $implicit: $ }">
   </ng-template>
 </div>

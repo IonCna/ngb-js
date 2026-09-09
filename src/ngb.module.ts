@@ -44,7 +44,7 @@ import { PlatformBrowserModule } from "ngjs-core/platform-browser";
     NgbTooltipModule,
     NgbNavModule,
     NgbOffcanvasModule,
-    NgbPopoverModule.name,
+    NgbPopoverModule,
     NgbScrollSpyModule,
     NgbRatingModule,
     NgbTimepickerModule.name,
@@ -52,11 +52,7 @@ import { PlatformBrowserModule } from "ngjs-core/platform-browser";
     NgbPaginationModule,
     NgbDatepickerModule.name,
   ],
-  providers: [
-    NgbConfig,
-    NgbScrollbar,
-    NgbRTL,
-  ],
+  providers: [NgbConfig, NgbScrollbar, NgbRTL],
 })
 class NgbRootModule {}
 

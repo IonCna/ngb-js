@@ -1,5 +1,5 @@
-import { NgbPopover } from "@ngb/popover/ngb-popover.directive";
-import type { ICompileService, IPromise, IRootScopeService } from "angular";
+import type { NgbPopover } from "@ngb/popover/ngb-popover.directive";
+import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configureTestBed, type NgbTestBed } from "../../test/testbed";
@@ -21,7 +21,7 @@ describe("ngbPopover", () => {
     document.body.innerHTML = "";
   });
 
-  async function settle(promise: IPromise<void>): Promise<void> {
+  async function settle(promise: PromiseLike<void>): Promise<void> {
     let settled = false;
     let rejected: unknown;
     promise.then(
@@ -59,7 +59,7 @@ describe("ngbPopover", () => {
     angular.element(document.body).append(element);
     scope.$digest();
 
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     const opening = popover.open();
     scope.$digest();
     await settle(opening);
@@ -90,8 +90,8 @@ describe("ngbPopover", () => {
     scope.$digest();
 
     const buttons = host.find("button");
-    const first = angular.element(buttons[0]).controller(NgbPopover.$name) as NgbPopover;
-    const second = angular.element(buttons[1]).controller(NgbPopover.$name) as NgbPopover;
+    const first = angular.element(buttons[0]).controller("ngbPopover") as NgbPopover;
+    const second = angular.element(buttons[1]).controller("ngbPopover") as NgbPopover;
 
     const firstOpening = first.open();
     const secondOpening = second.open();
@@ -121,7 +121,7 @@ describe("ngbPopover", () => {
     angular.element(document.body).append(element);
     scope.$digest();
 
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     const opening = popover.open();
     scope.$digest();
     await settle(opening);
@@ -156,7 +156,7 @@ describe("ngbPopover", () => {
     scope.$digest();
 
     const button = angular.element(host[0].querySelector("button") as Element);
-    const popover = button.controller(NgbPopover.$name) as NgbPopover;
+    const popover = button.controller("ngbPopover") as NgbPopover;
     const opening = popover.open();
     scope.$digest();
     await settle(opening);
@@ -176,7 +176,7 @@ describe("ngbPopover", () => {
     angular.element(document.body).append(element);
     scope.$digest();
 
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     const opening = popover.open();
     scope.$digest();
     await settle(opening);
@@ -188,7 +188,7 @@ describe("ngbPopover", () => {
     const element = $compile(`<button ngb-popover triggers="'manual'" animation="false">Open</button>`)(
       $rootScope.$new(),
     );
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     await settle(popover.open());
     expect(popover.isOpen()).toBe(false);
     expect(document.body.querySelector(".popover")).toBeNull();
@@ -199,7 +199,7 @@ describe("ngbPopover", () => {
       `<button ngb-popover="'Body'" popover-title="''" triggers="'manual'" animation="false">Open</button>`,
     )($rootScope.$new());
     angular.element(document.body).append(element);
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     await settle(popover.open());
     expect(document.body.querySelector(".popover-header")).toBeNull();
     expect(document.body.querySelector(".popover-body")?.textContent).toContain("Body");
@@ -210,7 +210,7 @@ describe("ngbPopover", () => {
       $rootScope.$new(),
     );
     angular.element(document.body).append(element);
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     // `toggle()` devuelve void: no se puede `settle` su promesa; se corren los
     // ciclos digest/microtask a mano para vaciar el `open()` que dispara.
     popover.toggle();
@@ -234,7 +234,7 @@ describe("ngbPopover", () => {
       <button ngb-popover="'Body'" triggers="'manual'" animation="false" shown="shown()" hidden="hidden()">Open</button>
     `)(scope);
     angular.element(document.body).append(element);
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     await settle(popover.open());
     await settle(popover.open());
     expect(scope.shown).toHaveBeenCalledOnce();
@@ -252,7 +252,7 @@ describe("ngbPopover", () => {
       <button ngb-popover="'Body'" popover-class="{{ popoverClass }}" triggers="'manual'" animation="false">Open</button>
     `)(scope);
     angular.element(document.body).append(element);
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     await settle(popover.open());
     expect(document.body.querySelector(".popover")?.classList.contains("first-class")).toBe(true);
     scope.popoverClass = "second-class";
@@ -264,7 +264,7 @@ describe("ngbPopover", () => {
     const scope = $rootScope.$new();
     const element = $compile(`<button ngb-popover="'Body'" triggers="'manual'" animation="false">Open</button>`)(scope);
     angular.element(document.body).append(element);
-    const popover = element.controller(NgbPopover.$name) as NgbPopover;
+    const popover = element.controller("ngbPopover") as NgbPopover;
     await settle(popover.open());
     expect(element.attr("aria-describedby")).toBeDefined();
     scope.$destroy();

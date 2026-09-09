@@ -121,7 +121,7 @@ describe("configuration service defaults", () => {
   });
 
   it("provides popover and tooltip defaults", () => {
-    expect(angularInjector.get<NgbPopoverConfig>(NgbPopoverConfig.$name)).toMatchObject({
+    expect(injector.get(NgbPopoverConfig)).toMatchObject({
       animation: true,
       autoClose: true,
       closeDelay: 0,

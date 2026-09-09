@@ -2,10 +2,10 @@
 
 <h3 ng-if="$.title" class="popover-header">
     <ng-template ng-ref="simpleTitle">{{ $.title }}</ng-template>
-    <ng-template
-            ng-template-outlet="$.isTitleTemplate() ? $.title : simpleTitle"
-            ng-template-outlet-context="$.context"
-    ></ng-template>
+    <ng-container
+        ng-template-outlet="$.isTitleTemplate() ? $.title : simpleTitle"
+        ng-template-outlet-context="$.context"
+    ></ng-container>
 </h3>
 
 <div class="popover-body"><ng-content></ng-content></div>

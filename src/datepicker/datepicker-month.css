@@ -1,0 +1,47 @@
+/* Compiled from ng-bootstrap `datepicker-month.scss` (ViewEncapsulation.None). */
+ngb-datepicker-month {
+  display: block;
+}
+
+.ngb-dp-weekday,
+.ngb-dp-week-number {
+  line-height: 2rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.ngb-dp-weekday {
+  color: var(--bs-info);
+}
+
+.ngb-dp-week {
+  border-radius: 0.25rem;
+  display: flex;
+}
+
+.ngb-dp-weekdays {
+  border-bottom: 1px solid var(--bs-border-color);
+  border-radius: 0;
+  background-color: var(--bs-tertiary-bg);
+}
+
+.ngb-dp-day,
+.ngb-dp-weekday,
+.ngb-dp-week-number {
+  width: 2rem;
+  height: 2rem;
+}
+
+.ngb-dp-day {
+  cursor: pointer;
+}
+
+.ngb-dp-day.disabled,
+.ngb-dp-day.hidden {
+  cursor: default;
+  pointer-events: none;
+}
+
+.ngb-dp-day[tabindex="0"] {
+  z-index: 1;
+}

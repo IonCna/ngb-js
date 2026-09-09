@@ -61,7 +61,7 @@ describe("NgbDatepickerModule", () => {
     document.body.appendChild(element[0]);
     scope.$digest();
 
-    const datepicker = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbInputDatepicker;
     const opening = datepicker.open();
     scope.$digest();
     await settle(opening);
@@ -83,7 +83,7 @@ describe("NgbDatepickerModule", () => {
     const element = $compile('<ngb-datepicker ng-model="date"></ngb-datepicker>')(scope);
     scope.$digest();
 
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     datepicker.onDateSelect(new NgbDate(2026, 8, 20));
     scope.$digest();
 
@@ -99,7 +99,7 @@ describe("NgbDatepickerModule", () => {
     const element = $compile('<ngb-datepicker ng-model="date"></ngb-datepicker>')(scope);
     scope.$digest();
 
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     datepicker.focusDate(scope.date);
     scope.$digest();
     datepicker.processKey(new KeyboardEvent("keydown", { key: "ArrowRight" }));
@@ -118,7 +118,7 @@ describe("NgbDatepickerModule", () => {
     document.body.appendChild(element[0]);
     scope.$digest();
 
-    const input = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
+    const input = element.controller("ngbDatepicker") as NgbInputDatepicker;
     const opening = input.open();
     scope.$digest();
     await settle(opening);
@@ -194,7 +194,7 @@ describe("NgbDatepickerModule", () => {
     const element = $compile('<ngb-datepicker calendar="calendar"></ngb-datepicker>')(scope);
     scope.$digest();
 
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     expect(datepicker.calendar).toBe(scope.calendar);
 
     element.remove();
@@ -208,7 +208,7 @@ describe("NgbDatepickerModule", () => {
     const element = $compile('<ngb-datepicker min-date="minDate" max-date="maxDate"></ngb-datepicker>')(scope);
     scope.$digest();
 
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     expect(datepicker.state.minDate).toEqual(new NgbDate(2026, 1, 1));
     scope.minDate = undefined;
     scope.maxDate = undefined;
@@ -226,7 +226,7 @@ describe("NgbDatepickerModule", () => {
     const element = $compile('<input ngb-datepicker min-date="minDate">')(scope);
     scope.$digest();
 
-    const input = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
+    const input = element.controller("ngbDatepicker") as NgbInputDatepicker;
     const changes: unknown[] = [];
     let touched = 0;
     input.registerOnChange((value) => changes.push(value));
@@ -250,7 +250,7 @@ describe("NgbDatepickerModule", () => {
     document.body.appendChild(element[0]);
     scope.$digest();
 
-    const input = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
+    const input = element.controller("ngbDatepicker") as NgbInputDatepicker;
     expect(input.disabled).toBe(true);
     const opening = input.open();
     scope.$digest();
@@ -287,7 +287,7 @@ describe("NgbDatepickerModule", () => {
     scope.startDate = { year: 2024, month: 2, day: 29 };
     const element = $compile('<ngb-datepicker start-date="startDate"></ngb-datepicker>')(scope);
     scope.$digest();
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     expect(datepicker.state.firstDate.year).toBe(2024);
     expect(datepicker.state.firstDate.month).toBe(2);
 
@@ -319,7 +319,7 @@ describe("NgbDatepickerModule", () => {
       '<ngb-datepicker start-date="min" min-date="min" max-date="max" mark-disabled="markDisabled"></ngb-datepicker>',
     )(scope);
     scope.$digest();
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     const month = datepicker.getMonth({ year: 2026, month: 8, day: 1 });
     const days = month.weeks.flatMap((week) => week.days);
     expect(days.find(({ date }) => date.equals({ year: 2026, month: 8, day: 9 }))?.context.disabled).toBe(true);
@@ -356,7 +356,7 @@ describe("NgbDatepickerModule", () => {
       scope,
     );
     scope.$digest();
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     datepicker.navigateTo({ year: 2026, month: 9 });
     scope.$digest();
     expect(scope.onNavigate).toHaveBeenCalled();
@@ -368,7 +368,7 @@ describe("NgbDatepickerModule", () => {
     scope.onSelect = vi.fn();
     const element = $compile('<ngb-datepicker date-select="onSelect($event)"></ngb-datepicker>')(scope);
     scope.$digest();
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     const date = datepicker.state.focusedDate;
     datepicker.onDateSelect(date);
     datepicker.onDateSelect(date);
@@ -390,7 +390,7 @@ describe("NgbDatepickerModule", () => {
       '<ngb-datepicker start-date="{ year: 2026, month: 8, day: 13 }" min-date="{ year: 2026, month: 1, day: 1 }" max-date="{ year: 2027, month: 12, day: 31 }"></ngb-datepicker>',
     )($rootScope.$new());
     $rootScope.$digest();
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     const previous = datepicker.state.focusedDate;
     const event = new KeyboardEvent("keydown", { cancelable: true, key, shiftKey });
     const stopPropagation = vi.spyOn(event, "stopPropagation");
@@ -407,7 +407,7 @@ describe("NgbDatepickerModule", () => {
     scope.disabled = true;
     const element = $compile('<ngb-datepicker ng-model="date" ng-disabled="disabled"></ngb-datepicker>')(scope);
     scope.$digest();
-    const datepicker = element.controller(NgbDatepicker.$name) as NgbDatepicker;
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     datepicker.onDateSelect(new NgbDate(2026, 8, 20));
     scope.$digest();
     expect(scope.date).toEqual({ year: 2026, month: 8, day: 13 });
@@ -423,7 +423,7 @@ describe("NgbDatepickerModule", () => {
     document.body.appendChild(element[0]);
     scope.$digest();
     expect((element[0] as HTMLInputElement).value).toBe("2026-08-13");
-    const input = element.controller(NgbInputDatepicker.$name) as NgbInputDatepicker;
+    const input = element.controller("ngbDatepicker") as NgbInputDatepicker;
     await settle(input.open());
     expect(document.querySelector("ngb-datepicker.custom-datepicker")).not.toBeNull();
     input.toggle();
@@ -440,7 +440,7 @@ describe("NgbDatepicker through NgbModule", () => {
       const element = $compile("<ngb-datepicker></ngb-datepicker>")(scope);
       scope.$digest();
 
-      expect(element.controller(NgbDatepicker.$name)).toBeInstanceOf(NgbDatepicker);
+      expect(element.controller("ngbDatepicker")).toBeInstanceOf(NgbDatepicker);
       expect(element[0].querySelectorAll(".ngb-dp-day").length).toBeGreaterThan(0);
 
       element.remove();

@@ -1,235 +1,262 @@
-import { type NgbDateAdapter, NgbDateStructAdapter } from "@ngb/datepicker/adapters/ngb-date-adapter.ts";
-import type { NgbCalendar } from "@ngb/datepicker/ngb-calendar.service.ts";
-import { NgbCalendarGregorian } from "@ngb/datepicker/ngb-calendar.service.ts";
+import { NgbDateAdapter } from "@ngb/datepicker/adapters/ngb-date-adapter.ts";
+import { NgbCalendar } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
-import { NgbDateISOParserFormatter, type NgbDateParserFormatter } from "@ngb/datepicker/ngb-date-parser-formatter.ts";
+import { NgbDateParserFormatter } from "@ngb/datepicker/ngb-date-parser-formatter.ts";
 import type { NgbDatepickerNavigateEvent, NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
 import { NgbDatepicker } from "@ngb/datepicker/ngb-datepicker.component.ts";
+import { NgbDatepickerConfig } from "@ngb/datepicker/ngb-datepicker-config.service.ts";
 import type { ContentTemplateContext } from "@ngb/datepicker/ngb-datepicker-content-template-context.ts";
 import type { DayTemplateContext } from "@ngb/datepicker/ngb-datepicker-day-template-context.ts";
-import type { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-config.service.ts";
-import { toNativeElement } from "@ngb/utils";
-import { ngbAutoClose } from "@ngb/utils/autoclose";
-import { ngbFocusTrap } from "@ngb/utils/focus-trap";
-import { PopupService } from "@ngb/utils/popup.service";
-import { type NgbPositioning, ngbPositioning, type PlacementArray } from "@ngb/utils/positioning";
-import { addPopperOffset } from "@ngb/utils/positioning.util";
-import { NgbRTL } from "@ngb/utils/rtl.service";
-import type { Options } from "@popperjs/core";
-import type {
-  IAugmentedJQuery,
-  IController,
-  IDirective,
-  INgModelController,
-  IOnChangesObject,
-  IPromise,
-  IQService,
-  IScope,
-} from "angular";
-import angular from "angular";
+import { addPopperOffset, isString, ngbAutoClose, ngbFocusTrap, ngbPositioning } from "@ngb/utils";
+import type { INgModelController } from "angular";
 import {
+  type AfterViewInit,
+  type AfterRenderRef,
+  afterEveryRender,
   ChangeDetectorRef,
   type ComponentRef,
-  type NgDisabled,
+  type ControlValueAccessor,
+  Directive,
+  DOCUMENT,
+  ElementRef,
+  EventEmitter,
+  forwardRef,
+  HostBinding,
+  HostListener,
+  inject,
+  Injector,
+  Input,
+  NG_VALUE_ACCESSOR,
   NgZone,
+  type OnChanges,
+  type OnDestroy,
+  Output,
+  type SimpleChanges,
   type TemplateRef,
   ViewContainerRef,
 } from "ngjs-core";
 import { Subject } from "rxjs";
 
-const DATEPICKER_INPUTS = [
-  "contentTemplate",
-  "dayTemplate",
-  "dayTemplateData",
-  "displayMonths",
-  "firstDayOfWeek",
-  "footerTemplate",
-  "markDisabled",
-  "minDate",
-  "maxDate",
-  "navigation",
-  "outsideDays",
-  "showWeekNumbers",
-  "weekdays",
-] as const;
+/**
+ * A directive that allows to stick a datepicker popup to an input field.
+ *
+ * Manages interaction with the input field itself, does value formatting and provides forms integration.
+ *
+ * ngjs-core:
+ * - `NG_VALIDATORS` no existe → el `validate()` se cablea a mano contra el
+ *   `ngModelController` (`require: ?ngModel`). Ver CORE_GAPS.
+ * - `ViewContainerRef.createComponent()` es async → `open()` es `async`.
+ * - `host` → `@HostListener` / `@HostBinding`.
+ */
+@Directive({
+  selector: "input[ngbDatepicker]",
+  exportAs: "ngbDatepicker",
+  require: { _ngModelCtrl: "?ngModel" },
+  providers: [
+    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbInputDatepicker), multi: true },
+    // upstream también: { provide: NG_VALIDATORS, useExisting: forwardRef(() => NgbInputDatepicker), multi: true }
+    // (no existe en ngjs-core — el validate() se engancha al ngModel en ngAfterViewInit).
+    { provide: NgbDatepickerConfig, useExisting: NgbInputDatepickerConfig },
+  ],
+})
+export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, ControlValueAccessor {
+  static ngAcceptInputType_autoClose: boolean | string;
+  static ngAcceptInputType_disabled: boolean | "";
+  static ngAcceptInputType_navigation: string;
+  static ngAcceptInputType_outsideDays: string;
+  static ngAcceptInputType_weekdays: boolean | string;
 
-export type NgbDatepickerValidationErrors = {
-  ngbDate: {
-    invalid?: unknown;
-    minDate?: { minDate: NgbDateStruct; actual: unknown };
-    maxDate?: { maxDate: NgbDateStruct; actual: unknown };
-  };
-};
+  private _parserFormatter = inject(NgbDateParserFormatter);
+  private _elRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
+  private _vcRef = inject(ViewContainerRef);
+  private _ngZone = inject(NgZone);
+  private _calendar = inject(NgbCalendar);
+  private _dateAdapter = inject<NgbDateAdapter<any>>(NgbDateAdapter);
+  private _document = inject(DOCUMENT);
+  private _changeDetector = inject(ChangeDetectorRef);
+  private _injector = inject(Injector);
+  private _config = inject(NgbInputDatepickerConfig);
 
-export class NgbInputDatepicker implements IController {
-  public autoClose!: boolean | "inside" | "outside";
-  public calendar?: NgbCalendar;
-  public contentTemplate?: TemplateRef<ContentTemplateContext>;
-  public datepickerClass?: string;
-  public dateAdapter?: NgbDateAdapter<unknown>;
-  public dayTemplate?: TemplateRef<DayTemplateContext>;
-  public dayTemplateData?: (date: NgbDateStruct, current?: { year: number; month: number }) => unknown;
-  public displayMonths?: number;
-  public firstDayOfWeek?: number;
-  public footerTemplate?: TemplateRef<unknown>;
-  public markDisabled?: (date: NgbDateStruct, current?: { year: number; month: number }) => boolean;
-  public i18n?: NgbDatepickerI18n;
-  public minDate?: NgbDateStruct;
-  public maxDate?: NgbDateStruct;
-  public navigation?: "select" | "arrows" | "none";
-  public outsideDays?: "visible" | "collapsed" | "hidden";
-  public placement!: PlacementArray;
-  public parserFormatter?: NgbDateParserFormatter;
-  public popperOptions!: (options: Partial<Options>) => Partial<Options>;
-  public restoreFocus!: true | string | HTMLElement;
-  public showWeekNumbers?: boolean;
-  public startDate?: { year: number; month: number; day?: number };
-  public container!: null | "body";
-  public positionTarget?: string | HTMLElement;
-  public weekdays?: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined> | boolean;
-  public dateSelect?: (locals: { $event: NgbDate }) => void;
-  public navigate?: (locals: { $event: NgbDatepickerNavigateEvent }) => void;
-  public closed?: () => void;
-  public ngDisabled?: NgDisabled;
-
-  private ngModelCtrl?: INgModelController;
-  private readonly _closed$ = new Subject<void>();
-  private readonly _nativeElement: HTMLInputElement;
-  private readonly _popupService: PopupService<NgbDatepicker>;
-  private readonly $q: IQService;
-  private readonly _positioning: NgbPositioning;
-  private _windowRef: ComponentRef<NgbDatepicker> | null = null;
-  private _model: NgbDate | null = null;
-  private _inputValue = "";
+  private _ngModelCtrl?: INgModelController;
+  private _cRef: ComponentRef<NgbDatepicker> | null = null;
   private _disabled = false;
-  private _elementWithFocus: HTMLElement | null = null;
-  private _removeDisabledListener?: () => void;
-  private _unwatchPositioning?: () => void;
-  private _onChange: (value: unknown) => void = () => undefined;
-  private _onTouched: () => void = () => undefined;
-  private _validatorChange: () => void = () => undefined;
+  private _elWithFocus: HTMLElement | null = null;
+  private _model: NgbDate | null = null;
+  private _inputValue!: string;
+  private _afterRenderRef: AfterRenderRef | undefined;
+  private _positioning = ngbPositioning();
+  private _destroyCloseHandlers$ = new Subject<void>();
 
-  public get disabled(): boolean {
+  /**
+   * Indicates whether the datepicker popup should be closed automatically after date selection / outside click or not.
+   *
+   * @since 3.0.0
+   */
+  @Input() autoClose = this._config.autoClose;
+
+  /**
+   * The reference to a custom content template.
+   *
+   * @since 14.2.0
+   */
+  @Input() contentTemplate?: TemplateRef<ContentTemplateContext>;
+
+  /**
+   * An optional class applied to the datepicker popup element.
+   *
+   * @since 9.1.0
+   */
+  @Input({ binding: "@" }) datepickerClass?: string;
+
+  /**
+   * The reference to a custom template for the day.
+   */
+  @Input() dayTemplate?: TemplateRef<DayTemplateContext>;
+
+  /**
+   * The callback to pass any arbitrary data to the template cell via the
+   * [`DayTemplateContext`](#/components/datepicker/api#DayTemplateContext)'s `data` parameter.
+   *
+   * @since 3.3.0
+   */
+  @Input() dayTemplateData?: (date: NgbDate, current?: { year: number; month: number }) => any;
+
+  /**
+   * The number of months to display.
+   */
+  @Input() displayMonths?: number;
+
+  /**
+   * The first day of the week.
+   */
+  @Input() firstDayOfWeek?: number;
+
+  /**
+   * The reference to the custom template for the datepicker footer.
+   *
+   * @since 3.3.0
+   */
+  @Input() footerTemplate?: TemplateRef<any>;
+
+  /**
+   * The callback to mark some dates as disabled.
+   */
+  @Input() markDisabled?: (date: NgbDate, current?: { year: number; month: number }) => boolean;
+
+  /**
+   * The earliest date that can be displayed or selected. Also used for form validation.
+   */
+  @Input() minDate?: NgbDateStruct;
+
+  /**
+   * The latest date that can be displayed or selected. Also used for form validation.
+   */
+  @Input() maxDate?: NgbDateStruct;
+
+  /**
+   * Navigation type.
+   */
+  @Input({ binding: "@" }) navigation?: "select" | "arrows" | "none";
+
+  /**
+   * The way of displaying days that don't belong to the current month.
+   */
+  @Input({ binding: "@" }) outsideDays?: "visible" | "collapsed" | "hidden";
+
+  /**
+   * The preferred placement of the datepicker popup, among the [possible values](#/guides/positioning#api).
+   */
+  @Input() placement = this._config.placement;
+
+  /**
+   * Allows to change default Popper options when positioning the popup.
+   *
+   * @since 13.1.0
+   */
+  @Input() popperOptions = this._config.popperOptions;
+
+  /**
+   * If `true`, when closing datepicker will focus element that was focused before datepicker was opened.
+   *
+   * @since 5.2.0
+   */
+  @Input() restoreFocus!: true | string | HTMLElement;
+
+  /**
+   * If `true`, week numbers will be displayed.
+   */
+  @Input() showWeekNumbers?: boolean;
+
+  /**
+   * The date to open calendar with.
+   */
+  @Input() startDate?: { year: number; month: number; day?: number };
+
+  /**
+   * A selector specifying the element the datepicker popup should be appended to.
+   */
+  @Input({ binding: "@" }) container = this._config.container;
+
+  /**
+   * A css selector or html element specifying the element the datepicker popup should be positioned against.
+   *
+   * @since 4.2.0
+   */
+  @Input() positionTarget = this._config.positionTarget;
+
+  /**
+   * The way weekdays should be displayed.
+   *
+   * @since 9.1.0
+   */
+  @Input() weekdays?: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined> | boolean;
+
+  /**
+   * An event emitted when user selects a date using keyboard or mouse.
+   *
+   * @since 1.1.1
+   */
+  @Output() dateSelect = new EventEmitter<NgbDate>();
+
+  /**
+   * Event emitted right after the navigation happens and displayed month changes.
+   */
+  @Output() navigate = new EventEmitter<NgbDatepickerNavigateEvent>();
+
+  /**
+   * An event fired after closing datepicker window.
+   *
+   * @since 4.2.0
+   */
+  @Output() closed = new EventEmitter<void>();
+
+  // upstream: `host: { '[disabled]': 'disabled' }` + `@Input() get disabled()`.
+  @HostBinding("disabled") get _hostDisabled() {
     return this._disabled;
   }
 
-  public set disabled(value: boolean | "" | string | undefined) {
-    this._disabled =
-      value === "" ||
-      (value === undefined && !!this._nativeElement?.hasAttribute("disabled")) ||
-      !!(value && value !== "false");
-    this._nativeElement?.toggleAttribute("disabled", this._disabled);
-    this._windowRef?.instance?.setDisabledState(this._disabled);
+  @Input()
+  get disabled() {
+    return this._disabled;
   }
+  set disabled(value: any) {
+    this._disabled = value === "" || (value && value !== "false");
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $scope: IScope,
-    private readonly _config: NgbInputDatepickerConfig,
-    private readonly _ngZone: NgZone,
-    private readonly _changeDetector: ChangeDetectorRef,
-    $injector: angular.auto.IInjectorService,
-    viewContainerRef: ViewContainerRef,
-    rtl: NgbRTL,
-  ) {
-    this.$q = $injector.get<IQService>("$q");
-    this._nativeElement = toNativeElement<HTMLInputElement>($element);
-    this._popupService = new PopupService<NgbDatepicker>(
-      NgbDatepicker.$name,
-      $injector,
-      viewContainerRef,
-      this._ngZone,
-    );
-    this._positioning = ngbPositioning(rtl);
-  }
-
-  $onInit(): void {
-    this.calendar = this.calendar ?? new NgbCalendarGregorian();
-    this.dateAdapter = this.dateAdapter ?? new NgbDateStructAdapter();
-    this.parserFormatter = this.parserFormatter ?? new NgbDateISOParserFormatter();
-    this.autoClose = this.autoClose ?? this._config.autoClose;
-    this.container = this.container ?? this._config.container;
-    this.dayTemplate = this.dayTemplate ?? this._config.dayTemplate;
-    this.dayTemplateData = this.dayTemplateData ?? this._config.dayTemplateData;
-    this.displayMonths = this.displayMonths ?? this._config.displayMonths;
-    this.firstDayOfWeek = this.firstDayOfWeek ?? this._config.firstDayOfWeek;
-    this.footerTemplate = this.footerTemplate ?? this._config.footerTemplate;
-    this.markDisabled = this.markDisabled ?? this._config.markDisabled;
-    this.maxDate = this.maxDate ?? this._config.maxDate;
-    this.minDate = this.minDate ?? this._config.minDate;
-    this.navigation = this.navigation ?? this._config.navigation;
-    this.outsideDays = this.outsideDays ?? this._config.outsideDays;
-    this.placement = this.placement ?? this._config.placement;
-    this.popperOptions = this.popperOptions ?? this._config.popperOptions;
-    this.positionTarget = this.positionTarget ?? this._config.positionTarget;
-    this.restoreFocus = this.restoreFocus ?? this._config.restoreFocus;
-    this.showWeekNumbers = this.showWeekNumbers ?? this._config.showWeekNumbers;
-    this.startDate = this.startDate ?? this._config.startDate;
-    this.weekdays = this.weekdays ?? this._config.weekdays;
-
-    if (this.ngModelCtrl) {
-      const model = this.ngModelCtrl;
-      this.registerOnChange((value) => model.$setViewValue(value));
-      this.registerOnTouched(() => model.$setTouched());
-      this.registerOnValidatorChange(() => model.$validate());
-      model.$parsers.unshift((value: unknown) => this._parseViewValue(value));
-      model.$validators.ngbDate = (modelValue: unknown) => this.validate({ value: modelValue }) === null;
-      model.$render = () => this.writeValue(model.$modelValue);
-      model.$render();
+    if (this.isOpen()) {
+      this._cRef!.instance.setDisabledState(this._disabled);
     }
   }
 
-  $postLink(): void {
-    this.$element.on("change", this._handleChange);
-    this.$element.on("focus", this._handleFocus);
-    this.$element.on("blur", this._handleBlur);
-    this._removeDisabledListener = this.ngDisabled?.onChange((disabled) =>
-      this.setDisabledState(disabled || this._nativeElement.disabled),
-    );
-    this.setDisabledState(!!this.ngDisabled?.disabled || this.disabled || this._nativeElement.disabled);
-  }
+  private _onChange = (_: any) => {};
+  private _onTouched = () => {};
+  private _validatorChange = () => {};
 
-  $onChanges(changes: IOnChangesObject): void {
-    if (changes.minDate || changes.maxDate) this._validatorChange();
-
-    if (changes.datepickerClass && this._windowRef) {
-      const { currentValue, previousValue } = changes.datepickerClass;
-      const $windowElement = angular.element(this._windowRef.location.nativeElement);
-      if (previousValue) $windowElement.removeClass(previousValue);
-      if (currentValue) $windowElement.addClass(currentValue);
-    }
-
-    if (changes.autoClose && this.isOpen()) this._setCloseHandlers();
-
-    if (this._windowRef) {
-      for (const name of DATEPICKER_INPUTS) {
-        if (name in changes) this._windowRef.setInput(name, this[name]);
-      }
-      if (changes.startDate) this._windowRef.instance?.navigateTo(this.startDate);
-    }
-  }
-
-  $onDestroy(): void {
-    this.$element.off("change", this._handleChange);
-    this.$element.off("focus", this._handleFocus);
-    this.$element.off("blur", this._handleBlur);
-    this._removeDisabledListener?.();
-    this.close(false);
-    this._closed$.complete();
-  }
-
-  writeValue(value: unknown): void {
-    if (!this.dateAdapter) return;
-    this._model = this._fromDateStruct(this.dateAdapter.fromModel(value));
-    this._writeModelValue(this._model);
-  }
-
-  registerOnChange(fn: (value: unknown) => void): void {
+  registerOnChange(fn: (value: any) => any): void {
     this._onChange = fn;
   }
 
-  registerOnTouched(fn: () => void): void {
+  registerOnTouched(fn: () => any): void {
     this._onTouched = fn;
   }
 
@@ -237,265 +264,317 @@ export class NgbInputDatepicker implements IController {
     this._validatorChange = fn;
   }
 
-  validate(control: { value: unknown }): NgbDatepickerValidationErrors | null {
-    const value = control.value;
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+  }
+
+  validate(c: { value: any }): Record<string, any> | null {
+    const { value } = c;
+
     if (value != null) {
-      const ngbDate = this.dateAdapter ? this._fromDateStruct(this.dateAdapter.fromModel(value)) : null;
-      if (!ngbDate) return { ngbDate: { invalid: value } };
+      const ngbDate = this._fromDateStruct(this._dateAdapter.fromModel(value));
+
+      if (!ngbDate) {
+        return { ngbDate: { invalid: value } };
+      }
+
       if (this.minDate && ngbDate.before(NgbDate.from(this.minDate))) {
         return { ngbDate: { minDate: { minDate: this.minDate, actual: value } } };
       }
+
       if (this.maxDate && ngbDate.after(NgbDate.from(this.maxDate))) {
         return { ngbDate: { maxDate: { maxDate: this.maxDate, actual: value } } };
       }
     }
+
     return null;
   }
 
-  manualDateChange(value: string, updateView = false): void {
+  writeValue(value: any) {
+    this._model = this._fromDateStruct(this._dateAdapter.fromModel(value));
+    this._writeModelValue(this._model);
+  }
+
+  // upstream: `host: { '(input)': 'manualDateChange($any($event).target.value)',
+  //   '(change)': 'manualDateChange($any($event).target.value, true)' }`.
+  // ngjs-core `@HostListener` no evalúa expresiones de argumento (siempre pasa el
+  // `event`), así que se extrae el value acá. Ver CORE_GAPS.
+  @HostListener("input", ["$event"])
+  _handleInput(event: Event) {
+    this.manualDateChange((event.target as HTMLInputElement).value);
+  }
+
+  @HostListener("change", ["$event"])
+  _handleChange(event: Event) {
+    this.manualDateChange((event.target as HTMLInputElement).value, true);
+  }
+
+  manualDateChange(value: string, updateView = false) {
     const inputValueChanged = value !== this._inputValue;
     if (inputValueChanged) {
       this._inputValue = value;
-      this._model = this._fromDateStruct(this.parserFormatter?.parse(value) ?? null);
+      this._model = this._fromDateStruct(this._parserFormatter.parse(value));
     }
     if (inputValueChanged || !updateView) {
-      this._onChange(
-        this._model && this.dateAdapter ? this.dateAdapter.toModel(this._model) : value === "" ? null : value,
-      );
+      this._onChange(this._model ? this._dateAdapter.toModel(this._model) : value === "" ? null : value);
     }
-    if (updateView && this._model) this._writeModelValue(this._model);
+    if (updateView && this._model) {
+      this._writeModelValue(this._model);
+    }
   }
 
-  setDisabledState(disabled: boolean): void {
-    this.disabled = disabled;
-    if (this._windowRef) angular.element(this._windowRef.location.nativeElement).toggleClass("disabled", disabled);
-    if (this._windowRef) {
-      this.$scope.$evalAsync(() => {
-        if (this._windowRef)
-          angular.element(this._windowRef.location.nativeElement).toggleClass("disabled", this.disabled);
+  isOpen() {
+    return !!this._cRef;
+  }
+
+  /**
+   * Opens the datepicker popup.
+   *
+   * ngjs-core: `createComponent` es async → método `async`.
+   */
+  async open() {
+    if (!this.isOpen()) {
+      this._cRef = await this._vcRef.createComponent(NgbDatepicker, { injector: this._injector });
+
+      this._applyPopupStyling(this._cRef.location.nativeElement);
+      this._applyDatepickerInputs(this._cRef);
+      this._subscribeForDatepickerOutputs(this._cRef.instance);
+      this._cRef.instance.ngOnInit();
+      this._cRef.instance.writeValue(this._dateAdapter.toModel(this._model));
+
+      // date selection event handling
+      this._cRef.instance.registerOnChange((selectedDate) => {
+        this.writeValue(selectedDate);
+        this._onChange(selectedDate);
+        this._onTouched();
       });
-    }
-  }
 
-  isOpen(): boolean {
-    return this._windowRef !== null;
-  }
+      this._cRef.changeDetectorRef.detectChanges();
 
-  open(): IPromise<void> {
-    if (this.isOpen()) return this.$q.resolve();
+      this._cRef.instance.setDisabledState(this.disabled);
 
-    return this._popupService.open().then(({ windowRef }) => {
-      this._windowRef = windowRef;
-      const instance = windowRef.instance;
-      if (!instance) return this.$q.reject(new Error("Unable to create the datepicker popup component."));
+      if (this.container === "body") {
+        this._document.querySelector(this.container)?.appendChild(this._cRef.location.nativeElement);
+      }
 
-    const $windowElement = angular.element(windowRef.location.nativeElement);
-    $windowElement.addClass("dropdown-menu show p-0");
-    if (this.datepickerClass) $windowElement.addClass(this.datepickerClass);
-    if (this.container === "body") {
-      $windowElement.addClass("ngb-dp-body");
-      $windowElement.css("z-index", "1055");
-    }
+      // focus handling
+      this._elWithFocus = this._document.activeElement as HTMLElement | null;
+      ngbFocusTrap(this._ngZone, this._cRef.location.nativeElement, this.closed, true);
+      setTimeout(() => this._cRef?.instance.focus());
 
-    this._applyDatepickerInputs(windowRef);
-    windowRef.setInput("dateSelect", ({ $event }: { $event: NgbDate }) => this._selectDate($event));
-    windowRef.setInput("navigate", ({ $event }: { $event: NgbDatepickerNavigateEvent }) => this.navigate?.({ $event }));
-    windowRef.setInput("startDate", this.startDate ?? this._model);
-    instance.writeValue(this.dateAdapter?.toModel(this._model));
-    instance.setDisabledState(!!this.disabled);
-    $windowElement.toggleClass("disabled", !!this.disabled);
-    this.$scope.$evalAsync(() => {
-      if (this._windowRef)
-        angular.element(this._windowRef.location.nativeElement).toggleClass("disabled", this.disabled);
-    });
+      let hostElement: HTMLElement | null;
+      if (isString(this.positionTarget)) {
+        hostElement = this._document.querySelector(this.positionTarget);
+      } else if (this.positionTarget instanceof HTMLElement) {
+        hostElement = this.positionTarget;
+      } else {
+        hostElement = this._elRef.nativeElement;
+      }
 
-    const popupElement = windowRef.location.nativeElement;
-    if (this.container === "body") document.body.appendChild(popupElement);
+      if (this.positionTarget && !hostElement) {
+        throw new Error("ngbDatepicker could not find element declared in [positionTarget] to position against.");
+      }
 
-    this._elementWithFocus = document.activeElement as HTMLElement | null;
-    ngbFocusTrap(this._ngZone, popupElement, this._closed$, true);
-    queueMicrotask(() => instance.focus());
+      // Setting up popper and scheduling updates when zone is stable
+      this._ngZone.runOutsideAngular(() => {
+        if (this._cRef && hostElement) {
+          this._positioning.createPopper({
+            hostElement,
+            targetElement: this._cRef.location.nativeElement,
+            placement: this.placement,
+            updatePopperOptions: (options: any) => this.popperOptions(addPopperOffset([0, 2])(options)),
+          });
 
-    const hostElement = this._resolvePositionTarget();
-    this._ngZone.runOutsideAngular(() => {
-      this._positioning.createPopper({
-        hostElement,
-        targetElement: popupElement,
-        placement: this.placement,
-        updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 2])(options)),
+          this._afterRenderRef = afterEveryRender(
+            {
+              mixedReadWrite: () => {
+                this._positioning.update();
+              },
+            },
+            { injector: this._injector },
+          );
+        }
       });
-    });
-    this._unwatchPositioning = this.$scope.$watch(() => this._positioning.update());
+
       this._setCloseHandlers();
+    }
+  }
+
+  /**
+   * Closes the datepicker popup.
+   */
+  close() {
+    if (this.isOpen()) {
+      this._cRef?.destroy();
+      this._cRef = null;
+      this._positioning.destroy();
+      this._afterRenderRef?.destroy();
+      this._destroyCloseHandlers$.next();
+      this.closed.emit();
       this._changeDetector.markForCheck();
-    });
+
+      // restore focus
+      let elementToFocus: HTMLElement | null = this._elWithFocus;
+      if (isString(this.restoreFocus)) {
+        elementToFocus = this._document.querySelector(this.restoreFocus);
+      } else if (this.restoreFocus !== undefined) {
+        elementToFocus = this.restoreFocus as HTMLElement;
+      }
+
+      // in IE document.activeElement can contain an object without 'focus()' sometimes
+      if (elementToFocus && elementToFocus["focus"]) {
+        elementToFocus.focus();
+      } else {
+        this._document.body.focus();
+      }
+    }
   }
 
-  close(restoreFocus = true): void {
-    if (!this._windowRef) return;
-
-    this._windowRef = null;
-    this._closed$.next();
-    this._positioning.destroy();
-    this._unwatchPositioning?.();
-    this._unwatchPositioning = undefined;
-    this._popupService.close().subscribe(() => {
-      this.closed?.();
-      this._changeDetector.markForCheck();
-    });
-
-    if (restoreFocus) this._restoreFocus();
+  /**
+   * Toggles the datepicker popup.
+   */
+  toggle() {
+    if (this.isOpen()) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 
-  toggle(): void {
-    if (this.isOpen()) this.close();
-    else this.open();
+  /**
+   * Navigates to the provided date.
+   */
+  navigateTo(date?: { year: number; month: number; day?: number }) {
+    if (this.isOpen()) {
+      this._cRef!.instance.navigateTo(date);
+    }
   }
 
-  navigateTo(date?: { year: number; month: number; day?: number }): void {
-    this._windowRef?.instance?.navigateTo(date);
-  }
-
-  private _parseViewValue(value: unknown): unknown {
-    if (typeof value !== "string") return value;
-    if (!this.parserFormatter || !this.dateAdapter) return value;
-    this._inputValue = value;
-    this._model = this._fromDateStruct(this.parserFormatter.parse(value));
-    return this._model ? this.dateAdapter.toModel(this._model) : value === "" ? null : value;
-  }
-
-  private _selectDate(date: NgbDate): void {
-    if (!this.dateAdapter) return;
-    this._model = date;
-    const value = this.dateAdapter.toModel(date);
-    this._writeModelValue(date);
-    this._onChange(value);
+  onBlur() {
     this._onTouched();
-    this.dateSelect?.({ $event: date });
-    if (this.autoClose === true || this.autoClose === "inside") this.close();
   }
 
-  private _writeModelValue(model: NgbDate | null): void {
-    if (!this.parserFormatter || !this.dateAdapter) return;
-    const value = this.parserFormatter.format(model);
+  onFocus() {
+    this._elWithFocus = this._elRef.nativeElement;
+  }
+
+  ngAfterViewInit() {
+    // ngjs-core: sin `NG_VALIDATORS`, el `validate()` se engancha al `ngModel`.
+    if (this._ngModelCtrl) {
+      this._ngModelCtrl.$validators.ngbDate = (modelValue: unknown) => this.validate({ value: modelValue }) === null;
+      this.registerOnValidatorChange(() => this._ngModelCtrl?.$validate());
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes["minDate"] || changes["maxDate"]) {
+      this._validatorChange();
+
+      if (this.isOpen()) {
+        if (changes["minDate"]) {
+          this._cRef!.setInput("minDate", this.minDate);
+        }
+        if (changes["maxDate"]) {
+          this._cRef!.setInput("maxDate", this.maxDate);
+        }
+      }
+    }
+
+    if (changes["datepickerClass"]) {
+      const { currentValue, previousValue } = changes["datepickerClass"];
+      this._applyPopupClass(currentValue as string, previousValue as string);
+    }
+
+    if (changes["autoClose"] && this.isOpen()) {
+      this._setCloseHandlers();
+    }
+  }
+
+  ngOnDestroy() {
+    this.close();
+  }
+
+  private _applyDatepickerInputs(datepickerComponentRef: ComponentRef<NgbDatepicker>): void {
+    [
+      "contentTemplate",
+      "dayTemplate",
+      "dayTemplateData",
+      "displayMonths",
+      "firstDayOfWeek",
+      "footerTemplate",
+      "markDisabled",
+      "minDate",
+      "maxDate",
+      "navigation",
+      "outsideDays",
+      "showNavigation",
+      "showWeekNumbers",
+      "weekdays",
+    ].forEach((inputName: string) => {
+      if ((this as any)[inputName] !== undefined) {
+        datepickerComponentRef.setInput(inputName, (this as any)[inputName]);
+      }
+    });
+    datepickerComponentRef.setInput("startDate", this.startDate || this._model);
+  }
+
+  private _applyPopupClass(newClass: string, oldClass?: string) {
+    const popupEl = this._cRef?.location.nativeElement as HTMLElement;
+    if (popupEl) {
+      if (newClass) {
+        popupEl.classList.add(newClass);
+      }
+      if (oldClass) {
+        popupEl.classList.remove(oldClass);
+      }
+    }
+  }
+
+  private _applyPopupStyling(nativeElement: HTMLElement) {
+    nativeElement.classList.add("dropdown-menu", "show");
+
+    if (this.container === "body") {
+      nativeElement.classList.add("ngb-dp-body");
+    }
+
+    this._applyPopupClass(this.datepickerClass as string);
+  }
+
+  private _subscribeForDatepickerOutputs(datepickerInstance: NgbDatepicker) {
+    datepickerInstance.navigate.subscribe((navigateEvent) => this.navigate.emit(navigateEvent));
+    datepickerInstance.dateSelect.subscribe((date) => {
+      this.dateSelect.emit(date);
+      if (this.autoClose === true || this.autoClose === "inside") {
+        this.close();
+      }
+    });
+  }
+
+  private _writeModelValue(model: NgbDate | null) {
+    const value = this._parserFormatter.format(model);
     this._inputValue = value;
-    this._nativeElement.value = value;
-    this._windowRef?.instance?.writeValue(this.dateAdapter.toModel(model));
+    this._elRef.nativeElement.value = value;
+    if (this.isOpen()) {
+      this._cRef!.instance.writeValue(this._dateAdapter.toModel(model));
+      this._onTouched();
+    }
   }
 
   private _fromDateStruct(date: NgbDateStruct | null): NgbDate | null {
     const ngbDate = date ? new NgbDate(date.year, date.month, date.day) : null;
-    return this.calendar?.isValid(ngbDate) ? ngbDate : null;
+    return this._calendar.isValid(ngbDate) ? ngbDate : null;
   }
 
-  private _applyDatepickerInputs(windowRef: ComponentRef<NgbDatepicker>): void {
-    windowRef.setInput("calendar", this.calendar);
-    windowRef.setInput("dateAdapter", this.dateAdapter);
-    if (this.i18n) windowRef.setInput("i18n", this.i18n);
-    for (const name of DATEPICKER_INPUTS) {
-      const value = this[name];
-      if (value !== undefined) windowRef.setInput(name, value);
-    }
-  }
-
-  private _resolvePositionTarget(): HTMLElement {
-    if (typeof this.positionTarget === "string") {
-      const target = document.querySelector<HTMLElement>(this.positionTarget);
-      if (!target) throw new Error(`ngbDatepicker could not find positionTarget "${this.positionTarget}".`);
-      return target;
-    }
-    return this.positionTarget instanceof HTMLElement ? this.positionTarget : this._nativeElement;
-  }
-
-  private _setCloseHandlers(): void {
-    this._closed$.next();
-    const popupElement = this._windowRef ? this._windowRef.location.nativeElement : null;
-    if (!popupElement) return;
+  private _setCloseHandlers() {
+    this._destroyCloseHandlers$.next();
     ngbAutoClose(
       this._ngZone,
+      this._document,
       this.autoClose,
-      this._closed$,
       () => this.close(),
-      [popupElement],
-      [this._nativeElement],
+      this._destroyCloseHandlers$,
+      [],
+      [this._elRef.nativeElement, this._cRef!.location.nativeElement],
     );
-  }
-
-  private _restoreFocus(): void {
-    let element = this._elementWithFocus;
-    if (typeof this.restoreFocus === "string") element = document.querySelector<HTMLElement>(this.restoreFocus);
-    else if (this.restoreFocus instanceof HTMLElement) element = this.restoreFocus;
-    (element ?? document.body).focus?.();
-  }
-
-  private readonly _handleChange = () => this.manualDateChange(this._nativeElement.value, true);
-  public onFocus(): void {
-    this._elementWithFocus = this._nativeElement;
-  }
-  public onBlur(): void {
-    this._onTouched();
-  }
-  private readonly _handleFocus = () => this.onFocus();
-  private readonly _handleBlur = () => this.onBlur();
-
-  static get $name() {
-    return "ngbDatepicker";
-  }
-
-  static get $inject() {
-    return [
-      "$element",
-      "$scope",
-      NgbInputDatepickerConfig.$name,
-      NgZone.$name,
-      ChangeDetectorRef.$name,
-      "$injector",
-      ViewContainerRef.$name,
-      NgbRTL.$name,
-    ];
-  }
-
-  static get $factory(): () => IDirective {
-    return () => ({
-      bindToController: {
-        autoClose: "<?",
-        calendar: "<?",
-        contentTemplate: "<?",
-        datepickerClass: "@?",
-        dateAdapter: "<?",
-        dayTemplate: "<?",
-        dayTemplateData: "<?",
-        displayMonths: "<?",
-        firstDayOfWeek: "<?",
-        footerTemplate: "<?",
-        markDisabled: "<?",
-        i18n: "<?",
-        minDate: "<?",
-        maxDate: "<?",
-        navigation: "@?",
-        outsideDays: "@?",
-        placement: "<?",
-        parserFormatter: "<?",
-        popperOptions: "<?",
-        restoreFocus: "<?",
-        showWeekNumbers: "<?",
-        startDate: "<?",
-        container: "@?",
-        positionTarget: "<?",
-        weekdays: "<?",
-        disabled: "<?",
-        dateSelect: "&?",
-        navigate: "&?",
-        closed: "&?",
-      },
-      controller: NgbInputDatepicker,
-      controllerAs: "$datepicker",
-      require: {
-        ngModelCtrl: "?ngModel",
-        ngDisabled: "?ngDisabled",
-      },
-      restrict: "A",
-      scope: false,
-    });
   }
 }

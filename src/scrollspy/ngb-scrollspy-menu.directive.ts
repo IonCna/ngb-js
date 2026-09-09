@@ -13,6 +13,10 @@ import {
 } from "ngjs-core";
 import type { Observable } from "rxjs";
 
+/**
+ * An optional scroll spy menu directive to build hierarchical menus
+ * and simplify the `NgbScrollSpyItem` configuration.
+ */
 @Directive({
   selector: "[ngbScrollSpyMenu]",
 })
@@ -25,37 +29,13 @@ export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit {
   @ContentChildren(NgbScrollSpyItem, { descendants: true })
   private _items!: QueryList<NgbScrollSpyItem>;
 
-  public scrollSpy?: NgbScrollSpy;
-  public parentScrollSpy?: NgbScrollSpy;
-
-  constructor(private $scrollSpy: NgbScrollSpyService) {}
-
-  $onInit(): void {
-    this._scrollSpyRef = this.scrollSpy ?? this.parentScrollSpy ?? this.$scrollSpy;
-  }
-
-  $postLink(): void {
-    this._rebuildMap();
-    this._itemsSubscription = this._items.changes.subscribe(() => this._rebuildMap());
-    this._activeSubscription = this._scrollSpyRef.active$.subscribe((activeId: string) => {
-      this._lastActiveItem?._deactivate();
-
-      const item = this._map.get(activeId);
-
-      if (!item) {
-        return;
-      }
-
-      item._activate();
-      this._lastActiveItem = item;
-    });
-  }
-
-  $onDestroy(): void {
-    this._activeSubscription?.unsubscribe();
-    this._itemsSubscription?.unsubscribe();
-    this._map.clear();
-    this._lastActiveItem = null;
+  /**
+   * The `NgbScrollSpy` this menu is bound to. When omitted, the menu falls back
+   * to the ambient `NgbScrollSpyService`.
+   */
+  @Input("ngbScrollSpyMenu")
+  set scrollSpy(scrollSpy: NgbScrollSpy) {
+    this._scrollSpyRef = scrollSpy;
   }
 
   get active(): string {

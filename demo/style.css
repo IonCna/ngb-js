@@ -1,5 +1,10 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "../src/tooltip/tooltip.css";
+@import "../src/datepicker/datepicker.css";
+@import "../src/datepicker/datepicker-day-view.css";
+@import "../src/datepicker/datepicker-month.css";
+@import "../src/datepicker/datepicker-navigation.css";
+@import "../src/datepicker/datepicker-navigation-select.css";
 
 .rating-custom-star {
   padding-right: 0.1rem;

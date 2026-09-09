@@ -1,74 +1,41 @@
-import type { NgbDate } from "@ngb/datepicker/ngb-date.ts";
-import { type NgbDatepickerI18n, NgbDatepickerI18nDefault } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
+import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import template from "@ngb/datepicker/ngb-datepicker-navigation.component.html";
+import { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import { type MonthViewModel, NavigationEvent } from "@ngb/datepicker/ngb-datepicker-view-model.ts";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  IFilterService,
-  ILocaleService,
-} from "angular";
+import { Component, EventEmitter, inject, Input, Output } from "ngjs-core";
 
-export class NgbDatepickerNavigation implements IComponentController {
-  public readonly navigation = NavigationEvent;
-  public i18n?: NgbDatepickerI18n;
-  public date!: NgbDate;
-  public disabled!: boolean;
-  public months: MonthViewModel[] = [];
-  public showSelect!: boolean;
-  public prevDisabled!: boolean;
-  public nextDisabled!: boolean;
-  public selectBoxes!: { years: number[]; months: number[] };
-  public navigate?: (locals: { $event: NavigationEvent }) => void;
-  public select?: (locals: { $event: NgbDate }) => void;
+@Component({
+  selector: "ngb-datepicker-navigation",
+  controllerAs: "$",
+  template,
+})
+export class NgbDatepickerNavigation {
+  navigation = NavigationEvent;
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $locale: ILocaleService,
-    private readonly $filter: IFilterService,
-  ) {}
+  i18n = inject(NgbDatepickerI18n);
 
-  $onInit(): void {
-    this.i18n = this.i18n ?? new NgbDatepickerI18nDefault(this.$locale, this.$filter);
-    this.$element.addClass("d-flex align-items-center");
+  @Input() date!: NgbDate;
+  @Input() disabled!: boolean;
+  @Input() months: MonthViewModel[] = [];
+  @Input() showSelect!: boolean;
+  @Input() prevDisabled!: boolean;
+  @Input() nextDisabled!: boolean;
+  @Input() selectBoxes!: { years: number[]; months: number[] };
+
+  @Output() navigate = new EventEmitter<NavigationEvent>();
+  @Output() select = new EventEmitter<NgbDate>();
+
+  onClickPrev(event: MouseEvent) {
+    (event.currentTarget as HTMLElement).focus();
+    this.navigate.emit(this.navigation.PREV);
   }
 
-  onClickPrev(event: MouseEvent): void {
-    (event.currentTarget as HTMLElement | null)?.focus();
-    this.navigate?.({ $event: NavigationEvent.PREV });
+  onClickNext(event: MouseEvent) {
+    (event.currentTarget as HTMLElement).focus();
+    this.navigate.emit(this.navigation.NEXT);
   }
 
-  onClickNext(event: MouseEvent): void {
-    (event.currentTarget as HTMLElement | null)?.focus();
-    this.navigate?.({ $event: NavigationEvent.NEXT });
-  }
-
-  static get $name() {
-    return "ngbDatepickerNavigation";
-  }
-
-  static get $inject() {
-    return ["$element", "$locale", "$filter"];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        date: "<",
-        disabled: "<",
-        i18n: "<?",
-        months: "<",
-        showSelect: "<",
-        prevDisabled: "<",
-        nextDisabled: "<",
-        selectBoxes: "<",
-        navigate: "&?",
-        select: "&?",
-      },
-      controller: NgbDatepickerNavigation,
-      controllerAs: "$",
-      template,
-    };
+  idMonth(month: MonthViewModel) {
+    return month;
   }
 }

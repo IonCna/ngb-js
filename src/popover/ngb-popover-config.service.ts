@@ -1,8 +1,12 @@
 import { NgbConfig } from "@ngb/ngb-config.service";
-import type { PlacementArray } from "@ngb/utils/positioning.ts";
+import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
+import { inject, Service } from "ngjs-core";
 
+/** Defaults for `NgbPopover`. Parity with `@ng-bootstrap` (`popover-config.ts`). */
+@Service()
 export class NgbPopoverConfig {
+  private readonly _config = inject(NgbConfig);
   private _animation?: boolean;
 
   autoClose: boolean | "inside" | "outside" = true;
@@ -16,21 +20,11 @@ export class NgbPopoverConfig {
   openDelay = 0;
   closeDelay = 0;
 
-  constructor(private _config: NgbConfig) {}
-
-  get animation() {
+  get animation(): boolean {
     return this._animation ?? this._config.animation;
   }
 
   set animation(value: boolean) {
     this._animation = value;
-  }
-
-  static get $inject() {
-    return [NgbConfig.$name];
-  }
-
-  static get $name() {
-    return "ngb.popover-config.service";
   }
 }

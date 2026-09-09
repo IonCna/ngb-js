@@ -20,11 +20,10 @@
   class="ngb-dp-navigation-select d-flex flex-grow-1"
   style="flex-basis: 9rem"
   date="$.date"
-  i18n="$.i18n"
   disabled="$.disabled"
   months="$.selectBoxes.months"
   years="$.selectBoxes.years"
-  select="$.select({ $event: $event })">
+  select="$.select.emit($event)">
 </ngb-datepicker-navigation-select>
 
 <ng-container ng-if="!$.showSelect">

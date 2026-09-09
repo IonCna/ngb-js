@@ -1,25 +1,13 @@
-import type { ContentTemplateContext } from "@ngb/datepicker/ngb-datepicker-content-template-context.ts";
-import type { IController, IDirective } from "angular";
-import type { TemplateRef } from "ngjs-core";
+import { Directive } from "ngjs-core";
 
 /**
- * Marks the template used to customize how the datepicker months are rendered.
+ * A directive that marks the content template that customizes the way datepicker months are displayed
+ *
+ * @since 5.3.0
+ *
+ * ngjs-core (Gap B): upstream hace `templateRef = inject(TemplateRef)`. Acá una
+ * `@Directive` sobre `<ng-template>` no puede inyectar su `TemplateRef`, así que
+ * `NgbDatepicker` lo lee con `@ContentChild(NgbDatepickerContent, { read: TemplateRef })`.
  */
-export class NgbDatepickerContent implements IController {
-  public templateRef!: TemplateRef<ContentTemplateContext>;
-
-  static get $name() {
-    return "ngbDatepickerContent";
-  }
-
-  static $factory(): IDirective {
-    return {
-      controller: NgbDatepickerContent,
-      bindToController: true,
-      restrict: "A",
-      require: {
-        templateRef: "ngTemplate",
-      },
-    };
-  }
-}
+@Directive({ selector: "ng-template[ngbDatepickerContent]" })
+export class NgbDatepickerContent {}

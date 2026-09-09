@@ -9,7 +9,7 @@ contrato correspondiente.
 
 | API de Angular usada por ng-bootstrap | Estado actual en `ngjs-core` | Features afectadas |
 | --- | --- | --- |
-| `ViewEncapsulation` | Decision: no se va a soportar (AngularJS no tiene scoped styles ni Shadow DOM real). Sacado de los componentes afectados. | Tooltip, typeahead. |
+| `ViewEncapsulation` | Decision: no se va a soportar (AngularJS no tiene scoped styles ni Shadow DOM real). El `styleUrl: './x.scss'` de upstream se compila a un `.css` **global** (prefijado con el selector del componente, como `ViewEncapsulation.None`) distribuido aparte — `src/tooltip/tooltip.css`, `src/datepicker/datepicker*.css`; el demo los toma con `@import` en `demo/style.css`. | Tooltip, typeahead, datepicker. |
 | `ChangeDetectionStrategy.Eager` | Decision: no se va a soportar (AngularJS no tiene CD por componente). Sacado de la ventana de typeahead. | Ventana de typeahead. |
 | `ControlValueAccessor` y `NG_VALUE_ACCESSOR` | **Agregado al core** — `src/forms/` (interfaz + token) + `control-value-accessor-bridge.ts` (adapta CVA ↔ `ngModelController`). Ver abajo. | Rating, typeahead, timepicker, datepicker. |
 | `@ViewChild(nombre, { read: ViewContainerRef })` sobre ancla sin controller | No resuelve (falta el `$viewContainerRefController`). Ver abajo. | accordion body (adaptado: `inject(ViewContainerRef)`). |
@@ -147,6 +147,40 @@ Menores (ya conocidos, no bloquean): objeto `host` → `@HostBinding`/`@HostList
 `PLATFORM_ID` (token con `factory: () => 'browser'`) en `core/platform`;
 `isPlatformBrowser`/`isPlatformServer` en `common` (y `runtime/common`). La rama
 browser se toma siempre.
+
+### datepicker (2026-09-08) — port textual 1:1 con `datepicker/*` de upstream
+
+Todos los archivos (`ngb-calendar`, `ngb-date`, `ngb-date-parser-formatter`,
+`datepicker-config`, `datepicker-input-config`, `datepicker-i18n`,
+`datepicker-service`, `datepicker-keyboard-service`, `datepicker-tools`,
+`datepicker-view-model`, adapters, `datepicker.ts` → `ngb-datepicker.component` +
+`ngb-datepicker-content` + `ngb-datepicker-month`, `datepicker-navigation`,
+`datepicker-navigation-select`, `datepicker-day-view`, `datepicker-input`,
+`datepicker.module`) portados con el **cuerpo de clase textual de upstream**.
+Typecheck limpio. Gaps que forzaron desvío (además de los ya listados arriba —
+`ViewEncapsulation`, `ChangeDetectionStrategy`, `NgModule.exports`,
+`Component.imports`, `inject(TemplateRef)` en `<ng-template>`, `createComponent`
+async, `NG_VALIDATORS`):
+
+| # | Upstream | Gap ngjs-core | Adaptación |
+|---|---|---|---|
+| F | `@Injectable({ providedIn: 'root', useFactory: NGB_*_FACTORY })` sobre abstracta | `@Injectable` no tiene `useFactory` y `providedIn: 'root'` es **informativo** (no auto-registra — sólo `@Service`) | Se conservan los `NGB_*_FACTORY` y `@Injectable({ providedIn: 'root' })`; el `@NgModule` lista `{ provide: NgbCalendar, useFactory: NGB_DATEPICKER_CALENDAR_FACTORY }`, `useClass` para i18n, y los `providedIn:'root'` concretos (`NgbDatepickerConfig`, `NgbInputDatepickerConfig`, `NgbDatepickerKeyboardService`) en `providers`. |
+| G | `host: { '(input)': 'manualDateChange($any($event).target.value)' }` | `@HostListener` **no evalúa expresiones de argumento** — siempre pasa el `event` crudo | Métodos wrapper `_handleInput(e)` / `_handleChange(e)` que extraen `.value`. |
+| H | `@Input() get disabled() / set disabled(v)` | `bindToController` **pisa** el accessor de la clase → el `set` con efecto colateral (`setDisabledState` al abrir) se pierde; `input.disabled` puede quedar `undefined` | Sin resolver — `NgbInputDatepicker.disabled` como `@Input` + getter/setter no anda 1:1. |
+| I | `@ViewChild('x', { static: true })` disponible antes de `ngOnInit` | En ngjs-core resuelve en `$postLink` | `dayTemplate` fallback movido a `ngAfterContentInit`. |
+| J | `takeUntilDestroyed()` (0-arg en contexto de inyección) | ngjs-core lo exige con `DestroyRef` explícito | `takeUntilDestroyed(this._destroyRef)`. |
+| K | `new NgbDatepickerI18nDefault()` (upstream: `inject(LOCALE_ID)` en field) | `inject()` en field/ctor falla fuera de contexto DI (lo hace `NgbDatepickerService` y specs) | `constructor($locale?, $filter?)` con fallback a `inject('$locale'/'$filter')`. |
+| L | `NgbDatepickerMonth` `inject(NgbDatepicker)` dentro de `<ng-template ngbDatepickerContent>` proyectado | La DI jerárquica de directivas **no atraviesa** contenido de `ngTemplateOutlet` | Sin resolver — falla "renders NgbDatepickerMonth from a custom content template". |
+| M | `LOCALE_ID` + `formatDate` (`@angular/common`) | No provistos en módulo suelto | `$locale` / `$filter('date')` de AngularJS. |
+| N | `styleUrl: './datepicker*.scss'` (5 archivos) | Sin `ViewEncapsulation` | Compilados a `src/datepicker/datepicker*.css` globales (prefijo por selector). `@import` en `demo/style.css`. |
+
+**Divergencias que NO se pudieron mantener textuales** (upstream las provee por DI,
+acá el `NgbDatepicker` sí las expone como métodos/inputs propios en el port viejo,
+pero el textual NO): `NgbDatepicker` no tiene `processKey` ni `getMonth` públicos
+(están en el service / `NgbDatepickerKeyboardService`); `calendar` no es `@Input`
+(se provee `NgbCalendar` por DI). Los specs de `ngb-js` que usaban esa API
+(`datepicker.processKey`, `datepicker.getMonth`, `<ngb-datepicker calendar=...>`)
+quedan por reescribir.
 
 ## Reglas del port
 

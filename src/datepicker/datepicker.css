@@ -1,0 +1,64 @@
+/* Compiled from ng-bootstrap `datepicker.scss` (ViewEncapsulation.None). */
+ngb-datepicker {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.25rem;
+  display: inline-block;
+}
+
+ngb-datepicker-month {
+  pointer-events: auto;
+}
+
+ngb-datepicker.dropdown-menu {
+  padding: 0;
+}
+
+ngb-datepicker.disabled .ngb-dp-weekday,
+ngb-datepicker.disabled .ngb-dp-week-number,
+ngb-datepicker.disabled .ngb-dp-month-name {
+  color: var(--bs-text-muted);
+}
+
+.ngb-dp-body {
+  z-index: 1055;
+}
+
+.ngb-dp-header {
+  border-bottom: 0;
+  border-radius: 0.25rem 0.25rem 0 0;
+  padding-top: 0.25rem;
+  background-color: var(--bs-tertiary-bg);
+}
+
+.ngb-dp-months {
+  display: flex;
+}
+
+.ngb-dp-month {
+  pointer-events: none;
+}
+
+.ngb-dp-month-name {
+  font-size: larger;
+  height: 2rem;
+  line-height: 2rem;
+  text-align: center;
+  background-color: var(--bs-tertiary-bg);
+}
+
+.ngb-dp-month + .ngb-dp-month .ngb-dp-month-name,
+.ngb-dp-month + .ngb-dp-month .ngb-dp-week {
+  padding-left: 1rem;
+}
+
+.ngb-dp-month:last-child .ngb-dp-week {
+  padding-right: 0.25rem;
+}
+
+.ngb-dp-month:first-child .ngb-dp-week {
+  padding-left: 0.25rem;
+}
+
+.ngb-dp-month .ngb-dp-week:last-child {
+  padding-bottom: 0.25rem;
+}

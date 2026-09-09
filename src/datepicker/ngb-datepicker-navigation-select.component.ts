@@ -1,79 +1,51 @@
+import { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
-import { type NgbDatepickerI18n, NgbDatepickerI18nDefault } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import template from "@ngb/datepicker/ngb-datepicker-navigation-select.component.html";
 import { toInteger } from "@ngb/utils";
-import type {
-  IAugmentedJQuery,
-  IComponentController,
-  IComponentOptions,
-  IFilterService,
-  ILocaleService,
-  IOnChangesObject,
-} from "angular";
+import { Component, EventEmitter, inject, Input, type OnChanges, type OnInit, Output } from "ngjs-core";
 
-export class NgbDatepickerNavigationSelect implements IComponentController {
-  public i18n?: NgbDatepickerI18n;
-  public date!: NgbDate;
-  public disabled!: boolean;
-  public months: number[] = [];
-  public years: number[] = [];
-  public select?: (locals: { $event: NgbDate }) => void;
+/**
+ * 1-1 con ng-bootstrap `datepicker-navigation-select.ts`. Upstream sincroniza los
+ * `<select>` por `@ViewChild` + `ngAfterViewChecked`; acá el template usa
+ * `ng-model` sobre `selectedMonth` / `selectedYear` (equivalente AngularJS).
+ */
+@Component({
+  selector: "ngb-datepicker-navigation-select",
+  controllerAs: "$",
+  template,
+})
+export class NgbDatepickerNavigationSelect implements OnInit, OnChanges {
+  i18n = inject(NgbDatepickerI18n);
 
-  public selectedMonth = 0;
-  public selectedYear = 0;
+  @Input() date!: NgbDate;
+  @Input() disabled!: boolean;
+  @Input() months: number[] = [];
+  @Input() years: number[] = [];
 
-  constructor(
-    private readonly $element: IAugmentedJQuery,
-    private readonly $locale: ILocaleService,
-    private readonly $filter: IFilterService,
-  ) {}
+  @Output() select = new EventEmitter<NgbDate>();
 
-  $onInit(): void {
-    this.i18n = this.i18n ?? new NgbDatepickerI18nDefault(this.$locale, this.$filter);
-    this.$element.addClass("d-flex flex-grow-1");
-    this.$element.css("flex-basis", "9rem");
+  selectedMonth = 0;
+  selectedYear = 0;
+
+  ngOnInit(): void {
     this._syncSelection();
   }
 
-  $onChanges(_changes: IOnChangesObject): void {
+  ngOnChanges(): void {
     this._syncSelection();
   }
 
   changeMonth(month: number | string): void {
-    this.select?.({ $event: new NgbDate(this.date.year, toInteger(month), 1) });
+    this.select.emit(new NgbDate(this.date.year, toInteger(month), 1));
   }
 
   changeYear(year: number | string): void {
-    this.select?.({ $event: new NgbDate(toInteger(year), this.date.month, 1) });
+    this.select.emit(new NgbDate(toInteger(year), this.date.month, 1));
   }
 
   private _syncSelection(): void {
     if (!this.date) return;
     this.selectedMonth = this.date.month;
     this.selectedYear = this.date.year;
-  }
-
-  static get $name() {
-    return "ngbDatepickerNavigationSelect";
-  }
-
-  static get $inject() {
-    return ["$element", "$locale", "$filter"];
-  }
-
-  static get $factory(): IComponentOptions {
-    return {
-      bindings: {
-        date: "<",
-        disabled: "<",
-        i18n: "<?",
-        months: "<",
-        years: "<",
-        select: "&?",
-      },
-      controller: NgbDatepickerNavigationSelect,
-      controllerAs: "$",
-      template,
-    };
   }
 }

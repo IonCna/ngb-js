@@ -1,7 +1,7 @@
-import { type NgbCalendar, NgbCalendarGregorian } from "@ngb/datepicker/ngb-calendar.service.ts";
+import { NgbCalendar } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import type { NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
-import { type NgbDatepickerI18n, NgbDatepickerI18nDefault } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
+import { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import {
   buildMonths,
   checkDateInRange,
@@ -20,8 +20,9 @@ import type {
   NgbMarkDisabled,
 } from "@ngb/datepicker/ngb-datepicker-view-model";
 import { isInteger, toInteger } from "@ngb/utils";
-import type { IFilterService, ILocaleService } from "angular";
-import { filter, type Observable, Subject } from "rxjs";
+import { inject, Injectable } from "ngjs-core";
+import { type Observable, Subject } from "rxjs";
+import { filter } from "rxjs/operators";
 
 export type DatepickerServiceInputs = Partial<{
   dayTemplateData: NgbDayTemplateData;
@@ -37,79 +38,66 @@ export type DatepickerServiceInputs = Partial<{
   weekdays: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined> | boolean;
 }>;
 
-export type DatePickerValidators = {
-  [K in keyof DatepickerServiceInputs]-?: (
-    value: DatepickerServiceInputs[K],
-  ) => Partial<DatepickerViewModel> | undefined;
-};
-
+@Injectable()
 export class NgbDatepickerService {
-  private _VALIDATORS: DatePickerValidators = {
-    dayTemplateData: (dayTemplateData: NgbDayTemplateData | undefined) => {
+  // upstream: `{ [K in keyof DatepickerServiceInputs]: (v: DatepickerServiceInputs[K]) => ... }`.
+  // ngb-js corre con `strict` (variancia de parámetros) → índice suelto.
+  private _VALIDATORS: Record<string, (v: any) => Partial<DatepickerViewModel> | void> = {
+    dayTemplateData: (dayTemplateData: NgbDayTemplateData) => {
       if (this._state.dayTemplateData !== dayTemplateData) {
-        return { dayTemplateData: dayTemplateData ?? null };
+        return { dayTemplateData };
       }
     },
-
-    displayMonths: (displayMonths: number | undefined) => {
+    displayMonths: (displayMonths: number) => {
       displayMonths = toInteger(displayMonths);
       if (isInteger(displayMonths) && displayMonths > 0 && this._state.displayMonths !== displayMonths) {
         return { displayMonths };
       }
     },
-
-    disabled: (disabled: boolean | undefined) => {
+    disabled: (disabled: boolean) => {
       if (this._state.disabled !== disabled) {
         return { disabled };
       }
     },
-
-    firstDayOfWeek: (firstDayOfWeek: number | undefined) => {
+    firstDayOfWeek: (firstDayOfWeek: number) => {
       firstDayOfWeek = toInteger(firstDayOfWeek);
       if (isInteger(firstDayOfWeek) && firstDayOfWeek >= 0 && this._state.firstDayOfWeek !== firstDayOfWeek) {
         return { firstDayOfWeek };
       }
     },
-
-    focusVisible: (focusVisible: boolean | undefined) => {
+    focusVisible: (focusVisible: boolean) => {
       if (this._state.focusVisible !== focusVisible && !this._state.disabled) {
         return { focusVisible };
       }
     },
-
-    markDisabled: (markDisabled: NgbMarkDisabled | undefined) => {
+    markDisabled: (markDisabled: NgbMarkDisabled) => {
       if (this._state.markDisabled !== markDisabled) {
-        return { markDisabled: markDisabled ?? null };
+        return { markDisabled };
       }
     },
-
-    maxDate: (date: NgbDate | null | undefined) => {
+    maxDate: (date: NgbDate | null) => {
       const maxDate = this.toValidDate(date, null);
       if (isChangedDate(this._state.maxDate, maxDate)) {
         return { maxDate };
       }
     },
-
-    minDate: (date: NgbDate | null | undefined) => {
+    minDate: (date: NgbDate | null) => {
       const minDate = this.toValidDate(date, null);
       if (isChangedDate(this._state.minDate, minDate)) {
         return { minDate };
       }
     },
-
-    navigation: (navigation: "select" | "arrows" | "none" | undefined) => {
+    navigation: (navigation: "select" | "arrows" | "none") => {
       if (this._state.navigation !== navigation) {
         return { navigation };
       }
     },
-
-    outsideDays: (outsideDays: "visible" | "collapsed" | "hidden" | undefined) => {
+    outsideDays: (outsideDays: "visible" | "collapsed" | "hidden") => {
       if (this._state.outsideDays !== outsideDays) {
         return { outsideDays };
       }
     },
-
-    weekdays: (weekdays: boolean | Exclude<Intl.DateTimeFormatOptions["weekday"], undefined> | undefined) => {
+    weekdays: (weekdays: boolean | Exclude<Intl.DateTimeFormatOptions["weekday"], undefined>) => {
       const weekdayWidth = weekdays === true || weekdays === false ? "narrow" : weekdays;
       const weekdaysVisible = weekdays === true || weekdays === false ? weekdays : true;
       if (this._state.weekdayWidth !== weekdayWidth || this._state.weekdaysVisible !== weekdaysVisible) {
@@ -118,8 +106,11 @@ export class NgbDatepickerService {
     },
   };
 
-  private _i18n: NgbDatepickerI18n;
+  private _calendar = inject(NgbCalendar);
+  private _i18n = inject(NgbDatepickerI18n);
+
   private _model$ = new Subject<DatepickerViewModel>();
+
   private _dateSelect$ = new Subject<NgbDate>();
 
   private _state: DatepickerViewModel = {
@@ -154,15 +145,8 @@ export class NgbDatepickerService {
   }
 
   set(options: DatepickerServiceInputs) {
-    const keys = Object.keys(options) as (keyof DatepickerServiceInputs)[];
-    const patch: Partial<DatepickerViewModel> = keys
-      .map((key) => {
-        const validator = this._VALIDATORS[key] as (
-          value: DatepickerServiceInputs[typeof key],
-        ) => Partial<DatepickerViewModel> | undefined;
-
-        return validator(options[key]) ?? {};
-      })
+    const patch = Object.keys(options)
+      .map((key) => this._VALIDATORS[key]((options as Record<string, any>)[key]) ?? {})
       .reduce((obj, part) => ({ ...obj, ...part }), {});
 
     if (Object.keys(patch).length > 0) {
@@ -216,7 +200,7 @@ export class NgbDatepickerService {
   }
 
   getMonth(struct: NgbDateStruct) {
-    for (const month of this._state.months) {
+    for (let month of this._state.months) {
       if (struct.month === month.number && struct.year === month.year) {
         return month;
       }
@@ -233,7 +217,6 @@ export class NgbDatepickerService {
 
   private _patchContexts(state: DatepickerViewModel) {
     const { months, displayMonths, selectedDate, focusDate, focusVisible, disabled, outsideDays } = state;
-
     state.months.forEach((month) => {
       month.weeks.forEach((week) => {
         week.days.forEach((day) => {
@@ -271,33 +254,40 @@ export class NgbDatepickerService {
   }
 
   private _updateState(patch: Partial<DatepickerViewModel>): DatepickerViewModel {
+    // patching fields
     const state = Object.assign({}, this._state, patch);
-    let { firstDate: startDate } = state;
 
+    let startDate = state.firstDate;
+
+    // min/max dates changed
     if ("minDate" in patch || "maxDate" in patch) {
       checkMinBeforeMax(state.minDate, state.maxDate);
       state.focusDate = checkDateInRange(state.focusDate, state.minDate, state.maxDate);
       state.firstDate = checkDateInRange(state.firstDate, state.minDate, state.maxDate);
-
       startDate = state.focusDate;
     }
 
+    // disabled
     if ("disabled" in patch) {
       state.focusVisible = false;
     }
 
+    // initial rebuild via 'select()'
     if ("selectedDate" in patch && this._state.months.length === 0) {
       startDate = state.selectedDate;
     }
 
+    // terminate early if only focus visibility was changed
     if ("focusVisible" in patch) {
       return state;
     }
 
+    // focus date changed
     if ("focusDate" in patch) {
       state.focusDate = checkDateInRange(state.focusDate, state.minDate, state.maxDate);
       startDate = state.focusDate;
 
+      // nothing to rebuild if only focus changed and it is still visible
       if (
         state.months.length !== 0 &&
         state.focusDate &&
@@ -308,80 +298,75 @@ export class NgbDatepickerService {
       }
     }
 
+    // first date changed
     if ("firstDate" in patch) {
       state.firstDate = checkDateInRange(state.firstDate, state.minDate, state.maxDate);
       startDate = state.firstDate;
     }
 
-    if (!startDate) {
-      return state;
-    }
+    // rebuilding months
+    if (startDate) {
+      const forceRebuild =
+        "dayTemplateData" in patch ||
+        "firstDayOfWeek" in patch ||
+        "markDisabled" in patch ||
+        "minDate" in patch ||
+        "maxDate" in patch ||
+        "disabled" in patch ||
+        "outsideDays" in patch ||
+        "weekdaysVisible" in patch;
 
-    const forceRebuild =
-      "dayTemplateData" in patch ||
-      "firstDayOfWeek" in patch ||
-      "markDisabled" in patch ||
-      "minDate" in patch ||
-      "maxDate" in patch ||
-      "disabled" in patch ||
-      "outsideDays" in patch ||
-      "weekdaysVisible" in patch;
+      const months = buildMonths(this._calendar, startDate, state, this._i18n, forceRebuild);
 
-    const months = buildMonths(this._calendar, startDate, state, this._i18n, forceRebuild);
+      // updating months and boundary dates
+      state.months = months;
+      state.firstDate = months[0].firstDate;
+      state.lastDate = months[months.length - 1].lastDate;
 
-    state.months = months;
-    state.firstDate = months[0].firstDate;
-    state.lastDate = months[months.length - 1].lastDate;
-
-    if ("selectedDate" in patch && !isDateSelectable(state.selectedDate, state)) {
-      state.selectedDate = null;
-    }
-
-    if ("firstDate" in patch) {
-      if (!state.focusDate || state.focusDate.before(state.firstDate) || state.focusDate.after(state.lastDate)) {
-        state.focusDate = startDate;
-      }
-    }
-
-    const yearChanged = !this._state.firstDate || this._state.firstDate.year !== state.firstDate.year;
-    const monthChanged = !this._state.firstDate || this._state.firstDate.month !== state.firstDate.month;
-
-    if (state.navigation === "select") {
-      // years ->  boundaries (min/max were changed)
-      if ("minDate" in patch || "maxDate" in patch || state.selectBoxes.years.length === 0 || yearChanged) {
-        state.selectBoxes.years = generateSelectBoxYears(state.firstDate, state.minDate, state.maxDate);
+      // reset selected date if 'markDisabled' returns true
+      if ("selectedDate" in patch && !isDateSelectable(state.selectedDate, state)) {
+        state.selectedDate = null;
       }
 
-      // months -> when current year or boundaries change
-      if ("minDate" in patch || "maxDate" in patch || state.selectBoxes.months.length === 0 || yearChanged) {
-        state.selectBoxes.months = generateSelectBoxMonths(
-          this._calendar,
-          state.firstDate,
-          state.minDate,
-          state.maxDate,
-        );
+      // adjusting focus after months were built
+      if ("firstDate" in patch) {
+        if (!state.focusDate || state.focusDate.before(state.firstDate) || state.focusDate.after(state.lastDate)) {
+          state.focusDate = startDate;
+        }
       }
-    } else {
-      state.selectBoxes = { years: [], months: [] };
-    }
 
-    if (
-      (state.navigation === "arrows" || state.navigation === "select") &&
-      (monthChanged || yearChanged || "minDate" in patch || "maxDate" in patch || "disabled" in patch)
-    ) {
-      state.prevDisabled = state.disabled || prevMonthDisabled(this._calendar, state.firstDate, state.minDate);
-      state.nextDisabled = state.disabled || nextMonthDisabled(this._calendar, state.lastDate, state.maxDate);
+      // adjusting months/years for the select box navigation
+      const yearChanged = !this._state.firstDate || this._state.firstDate.year !== state.firstDate.year;
+      const monthChanged = !this._state.firstDate || this._state.firstDate.month !== state.firstDate.month;
+      if (state.navigation === "select") {
+        // years ->  boundaries (min/max were changed)
+        if ("minDate" in patch || "maxDate" in patch || state.selectBoxes.years.length === 0 || yearChanged) {
+          state.selectBoxes.years = generateSelectBoxYears(state.firstDate, state.minDate, state.maxDate);
+        }
+
+        // months -> when current year or boundaries change
+        if ("minDate" in patch || "maxDate" in patch || state.selectBoxes.months.length === 0 || yearChanged) {
+          state.selectBoxes.months = generateSelectBoxMonths(
+            this._calendar,
+            state.firstDate,
+            state.minDate,
+            state.maxDate,
+          );
+        }
+      } else {
+        state.selectBoxes = { years: [], months: [] };
+      }
+
+      // updating navigation arrows -> boundaries change (min/max) or month/year changes
+      if (
+        (state.navigation === "arrows" || state.navigation === "select") &&
+        (monthChanged || yearChanged || "minDate" in patch || "maxDate" in patch || "disabled" in patch)
+      ) {
+        state.prevDisabled = state.disabled || prevMonthDisabled(this._calendar, state.firstDate, state.minDate);
+        state.nextDisabled = state.disabled || nextMonthDisabled(this._calendar, state.lastDate, state.maxDate);
+      }
     }
 
     return state;
-  }
-
-  constructor(
-    $locale: ILocaleService,
-    $filter: IFilterService,
-    private _calendar: NgbCalendar = new NgbCalendarGregorian(),
-    i18n?: NgbDatepickerI18n,
-  ) {
-    this._i18n = i18n ?? new NgbDatepickerI18nDefault($locale, $filter);
   }
 }

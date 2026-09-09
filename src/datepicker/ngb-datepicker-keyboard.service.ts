@@ -1,9 +1,20 @@
 import type { NgbDatepicker } from "@ngb/datepicker/ngb-datepicker.component";
+import { Injectable } from "ngjs-core";
 
+/**
+ * A service that represents the keyboard navigation.
+ *
+ * Default keyboard shortcuts [are documented in the overview](#/components/datepicker/overview#keyboard-shortcuts)
+ *
+ * @since 5.2.0
+ */
+@Injectable({ providedIn: "root" })
 export class NgbDatepickerKeyboardService {
-  processKey(event: KeyboardEvent | JQueryEventObject, datepicker: NgbDatepicker): void {
+  /**
+   * Processes a keyboard event.
+   */
+  processKey(event: KeyboardEvent, datepicker: NgbDatepicker) {
     const { state, calendar } = datepicker;
-
     switch (event.key) {
       case "PageUp":
         datepicker.focusDate(calendar.getPrev(state.focusedDate, event.shiftKey ? "y" : "m", 1));
@@ -36,12 +47,7 @@ export class NgbDatepickerKeyboardService {
       default:
         return;
     }
-
     event.preventDefault();
     event.stopPropagation();
-  }
-
-  static get $name() {
-    return "ngb.datepicker.keyboard.service";
   }
 }
