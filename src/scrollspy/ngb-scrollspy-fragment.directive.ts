@@ -7,7 +7,7 @@ import { Directive, HostBinding, inject, Input, type AfterViewInit, type OnDestr
 export class NgbScrollSpyFragment implements AfterViewInit, OnDestroy {
   private _scrollSpy = inject(NgbScrollSpy);
 
-  @Input("ngbScrollSpyFragment") id!: string;
+  @Input({ alias: "ngbScrollSpyFragment", binding: "@" }) id!: string;
 
   @HostBinding("attr.id")
   get _id(): string {
