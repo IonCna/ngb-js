@@ -1,5 +1,5 @@
 import type angular from "angular";
-import { type ApplicationRef, bootstrapApplication, NgModule } from "ngjs-core";
+import { type ApplicationRef, bootstrapApplication, Injector, NgModule } from "ngjs-core";
 import { resetTestingModule } from "ngjs-core/testing";
 
 /**
@@ -45,12 +45,16 @@ export async function configureTestBed(feature: Function | angular.IModule | str
 
 	const appRef = (await bootstrapApplication(TestRootModule, { hostElement: host })) as ApplicationRef;
 	const $injector = appRef.injector;
+	// Envuelto, no el `$injector` crudo: los `@Service` (ej. `NgbConfig`) viven en el
+	// `RootSingletonRegistry`, no en el `$injector` real de AngularJS — solo `Injector`
+	// sabe caer ahí (ver `getFromAppInjector`).
+	const injector = $injector.get<Injector>(Injector.$name);
 
 	return {
 		$injector,
 		$compile: $injector.get<angular.ICompileService>("$compile"),
 		$rootScope: $injector.get<angular.IRootScopeService>("$rootScope"),
-		get: <T>(token: string) => $injector.get<T>(token),
+		get: <T>(token: string) => injector.get<T>(token),
 		detectChanges: () => appRef.tick(),
 		destroy: () => {
 			appRef.destroy();

@@ -11,6 +11,7 @@ import {
   Component,
   DOCUMENT,
   ElementRef,
+  EventEmitter,
   HostBinding,
   inject,
   Injector,
@@ -18,6 +19,7 @@ import {
   NgZone,
   type OnDestroy,
   type OnInit,
+  Output,
 } from "ngjs-core";
 import { defaultIfEmpty, filter, fromEvent, type Observable, Subject, takeUntil } from "rxjs";
 
@@ -49,8 +51,7 @@ export class NgbOffcanvasPanel implements OnInit, OnDestroy {
   @Input({ binding: "@" }) panelClass?: string;
   @Input({ binding: "@" }) position: "start" | "end" | "top" | "bottom" = "start";
 
-  /** Lo asigna `NgbOffcanvasRef` — descarta el offcanvas. */
-  onDismiss?: (arg: { $event: unknown }) => void;
+  @Output("dismiss") dismissEvent = new EventEmitter<unknown>();
 
   shown = new Subject<void>();
   hidden = new Subject<void>();
@@ -87,7 +88,7 @@ export class NgbOffcanvasPanel implements OnInit, OnDestroy {
   }
 
   dismiss(reason: unknown): void {
-    this.onDismiss?.({ $event: reason });
+    this.dismissEvent.emit(reason);
   }
 
   updateOptions(options: NgbOffcanvasUpdatableOptions): void {

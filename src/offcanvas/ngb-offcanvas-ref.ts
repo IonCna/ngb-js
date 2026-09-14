@@ -41,10 +41,10 @@ export class NgbOffcanvasRef<T = unknown> {
     this.result.then(null, () => {});
 
     if (this.panelRef.instance) {
-      this.panelRef.instance.onDismiss = ({ $event }: { $event: unknown }) => this.dismiss($event);
+      this.panelRef.instance.dismissEvent.subscribe((reason: unknown) => this.dismiss(reason));
     }
     if (this.backdropRef?.instance) {
-      this.backdropRef.instance.onDismiss = ({ $event }: { $event: unknown }) => this.dismiss($event);
+      this.backdropRef.instance.dismissEvent.subscribe((reason: unknown) => this.dismiss(reason));
     }
   }
 

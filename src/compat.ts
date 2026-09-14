@@ -32,7 +32,7 @@ export { NgbDatepickerModule } from "@ngb/datepicker/compat";
 export { NgbDropdownModule } from "@ngb/dropdown/compat";
 export { NgbModalModule } from "@ngb/modal/compat";
 export { NgbNavModule } from "@ngb/nav/compat";
-export { NgbConfig } from "@ngb/ngb-config.service";
+export { NgbConfig } from "@ngb/config/ngb-config";
 export { NgbOffcanvasModule } from "@ngb/offcanvas/compat";
 export { NgbPaginationModule } from "@ngb/pagination/compat";
 export { NgbPopoverModule } from "@ngb/popover/compat";

@@ -1,4 +1,4 @@
-import { NgbConfig } from "@ngb/ngb-config.service";
+import { NgbConfig } from "@ngb/config/ngb-config";
 import { inject, Service } from "ngjs-core";
 
 // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap

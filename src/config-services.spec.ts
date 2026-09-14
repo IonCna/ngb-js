@@ -12,7 +12,7 @@ import { NgbDropdownConfig } from "./dropdown/ngb-dropdown-config.service";
 import { NgbModalConfig } from "./modal/ngb-modal-config.service";
 import { NgbNavConfig } from "./nav/ngb-nav-config.service";
 import { NgbModule } from "./ngb.module";
-import { NgbConfig } from "./ngb-config.service";
+import { NgbConfig } from "./config/ngb-config";
 import { NgbOffcanvasConfig } from "./offcanvas/ngb-offcanvas-config.service";
 import { NgbPopoverConfig } from "./popover/ngb-popover-config.service";
 import { NgbProgressbarConfig } from "./progressbar/ngb-progressbar-config.service";
@@ -36,7 +36,7 @@ describe("configuration service defaults", () => {
   });
 
   it("provides the global animation default", () => {
-    expect(angularInjector.get<NgbConfig>(NgbConfig.$name).animation).toBe(true);
+    expect(injector.get(NgbConfig).animation).toBe(true);
   });
 
   it("provides accordion defaults", () => {
@@ -182,7 +182,7 @@ describe("configuration service defaults", () => {
   });
 
   it("lets local animation overrides take precedence over NgbConfig", () => {
-    const globalConfig = angularInjector.get<NgbConfig>(NgbConfig.$name);
+    const globalConfig = injector.get(NgbConfig);
     const configs = [
       injector.get(NgbAccordionConfig),
       injector.get(NgbAlertConfig),

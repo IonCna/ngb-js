@@ -38,7 +38,7 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
 
   @Input() animation = this._config.animation;
   @Input() autoClose = this._config.autoClose;
-  @Input({ binding: "@" }) placement = this._config.placement;
+  @Input() placement = this._config.placement;
   @Input() popperOptions = this._config.popperOptions;
   @Input({ binding: "@" }) triggers = this._config.triggers;
   @Input() positionTarget?: string | HTMLElement;

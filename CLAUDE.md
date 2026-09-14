@@ -15,14 +15,23 @@ bunx vitest
 bunx vitest src/alert/ngb-alert.component.spec.ts
 ```
 
-> Note: `esbuild.config.ts` has `entryPoints: []` — the build is a work in progress. Tests use `tsconfig.spec.json` which includes `test/setup.ts` as a setup file.
+> Note: tests use `tsconfig.spec.json` which includes `test/setup.ts` as a setup file.
 
 ## Architecture
 
-**ngb-js** is an AngularJS 1.8 Bootstrap 5 UI component library written in TypeScript. It mirrors ng-bootstrap's API but targets the AngularJS (1.x) ecosystem.
+**ngb-js** is a port of ng-bootstrap (Angular Bootstrap) to the AngularJS (1.x)
+ecosystem, running on top of **`ngjs-core`** — a sibling package that
+reimplements the `@angular/core` surface (`@Component`, `@Directive`, `@Input`,
+`@Output`, DI, lifecycle hooks, queries, `ChangeDetectorRef`, etc.) as a runtime
+layer over AngularJS, with no build step and no template compiler. Component
+source is meant to be as close to a textual copy of upstream ng-bootstrap as
+`ngjs-core`'s API surface allows — see `CORE_GAPS.md` for the documented,
+deliberate deviations (and why).
 
 - `src/index.ts` — main entry point; exports all components and services
-- `src/ngb.module.ts` — root `NgbModule` that aggregates all sub-modules
+- `src/ngb.module.ts` — root `NgbModule` (an `ngjs-core` `@NgModule`) that
+  aggregates all sub-modules
+- `src/config/` — `NgbConfig`, the global defaults service
 - `demo/` — local demo app that consumes the library
 
 ### Component structure
@@ -32,33 +41,41 @@ Each component lives in its own directory under `src/` and follows this pattern:
 ```
 src/alert/
 ├── index.ts                      # Re-exports for consumers
-├── ngb-alert.module.ts           # angular.module() registration
-├── ngb-alert.component.ts        # Controller class
+├── ngb-alert.module.ts           # @NgModule registration
+├── ngb-alert.component.ts        # @Component class
 ├── ngb-alert.component.html      # Template (imported as string)
-├── ngb-alert-config.service.ts   # Service that holds defaults
+├── ngb-alert-config.service.ts   # @Service holding defaults (paridad con NgbAlertConfig upstream)
 ├── ngb-alert-transition.ts       # Animation logic
-└── ngb-alert.component.spec.ts   # Vitest unit test
+└── ngb-alert.component.spec.ts   # Vitest unit test (via configureTestBed)
 ```
 
-### AngularJS conventions used throughout
+### `ngjs-core` decorator pattern (not classic AngularJS)
 
-**Controller class pattern** — every component/directive/service class exposes static getters:
+Components/directives are plain classes decorated with the real `@angular/core`-shaped
+decorators, DI via `inject()` in field initializers (no constructor injection,
+no `$inject` arrays), same as upstream ng-bootstrap:
 
 ```typescript
-class NgbAlert implements IComponentController {
-    static get $name()    { return "ngbAlert" }        // registration key
-    static get $inject()  { return ["$element", ...] } // DI tokens
-    static get $factory() { return { bindings: {...}, controller: NgbAlert, template } } // IComponentOptions
+@Component({ selector: "ngb-alert", exportAs: "ngbAlert", template })
+export class NgbAlert implements INgbAlert {
+  private readonly _config = inject(NgbAlertConfig);
+
+  @Input() animation = this._config.animation;
+  @Output() closed = new EventEmitter<void>();
+
+  @HostBinding("class.fade") get _fade(): boolean { return this.animation; }
+
+  ngOnInit(): void { /* ... */ }
 }
 ```
 
-**Module registration** — each `*.module.ts` creates an `angular.module()` and calls `.component()`, `.service()`, etc. using the static getters above.
-
 **Templates** — HTML files are imported as ES module strings (`import template from "*.html"`). esbuild resolves these.
 
-**Lifecycle hooks** — use `$onInit()`, `$postLink()`, `$onChanges()` (not Angular 2+ hooks).
+**Lifecycle hooks** — Angular-style (`ngOnInit`, `ngOnChanges`, `ngAfterViewInit`, `ngOnDestroy`, ...), not AngularJS's `$onInit`/`$postLink`.
 
-**Bindings** — one-way `<?`, string `@?`, expression `&?` (AngularJS binding syntax).
+**Bindings** — `@Input()` defaults to AngularJS `<?` (one-way expression, evaluated) under the hood; `@Input({ binding: "@" })` opts into AngularJS `@?` (raw string/interpolation) **only** for inputs that are always plain strings (`placement`, `type`, `tooltipClass`, ...) — never for inputs that can hold a number, array, or object (those MUST stay on the default `<`, or the value silently degrades to its literal string text). See `src/core/metadata/input.ts` in `ngjs-core` and the `NgbNavItem`/`NgbScrollSpyItem` vs. `NgbScrollSpyFragment` split for a concrete example of the boundary.
+
+**Services** — `@Service()` (app-wide implicit singleton, like `providedIn: 'root'` — auto-registers, never goes in `providers: [...]`) or `@Injectable()` + explicit `providers: [...]` (per-module/per-component). `inject()` and `ngjs-core`'s `Injector.get()` resolve either; the raw AngularJS `$injector` only sees `@Injectable`-via-providers registrations, not `@Service` (which lives in `ngjs-core`'s `RootSingletonRegistry`) — test code must use the wrapped `Injector`, never `$injector.get(name)` directly, to fetch a `@Service`.
 
 ### Shared utilities (`src/utils/`)
 
@@ -76,18 +93,20 @@ class NgbAlert implements IComponentController {
 
 Tests use **Vitest** with `jsdom` environment and `angular-mocks`. The shim at `test/test-framework-shim.ts` bridges Vitest's `beforeEach`/`afterEach` to the window globals that `angular-mocks` expects.
 
-Typical test pattern:
+Typical test pattern — `test/testbed.ts`'s `configureTestBed` (equivalent to Angular's `TestBed.configureTestingModule` + `ComponentFixture`), not raw `angular.mock.module`/`angular.mock.inject`:
 
 ```typescript
-import { NgbModule } from "@ngb/ngb.module"
+import { configureTestBed, type NgbTestBed } from "../../test/testbed";
+import { NgbModule } from "@ngb/ngb.module";
 
-beforeEach(() => {
-    angular.mock.module(NgbModule.name)
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-        $compile = _$compile_
-        $rootScope = _$rootScope_
-    })
-})
+let tb: NgbTestBed;
+
+beforeEach(async () => {
+    tb = await configureTestBed(NgbModule);
+    // tb.$compile, tb.$rootScope, tb.get<T>(token), tb.detectChanges(), tb.destroy()
+});
+
+afterEach(() => tb.destroy());
 ```
 
 ### Path aliases

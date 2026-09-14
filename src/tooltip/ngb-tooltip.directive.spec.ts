@@ -255,7 +255,7 @@ describe("ngbTooltip", () => {
             <button
                 type="button"
                 ngb-tooltip="'Tooltip'"
-                placement="top left"
+                placement="'top left'"
                 triggers="manual"
                 tooltip-class="my-tip"
                 open-delay="0"
@@ -275,7 +275,9 @@ describe("ngbTooltip", () => {
       tooltipClass: unknown;
     };
 
-    // Sin comillas y con espacios: `@` los pasa crudos, no los evalúa como expresión.
+    // `placement` acepta PlacementArray (string | Placement[]), así que queda en el binding
+    // `<` por defecto — el markup usa comillas de expresión JS para el literal string.
+    // `triggers`/`tooltipClass` son siempre string, así que usan `@` y se pasan crudos.
     expect(ctrl.placement).toBe("top left");
     expect(ctrl.triggers).toBe("manual");
     expect(ctrl.tooltipClass).toBe("my-tip");

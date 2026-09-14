@@ -8,6 +8,7 @@ import {
   inject,
   type OnDestroy,
   TemplateRef,
+  ViewChild,
   ViewContainerRef,
 } from "ngjs-core";
 
@@ -17,18 +18,17 @@ import {
  * El contenido real va en un `<ng-template>` hijo — según el estado del
  * acordeón, se inserta o se quita del DOM.
  *
- * ng-bootstrap v20 usa `template: "<ng-container #container /><ng-content />"` +
- * `@ViewChild("container", { read: ViewContainerRef })`. `ngjs-core` no resuelve
- * `@ViewChild(nombre, { read: ViewContainerRef })` sobre un ancla que no es un
- * componente (ver CORE_GAPS), así que acá se usa el `ViewContainerRef` del
- * propio host (`inject(ViewContainerRef)`) — mismo efecto: la vista embebida
- * queda dentro del `.accordion-body`.
+ * Patrón 1:1 con ng-bootstrap v20: `template: "<ng-container #container />
+ * <ng-content />"` + `@ViewChild("container", { read: ViewContainerRef })` —
+ * el `ViewContainerRef` ancla en el `<ng-container>` (adentro del propio
+ * template de este componente), así la vista embebida queda dentro de
+ * `.accordion-body`.
  *
  * @since 14.1.0
  */
 @Component({
   selector: "[ngbAccordionBody]",
-  template: `<ng-content></ng-content>`,
+  template: `<ng-container ng-ref="container"></ng-container><ng-content></ng-content>`,
 })
 export class NgbAccordionBody implements OnDestroy {
   private _item = inject(NgbAccordionItem);
@@ -40,7 +40,8 @@ export class NgbAccordionBody implements OnDestroy {
   @HostBinding("class.accordion-body")
   readonly _hostClass = true;
 
-  private _vcr = inject(ViewContainerRef);
+  @ViewChild("container", { read: ViewContainerRef, static: true })
+  private _vcr!: ViewContainerRef;
 
   @ContentChild(TemplateRef, { static: true })
   private _bodyTpl!: TemplateRef<unknown>;

@@ -1,4 +1,4 @@
-import { NgbConfig } from "@ngb/ngb-config.service";
+import { NgbConfig } from "@ngb/config/ngb-config";
 import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
 import { inject, Service } from "ngjs-core";

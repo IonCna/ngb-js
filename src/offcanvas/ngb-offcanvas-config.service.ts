@@ -1,4 +1,4 @@
-import { NgbConfig } from "@ngb/ngb-config.service";
+import { NgbConfig } from "@ngb/config/ngb-config";
 import type { IAugmentedJQuery } from "angular";
 import { inject, Service } from "ngjs-core";
 

@@ -33,7 +33,7 @@ export class NgbScrollSpyItem implements OnInit {
   private _destroyRef = inject(DestroyRef);
   private _isActive = false;
 
-  @Input({ alias: "ngbScrollSpyItem", binding: "@" })
+  @Input({ alias: "ngbScrollSpyItem" })
   set data(data: NgbScrollSpyItemData) {
     if (Array.isArray(data)) {
       this._scrollSpyAPI = data[0];

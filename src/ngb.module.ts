@@ -6,7 +6,6 @@ import { NgbDatepickerModule } from "@ngb/datepicker/ngb-datepicker.module";
 import { NgbDropdownModule } from "@ngb/dropdown/ngb-dropdown.module";
 import { NgbModalModule } from "@ngb/modal/ngb-modal.module";
 import { NgbNavModule } from "@ngb/nav/ngb-nav.module";
-import { NgbConfig } from "@ngb/ngb-config.service";
 import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbOffcanvasModule } from "@ngb/offcanvas/ngb-offcanvas.module";
 import { NgbPaginationModule } from "@ngb/pagination/ngb-pagination.module";
@@ -52,7 +51,8 @@ import { PlatformBrowserModule } from "ngjs-core/platform-browser";
     NgbPaginationModule,
     NgbDatepickerModule,
   ],
-  providers: [NgbConfig, NgbScrollbar, NgbRTL],
+  // `NgbConfig` es `@Service()` — se auto-registra, no va acá (ver assertNotServiceProvider).
+  providers: [NgbScrollbar, NgbRTL],
 })
 
 export class NgbModule {}

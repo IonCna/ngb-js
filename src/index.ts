@@ -5,4 +5,4 @@
  * (`ngb-js/compat`, `ngb-js/alert/compat`, …).
  */
 export { NgbModule } from "@ngb/ngb.module";
-export { NgbConfig } from "@ngb/ngb-config.service";
+export { NgbConfig } from "@ngb/config/ngb-config";

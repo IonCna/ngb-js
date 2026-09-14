@@ -1,4 +1,4 @@
-import { NgbConfig } from "@ngb/ngb-config.service";
+import { NgbConfig } from "@ngb/config/ngb-config";
 import { inject, Service } from "ngjs-core";
 
 @Service({ id: "ngb.collapse.config.service" })

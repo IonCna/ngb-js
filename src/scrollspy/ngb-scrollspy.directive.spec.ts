@@ -55,8 +55,8 @@ describe("ngbScrollSpy directives", () => {
       <div>
         <div class="spy-container" ngb-scroll-spy ng-ref="spy" ng-ref-read="ngbScrollSpy"
           active-change="active = $event" root-margin="10px" threshold="0.5">
-          <section ngb-scroll-spy-fragment="'one'">One</section>
-          <section ngb-scroll-spy-fragment="'two'">Two</section>
+          <section ngb-scroll-spy-fragment="one">One</section>
+          <section ngb-scroll-spy-fragment="two">Two</section>
         </div>
         <button class="one-link" ngb-scroll-spy-item="[spy, 'one']">One link</button>
         <button class="two-link" ngb-scroll-spy-item="[spy, 'two']">Two link</button>
@@ -113,7 +113,7 @@ describe("ngbScrollSpy directives", () => {
     scope.custom = vi.fn((_state, changeActive: (active: string) => void) => changeActive("custom"));
     const element = $compile(`
       <div ngb-scroll-spy ng-ref="spy" ng-ref-read="ngbScrollSpy" process-changes="custom"
-        active-change="active = $event"><section ngb-scroll-spy-fragment="'one'">One</section></div>
+        active-change="active = $event"><section ngb-scroll-spy-fragment="one">One</section></div>
     `)(scope);
     tb.detectChanges();
     const observer = IntersectionObserverMock.instances[0];
@@ -129,7 +129,7 @@ describe("ngbScrollSpy directives", () => {
     const scope = $rootScope.$new() as IRootScopeService & { visible: boolean };
     scope.visible = true;
     const element = $compile(`
-      <div ngb-scroll-spy><section ng-if="visible" ngb-scroll-spy-fragment="'one'">One</section></div>
+      <div ngb-scroll-spy><section ng-if="visible" ngb-scroll-spy-fragment="one">One</section></div>
     `)(scope);
     tb.detectChanges();
     const observer = IntersectionObserverMock.instances[0];

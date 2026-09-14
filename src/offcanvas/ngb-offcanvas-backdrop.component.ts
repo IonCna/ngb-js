@@ -7,6 +7,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  EventEmitter,
   HostBinding,
   inject,
   Injector,
@@ -14,6 +15,7 @@ import {
   NgZone,
   type OnDestroy,
   type OnInit,
+  Output,
 } from "ngjs-core";
 import { defaultIfEmpty, fromEvent, type Observable, Subject, takeUntil } from "rxjs";
 
@@ -33,9 +35,9 @@ export class NgbOffcanvasBackdrop implements OnInit, OnDestroy {
   @Input({ binding: "@" }) backdropClass?: string;
 
   /** Lo pone `NgbOffcanvasStack` según `options.backdrop === "static"`. */
-  static?: boolean;
-  /** Lo asigna `NgbOffcanvasRef`. */
-  onDismiss?: (arg: { $event: OffcanvasDismissReasons }) => void;
+  @Input() static?: boolean;
+
+  @Output("dismiss") dismissEvent = new EventEmitter<OffcanvasDismissReasons>();
 
   private _destroyed$ = new Subject<void>();
 
@@ -83,7 +85,7 @@ export class NgbOffcanvasBackdrop implements OnInit, OnDestroy {
 
   dismiss(): void {
     if (this.static) return;
-    this.onDismiss?.({ $event: OffcanvasDismissReasons.BACKDROP_CLICK });
+    this.dismissEvent.emit(OffcanvasDismissReasons.BACKDROP_CLICK);
   }
 
   updateOptions(options: NgbOffcanvasUpdatableOptions): void {
