@@ -5,6 +5,7 @@ import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component"
 import { NGB_OFFCANVAS, NGB_OFFCANVAS_CONFIG } from "@ngb/offcanvas/tokens";
 import { inject, NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
+import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 
 export { NgbOffcanvas } from "@ngb/offcanvas/ngb-offcanvas.service";
 export {
@@ -24,6 +25,7 @@ export { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanva
   imports: [CommonModule],
   declarations: [NgbOffcanvasPanel, NgbOffcanvasBackdrop],
   providers: [
+    NgbScrollbar,
     { provide: NGB_OFFCANVAS, useFactory: () => inject(NgbOffcanvas) },
     { provide: NGB_OFFCANVAS_CONFIG, useFactory: () => inject(NgbOffcanvasConfig) },
   ],

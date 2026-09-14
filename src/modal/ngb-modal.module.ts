@@ -5,6 +5,7 @@ import { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
 import { NGB_MODAL, NGB_MODAL_CONFIG } from "@ngb/modal/tokens";
 import { inject, NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
+import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 
 export { NgbModal } from "@ngb/modal/ngb-modal.service";
 export {
@@ -24,6 +25,7 @@ export { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
   imports: [CommonModule],
   declarations: [NgbModalWindow, NgbModalBackdrop],
   providers: [
+    NgbScrollbar,
     { provide: NGB_MODAL, useFactory: () => inject(NgbModal) },
     { provide: NGB_MODAL_CONFIG, useFactory: () => inject(NgbModalConfig) },
   ],

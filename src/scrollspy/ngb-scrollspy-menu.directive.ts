@@ -1,7 +1,16 @@
 import type { NgbScrollSpy } from "@ngb/scrollspy/ngb-scrollspy.directive";
 import { NgbScrollSpyItem, type NgbScrollSpyRef } from "@ngb/scrollspy/ngb-scrollspy-item.directive";
 import { NgbScrollSpyService, type NgbScrollToOptions } from "@ngb/scrollspy/scrollspy.service";
-import { type AfterViewInit, ContentChildren, DestroyRef, Directive, Input, inject, type QueryList } from "ngjs-core";
+import {
+  type AfterViewInit,
+  ContentChildren,
+  DestroyRef,
+  Directive,
+  forwardRef,
+  Input,
+  inject,
+  type QueryList,
+} from "ngjs-core";
 import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
 import type { Observable } from "rxjs";
 
@@ -18,7 +27,11 @@ export class NgbScrollSpyMenu implements NgbScrollSpyRef, AfterViewInit {
   private _map = new Map<string, NgbScrollSpyItem>();
   private _lastActiveItem: NgbScrollSpyItem | null = null;
 
-  @ContentChildren(NgbScrollSpyItem, { descendants: true })
+  // `forwardRef`: `NgbScrollSpyItem` importa `NgbScrollSpyMenu` de vuelta
+  // (referencia circular real). Con `splitting: true` en esbuild, el decorador
+  // puede correr antes de que el import circular resuelva, capturando
+  // `undefined` como locator — ver el mismo caso en `ngb-accordion-item.directive.ts`.
+  @ContentChildren(forwardRef(() => NgbScrollSpyItem), { descendants: true })
   private _items!: QueryList<NgbScrollSpyItem>;
 
   /**

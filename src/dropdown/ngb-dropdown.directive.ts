@@ -19,6 +19,7 @@ import {
   DOCUMENT,
   ElementRef,
   EventEmitter,
+  forwardRef,
   HostBinding,
   inject,
   Injector,
@@ -52,8 +53,12 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
 
   private _positioning: ReturnType<typeof ngbPositioning> = ngbPositioning();
 
-  @ContentChild(NgbDropdownMenu) private _menu!: NgbDropdownMenu;
-  @ContentChild(NgbDropdownAnchor) private _anchor!: NgbDropdownAnchor;
+  // `forwardRef`: `NgbDropdownMenu`/`NgbDropdownAnchor` importan `NgbDropdown` de
+  // vuelta (referencia circular real). Con `splitting: true` en esbuild, el
+  // decorador puede correr antes de que el import circular resuelva, capturando
+  // `undefined` como locator — ver el mismo caso en `ngb-accordion-item.directive.ts`.
+  @ContentChild(forwardRef(() => NgbDropdownMenu)) private _menu!: NgbDropdownMenu;
+  @ContentChild(forwardRef(() => NgbDropdownAnchor)) private _anchor!: NgbDropdownAnchor;
 
   /**
    * Los `NgbDropdownItem` proyectados. No existe en ng-bootstrap (usa

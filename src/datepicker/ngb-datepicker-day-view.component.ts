@@ -12,9 +12,10 @@ import { Component, HostBinding, inject, Input } from "ngjs-core";
  *   '[class.active]': 'focused',
  * }
  * ```
- * `styleUrl: './datepicker-day-view.scss'` de upstream → `datepicker-day-view.css`
- * (global, sin `ViewEncapsulation` — no lo soporta ngjs-core). Se incluye como
- * hoja de estilo aparte, igual que `tooltip.css`.
+ * `styleUrl: './datepicker-day-view.scss'` de upstream → CSS inline en el
+ * `<style>` de `ngb-datepicker.component.html` (global, sin `ViewEncapsulation`
+ * — ngjs-core no soporta `styleUrl`, así que va como texto plano en el template
+ * del componente raíz en vez de requerir que el consumidor importe un `.css`).
  */
 @Component({
   selector: "[ngbDatepickerDayView]",

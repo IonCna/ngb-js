@@ -11,6 +11,7 @@ import {
   DOCUMENT,
   ElementRef,
   EventEmitter,
+  forwardRef,
   HostBinding,
   HostListener,
   Input,
@@ -57,10 +58,14 @@ export class NgbNav implements AfterContentInit, OnChanges {
   @Output() hidden = new EventEmitter<any>();
   @Output() navChange = new EventEmitter<NgbNavChangeEvent>();
 
-  @ContentChildren(NgbNavItem)
+  // `forwardRef`: `NgbNavItem`/`NgbNavLinkBase` importan `NgbNav` de vuelta
+  // (referencia circular real). Con `splitting: true` en esbuild, el decorador
+  // puede correr antes de que el import circular resuelva, capturando
+  // `undefined` como locator — ver el mismo caso en `ngb-accordion-item.directive.ts`.
+  @ContentChildren(forwardRef(() => NgbNavItem))
   items!: QueryList<NgbNavItem>;
 
-  @ContentChildren(NgbNavLinkBase, { descendants: true })
+  @ContentChildren(forwardRef(() => NgbNavLinkBase), { descendants: true })
   links!: QueryList<NgbNavLinkBase>;
 
   readonly navItemChange$ = new Subject<NgbNavItem | null>();

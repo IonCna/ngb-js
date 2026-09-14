@@ -7,6 +7,7 @@ import {
   DestroyRef,
   Directive,
   EventEmitter,
+  forwardRef,
   HostBinding,
   Input,
   inject,
@@ -43,7 +44,13 @@ export class NgbAccordionItem {
 
   private _collapseAnimationRunning = false;
 
-  @ContentChild(NgbAccordionCollapse, { static: true })
+  // `forwardRef`: `NgbAccordionCollapse` importa `NgbAccordionItem` de vuelta
+  // (referencia circular real entre los dos módulos). Con `splitting: true` en
+  // esbuild (ver `esbuild.config.ts`), el decorador puede correr antes de que
+  // el import circular termine de resolver, capturando `undefined` como
+  // locator — `forwardRef` difiere la lectura de la clase hasta que la query
+  // se instancia de verdad (bien después de que todos los módulos cargaron).
+  @ContentChild(forwardRef(() => NgbAccordionCollapse), { static: true })
   private _collapse!: NgbAccordionCollapse;
 
   @HostBinding("id")
