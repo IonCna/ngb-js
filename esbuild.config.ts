@@ -85,20 +85,6 @@ await Promise.all([
   esbuild.build({
     ...commonOptions,
     format: "esm",
-    // Sin esto, cada entry point (`index`, `datepicker/index`, `datepicker/compat`, ...)
-    // empaqueta su PROPIA copia de cualquier módulo compartido (p.ej.
-    // `ngb-datepicker-config.service.ts`) — dos copias de la MISMA clase fuente
-    // son dos identidades JS distintas. Un consumidor que importe `NgbModule`
-    // desde `"ngb-js"` (que registra `NgbDatepickerConfig` como provider dentro
-    // de `NgbDatepickerModule`) y TAMBIÉN importe `NgbDatepickerConfig` desde
-    // `"ngb-js/datepicker"` (el patrón normal para tipar/inyectar fuera del
-    // módulo) termina con dos clases `NgbDatepickerConfig` distintas — el DI
-    // registra una y el consumidor pide la otra → "no provider" (`_1` en el
-    // nombre del token, por la colisión de nombre entre ambas). `splitting`
-    // extrae los módulos compartidos a un chunk común importado por ambos
-    // entry points, preservando la identidad de clase. Solo ESM (CJS no lo
-    // soporta) — alcanza, es el formato que consume Vite/el resto del árbol.
-    splitting: true,
   }),
   esbuild.build({
     ...commonOptions,
