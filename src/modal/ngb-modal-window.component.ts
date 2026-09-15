@@ -2,6 +2,7 @@ import { ModalDismissReasons } from "@ngb/modal/ngb-modal-dismiss-reasons";
 import template from "@ngb/modal/ngb-modal-window.component.html";
 import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import {
+  afterAttachedRender,
   getFocusableBoundaryElements,
   isDefined,
   isString,
@@ -10,7 +11,6 @@ import {
   reflow,
 } from "@ngb/utils";
 import {
-  afterNextRender,
   ChangeDetectorRef,
   Component,
   DOCUMENT,
@@ -121,7 +121,7 @@ export class NgbModalWindow implements OnInit, OnDestroy {
 
   ngOnInit() {
     this._elWithFocus = this._document.activeElement;
-    afterNextRender({ mixedReadWrite: () => this._show() }, { injector: this._injector });
+    afterAttachedRender(this._elRef.nativeElement, () => this._show(), { injector: this._injector });
   }
 
   ngOnDestroy() {

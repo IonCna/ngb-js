@@ -104,6 +104,11 @@ describe("NgbModal", () => {
   });
 
   it("renders TemplateRef context and destroys its view after closing", async () => {
+    // Timeout explícito: bajo carga (toda la suite en paralelo) `flush()` (60
+    // iteraciones reales de `setTimeout(0)`) + esperar a que la ventana quede
+    // `isConnected` antes de animar (`afterAttachedRender`, ver `ngb-modal-
+    // window.component.ts`) puede pasar el default de 5000ms sin que haya
+    // nada roto — corriendo el archivo solo, este test tarda ~1-2s.
     const scope = $rootScope.$new() as IRootScopeService & {
       message: string;
       modalTemplate?: TemplateRef<unknown>;
@@ -134,7 +139,7 @@ describe("NgbModal", () => {
     expect(await resolveOpen(modalRef.result)).toBe("template result");
     expect(document.body.querySelector(".template-modal")).toBeNull();
     host.remove();
-  });
+  }, 15000);
 
   it("honors beforeDismiss and emits the accepted dismiss reason", async () => {
     let allowDismiss = false;
@@ -158,7 +163,7 @@ describe("NgbModal", () => {
     expect(dismissed).toHaveBeenCalledWith("accepted");
     expect(ngbModal.hasOpenModals()).toBe(false);
     await expect(resolveOpen(modalRef.result)).rejects.toBe("accepted");
-  });
+  }, 15000);
 
   it("dismisses with the Angular-compatible reason when Escape is pressed", async () => {
     const animationFrame = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
@@ -212,6 +217,12 @@ describe("NgbModal", () => {
     expect(backdrop?.classList.contains("modal-backdrop")).toBe(true);
   });
 
+  it("shows the backdrop when using the default (animated) options", async () => {
+    await resolveOpen(ngbModal.open("ngbModalSpecContent", {}));
+    const backdrop = document.body.querySelector("ngb-modal-backdrop");
+    expect(backdrop?.classList.contains("show")).toBe(true);
+  });
+
   it("opens without a backdrop when requested", async () => {
     const modalRef = await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: false, backdrop: false }));
     expect(document.body.querySelector("ngb-modal-window")).not.toBeNull();
@@ -244,6 +255,20 @@ describe("NgbModal", () => {
     expect(dialog?.classList.contains("modal-dialog-scrollable")).toBe(true);
     expect(dialog?.classList.contains("custom-dialog")).toBe(true);
     expect(document.body.querySelector("ngb-modal-backdrop")?.classList.contains("custom-backdrop")).toBe(true);
+  });
+
+  it("makes the component content host a growing flex column for fullscreen modals", async () => {
+    // `.modal-fullscreen .modal-content` (Bootstrap) es `height:100%` y espera
+    // que `.modal-header`/`.modal-body`/`.modal-footer` sean hijos DIRECTOS
+    // flex — con contenido de tipo componente, esos quedan un nivel más
+    // adentro (el host del componente). Sin `d-flex flex-column flex-grow-1`
+    // en ese host, `.modal-body` no crece y queda espacio vacío debajo.
+    await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: false, fullscreen: true }));
+    const contentHost = document.body.querySelector("ngb-modal-window .modal-content > ngb-modal-spec-content");
+    expect(contentHost?.classList.contains("d-flex")).toBe(true);
+    expect(contentHost?.classList.contains("flex-column")).toBe(true);
+    expect(contentHost?.classList.contains("flex-grow-1")).toBe(true);
+    expect(contentHost?.classList.contains("overflow-hidden")).toBe(true);
   });
 
   it("updates all supported window and backdrop options", async () => {

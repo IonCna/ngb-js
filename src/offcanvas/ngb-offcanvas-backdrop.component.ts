@@ -1,9 +1,8 @@
 import type { NgbOffcanvasUpdatableOptions } from "@ngb/offcanvas/ngb-offcanvas-config.service";
 import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 import { ngbOffcanvasFadeInTransition, ngbOffcanvasFadeOutTransition } from "@ngb/offcanvas/ngb-offcanvas-transition";
-import { isDefined, ngbRunTransition } from "@ngb/utils";
+import { afterAttachedRender, isDefined, ngbRunTransition } from "@ngb/utils";
 import {
-  afterNextRender,
   ChangeDetectorRef,
   Component,
   ElementRef,
@@ -53,14 +52,13 @@ export class NgbOffcanvasBackdrop implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const animation = this.animation ?? true;
-    afterNextRender(
-      {
-        mixedReadWrite: () =>
-          ngbRunTransition(this._zone, this._nativeElement, ngbOffcanvasFadeInTransition, {
-            animation,
-            runningTransition: "continue",
-          }),
-      },
+    afterAttachedRender(
+      this._nativeElement,
+      () =>
+        ngbRunTransition(this._zone, this._nativeElement, ngbOffcanvasFadeInTransition, {
+          animation,
+          runningTransition: "continue",
+        }),
       { injector: this._injector },
     );
 

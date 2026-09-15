@@ -4,9 +4,14 @@ import {
   ngbOffcanvasPanelHideTransition,
   ngbOffcanvasPanelShowTransition,
 } from "@ngb/offcanvas/ngb-offcanvas-panel-transition";
-import { getFocusableBoundaryElements, isDefined, type NgbTransitionOptions, ngbRunTransition } from "@ngb/utils";
 import {
-  afterNextRender,
+  afterAttachedRender,
+  getFocusableBoundaryElements,
+  isDefined,
+  type NgbTransitionOptions,
+  ngbRunTransition,
+} from "@ngb/utils";
+import {
   ChangeDetectorRef,
   Component,
   DOCUMENT,
@@ -80,7 +85,7 @@ export class NgbOffcanvasPanel implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this._elWithFocus = this._document.activeElement;
-    afterNextRender({ mixedReadWrite: () => this._show() }, { injector: this._injector });
+    afterAttachedRender(this._nativeElement, () => this._show(), { injector: this._injector });
   }
 
   ngOnDestroy(): void {

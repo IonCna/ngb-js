@@ -1,5 +1,6 @@
 export { type Placement, type PlacementArray, ngbPositioning } from "@ngb/utils/positioning";
 export {
+  afterAttachedRender,
   getActiveElement,
   getValueInRange,
   isDefined,

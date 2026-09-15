@@ -59,10 +59,10 @@ export class NgbOffcanvasStack {
     const activeOffcanvas = new NgbActiveOffcanvas();
 
     return Promise.all([
-      options.backdrop !== false ? this._attachBackdrop(container) : Promise.resolve(undefined),
+      options.backdrop !== false ? this._attachBackdrop(container, options) : Promise.resolve(undefined),
       this._getContentRef(content, activeOffcanvas, options),
     ]).then(([backdropRef, contentRef]) =>
-      this._attachPanelComponent(container, contentRef).then((panelRef) => {
+      this._attachPanelComponent(container, contentRef, options).then((panelRef) => {
         const ngbOffcanvasRef = new NgbOffcanvasRef<T>(panelRef, contentRef, backdropRef, options.beforeDismiss);
 
         activeOffcanvas.close = (result: unknown) => ngbOffcanvasRef.close(result);
@@ -97,8 +97,24 @@ export class NgbOffcanvasStack {
     return !!this._offcanvasRef;
   }
 
-  private _attachBackdrop(container: Element): Promise<ComponentRef<NgbOffcanvasBackdrop>> {
-    return this._createRootComponent<NgbOffcanvasBackdrop>(NgbOffcanvasBackdrop.$name).then((ref) => {
+  private _attachBackdrop(
+    container: Element,
+    options: NgbOffcanvasOptions,
+  ): Promise<ComponentRef<NgbOffcanvasBackdrop>> {
+    // `animation` va como binding de CREACIÓN, no solo por `updateOptions()`
+    // (que corre después, ver `open()`): `createComponent` acá es async (ver
+    // CORE_GAPS), así que si `this.animation` arranca `undefined` y recién se
+    // resuelve más tarde, el `mixedReadWrite` de `ngOnInit` (que dispara la
+    // transición de entrada, vía `afterNextRender` — global, `ApplicationRef.
+    // tick()`) puede correr ANTES de ese `updateOptions()`, con `animation`
+    // todavía `undefined`. `ngbRunTransition` interpreta eso como "sin
+    // animación" y saca la clase `.showing` en el mismo tick en vez de dejarla
+    // el tiempo de la transición — incluso con `animation` en su default
+    // `true`, la entrada del panel queda sin verse (mismo bug real que tenía
+    // el backdrop del modal, ver `ngb-modal-stack.service.ts`).
+    return this._createRootComponent<NgbOffcanvasBackdrop>(NgbOffcanvasBackdrop.$name, {
+      bindings: { animation: options.animation, backdropClass: options.backdropClass },
+    }).then((ref) => {
       container.appendChild(ref.location.nativeElement);
       return ref;
     });
@@ -107,9 +123,11 @@ export class NgbOffcanvasStack {
   private _attachPanelComponent(
     container: Element,
     contentRef: ContentRef,
+    options: NgbOffcanvasOptions,
   ): Promise<ComponentRef<NgbOffcanvasPanel>> {
     return this._createRootComponent<NgbOffcanvasPanel>(NgbOffcanvasPanel.$name, {
       projectableNodes: contentRef.nodes,
+      bindings: { animation: options.animation, panelClass: options.panelClass, position: options.position },
     }).then((ref) => {
       container.appendChild(ref.location.nativeElement);
       return ref;

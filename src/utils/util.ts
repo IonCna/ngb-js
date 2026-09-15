@@ -1,5 +1,5 @@
 import type { IAugmentedJQuery } from "angular";
-import type { NgZone } from "ngjs-core";
+import { afterEveryRender, type AfterRenderOptions, type NgZone } from "ngjs-core";
 import { Observable, type OperatorFunction } from "rxjs";
 
 /**
@@ -58,6 +58,36 @@ export function regExpEscape(text: string) {
 
 export function reflow(element: HTMLElement) {
   return (element || document.body).getBoundingClientRect();
+}
+
+/**
+ * Como `afterNextRender`, pero espera a que `element` esté REALMENTE en el
+ * documento (`isConnected`) antes de correr `callback` — pensado para la
+ * transición de entrada de un componente creado con `createComponent`
+ * (`NgbModalStack`/`NgbOffcanvasStack`, ver CORE_GAPS: acá es async).
+ *
+ * `ngOnInit` (y por lo tanto el `afterNextRender` que agendan `NgbModalWindow`
+ * /`NgbModalBackdrop`/`NgbOffcanvasPanel`/`NgbOffcanvasBackdrop` para poner
+ * `.show`) corre SIEMPRE sobre un elemento todavía DESCONECTADO — recién se
+ * cuelga del DOM real más tarde, en el `.then()` del stack service que crea
+ * el componente. Si el próximo `ApplicationRef.tick()` (global, dispara
+ * `afterNextRender`) cae ANTES de ese `appendChild`, `reflow()` + la clase
+ * `.show`/`.showing` se aplican sobre un nodo que el browser nunca pintó — no
+ * hay un "antes" real que animar, así que la entrada (slide del offcanvas,
+ * fade del backdrop) queda pegada al estado final sin transición visible.
+ * Reintentando en cada render hasta que `isConnected` sea `true` garantiza
+ * que el `reflow()` de la transición lea el layout YA insertado.
+ */
+export function afterAttachedRender(
+  element: HTMLElement,
+  callback: () => void,
+  options?: AfterRenderOptions,
+): void {
+  const ref = afterEveryRender(() => {
+    if (!element.isConnected) return;
+    ref.destroy();
+    callback();
+  }, options);
 }
 
 export function getActiveElement(element: Document | ShadowRoot): Element | null {

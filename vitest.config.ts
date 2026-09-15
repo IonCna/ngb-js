@@ -23,5 +23,13 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./test/setup.ts"],
+    // Default (5000ms) es angosto para los specs de modal/offcanvas: `flush()`
+    // hace 60 iteraciones reales de `setTimeout(0)`, y desde que las
+    // transiciones de entrada esperan a que el elemento esté `isConnected`
+    // antes de animar (`afterAttachedRender`, ver `@ngb/utils`) necesitan
+    // un tick real más — corriendo la suite completa en paralelo (más
+    // contención de CPU) alguno de esos specs pasa el default sin que haya
+    // nada roto (corridos solos tardan ~1-3s).
+    testTimeout: 10000,
   },
 });

@@ -61,10 +61,10 @@ export class NgbModalStack {
     const activeModal = new NgbActiveModal();
 
     return Promise.all([
-      options.backdrop !== false ? this._attachBackdrop(containerEl) : Promise.resolve(undefined),
+      options.backdrop !== false ? this._attachBackdrop(containerEl, options) : Promise.resolve(undefined),
       this._getContentRef(content, activeModal, options),
     ]).then(([backdropCmptRef, contentRef]) =>
-      this._attachWindowComponent(containerEl, contentRef).then((windowCmptRef) => {
+      this._attachWindowComponent(containerEl, contentRef, options).then((windowCmptRef) => {
         const ngbModalRef = new NgbModalRef<T>(windowCmptRef, contentRef, backdropCmptRef, options.beforeDismiss);
 
         this._registerModalRef(ngbModalRef);
@@ -108,8 +108,17 @@ export class NgbModalStack {
     return this._modalRefs.length > 0;
   }
 
-  private _attachBackdrop(containerEl: Element): Promise<ComponentRef<NgbModalBackdrop>> {
-    return this._createRootComponent<NgbModalBackdrop>(NgbModalBackdrop.$name).then((ref) => {
+  private _attachBackdrop(containerEl: Element, options: NgbModalOptions): Promise<ComponentRef<NgbModalBackdrop>> {
+    // `animation`/`backdropClass` van como bindings de CREACIÓN (no solo por
+    // `ngbModalRef.update()`, que corre después): si `this.animation` arranca
+    // `undefined` y recién se resuelve en un digest posterior, el `$watch` de
+    // `@HostBinding('class.show')` (`!animation`) dispara dos veces — una con
+    // el valor transitorio, otra con el real — y la segunda pisa el `.show`
+    // que ya había puesto la transición de `ngOnInit` (`afterNextRender`),
+    // dejando el backdrop invisible aunque esté en el DOM.
+    return this._createRootComponent<NgbModalBackdrop>(NgbModalBackdrop.$name, {
+      bindings: { animation: options.animation, backdropClass: options.backdropClass },
+    }).then((ref) => {
       containerEl.appendChild(ref.location.nativeElement);
       return ref;
     });
@@ -118,9 +127,11 @@ export class NgbModalStack {
   private _attachWindowComponent(
     containerEl: Element,
     contentRef: ContentRef,
+    options: NgbModalOptions,
   ): Promise<ComponentRef<NgbModalWindow>> {
     return this._createRootComponent<NgbModalWindow>(NgbModalWindow.$name, {
       projectableNodes: contentRef.nodes,
+      bindings: { animation: options.animation },
     }).then((ref) => {
       containerEl.appendChild(ref.location.nativeElement);
       return ref;
@@ -150,10 +161,27 @@ export class NgbModalStack {
     return this._createRootComponent(content as string, {
       bindings: { ...(options.bindings as Record<string, unknown> | undefined), ngbActiveModal: activeModal },
     }).then((componentRef) => {
-      if (options.scrollable) {
+      // El host del componente de contenido (`<docs-modal-demo-content>`, etc.)
+      // queda como hijo DIRECTO de `.modal-content` — ADENTRO de él, el autor
+      // suele poner `.modal-header`/`.modal-body`/`.modal-footer` como hijos
+      // top-level de SU template. `.modal-content` es `display:flex;
+      // flex-direction:column`, así que ese layout (y el `.modal-body{flex:1 1
+      // auto}`/`overflow-y:auto` que Bootstrap define para `scrollable` y
+      // `fullscreen`) solo funciona si el host TAMBIÉN es un flex container en
+      // columna — si no, `.modal-body` queda con su altura natural (chica) y
+      // el resto del `.modal-content` (acotado en altura en estos dos casos)
+      // queda vacío por abajo. Sin `scrollable`/`fullscreen` el alto de
+      // `.modal-content` es libre (la página scrollea), así que agregar
+      // `overflow-hidden` ahí SÍ recortaría contenido legítimo — por eso
+      // el gate es a estos dos casos, no incondicional. `flex-grow-1`:
+      // sin esto el wrapper (como cualquier ítem de un flex container en
+      // columna) no crece más allá de su tamaño natural — con contenido
+      // corto sobra espacio vacío DEBAJO del wrapper en vez de dárselo a
+      // `.modal-body`.
+      if (options.scrollable || options.fullscreen) {
         angular
           .element(componentRef.location.nativeElement)
-          .addClass("component-host-scrollable d-flex flex-column overflow-hidden");
+          .addClass("component-host-scrollable d-flex flex-column flex-grow-1 overflow-hidden");
       }
       return new ContentRef([[componentRef.location.nativeElement]], undefined, componentRef);
     });
