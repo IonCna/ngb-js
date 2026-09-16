@@ -26,8 +26,8 @@ export class NgbProgressbar {
   @Input() ariaLabel = this._config.ariaLabel;
   @Input() striped = this._config.striped;
   @Input() showValue = this._config.showValue;
-  @Input() textType = this._config.textType;
-  @Input() type = this._config.type;
+  @Input({ binding: "@" }) textType = this._config.textType;
+  @Input({ binding: "@" }) type = this._config.type;
   @Input({ required: true }) value = 0;
   @Input() height = this._config.height;
 
