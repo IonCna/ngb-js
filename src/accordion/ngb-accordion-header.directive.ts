@@ -1,5 +1,5 @@
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
-import { Directive, HostBinding, inject } from "ngjs-core";
+import { Directive, HostBinding, Inject } from "ngjs-core";
 
 /**
  * Directiva que envuelve el header de un item del acordeón.
@@ -10,7 +10,11 @@ import { Directive, HostBinding, inject } from "ngjs-core";
   selector: "[ngbAccordionHeader]",
 })
 export class NgbAccordionHeader {
-  item = inject(NgbAccordionItem);
+  item: NgbAccordionItem;
+
+  constructor(@Inject(NgbAccordionItem) item: NgbAccordionItem) {
+    this.item = item;
+  }
 
   @HostBinding("attr.role")
   readonly _role = "heading";

@@ -10,4 +10,3 @@ export {
   NgbScrollSpyService,
   type NgbScrollToOptions,
 } from "@ngb/scrollspy/scrollspy.service";
-export { NGB_SCROLLSPY_CONFIG } from "@ngb/scrollspy/tokens";

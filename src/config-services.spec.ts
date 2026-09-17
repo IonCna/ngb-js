@@ -94,9 +94,7 @@ describe("configuration service defaults", () => {
   });
 
   it("provides modal and offcanvas defaults", () => {
-    // `@Service` → se pide por el `Injector` de ngjs-core (como el resto de los
-    // configs). El acceso por string vía `$injector` es cosa del modo compat
-    // (`ngb-js/modal/compat` lo expone con `exposeServices`).
+    // `@Service` → se pide por el `Injector` de ngjs-core (como el resto de los configs).
     expect(injector.get(NgbModalConfig)).toMatchObject({
       animation: true,
       backdrop: true,

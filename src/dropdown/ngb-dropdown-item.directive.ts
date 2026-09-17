@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, inject, Input, NgDisabled } from "ngjs-core";
+import { Directive, ElementRef, HostBinding, Inject, Input, NgDisabled, Optional } from "ngjs-core";
 
 /**
  * Poné esta directiva en un ítem del dropdown para habilitar navegación por
@@ -16,11 +16,19 @@ import { Directive, ElementRef, HostBinding, inject, Input, NgDisabled } from "n
  */
 @Directive({ selector: "[ngbDropdownItem]" })
 export class NgbDropdownItem {
-  nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  nativeElement: HTMLElement;
 
-  private _ngDisabled = inject(NgDisabled, { optional: true });
+  private _ngDisabled: NgDisabled | null;
 
   @Input() tabindex: string | number = 0;
+
+  constructor(
+    @Inject(ElementRef) elementRef: ElementRef<HTMLElement>,
+    @Optional() @Inject(NgDisabled) ngDisabled: NgDisabled | null,
+  ) {
+    this.nativeElement = elementRef.nativeElement;
+    this._ngDisabled = ngDisabled;
+  }
 
   @HostBinding("class.dropdown-item")
   readonly _dropdownItemClass = true;

@@ -24,6 +24,10 @@ import {
   exportAs: "ngbAccordion",
 })
 export class NgbAccordionDirective {
+  // NgbAccordionConfig es @Service: el $injector nativo de AngularJS (que
+  // resuelve los parámetros de constructor de un @Directive/@Component) no
+  // conoce el RootSingletonRegistry donde vive — solo inject() (que sí cae a
+  // ese registry) puede resolverlo acá. Excepción documentada, ver AGENTS.md.
   private _config = inject(NgbAccordionConfig);
   private _anItemWasAlreadyExpandedDuringInitialisation = false;
 

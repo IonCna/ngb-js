@@ -1,5 +1,5 @@
 import { NgbConfig } from "@ngb/config/ngb-config";
-import { inject, Service } from "ngjs-core";
+import { Inject, Service } from "ngjs-core";
 
 /**
  * Servicio de configuración de
@@ -9,11 +9,15 @@ import { inject, Service } from "ngjs-core";
  */
 @Service({ id: "ngb.accordion.config.service" })
 export class NgbAccordionConfig {
-  private _ngbConfig = inject(NgbConfig);
+  private _ngbConfig: NgbConfig;
   private _animation?: boolean;
 
   closeOthers = false;
   destroyOnHide = true;
+
+  constructor(@Inject(NgbConfig) ngbConfig: NgbConfig) {
+    this._ngbConfig = ngbConfig;
+  }
 
   get animation(): boolean {
     return this._animation ?? this._ngbConfig.animation;

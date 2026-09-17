@@ -21,9 +21,10 @@ import {
   EventEmitter,
   HostBinding,
   HostListener,
+  Inject,
+  inject,
   Injector,
   Input,
-  inject,
   NgZone,
   Output,
   PLATFORM_ID,
@@ -59,13 +60,16 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
 
   public NgbSlideEventSource = NgbSlideEventSource;
 
+  // NgbCarouselConfig es @Service y PLATFORM_ID es un InjectionToken con
+  // `factory` propio: ninguno de los dos lo resuelve el $injector nativo de
+  // AngularJS por constructor, solo inject() (cae al RootSingletonRegistry).
   private _config = inject(NgbCarouselConfig);
   private _platformId = inject(PLATFORM_ID);
-  private _ngZone = inject(NgZone);
-  private _cd = inject(ChangeDetectorRef);
-  private _container = inject(ElementRef);
-  private _destroyRef = inject(DestroyRef);
-  private _injector = inject(Injector);
+  private _ngZone: NgZone;
+  private _cd: ChangeDetectorRef;
+  private _container: ElementRef<HTMLElement>;
+  private _destroyRef: DestroyRef;
+  private _injector: Injector;
 
   private _interval$ = new BehaviorSubject(this._config.interval);
   private _mouseHover$ = new BehaviorSubject(false);
@@ -167,6 +171,20 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
    * @since 2.2.0
    */
   @Input() showNavigationIndicators = this._config.showNavigationIndicators;
+
+  constructor(
+    @Inject(NgZone) ngZone: NgZone,
+    @Inject(ChangeDetectorRef) cd: ChangeDetectorRef,
+    @Inject(ElementRef) container: ElementRef<HTMLElement>,
+    @Inject(DestroyRef) destroyRef: DestroyRef,
+    @Inject(Injector) injector: Injector,
+  ) {
+    this._ngZone = ngZone;
+    this._cd = cd;
+    this._container = container;
+    this._destroyRef = destroyRef;
+    this._injector = injector;
+  }
 
   /**
    * Evento emitido justo antes de que empiece la transición del slide.
@@ -501,7 +519,7 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
   }
 
   private _getSlideElement(slideId: string): HTMLElement {
-    return this._container.nativeElement.querySelector(`#slide-${slideId}`);
+    return this._container.nativeElement.querySelector(`#slide-${slideId}`) as HTMLElement;
   }
 }
 

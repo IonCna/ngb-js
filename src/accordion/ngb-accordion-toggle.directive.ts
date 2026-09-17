@@ -1,6 +1,6 @@
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import { NgbAccordionDirective } from "@ngb/accordion/ngb-accordion.directive";
-import { Directive, HostBinding, HostListener, inject } from "ngjs-core";
+import { Directive, HostBinding, HostListener, Inject } from "ngjs-core";
 
 /**
  * Directiva para poner en un elemento toggle dentro del header del item del
@@ -15,8 +15,13 @@ import { Directive, HostBinding, HostListener, inject } from "ngjs-core";
   selector: "[ngbAccordionToggle]",
 })
 export class NgbAccordionToggle {
-  item = inject(NgbAccordionItem);
-  accordion = inject(NgbAccordionDirective);
+  item: NgbAccordionItem;
+  accordion: NgbAccordionDirective;
+
+  constructor(@Inject(NgbAccordionItem) item: NgbAccordionItem, @Inject(NgbAccordionDirective) accordion: NgbAccordionDirective) {
+    this.item = item;
+    this.accordion = accordion;
+  }
 
   @HostBinding("id")
   get _id(): string {

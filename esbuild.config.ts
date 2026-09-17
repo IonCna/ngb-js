@@ -13,8 +13,7 @@ const typesDir = join(outDir, "types");
 
 /**
  * Features con subpath propio: cada una emite `<feature>/index` (barrel de
- * clases sueltas → `ngb-js/<feature>`) y `<feature>/compat` (variante
- * `angular.IModule` → `ngb-js/<feature>/compat`).
+ * clases sueltas → `ngb-js/<feature>`).
  */
 const features = [
   "accordion",
@@ -39,16 +38,13 @@ const features = [
 
 /**
  * Una entrada por superficie pública. Clave = ruta de salida bajo `dist/`
- * (`dist/<clave>.js` + `.cjs`). Root global (`index`) + `compat` general, y por
- * feature `<feature>/index` + `<feature>/compat`.
+ * (`dist/<clave>.js` + `.cjs`). Root global (`index`) + por feature `<feature>/index`.
  */
 const entryPoints: Record<string, string> = {
   index: "./src/index.ts",
-  compat: "./src/compat.ts",
 };
 for (const feature of features) {
   entryPoints[`${feature}/index`] = `./src/${feature}/index.ts`;
-  entryPoints[`${feature}/compat`] = `./src/${feature}/compat.ts`;
 }
 
 const external = ["angular", "rxjs", "rxjs/*", "@popperjs/core", "ngjs-core", "ngjs-core/*"];

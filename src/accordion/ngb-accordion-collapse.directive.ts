@@ -1,6 +1,6 @@
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import { NgbCollapse } from "@ngb/collapse/ngb-collapse.directive";
-import { Directive, HostBinding, inject } from "ngjs-core";
+import { Directive, forwardRef, HostBinding, Inject } from "ngjs-core";
 
 /**
  * Envuelve el contenido colapsable del item del acordeón.
@@ -15,8 +15,18 @@ import { Directive, HostBinding, inject } from "ngjs-core";
   hostDirectives: [NgbCollapse],
 })
 export class NgbAccordionCollapse {
-  item = inject(NgbAccordionItem);
-  ngbCollapse = inject(NgbCollapse);
+  item: NgbAccordionItem;
+  ngbCollapse: NgbCollapse;
+
+  // `forwardRef` en el primer parámetro: import circular con
+  // `ngb-accordion-item.directive.ts` (mismo motivo que su `@ContentChild`).
+  constructor(
+    @Inject(forwardRef(() => NgbAccordionItem)) item: NgbAccordionItem,
+    @Inject(NgbCollapse) ngbCollapse: NgbCollapse,
+  ) {
+    this.item = item;
+    this.ngbCollapse = ngbCollapse;
+  }
 
   @HostBinding("attr.role")
   readonly _role = "region";
