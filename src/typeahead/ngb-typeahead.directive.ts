@@ -1,9 +1,8 @@
 import { NgbTypeaheadConfig } from "@ngb/typeahead/ngb-typeahead-config.service";
 import { NgbTypeaheadWindow, type ResultTemplateContext } from "@ngb/typeahead/ngb-typeahead-window";
 import { addPopperOffset, isDefined, Live, ngbAutoClose, ngbPositioning, PopupService, toString } from "@ngb/utils";
+import { Key } from "@ngb/utils/key";
 import {
-  type AfterRenderRef,
-  afterEveryRender,
   ChangeDetectorRef,
   type ComponentRef,
   Directive,
@@ -13,7 +12,6 @@ import {
   forwardRef,
   HostBinding,
   HostListener,
-  Injector,
   Input,
   inject,
   NgZone,
@@ -56,7 +54,6 @@ export class NgbTypeahead implements ControlValueAccessor, OnInit, OnChanges, On
   private _document = inject(DOCUMENT);
   private _ngZone = inject(NgZone);
   private _changeDetector = inject(ChangeDetectorRef);
-  private _injector = inject(Injector);
 
   private _popupService = new PopupService(NgbTypeaheadWindow);
   private _positioning = ngbPositioning();
@@ -70,7 +67,7 @@ export class NgbTypeahead implements ControlValueAccessor, OnInit, OnChanges, On
   );
   private _resubscribeTypeahead$ = new BehaviorSubject(null);
   private _windowRef: ComponentRef<NgbTypeaheadWindow> | null = null;
-  private _afterRenderRef!: AfterRenderRef;
+  private _zoneSubscription?: Subscription;
 
   // String literal (`autocomplete="off"` / `"postal-code"`): binding `@`.
   @Input({ binding: "@" }) @HostBinding("autocomplete") autocomplete = "off";
@@ -181,19 +178,19 @@ export class NgbTypeahead implements ControlValueAccessor, OnInit, OnChanges, On
       return;
     }
 
-    switch (event.key) {
-      case "ArrowDown":
+    switch (event.which) {
+      case Key.ArrowDown:
         event.preventDefault();
         this._windowRef!.instance.next();
         this._showHint();
         break;
-      case "ArrowUp":
+      case Key.ArrowUp:
         event.preventDefault();
         this._windowRef!.instance.prev();
         this._showHint();
         break;
-      case "Enter":
-      case "Tab": {
+      case Key.Enter:
+      case Key.Tab: {
         const result = this._windowRef!.instance.getActive();
         if (isDefined(result)) {
           event.preventDefault();
@@ -229,17 +226,14 @@ export class NgbTypeahead implements ControlValueAccessor, OnInit, OnChanges, On
             hostElement: this._nativeElement,
             targetElement: this._windowRef.location.nativeElement,
             placement: this.placement,
+            appendToBody: this.container === "body",
             updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 2])(options)),
           });
 
-          this._afterRenderRef = afterEveryRender(
-            {
-              mixedReadWrite: () => {
-                this._positioning.update();
-              },
-            },
-            { injector: this._injector },
-          );
+          Promise.resolve().then(() => {
+            this._positioning.update();
+            this._zoneSubscription = this._ngZone.onStable.subscribe(() => this._positioning.update());
+          });
         }
       });
 
@@ -253,7 +247,7 @@ export class NgbTypeahead implements ControlValueAccessor, OnInit, OnChanges, On
   private _closePopup() {
     this._popupService.close().subscribe(() => {
       this._positioning.destroy();
-      this._afterRenderRef?.destroy();
+      this._zoneSubscription?.unsubscribe();
       this._closed$.next();
       this._windowRef = null;
       this.activeDescendant = null;

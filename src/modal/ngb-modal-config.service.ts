@@ -1,5 +1,5 @@
 import { NgbConfig } from "@ngb/config/ngb-config";
-import { type Injector, inject, Service } from "ngjs-core";
+import { type Injector, Injectable, inject } from "ngjs-core";
 
 /**
  * Opciones al abrir un modal con `NgbModal.open()`.
@@ -15,7 +15,6 @@ export interface NgbModalOptions {
   fullscreen?: "sm" | "md" | "lg" | "xl" | "xxl" | boolean | string;
   injector?: Injector;
   keyboard?: boolean;
-  role?: "alertdialog" | "dialog";
   scrollable?: boolean;
   size?: "sm" | "lg" | "xl" | string;
   windowClass?: string;
@@ -47,7 +46,7 @@ export type NgbModalUpdatableOptions = Pick<
  *
  * @since 3.1.0
  */
-@Service({ id: "ngb.modal.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbModalConfig implements Required<Omit<NgbModalOptions, "bindings">> {
   private _ngbConfig = inject(NgbConfig);
   private _animation!: boolean;
@@ -61,7 +60,6 @@ export class NgbModalConfig implements Required<Omit<NgbModalOptions, "bindings"
   fullscreen: "sm" | "md" | "lg" | "xl" | "xxl" | boolean | string = false;
   injector!: Injector;
   keyboard = true;
-  role: "alertdialog" | "dialog" = "dialog";
   scrollable!: boolean;
   size!: "sm" | "lg" | "xl" | string;
   windowClass!: string;

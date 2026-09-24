@@ -14,7 +14,6 @@ import { type DatepickerViewModel, NavigationEvent } from "@ngb/datepicker/ngb-d
 import {
   type AfterContentInit,
   type AfterViewInit,
-  afterNextRender,
   ChangeDetectorRef,
   Component,
   ContentChild,
@@ -23,7 +22,6 @@ import {
   EventEmitter,
   forwardRef,
   HostBinding,
-  Injector,
   Input,
   inject,
   NgZone,
@@ -36,7 +34,7 @@ import {
 } from "ngjs-core";
 import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
 import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
-import { fromEvent, merge } from "rxjs";
+import { fromEvent, merge, take } from "rxjs";
 import { filter } from "rxjs/operators";
 
 // upstream inlinea este array en `ngOnInit`/`ngOnChanges`; acá va arriba para
@@ -63,7 +61,6 @@ const SERVICE_INPUT_NAMES: (keyof DatepickerServiceInputs)[] = [
   selector: "ngb-datepicker",
   controllerAs: "$",
   template,
-  transclude: true,
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbDatepicker), multi: true },
     NgbDatepickerService,
@@ -80,8 +77,6 @@ export class NgbDatepicker implements AfterContentInit, AfterViewInit, OnChanges
   @ViewChild("defaultDayTemplate", { static: true }) private _defaultDayTemplate!: TemplateRef<DayTemplateContext>;
   @ViewChild("content", { read: ElementRef, static: true }) private _contentEl!: ElementRef<HTMLElement>;
 
-  protected injector = inject(Injector);
-
   private _service = inject(NgbDatepickerService);
   private _calendar = inject(NgbCalendar);
   private _i18n = inject(NgbDatepickerI18n);
@@ -90,7 +85,6 @@ export class NgbDatepicker implements AfterContentInit, AfterViewInit, OnChanges
   private _ngbDateAdapter = inject<NgbDateAdapter<any>>(NgbDateAdapter);
   private _ngZone = inject(NgZone);
   private _destroyRef = inject(DestroyRef);
-  private _injector = inject(Injector);
 
   private _controlValue: NgbDate | null = null;
   private _publicState: NgbDatepickerState = <any>{};
@@ -299,14 +293,9 @@ export class NgbDatepicker implements AfterContentInit, AfterViewInit, OnChanges
   }
 
   focus() {
-    afterNextRender(
-      {
-        read: () => {
-          this._nativeElement.querySelector<HTMLElement>('div.ngb-dp-day[tabindex="0"]')?.focus();
-        },
-      },
-      { injector: this._injector },
-    );
+    this._ngZone.onStable.pipe(take(1)).subscribe(() => {
+      this._nativeElement.querySelector<HTMLElement>('div.ngb-dp-day[tabindex="0"]')?.focus();
+    });
   }
 
   /**

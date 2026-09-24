@@ -1,22 +1,21 @@
 import type { NgbOffcanvasUpdatableOptions } from "@ngb/offcanvas/ngb-offcanvas-config.service";
 import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 import { ngbOffcanvasFadeInTransition, ngbOffcanvasFadeOutTransition } from "@ngb/offcanvas/ngb-offcanvas-transition";
-import { afterAttachedRender, isDefined, ngbRunTransition } from "@ngb/utils";
+import { isDefined, ngbRunTransition } from "@ngb/utils";
 import {
   ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
   HostBinding,
-  inject,
-  Injector,
   Input,
+  inject,
   NgZone,
   type OnDestroy,
   type OnInit,
   Output,
 } from "ngjs-core";
-import { defaultIfEmpty, fromEvent, type Observable, Subject, takeUntil } from "rxjs";
+import { defaultIfEmpty, fromEvent, type Observable, Subject, take, takeUntil } from "rxjs";
 
 const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 
@@ -27,7 +26,6 @@ const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 export class NgbOffcanvasBackdrop implements OnInit, OnDestroy {
   private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private _zone = inject(NgZone);
-  private _injector = inject(Injector);
   private _cdRef = inject(ChangeDetectorRef);
 
   @Input() animation?: boolean;
@@ -52,14 +50,11 @@ export class NgbOffcanvasBackdrop implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const animation = this.animation ?? true;
-    afterAttachedRender(
-      this._nativeElement,
-      () =>
-        ngbRunTransition(this._zone, this._nativeElement, ngbOffcanvasFadeInTransition, {
-          animation,
-          runningTransition: "continue",
-        }),
-      { injector: this._injector },
+    this._zone.onStable.pipe(take(1)).subscribe(() =>
+      ngbRunTransition(this._zone, this._nativeElement, ngbOffcanvasFadeInTransition, {
+        animation,
+        runningTransition: "continue",
+      }),
     );
 
     this._zone.runOutsideAngular(() => {

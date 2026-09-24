@@ -1,6 +1,6 @@
-import { DOCUMENT, inject, Service } from "ngjs-core";
+import { DOCUMENT, Injectable, inject } from "ngjs-core";
 
-@Service()
+@Injectable({ providedIn: "root" })
 export class NgbRTL {
   private _element = inject(DOCUMENT).documentElement;
 

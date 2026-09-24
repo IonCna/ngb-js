@@ -1,17 +1,8 @@
 import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
-import { afterAttachedRender, isDefined, ngbRunTransition, reflow } from "@ngb/utils";
-import {
-  ChangeDetectorRef,
-  Component,
-  ElementRef,
-  HostBinding,
-  inject,
-  Injector,
-  Input,
-  NgZone,
-  type OnInit,
-} from "ngjs-core";
+import { isDefined, ngbRunTransition, reflow } from "@ngb/utils";
+import { ChangeDetectorRef, Component, ElementRef, HostBinding, inject, Input, NgZone, type OnInit } from "ngjs-core";
 import type { Observable } from "rxjs";
+import { take } from "rxjs/operators";
 
 const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 
@@ -22,7 +13,6 @@ const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 export class NgbModalBackdrop implements OnInit {
   private _nativeElement = inject(ElementRef).nativeElement as HTMLElement;
   private _zone = inject(NgZone);
-  private _injector = inject(Injector);
   private _cdRef = inject(ChangeDetectorRef);
 
   @Input() animation!: boolean;
@@ -59,22 +49,19 @@ export class NgbModalBackdrop implements OnInit {
     // `reflow()`+`.show` de abajo corren sobre un nodo que el browser nunca
     // pintó: no hay "antes" que animar y el fade queda pegado al estado final
     // (mismo bug, pero de la ANIMACIÓN en sí, no de la clase).
-    afterAttachedRender(
-      this._nativeElement,
-      () =>
-        ngbRunTransition(
-          this._zone,
-          this._nativeElement,
-          (element: HTMLElement, animation: boolean) => {
-            if (animation) {
-              reflow(element);
-            }
-            element.classList.add("show");
-          },
-          { animation: this.animation, runningTransition: "continue" },
-        ),
-      { injector: this._injector },
-    );
+    this._zone.onStable.pipe(take(1)).subscribe(() => {
+      ngbRunTransition(
+        this._zone,
+        this._nativeElement,
+        (element: HTMLElement, animation: boolean) => {
+          if (animation) {
+            reflow(element);
+          }
+          element.classList.add("show");
+        },
+        { animation: this.animation, runningTransition: "continue" },
+      );
+    });
   }
 
   hide(): Observable<void> {

@@ -18,7 +18,7 @@ export function NGB_DATEPICKER_DATE_ADAPTER_FACTORY() {
  * See the [date format overview](#/components/datepicker/overview#date-model) for more details
  * and the [custom adapter demo](#/components/datepicker/examples#adapter) for an example.
  */
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: "root", useFactory: NGB_DATEPICKER_DATE_ADAPTER_FACTORY })
 export abstract class NgbDateAdapter<D> {
   /**
    * Converts a user-model date of type `D` to an `NgbDateStruct` for internal use.

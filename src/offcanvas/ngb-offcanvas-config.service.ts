@@ -1,6 +1,5 @@
 import { NgbConfig } from "@ngb/config/ngb-config";
-import type { IAugmentedJQuery } from "angular";
-import { inject, Service } from "ngjs-core";
+import { Injectable, type Injector, inject } from "ngjs-core";
 
 export interface NgbOffcanvasOptions {
   animation?: boolean;
@@ -11,7 +10,8 @@ export interface NgbOffcanvasOptions {
   beforeDismiss?: () => boolean | Promise<boolean>;
   /** ngb-js: bindings que se pasan al componente de contenido (upstream usa `Injector.create`). */
   bindings?: Record<string, unknown>;
-  container?: string | IAugmentedJQuery;
+  container?: string | HTMLElement;
+  injector?: Injector;
   keyboard?: boolean;
   panelClass?: string;
   position?: "start" | "end" | "top" | "bottom";
@@ -26,17 +26,18 @@ export type NgbOffcanvasUpdatableOptions = Pick<
 /**
  * Servicio de configuración de [`NgbOffcanvas`](#/components/offcanvas/api#NgbOffcanvas).
  */
-@Service({ id: "ngb.offcanvas.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbOffcanvasConfig implements NgbOffcanvasOptions {
   private _ngbConfig = inject(NgbConfig);
-  private _animation?: boolean;
+  private _animation: boolean;
 
   ariaDescribedBy?: string;
   ariaLabelledBy?: string;
   backdrop: boolean | "static" = true;
   backdropClass?: string;
   beforeDismiss?: () => boolean | Promise<boolean>;
-  container?: string | IAugmentedJQuery;
+  container?: string | HTMLElement;
+  injector?: Injector;
   keyboard = true;
   panelClass?: string;
   position: "start" | "end" | "top" | "bottom" = "start";

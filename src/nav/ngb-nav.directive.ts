@@ -1,6 +1,7 @@
 import { type NgbNavChangeEvent, NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
 import { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
 import { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
+import { Key } from "@ngb/utils/key";
 import {
   type AfterContentInit,
   Attribute,
@@ -123,19 +124,19 @@ export class NgbNav implements AfterContentInit, OnChanges {
       return;
     }
 
-    switch (event.key) {
-      case "ArrowUp":
-      case "ArrowLeft":
+    switch (event.which) {
+      case Key.ArrowUp:
+      case Key.ArrowLeft:
         position = (position - 1 + length) % length;
         break;
-      case "ArrowRight":
-      case "ArrowDown":
+      case Key.ArrowRight:
+      case Key.ArrowDown:
         position = (position + 1) % length;
         break;
-      case "Home":
+      case Key.Home:
         position = 0;
         break;
-      case "End":
+      case Key.End:
         position = length - 1;
         break;
       default:

@@ -4,13 +4,8 @@ import {
   ngbOffcanvasPanelHideTransition,
   ngbOffcanvasPanelShowTransition,
 } from "@ngb/offcanvas/ngb-offcanvas-panel-transition";
-import {
-  afterAttachedRender,
-  getFocusableBoundaryElements,
-  isDefined,
-  type NgbTransitionOptions,
-  ngbRunTransition,
-} from "@ngb/utils";
+import { getFocusableBoundaryElements, isDefined, type NgbTransitionOptions, ngbRunTransition } from "@ngb/utils";
+import { Key } from "@ngb/utils/key";
 import {
   ChangeDetectorRef,
   Component,
@@ -18,15 +13,14 @@ import {
   ElementRef,
   EventEmitter,
   HostBinding,
-  inject,
-  Injector,
   Input,
+  inject,
   NgZone,
   type OnDestroy,
   type OnInit,
   Output,
 } from "ngjs-core";
-import { defaultIfEmpty, filter, fromEvent, type Observable, Subject, takeUntil } from "rxjs";
+import { defaultIfEmpty, filter, fromEvent, type Observable, Subject, take, takeUntil } from "rxjs";
 
 const PANEL_ATTRIBUTES = [
   "animation",
@@ -45,7 +39,6 @@ const PANEL_ATTRIBUTES = [
 export class NgbOffcanvasPanel implements OnInit, OnDestroy {
   private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private _zone = inject(NgZone);
-  private _injector = inject(Injector);
   private _cdRef = inject(ChangeDetectorRef);
   private _document = inject(DOCUMENT);
 
@@ -85,7 +78,7 @@ export class NgbOffcanvasPanel implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this._elWithFocus = this._document.activeElement;
-    afterAttachedRender(this._nativeElement, () => this._show(), { injector: this._injector });
+    this._zone.onStable.pipe(take(1)).subscribe(() => this._show());
   }
 
   ngOnDestroy(): void {
@@ -153,7 +146,7 @@ export class NgbOffcanvasPanel implements OnInit, OnDestroy {
       fromEvent<KeyboardEvent>(this._nativeElement, "keydown")
         .pipe(
           takeUntil(this._closed$),
-          filter((event) => event.key === "Escape"),
+          filter((event) => event.which === Key.Escape),
         )
         .subscribe((event) => {
           if (this.keyboard) {

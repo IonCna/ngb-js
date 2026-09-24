@@ -4,15 +4,15 @@ import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
 import {
-  afterNextRender,
+  type AfterContentInit,
   Attribute,
   Component,
   ContentChild,
   ElementRef,
   EventEmitter,
   HostBinding,
-  inject,
   Input,
+  inject,
   NgZone,
   type OnChanges,
   Output,
@@ -20,7 +20,7 @@ import {
   TemplateRef,
   ViewChild,
 } from "ngjs-core";
-import type { Observable } from "rxjs";
+import { type Observable, take } from "rxjs";
 
 export interface INgbToast {
   hide(): Observable<void>;
@@ -32,7 +32,7 @@ export interface INgbToast {
   exportAs: "ngbToast",
   template,
 })
-export class NgbToast implements OnChanges , INgbToast {
+export class NgbToast implements AfterContentInit, OnChanges, INgbToast {
   private _config = inject(NgbToastConfig);
   private _zone = inject(NgZone);
   private _element = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -71,7 +71,7 @@ export class NgbToast implements OnChanges , INgbToast {
   }
 
   ngAfterContentInit() {
-    afterNextRender(() => {
+    this._zone.onStable.pipe(take(1)).subscribe(() => {
       this._init();
       this.show();
     });

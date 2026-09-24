@@ -17,7 +17,7 @@ export function NGB_TIMEPICKER_TIME_ADAPTER_FACTORY() {
  *
  * @since 2.2.0
  */
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: "root", useFactory: NGB_TIMEPICKER_TIME_ADAPTER_FACTORY })
 export abstract class NgbTimeAdapter<T> {
   /**
    * Converts a user-model time of type `T` to an `NgbTimeStruct` for internal use.

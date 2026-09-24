@@ -14,7 +14,7 @@ import {
   inject,
   Injector,
   NgZone,
-  Service,
+  Injectable,
   TemplateRef,
 } from "ngjs-core";
 import { Subject, take } from "rxjs";
@@ -27,7 +27,7 @@ import { Subject, take } from "rxjs";
  * `NgbActiveModal` se pasa al componente de contenido por `bindings` en vez de
  * `Injector.create({ providers })`.
  */
-@Service()
+@Injectable({ providedIn: "root" })
 export class NgbModalStack {
   private _applicationRef = inject(ApplicationRef);
   private _scrollBar = inject(NgbScrollbar);
@@ -138,11 +138,7 @@ export class NgbModalStack {
     });
   }
 
-  private _getContentRef(
-    content: unknown,
-    activeModal: NgbActiveModal,
-    options: NgbModalOptions,
-  ): Promise<ContentRef> {
+  private _getContentRef(content: unknown, activeModal: NgbActiveModal, options: NgbModalOptions): Promise<ContentRef> {
     if (!content) {
       return Promise.resolve(new ContentRef([]));
     }

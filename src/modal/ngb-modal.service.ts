@@ -2,14 +2,14 @@ import type { NgbModalOptions } from "@ngb/modal/ngb-modal-config.service";
 import { NgbModalConfig } from "@ngb/modal/ngb-modal-config.service";
 import type { NgbModalRef } from "@ngb/modal/ngb-modal-ref";
 import { NgbModalStack } from "@ngb/modal/ngb-modal-stack.service";
-import { Injector, inject, Service } from "ngjs-core";
+import { Injector, Injectable, inject } from "ngjs-core";
 
 /**
  * Servicio para abrir modales.
  *
  * Crear un modal: armá un componente o un `TemplateRef` y pasalo a `.open()`.
  */
-@Service({ id: "ngb.modal.service" })
+@Injectable({ providedIn: "root" })
 export class NgbModal {
   private _injector = inject(Injector);
   private _modalStack = inject(NgbModalStack);

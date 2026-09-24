@@ -21,7 +21,7 @@ export function NGB_DATEPICKER_PARSER_FORMATTER_FACTORY() {
  *
  * See the [date format overview](#/components/datepicker/overview#date-model) for more details.
  */
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: "root", useFactory: NGB_DATEPICKER_PARSER_FORMATTER_FACTORY })
 export abstract class NgbDateParserFormatter {
   /**
    * Parses the given `string` to an `NgbDateStruct`.

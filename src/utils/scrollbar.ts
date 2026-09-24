@@ -1,8 +1,8 @@
-import { DOCUMENT, inject, Service } from "ngjs-core";
+import { DOCUMENT, Injectable, inject } from "ngjs-core";
 
 export type ScrollbarReverter = () => void;
 
-@Service()
+@Injectable({ providedIn: "root" })
 export class ScrollBar {
   private _document = inject(DOCUMENT);
 

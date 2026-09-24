@@ -1,4 +1,4 @@
-import { DOCUMENT, inject, InjectionToken, type OnDestroy, Service } from "ngjs-core";
+import { DOCUMENT, Injectable, InjectionToken, inject, type OnDestroy } from "ngjs-core";
 
 export const ARIA_LIVE_DELAY = new InjectionToken<number | null>("live announcer delay", {
   providedIn: "root",
@@ -20,7 +20,7 @@ function getLiveElement(document: any, lazyCreate = false): HTMLElement | null {
   return element;
 }
 
-@Service()
+@Injectable({ providedIn: "root" })
 export class Live implements OnDestroy {
   private _document = inject(DOCUMENT);
   private _delay = inject(ARIA_LIVE_DELAY);

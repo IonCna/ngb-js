@@ -11,9 +11,7 @@ import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-c
 import { addPopperOffset, isString, ngbAutoClose, ngbFocusTrap, ngbPositioning } from "@ngb/utils";
 import type { INgModelController } from "angular";
 import {
-  type AfterRenderRef,
   type AfterViewInit,
-  afterEveryRender,
   ChangeDetectorRef,
   type ComponentRef,
   Directive,
@@ -36,7 +34,7 @@ import {
   ViewContainerRef,
 } from "ngjs-core";
 import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
-import { Subject } from "rxjs";
+import { Subject, type Subscription } from "rxjs";
 
 /**
  * A directive that allows to stick a datepicker popup to an input field.
@@ -84,7 +82,7 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
   private _elWithFocus: HTMLElement | null = null;
   private _model: NgbDate | null = null;
   private _inputValue!: string;
-  private _afterRenderRef: AfterRenderRef | undefined;
+  private _zoneSubscription?: Subscription;
   private _positioning = ngbPositioning();
   private _destroyCloseHandlers$ = new Subject<void>();
 
@@ -387,17 +385,14 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
             hostElement,
             targetElement: this._cRef.location.nativeElement,
             placement: this.placement,
+            appendToBody: this.container === "body",
             updatePopperOptions: (options: any) => this.popperOptions(addPopperOffset([0, 2])(options)),
           });
 
-          this._afterRenderRef = afterEveryRender(
-            {
-              mixedReadWrite: () => {
-                this._positioning.update();
-              },
-            },
-            { injector: this._injector },
-          );
+          Promise.resolve().then(() => {
+            this._positioning.update();
+            this._zoneSubscription = this._ngZone.onStable.subscribe(() => this._positioning.update());
+          });
         }
       });
 
@@ -413,7 +408,7 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
       this._cRef?.destroy();
       this._cRef = null;
       this._positioning.destroy();
-      this._afterRenderRef?.destroy();
+      this._zoneSubscription?.unsubscribe();
       this._destroyCloseHandlers$.next();
       this.closed.emit();
       this._changeDetector.markForCheck();

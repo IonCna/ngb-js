@@ -2,7 +2,6 @@ import { ModalDismissReasons } from "@ngb/modal/ngb-modal-dismiss-reasons";
 import template from "@ngb/modal/ngb-modal-window.component.html";
 import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import {
-  afterAttachedRender,
   getFocusableBoundaryElements,
   isDefined,
   isString,
@@ -18,7 +17,6 @@ import {
   EventEmitter,
   HostBinding,
   inject,
-  Injector,
   Input,
   NgZone,
   type OnDestroy,
@@ -26,6 +24,7 @@ import {
   Output,
   ViewChild,
 } from "ngjs-core";
+import { Key } from "@ngb/utils/key";
 import { fromEvent, type Observable, Subject, zip } from "rxjs";
 import { filter, switchMap, take, takeUntil, tap } from "rxjs/operators";
 
@@ -37,7 +36,6 @@ const WINDOW_ATTRIBUTES = [
   "centered",
   "fullscreen",
   "keyboard",
-  "role",
   "scrollable",
   "size",
   "windowClass",
@@ -53,7 +51,6 @@ export class NgbModalWindow implements OnInit, OnDestroy {
   private _document = inject(DOCUMENT);
   private _elRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private _zone = inject(NgZone);
-  private _injector = inject(Injector);
   private _cdRef = inject(ChangeDetectorRef);
 
   private _closed$ = new Subject<void>();
@@ -68,7 +65,6 @@ export class NgbModalWindow implements OnInit, OnDestroy {
   @Input({ binding: "@" }) centered!: string;
   @Input() fullscreen!: string | boolean;
   @Input() keyboard = true;
-  @Input({ binding: "@" }) role = "dialog";
   @Input({ binding: "@" }) scrollable!: string;
   @Input({ binding: "@" }) size!: string;
   @Input({ binding: "@" }) windowClass!: string;
@@ -103,9 +99,7 @@ export class NgbModalWindow implements OnInit, OnDestroy {
   }
 
   @HostBinding("attr.role")
-  get _role() {
-    return this.role;
-  }
+  readonly _role = "dialog";
 
   get fullscreenClass(): string {
     return this.fullscreen === true
@@ -121,7 +115,7 @@ export class NgbModalWindow implements OnInit, OnDestroy {
 
   ngOnInit() {
     this._elWithFocus = this._document.activeElement;
-    afterAttachedRender(this._elRef.nativeElement, () => this._show(), { injector: this._injector });
+    this._zone.onStable.pipe(take(1)).subscribe(() => this._show());
   }
 
   ngOnDestroy() {
@@ -192,7 +186,7 @@ export class NgbModalWindow implements OnInit, OnDestroy {
       fromEvent<KeyboardEvent>(nativeElement, "keydown")
         .pipe(
           takeUntil(this._closed$),
-          filter((e) => e.key === "Escape"),
+          filter((e) => e.which === Key.Escape),
         )
         .subscribe((event) => {
           if (this.keyboard) {

@@ -1,19 +1,18 @@
+import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbOffcanvasBackdrop } from "@ngb/offcanvas/ngb-offcanvas-backdrop.component";
 import type { NgbOffcanvasOptions } from "@ngb/offcanvas/ngb-offcanvas-config.service";
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
 import { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanvas-ref";
-import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
-import angular from "angular";
 import {
   ApplicationRef,
   type ComponentRef,
   createComponent,
-  inject,
+  Injectable,
   type Injector,
+  inject,
   NgZone,
-  Service,
   TemplateRef,
 } from "ngjs-core";
 import { finalize, Subject } from "rxjs";
@@ -25,7 +24,7 @@ import { finalize, Subject } from "rxjs";
  * upstream (backdrop + content + panel + `NgbOffcanvasRef`) se conserva 1:1.
  * `NgbActiveOffcanvas` se pasa al componente de contenido por `bindings`.
  */
-@Service()
+@Injectable()
 export class NgbOffcanvasStack {
   private _applicationRef = inject(ApplicationRef);
   private _scrollBar = inject(NgbScrollbar);
@@ -46,7 +45,11 @@ export class NgbOffcanvasStack {
     });
   }
 
-  open<T = unknown>(_contentInjector: Injector, content: unknown, options: NgbOffcanvasOptions): Promise<NgbOffcanvasRef<T>> {
+  open<T = unknown>(
+    _contentInjector: Injector,
+    content: unknown,
+    options: NgbOffcanvasOptions,
+  ): Promise<NgbOffcanvasRef<T>> {
     const container = this._resolveContainer(options.container);
     if (!container) {
       throw new Error(`The specified offcanvas container "${options.container || "body"}" was not found in the DOM.`);
@@ -60,7 +63,7 @@ export class NgbOffcanvasStack {
 
     return Promise.all([
       options.backdrop !== false ? this._attachBackdrop(container, options) : Promise.resolve(undefined),
-      this._getContentRef(content, activeOffcanvas, options),
+      this._getContentRef(content, activeOffcanvas, options, _contentInjector),
     ]).then(([backdropRef, contentRef]) =>
       this._attachPanelComponent(container, contentRef, options).then((panelRef) => {
         const ngbOffcanvasRef = new NgbOffcanvasRef<T>(panelRef, contentRef, backdropRef, options.beforeDismiss);
@@ -138,6 +141,7 @@ export class NgbOffcanvasStack {
     content: unknown,
     activeOffcanvas: NgbActiveOffcanvas,
     options: NgbOffcanvasOptions,
+    contentInjector: Injector,
   ): Promise<ContentRef> {
     if (!content) {
       return Promise.resolve(new ContentRef([]));
@@ -152,13 +156,18 @@ export class NgbOffcanvasStack {
       return Promise.resolve(new ContentRef([viewRef.rootNodes], viewRef));
     }
     return this._createRootComponent(content as string, {
+      environmentInjector: options.injector || contentInjector,
       bindings: { ...(options.bindings as Record<string, unknown> | undefined), ngbActiveOffcanvas: activeOffcanvas },
     }).then((componentRef) => new ContentRef([[componentRef.location.nativeElement]], undefined, componentRef));
   }
 
   private _createRootComponent<C>(
     component: string,
-    options?: { projectableNodes?: Node[][]; bindings?: Record<string, unknown> },
+    options?: {
+      projectableNodes?: Node[][];
+      bindings?: Record<string, unknown>;
+      environmentInjector?: Injector;
+    },
   ): Promise<ComponentRef<C>> {
     return Promise.resolve(
       createComponent<C>(component, { environmentInjector: this._applicationRef.injector, ...options }),
@@ -175,12 +184,12 @@ export class NgbOffcanvasStack {
     });
   }
 
-  private _resolveContainer(container?: angular.IAugmentedJQuery | string): Element | undefined {
-    if (angular.isString(container)) {
-      return document.querySelector(String(container)) ?? undefined;
+  private _resolveContainer(container?: string | HTMLElement): Element | undefined {
+    if (typeof container === "string") {
+      return document.querySelector(container) ?? undefined;
     }
     if (container) {
-      return (container as angular.IAugmentedJQuery)[0] as Element;
+      return container;
     }
     return document.body;
   }

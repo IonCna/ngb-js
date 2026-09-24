@@ -1,12 +1,15 @@
 import type { IFilterService } from "angular";
-import { inject, Injectable } from "ngjs-core";
+import { Injectable, inject } from "ngjs-core";
 
 /**
  * Type of the service supplying day periods (for example, 'AM' and 'PM') to NgbTimepicker component.
  * The default implementation of this service honors the Angular locale, and uses the registered locale data,
  * as explained in the Angular i18n guide.
  */
-@Injectable({ providedIn: "root" })
+@Injectable({
+  providedIn: "root",
+  useFactory: () => new NgbTimepickerI18nDefault(),
+})
 export abstract class NgbTimepickerI18n {
   /**
    * Returns the name for the period before midday.
@@ -37,10 +40,7 @@ export class NgbTimepickerI18nDefault extends NgbTimepickerI18n {
     super();
 
     const dateFilter = ($filter ?? inject<IFilterService>("$filter"))("date");
-    this._periods = [
-      dateFilter(new Date(3_600_000), "a", "UTC"),
-      dateFilter(new Date(3_600_000 * 13), "a", "UTC"),
-    ];
+    this._periods = [dateFilter(new Date(3_600_000), "a", "UTC"), dateFilter(new Date(3_600_000 * 13), "a", "UTC")];
   }
 
   getMorningPeriod(): string {

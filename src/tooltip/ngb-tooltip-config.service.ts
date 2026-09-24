@@ -1,12 +1,12 @@
 import { NgbConfig } from "@ngb/config/ngb-config";
 import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
-import { inject, Service } from "ngjs-core";
+import { Injectable, inject } from "ngjs-core";
 
-@Service({ id: "ngb.tooltip.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbTooltipConfig {
   private _ngbConfig = inject(NgbConfig);
-  private _animation?: boolean;
+  private _animation: boolean;
 
   autoClose: boolean | "inside" | "outside" = true;
   placement: PlacementArray = "auto";

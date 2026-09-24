@@ -1,10 +1,10 @@
 import { NgbConfig } from "@ngb/config/ngb-config";
 import type { PlacementArray } from "@ngb/utils/positioning";
 import type { Options } from "@popperjs/core";
-import { inject, Service } from "ngjs-core";
+import { Injectable, inject } from "ngjs-core";
 
 /** Defaults for `NgbPopover`. Parity with `@ng-bootstrap` (`popover-config.ts`). */
-@Service({ id: "ngb.popover.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbPopoverConfig {
   private readonly _config = inject(NgbConfig);
   private _animation?: boolean;

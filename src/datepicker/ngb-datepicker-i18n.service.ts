@@ -1,6 +1,6 @@
 import type { NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
 import type { IFilterService, ILocaleService } from "angular";
-import { inject, Injectable } from "ngjs-core";
+import { Injectable, inject } from "ngjs-core";
 
 /**
  * A service supplying i18n data to the datepicker component.
@@ -20,7 +20,10 @@ import { inject, Injectable } from "ngjs-core";
  * abstracta → el token lo provee `NgbDatepickerModule`
  * (`{ provide: NgbDatepickerI18n, useClass: NgbDatepickerI18nDefault }`).
  */
-@Injectable({ providedIn: "root" })
+@Injectable({
+  providedIn: "root",
+  useFactory: () => new NgbDatepickerI18nDefault(),
+})
 export abstract class NgbDatepickerI18n {
   /**
    * Returns the weekday label using specified width

@@ -1,19 +1,18 @@
+import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
 import {
-  afterNextRender,
   ApplicationRef,
   type ComponentRef,
   DOCUMENT,
-  inject,
   Injector,
+  inject,
   NgZone,
   TemplateRef,
   type Type,
   ViewContainerRef,
   type ViewRef,
 } from "ngjs-core";
-import { type Observable, of, Subject } from "rxjs";
-import { mergeMap, tap } from "rxjs/operators";
-import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
+import { type Observable, of } from "rxjs";
+import { mergeMap, take, tap } from "rxjs/operators";
 
 export class ContentRef {
   constructor(
@@ -50,19 +49,8 @@ export class PopupService<T> {
 
     const { nativeElement } = this._windowRef.location;
 
-    const nextRenderSubject = new Subject<void>();
-    afterNextRender(
-      {
-        mixedReadWrite: () => {
-          nextRenderSubject.next();
-          nextRenderSubject.complete();
-        },
-      },
-      {
-        injector: this._injector,
-      },
-    );
-    const transition$ = nextRenderSubject.pipe(
+    const transition$ = this._ngZone.onStable.pipe(
+      take(1),
       mergeMap(() =>
         ngbRunTransition(this._ngZone, nativeElement, ({ classList }) => classList.add("show"), {
           animation,
@@ -86,10 +74,20 @@ export class PopupService<T> {
       { animation, runningTransition: "stop" },
     ).pipe(
       tap(() => {
-        this._windowRef?.destroy();
-        this._contentRef?.viewRef?.destroy();
-        this._windowRef = null;
-        this._contentRef = null;
+        if (this._windowRef) {
+          const viewIndex = this._viewContainerRef.indexOf(this._windowRef.hostView);
+          if (viewIndex !== -1) {
+            this._viewContainerRef.remove(viewIndex);
+          } else {
+            this._windowRef.destroy();
+          }
+          this._windowRef = null;
+        }
+        if (this._contentRef?.viewRef) {
+          this._applicationRef.detachView(this._contentRef.viewRef);
+          this._contentRef.viewRef.destroy();
+          this._contentRef = null;
+        }
       }),
     );
   }

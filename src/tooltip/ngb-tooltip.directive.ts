@@ -1,24 +1,20 @@
 import { NgbTooltipConfig } from "@ngb/tooltip/ngb-tooltip-config.service";
 import { NgbTooltipWindow } from "@ngb/tooltip/ngb-tooltip-window.component";
-import { isString, ngbCompleteTransition } from "@ngb/utils";
+import { isString } from "@ngb/utils";
 import { ngbAutoClose } from "@ngb/utils/autoclose";
 import { PopupService } from "@ngb/utils/popup.service";
 import { ngbPositioning } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
 import { listenToTriggers } from "@ngb/utils/triggers";
-import { Subject } from "rxjs";
 import {
-  afterEveryRender,
-  type AfterRenderRef,
   ChangeDetectorRef,
   type ComponentRef,
   Directive,
   DOCUMENT,
   ElementRef,
   EventEmitter,
-  inject,
-  Injector,
   Input,
+  inject,
   NgZone,
   type OnChanges,
   type OnDestroy,
@@ -27,6 +23,7 @@ import {
   type SimpleChanges,
   type TemplateRef,
 } from "ngjs-core";
+import { Subject, type Subscription } from "rxjs";
 
 let nextId = 0;
 
@@ -56,7 +53,6 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
   private _ngZone = inject(NgZone);
   private _document = inject(DOCUMENT);
   private _changeDetector = inject(ChangeDetectorRef);
-  private _injector = inject(Injector);
 
   private _ngbTooltip: string | TemplateRef<any> | null | undefined;
   private _ngbTooltipWindowId = `ngb-tooltip-${nextId++}`;
@@ -64,13 +60,10 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
   private _windowRef: ComponentRef<NgbTooltipWindow> | null = null;
   private _unregisterListenersFn?: () => void;
   private _positioning = ngbPositioning();
-  private _afterRenderRef: AfterRenderRef | undefined;
+  private _zoneSubscription?: Subscription;
 
   private _mouseEnterTooltip = new Subject<void>();
   private _mouseLeaveTooltip = new Subject<void>();
-
-  private _opening = true;
-  private _transitioning = false;
 
   @Input()
   set ngbTooltip(value: string | TemplateRef<any> | null | undefined) {
@@ -85,18 +78,12 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
   }
 
   async open(context?: any): Promise<void> {
-    if (!this._opening && this._transitioning) {
-      this._transitioning = false;
-      ngbCompleteTransition(this._windowRef!.location.nativeElement);
-    }
     if (!this._windowRef && this._ngbTooltip && !this.disableTooltip) {
       const { windowRef, transition$ } = await this._popupService.open(
         this._ngbTooltip,
         context ?? this.tooltipContext,
         this.animation,
       );
-      this._opening = true;
-      this._transitioning = true;
       this._windowRef = windowRef;
       this._windowRef.setInput("animation", this.animation);
       this._windowRef.setInput("tooltipClass", this.tooltipClass);
@@ -118,21 +105,15 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
           hostElement: this._getPositionTargetElement(),
           targetElement: this._windowRef!.location.nativeElement,
           placement: this.placement,
+          appendToBody: this.container === "body",
           baseClass: "bs-tooltip",
           updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 6])(options)),
         });
 
         Promise.resolve().then(() => {
           this._positioning.update();
+          this._zoneSubscription = this._ngZone.onStable.subscribe(() => this._positioning.update());
         });
-        this._afterRenderRef = afterEveryRender(
-          {
-            mixedReadWrite: () => {
-              this._positioning.update();
-            },
-          },
-          { injector: this._injector },
-        );
       });
 
       ngbAutoClose(
@@ -146,31 +127,19 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
       );
 
       transition$.subscribe(() => {
-        if (this._transitioning) {
-          this._transitioning = false;
-          this.shown.emit();
-        }
+        this.shown.emit();
       });
     }
   }
 
   close(animation = this.animation): void {
-    if (this._opening && this._transitioning) {
-      this._transitioning = false;
-      ngbCompleteTransition(this._windowRef!.location.nativeElement);
-    }
     if (this._windowRef != null) {
       this._getPositionTargetElement().removeAttribute("aria-describedby");
-      this._opening = false;
-      this._transitioning = true;
       this._popupService.close(animation).subscribe(() => {
         this._windowRef = null;
         this._positioning.destroy();
-        this._afterRenderRef?.destroy();
-        if (this._transitioning) {
-          this._transitioning = false;
-          this.hidden.emit();
-        }
+        this._zoneSubscription?.unsubscribe();
+        this.hidden.emit();
         this._changeDetector.markForCheck();
       });
     }
