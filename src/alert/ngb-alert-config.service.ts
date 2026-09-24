@@ -1,8 +1,8 @@
 import { NgbConfig } from "@ngb/config/ngb-config";
-import { inject, Service } from "ngjs-core";
+import { Injectable, inject } from "ngjs-core";
 
 /** Defaults de `NgbAlert`. Paridad con `@ng-bootstrap` (`alert-config.ts`). */
-@Service({ id: "ngb.alert.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbAlertConfig {
   private readonly _config = inject(NgbConfig);
   private _animation?: boolean;

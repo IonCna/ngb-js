@@ -6,8 +6,19 @@
     "declaration": true,
     "outDir": "./dist/types",
     "rootDir": "./src",
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": [
+      "./types/index.d.ts"
+    ]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "test", "demo"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "test",
+    "src/test",
+    "demo"
+  ]
 }

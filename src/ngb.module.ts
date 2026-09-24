@@ -6,7 +6,6 @@ import { NgbDatepickerModule } from "@ngb/datepicker/ngb-datepicker.module";
 import { NgbDropdownModule } from "@ngb/dropdown/ngb-dropdown.module";
 import { NgbModalModule } from "@ngb/modal/ngb-modal.module";
 import { NgbNavModule } from "@ngb/nav/ngb-nav.module";
-import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbOffcanvasModule } from "@ngb/offcanvas/ngb-offcanvas.module";
 import { NgbPaginationModule } from "@ngb/pagination/ngb-pagination.module";
 import { NgbPopoverModule } from "@ngb/popover/ngb-popover.module";
@@ -17,42 +16,29 @@ import { NgbTimepickerModule } from "@ngb/timepicker/ngb-timepicker.module";
 import { NgbToastModule } from "@ngb/toast/ngb-toast.module";
 import { NgbTooltipModule } from "@ngb/tooltip/ngb-tooltip.module";
 import { NgbTypeaheadModule } from "@ngb/typeahead/ngb-typeahead.module";
-import { NgbRTL } from "@ngb/utils/rtl.service";
 import { NgModule } from "ngjs-core";
-import { PlatformBrowserModule } from "ngjs-core/platform-browser";
 
-/**
- * Módulo raíz. Los feature modules ya convertidos a `@NgModule` entran como
- * clase; los que siguen siendo `angular.module` crudos, por `.name`. `imports`
- * de `@NgModule` acepta las dos formas + `angular.IModule`, así la migración es
- * incremental.
- */
 @NgModule({
-  id: "ngb",
   controllerAs: "$",
   imports: [
-    PlatformBrowserModule,
-    NgbAlertModule,
-    NgbProgressbarModule,
-    NgbCollapseModule,
-    NgbCarouselModule,
-    NgbToastModule,
     NgbAccordionModule,
-    NgbModalModule,
+    NgbAlertModule,
+    NgbCarouselModule,
+    NgbCollapseModule,
+    NgbDatepickerModule,
     NgbDropdownModule,
-    NgbTooltipModule,
+    NgbModalModule,
     NgbNavModule,
     NgbOffcanvasModule,
-    NgbPopoverModule,
-    NgbScrollSpyModule,
-    NgbRatingModule,
-    NgbTimepickerModule,
-    NgbTypeaheadModule,
     NgbPaginationModule,
-    NgbDatepickerModule,
+    NgbPopoverModule,
+    NgbProgressbarModule,
+    NgbRatingModule,
+    NgbScrollSpyModule,
+    NgbTimepickerModule,
+    NgbToastModule,
+    NgbTooltipModule,
+    NgbTypeaheadModule,
   ],
-  // `NgbConfig` es `@Service()` — se auto-registra, no va acá (ver assertNotServiceProvider).
-  providers: [NgbScrollbar, NgbRTL],
 })
-
 export class NgbModule {}

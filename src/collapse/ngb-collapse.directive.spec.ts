@@ -1,163 +1,291 @@
-import type { IRootScopeService } from "angular";
-import { Injector } from "ngjs-core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
-import { NgbModule } from "../ngb.module";
-import type { NgbCollapse } from "./ngb-collapse.directive";
-import { NgbCollapseConfig } from "./ngb-collapse-config.service";
+import { type ComponentFixture, TestBed } from "ngjs-core/testing";
+import { createGenericTestComponent, isBrowserVisible } from "../test/common";
 
-describe("ngbCollapse", () => {
-  let tb: NgbTestBed;
-  let $compile: NgbTestBed["$compile"];
-  let $rootScope: IRootScopeService;
-  let config: NgbCollapseConfig;
+import angular from "angular";
+import { Component, HostBinding } from "ngjs-core";
 
-  beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
-    config = tb.get<Injector>(Injector.$name).get(NgbCollapseConfig);
+import { NgbCollapse } from "./ngb-collapse.directive";
+import { NgbCollapseModule } from "./ngb-collapse.module";
+import { NgbConfig } from "../config/ngb-config";
+import { NgbConfigAnimation } from "../test/ngb-config-animation";
+
+/**
+ * Port de `collapse.spec.ts` de ng-bootstrap 16. Diferencias forzadas por AngularJS:
+ * - templates en sintaxis de AngularJS: `[ngbCollapse]="collapsed"` → `ngb-collapse="$ctrl.collapsed"`,
+ *   `#c="ngbCollapse"` → `ng-ref="$ctrl.c" ng-ref-read="ngbCollapse"`, `[(ngbCollapse)]` → el input más
+ *   `ngb-collapse-change="$ctrl.collapsed = $event"`;
+ * - sin componentes standalone: `NgbCollapseModule` se importa en el módulo de test;
+ * - sin `DebugElement`: la instancia se toma con `angular.element(…).controller()`;
+ * - sin el callback `done` de Jasmine: esos tests devuelven una promesa.
+ */
+const createTestComponent = (html: string) =>
+  createGenericTestComponent(html, TestComponent) as ComponentFixture<TestComponent>;
+
+function getCollapsibleContent(element: HTMLElement): HTMLDivElement {
+  return <HTMLDivElement>element.querySelector(".collapse");
+}
+
+describe("ngb-collapse", () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [NgbCollapseModule] });
   });
 
-  afterEach(() => tb.destroy());
+  it("should have content open", () => {
+    const fixture = createTestComponent(`<div ngb-collapse="$ctrl.collapsed">Some content</div>`);
 
-  it("responds to bound model changes and emits transition callbacks", () => {
-    const scope = $rootScope.$new() as IRootScopeService & {
-      isCollapsed: boolean;
-      onHidden: () => void;
-      onShown: () => void;
-      onChange: () => void;
-    };
+    const collapseEl = getCollapsibleContent(fixture.nativeElement);
 
-    const onHidden = vi.fn();
-    const onShown = vi.fn();
-    const onChange = vi.fn();
-
-    scope.isCollapsed = false;
-    scope.onHidden = onHidden;
-    scope.onShown = onShown;
-    scope.onChange = onChange;
-
-    const element = $compile(`
-            <div ngb-collapse="isCollapsed"
-                 animation="false"
-                 hidden="onHidden()"
-                 shown="onShown()"
-                 ngb-collapse-change="onChange()">
-                content
-            </div>
-        `)(scope);
-    scope.$digest();
-
-    expect(element.hasClass("collapse")).toBe(true);
-    expect(element.hasClass("show")).toBe(true);
-
-    scope.isCollapsed = true;
-    scope.$digest();
-
-    expect(element.hasClass("show")).toBe(false);
-    expect(onHidden).toHaveBeenCalledTimes(1);
-    expect(onChange).not.toHaveBeenCalled();
-
-    scope.isCollapsed = false;
-    scope.$digest();
-
-    expect(element.hasClass("show")).toBe(true);
-    expect(onShown).toHaveBeenCalledTimes(1);
-    expect(onChange).not.toHaveBeenCalled();
+    expect(collapseEl).toHaveCssClass("show");
   });
 
-  it("toggles programmatically and emits the collapsed state", () => {
-    const scope = $rootScope.$new() as IRootScopeService & {
-      onChange: (collapsed: boolean) => void;
-    };
-    const onChange = vi.fn();
-    scope.onChange = onChange;
+  it(`should set css classes for horizontal collapse`, () => {
+    const fixture = createTestComponent(`<div ngb-collapse="$ctrl.collapsed">Some content</div>`);
+    const element = fixture.nativeElement.querySelector("[ngb-collapse]") as HTMLElement;
+    const directive = angular.element(element).controller("ngbCollapse") as NgbCollapse;
 
-    const element = $compile(`
-      <div ngb-collapse animation="false" ngb-collapse-change="onChange($event)"></div>
-    `)(scope);
-    scope.$digest();
+    expect(element).toHaveCssClass("collapse");
+    expect(element).not.toHaveCssClass("collapse-horizontal");
 
-    const collapse = element.controller<NgbCollapse>("ngbCollapse");
+    directive.horizontal = true;
+    fixture.detectChanges();
 
-    collapse.toggle();
-
-    expect(element.hasClass("show")).toBe(false);
-    expect(onChange).toHaveBeenLastCalledWith(true);
-
-    collapse.toggle();
-
-    expect(element.hasClass("show")).toBe(true);
-    expect(onChange).toHaveBeenLastCalledWith(false);
+    expect(element).toHaveCssClass("collapse");
+    expect(element).toHaveCssClass("collapse-horizontal");
   });
 
-  it("adds horizontal class when configured", () => {
-    const scope = $rootScope.$new() as IRootScopeService & {
-      isCollapsed: boolean;
-    };
-    scope.isCollapsed = true;
+  it("should have content closed", () => {
+    const fixture = createTestComponent(`<div ngb-collapse="$ctrl.collapsed">Some content</div>`);
+    const tc = fixture.componentInstance;
+    tc.collapsed = true;
+    fixture.detectChanges();
 
-    const element = $compile(`<div ngb-collapse="isCollapsed" animation="false" horizontal="true"></div>`)(scope);
-    scope.$digest();
+    const collapseEl = getCollapsibleContent(fixture.nativeElement);
 
-    expect(element.hasClass("collapse-horizontal")).toBe(true);
+    expect(collapseEl).not.toHaveCssClass("show");
   });
 
-  it("uses horizontal configuration by default", () => {
-    config.horizontal = true;
+  it("should toggle collapsed content based on bound model change", () => {
+    const fixture = createTestComponent(`<div ngb-collapse="$ctrl.collapsed">Some content</div>`);
+    fixture.detectChanges();
 
-    const element = $compile(`<div ngb-collapse="false" animation="false"></div>`)($rootScope.$new());
-    $rootScope.$digest();
+    const tc = fixture.componentInstance;
+    const collapseEl = getCollapsibleContent(fixture.nativeElement);
+    expect(collapseEl).toHaveCssClass("show");
 
-    expect(element.hasClass("collapse-horizontal")).toBe(true);
+    tc.collapsed = true;
+    fixture.detectChanges();
+    expect(collapseEl).not.toHaveCssClass("show");
+
+    tc.collapsed = false;
+    fixture.detectChanges();
+    expect(collapseEl).toHaveCssClass("show");
   });
 
-  it.each([
-    [false, true],
-    [true, false],
-  ])("initializes collapsed=%s with show=%s", (collapsed, shown) => {
-    const scope = $rootScope.$new() as IRootScopeService & { collapsed: boolean };
-    scope.collapsed = collapsed;
-    const element = $compile(`<div ngb-collapse="collapsed" animation="false">content</div>`)(scope);
-    scope.$digest();
-    expect(element.hasClass("collapse")).toBe(true);
-    expect(element.hasClass("show")).toBe(shown);
-    expect(element.text().trim()).toBe("content");
+  it("should allow toggling collapse from outside", () => {
+    const fixture = createTestComponent(`
+      <button ng-click="$ctrl.collapse.toggle()">Collapse</button>
+      <div ngb-collapse="$ctrl.collapsed" ng-ref="$ctrl.collapse" ng-ref-read="ngbCollapse"></div>`);
+
+    const compiled = fixture.nativeElement;
+    const collapseEl = getCollapsibleContent(compiled);
+    const buttonEl = compiled.querySelector("button")!;
+
+    buttonEl.click();
+    fixture.detectChanges();
+    expect(collapseEl).not.toHaveCssClass("show");
+
+    buttonEl.click();
+    fixture.detectChanges();
+    expect(collapseEl).toHaveCssClass("show");
   });
 
-  it("works without an input binding", () => {
-    const element = $compile(`<div ngb-collapse animation="false">content</div>`)($rootScope.$new());
-    $rootScope.$digest();
-    expect(element.hasClass("show")).toBe(true);
-  });
+  it("should work with no binding", () => {
+    const fixture = createTestComponent(`
+      <button ng-click="$ctrl.collapse.toggle()">Collapse</button>
+      <div ngb-collapse ng-ref="$ctrl.collapse" ng-ref-read="ngbCollapse"></div>`);
 
-  it("reacts to horizontal input changes", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { horizontal: boolean };
-    scope.horizontal = false;
-    const element = $compile(`<div ngb-collapse="false" animation="false" horizontal="horizontal"></div>`)(scope);
-    scope.$digest();
-    expect(element.hasClass("collapse-horizontal")).toBe(false);
-    scope.horizontal = true;
-    scope.$digest();
-    expect(element.hasClass("collapse-horizontal")).toBe(true);
-  });
+    const compiled = fixture.nativeElement;
+    const collapseEl = getCollapsibleContent(compiled);
+    const buttonEl = compiled.querySelector("button")!;
 
-  it("honors the explicit open state passed to toggle", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { onChange: (collapsed: boolean) => void };
-    scope.onChange = vi.fn();
-    const element = $compile(
-      `<div ngb-collapse="true" animation="false" ngb-collapse-change="onChange($event)"></div>`,
-    )(scope);
-    scope.$digest();
-    const collapse = element.controller<NgbCollapse>("ngbCollapse");
+    buttonEl.click();
+    fixture.detectChanges();
+    expect(collapseEl).not.toHaveCssClass("show");
 
-    // `toggle(open)` → `collapsed = !open`; `ngbCollapseChange` emite el estado *collapsed*.
-    collapse.toggle(true); // abrir
-    expect(element.hasClass("show")).toBe(true);
-    expect(scope.onChange).toHaveBeenLastCalledWith(false);
-    collapse.toggle(false); // cerrar
-    expect(element.hasClass("show")).toBe(false);
-    expect(scope.onChange).toHaveBeenLastCalledWith(true);
+    buttonEl.click();
+    fixture.detectChanges();
+    expect(collapseEl).toHaveCssClass("show");
   });
 });
+
+if (isBrowserVisible("ngb-collapse animations")) {
+  describe("ngb-collapse animations", () => {
+    beforeEach(() => {
+      TestBed.configureTestingModule({
+        imports: [NgbCollapseModule],
+        providers: [{ provide: NgbConfig, useClass: NgbConfigAnimation }],
+      });
+    });
+
+    it(`should run collapsing transition (force-reduced-motion = false)`, () =>
+      new Promise<void>((done) => {
+        const fixture = TestBed.createComponent(TestAnimationComponent);
+        fixture.componentInstance.reduceMotion = false;
+        fixture.detectChanges();
+
+        const buttonEl = fixture.nativeElement.querySelector("button")!;
+        const content = getCollapsibleContent(fixture.nativeElement);
+
+        const onCollapseSpy = spyOn(fixture.componentInstance, "onCollapse");
+        const onShownSpy = spyOn(fixture.componentInstance, "onShown");
+        const onHiddenSpy = spyOn(fixture.componentInstance, "onHidden");
+
+        // First we're going to collapse, then expand
+        onHiddenSpy.and.callFake(() => {
+          expect(content).toHaveClass("collapse");
+          expect(content).not.toHaveClass("show");
+          expect(content).not.toHaveClass("collapsing");
+
+          // Expanding
+          buttonEl.click();
+          fixture.detectChanges();
+          expect(onShownSpy).not.toHaveBeenCalled();
+          expect(content).not.toHaveClass("collapse");
+          expect(content).not.toHaveClass("show");
+          expect(content).toHaveClass("collapsing");
+        });
+
+        onShownSpy.and.callFake(() => {
+          expect(onCollapseSpy).toHaveBeenCalledTimes(2);
+          expect(content).toHaveClass("collapse");
+          expect(content).toHaveClass("show");
+          expect(content).not.toHaveClass("collapsing");
+
+          done();
+        });
+
+        expect(content).toHaveClass("collapse");
+        expect(content).toHaveClass("show");
+        expect(content).not.toHaveClass("collapsing");
+        expect(fixture.componentInstance.collapsed).toBe(false);
+
+        // Collapsing
+        buttonEl.click();
+        fixture.detectChanges();
+        expect(onHiddenSpy).not.toHaveBeenCalled();
+        expect(onCollapseSpy).toHaveBeenCalledTimes(1);
+        expect(content).not.toHaveClass("collapse");
+        expect(content).not.toHaveClass("show");
+        expect(content).toHaveClass("collapsing");
+      }));
+
+    it(`should run collapsing transition (force-reduced-motion = true)`, () => {
+      const fixture = TestBed.createComponent(TestAnimationComponent);
+      fixture.componentInstance.reduceMotion = true;
+      fixture.detectChanges();
+
+      const buttonEl = fixture.nativeElement.querySelector("button")!;
+      const content = getCollapsibleContent(fixture.nativeElement);
+
+      const onCollapseSpy = spyOn(fixture.componentInstance, "onCollapse");
+      const onShownSpy = spyOn(fixture.componentInstance, "onShown");
+      const onHiddenSpy = spyOn(fixture.componentInstance, "onHidden");
+
+      expect(content).toHaveClass("collapse");
+      expect(content).toHaveClass("show");
+      expect(content).not.toHaveClass("collapsing");
+      expect(fixture.componentInstance.collapsed).toBe(false);
+
+      // Collapsing
+      buttonEl.click();
+      fixture.detectChanges();
+      expect(onHiddenSpy).toHaveBeenCalled();
+      expect(onCollapseSpy).toHaveBeenCalledTimes(1);
+      expect(content).toHaveClass("collapse");
+      expect(content).not.toHaveClass("show");
+      expect(content).not.toHaveClass("collapsing");
+
+      // Expanding
+      buttonEl.click();
+      fixture.detectChanges();
+      expect(onShownSpy).toHaveBeenCalled();
+      expect(onCollapseSpy).toHaveBeenCalledTimes(2);
+      expect(content).toHaveClass("collapse");
+      expect(content).toHaveClass("show");
+      expect(content).not.toHaveClass("collapsing");
+    });
+
+    it(`should run revert collapsing transition (force-reduced-motion = false)`, () =>
+      new Promise<void>((done) => {
+        const fixture = TestBed.createComponent(TestAnimationComponent);
+        fixture.componentInstance.reduceMotion = false;
+        fixture.detectChanges();
+
+        const buttonEl = fixture.nativeElement.querySelector("button")!;
+        const content = getCollapsibleContent(fixture.nativeElement);
+
+        const onCollapseSpy = spyOn(fixture.componentInstance, "onCollapse");
+        const onShownSpy = spyOn(fixture.componentInstance, "onShown");
+        const onHiddenSpy = spyOn(fixture.componentInstance, "onHidden");
+
+        onShownSpy.and.callFake(() => {
+          expect(onHiddenSpy).not.toHaveBeenCalled();
+          expect(fixture.componentInstance.collapsed).toBe(false);
+          expect(content).toHaveClass("collapse");
+          expect(content).toHaveClass("show");
+          expect(content).not.toHaveClass("collapsing");
+          done();
+        });
+
+        expect(content).toHaveClass("collapse");
+        expect(content).toHaveClass("show");
+        expect(content).not.toHaveClass("collapsing");
+        expect(fixture.componentInstance.collapsed).toBe(false);
+
+        // Collapsing
+        buttonEl.click();
+        fixture.detectChanges();
+        expect(onCollapseSpy).toHaveBeenCalledTimes(1);
+        expect(content).not.toHaveClass("collapse");
+        expect(content).not.toHaveClass("show");
+        expect(content).toHaveClass("collapsing");
+
+        // Expanding before hidden
+        buttonEl.click();
+        fixture.detectChanges();
+        expect(onCollapseSpy).toHaveBeenCalledTimes(2);
+        expect(content).not.toHaveClass("collapse");
+        expect(content).not.toHaveClass("show");
+        expect(content).toHaveClass("collapsing");
+      }));
+  });
+}
+
+/** En ng-bootstrap está dentro del `describe`: el compilador solo lee clases de nivel de módulo. */
+@Component({
+  selector: "test-animation-cmp",
+  template: `
+    <button ng-click="$ctrl.c.toggle()">Collapse!</button>
+    <div
+      ngb-collapse="$ctrl.collapsed"
+      ng-ref="$ctrl.c"
+      ng-ref-read="ngbCollapse"
+      ngb-collapse-change="$ctrl.collapsed = $event; $ctrl.onCollapse()"
+      shown="$ctrl.onShown()"
+      hidden="$ctrl.onHidden()"
+    ></div>
+  `,
+})
+class TestAnimationComponent {
+  collapsed = false;
+  // `host: { "[class.ngb-reduce-motion]": "reduceMotion" }` en ng-bootstrap: `host` no está soportado todavía.
+  @HostBinding("class.ngb-reduce-motion") reduceMotion = true;
+  onCollapse = () => {};
+  onShown = () => {};
+  onHidden = () => {};
+}
+
+@Component({ selector: "test-cmp", template: "" })
+class TestComponent {
+  collapsed = false;
+}

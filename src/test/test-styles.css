@@ -1,0 +1,118 @@
+/*
+  Port de `test/test-styles.css` de ng-bootstrap, que Karma carga con bootstrap.css (ver `test-styles.ts`).
+
+  Mismas reglas, con `transition` escrito en longhands: jsdom aplica `transition-property`/`transition-duration`
+  desde las hojas de estilo pero no expande el shorthand `transition` (quedaría `all 0s`), y `ngbRunTransition`
+  lee esos dos valores con `getComputedStyle` — `none` es lo que simula "reduced motion".
+
+  Overriding some of the Bootstrap transition styles for testing purposes.
+
+  Adding `!important` will disable bootstrap's prefer-reduced-motion support and always run transitions regardless
+  of the host OS setting. We can simulate reduced motion support with the `.ngb-reduce-motion` class.
+ */
+
+.fade {
+  transition-property: opacity !important;
+  transition-duration: 0.01s !important;
+  transition-timing-function: linear !important;
+}
+
+.tooltip.show {
+  opacity: 1 !important;
+}
+
+.collapsing {
+  transition-property: height !important;
+  transition-duration: 0.01s !important;
+  transition-timing-function: ease !important;
+}
+
+.modal.fade .modal-dialog {
+  transition-property: transform, -webkit-transform !important;
+  transition-duration: 0.01s, 0.01s !important;
+  transition-timing-function: ease-out, ease-out !important;
+}
+
+.offcanvas {
+  transition-property: transform !important;
+  transition-duration: 1s !important;
+  transition-timing-function: ease-out !important;
+  opacity: 1;
+}
+
+.carousel-item {
+  transition-property: transform, -webkit-transform !important;
+  transition-duration: 0.01s, 0.01s !important;
+  transition-timing-function: ease-out, ease-out !important;
+}
+
+.ngb-reduce-motion .fade,
+.ngb-reduce-motion .collapsing,
+.ngb-reduce-motion .modal.fade .modal-dialog,
+.ngb-reduce-motion .offcanvas,
+.ngb-reduce-motion .carousel-item {
+  transition-property: none !important;
+}
+
+/*
+  Styles used for internal testing
+ */
+
+.ngb-test-transition {
+  height: 100px;
+  width: 100px;
+  background-color: red;
+}
+
+.ngb-test-none {
+  transition-property: none;
+  transition-duration: 0.01s;
+  transition-timing-function: linear;
+}
+
+.ngb-test-fade {
+  transition-property: opacity;
+  transition-duration: 0.01s;
+  transition-timing-function: linear;
+}
+
+.ngb-test-fade:not(.ngb-test-show) {
+  opacity: 0;
+}
+
+.ngb-test-long-duration {
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: 1s;
+  transition-timing-function: linear;
+}
+
+.ngb-test-before {
+  opacity: 1;
+}
+
+.ngb-test-during {
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: 0.01s;
+  transition-timing-function: linear;
+}
+
+.ngb-test-after {
+  opacity: 0;
+  transition-property: none;
+}
+
+.ngb-test-hide-outer {
+  opacity: 0 !important;
+  transition-property: opacity;
+  transition-duration: 0.1s;
+  transition-timing-function: linear;
+}
+
+.ngb-test-hide-inner {
+  opacity: 0 !important;
+  transition-property: opacity;
+  transition-duration: 0.01s;
+  transition-timing-function: linear;
+}

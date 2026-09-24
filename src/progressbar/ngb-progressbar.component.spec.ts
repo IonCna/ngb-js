@@ -1,161 +1,389 @@
-import type { ICompileService, IRootScopeService } from "angular";
-import angular from "angular";
-import { getNgModuleName } from "ngjs-core";
-import { beforeEach, describe, expect, it } from "vitest";
-import { NgbModule } from "../ngb.module";
+import { type ComponentFixture, inject, TestBed } from "ngjs-core/testing";
+import { createGenericTestComponent } from "../test/common";
 
-describe("ngbProgressbar", () => {
-  let $compile: ICompileService;
-  let $rootScope: IRootScopeService;
+import { Component } from "ngjs-core";
 
+import { NgbProgressbar } from "./ngb-progressbar.component";
+import { NgbProgressbarModule } from "./ngb-progressbar.module";
+import { NgbProgressbarConfig } from "./ngb-progressbar-config.service";
+
+/**
+ * Port de `progressbar.spec.ts` de ng-bootstrap 16. Diferencias forzadas por AngularJS:
+ * - templates en sintaxis de AngularJS (`[value]="value"` → `value="$ctrl.value"`, un literal va entre comillas:
+ *   `height="'10px'"`, `aria-label="'flupke'"`);
+ * - sin componentes standalone: `NgbProgressbarModule` se importa en el módulo de test.
+ */
+const createTestComponent = (html: string) =>
+  createGenericTestComponent(html, TestComponent) as ComponentFixture<TestComponent>;
+
+function getAriaLabel(nativeEl: Element): string {
+  return getProgress(nativeEl).getAttribute("aria-label") || "";
+}
+
+function getBarWidth(nativeEl: Element): string {
+  return getProgressbar(nativeEl).style.width;
+}
+
+function getBarHeight(nativeEl: Element): string {
+  return getProgress(nativeEl).style.height;
+}
+
+function getBarValue(nativeEl: Element): number {
+  return parseInt(getProgress(nativeEl).getAttribute("aria-valuenow")!, 10);
+}
+
+function getProgress(nativeEl: Element): HTMLElement {
+  return nativeEl.querySelector(".progress") as HTMLElement;
+}
+
+function getProgressbar(nativeEl: Element): HTMLElement {
+  return nativeEl.querySelector(".progress-bar") as HTMLElement;
+}
+
+describe("ngb-progressbar", () => {
   beforeEach(() => {
-    angular.mock.module(getNgModuleName(NgbModule));
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
+    TestBed.configureTestingModule({ imports: [NgbProgressbarModule] });
+  });
+
+  describe("business logic", () => {
+    let progressCmp: NgbProgressbar;
+
+    beforeEach(() => {
+      progressCmp = TestBed.createComponent(NgbProgressbar).componentInstance;
+    });
+
+    it("should initialize inputs with default values", () => {
+      const defaultConfig = TestBed.inject(NgbProgressbarConfig);
+      expect(progressCmp.max).toBe(defaultConfig.max);
+      expect(progressCmp.animated).toBe(defaultConfig.animated);
+      expect(progressCmp.striped).toBe(defaultConfig.striped);
+      expect(progressCmp.textType).toBe(defaultConfig.textType);
+      expect(progressCmp.type).toBe(defaultConfig.type);
+    });
+
+    it("should calculate the percentage (default max size)", () => {
+      progressCmp.value = 50;
+      expect(progressCmp.getPercentValue()).toBe(50);
+
+      progressCmp.value = 25;
+      expect(progressCmp.getPercentValue()).toBe(25);
+    });
+
+    it("should calculate the percentage (custom max size)", () => {
+      progressCmp.max = 150;
+
+      progressCmp.value = 75;
+      expect(progressCmp.getPercentValue()).toBe(50);
+
+      progressCmp.value = 30;
+      expect(progressCmp.getPercentValue()).toBe(20);
+    });
+
+    it("should calculate the percentage (custom max size of null)", () => {
+      progressCmp.max = <any>null;
+
+      progressCmp.value = 25;
+      expect(progressCmp.getPercentValue()).toBe(25);
+    });
+
+    it("should calculate the percentage (custom max size of undefined)", () => {
+      progressCmp.max = <any>undefined;
+
+      progressCmp.value = 25;
+      expect(progressCmp.getPercentValue()).toBe(25);
+    });
+
+    it("should calculate the percentage (custom max size of zero)", () => {
+      progressCmp.max = 0;
+
+      progressCmp.value = 25;
+      expect(progressCmp.getPercentValue()).toBe(25);
+    });
+
+    it("should calculate the percentage (custom negative max size)", () => {
+      progressCmp.max = -10;
+
+      progressCmp.value = 25;
+      expect(progressCmp.getPercentValue()).toBe(25);
+    });
+
+    it("should calculate the percentage (custom max size of positive infinity)", () => {
+      progressCmp.max = Number.POSITIVE_INFINITY;
+
+      progressCmp.value = 25;
+      expect(progressCmp.getPercentValue()).toBe(25);
+    });
+
+    it("should calculate the percentage (custom max size of negative infinity)", () => {
+      progressCmp.max = Number.NEGATIVE_INFINITY;
+
+      progressCmp.value = 25;
+      expect(progressCmp.getPercentValue()).toBe(25);
+    });
+
+    it("should set the value to 0 for negative numbers", () => {
+      progressCmp.value = -20;
+      expect(progressCmp.getValue()).toBe(0);
+    });
+
+    it("should set the value to max if it is higher than max (default max size)", () => {
+      progressCmp.value = 120;
+      expect(progressCmp.getValue()).toBe(100);
+    });
+
+    it("should set the value to max if it is higher than max (custom max size)", () => {
+      progressCmp.max = 150;
+      progressCmp.value = 170;
+      expect(progressCmp.getValue()).toBe(150);
+    });
+
+    it("should update the value if max updates to a smaller value", () => {
+      progressCmp.value = 80;
+      progressCmp.max = 70;
+      expect(progressCmp.getValue()).toBe(70);
+    });
+
+    it("should not update the value if max updates to a larger value", () => {
+      progressCmp.value = 120;
+      progressCmp.max = 150;
+      expect(progressCmp.getValue()).toBe(120);
     });
   });
 
-  it("renders host aria attributes and width from value/max", () => {
-    const scope = $rootScope.$new() as IRootScopeService & {
-      value: number;
-      max: number;
-    };
-    scope.value = 25;
-    scope.max = 100;
+  describe("UI logic", () => {
+    it("accepts a value and respond to value changes", () => {
+      const html = `<ngb-progressbar value="$ctrl.value"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
 
-    const element = $compile(`
-            <ngb-progressbar
-                value="value"
-                max="max"
-                aria-label="'Download'"
-                show-value="true"
-                striped="true"
-                animated="true"
-                type="'success'"
-                text-type="'dark'">
-            </ngb-progressbar>
-        `)(scope);
-    scope.$digest();
+      expect(getBarWidth(fixture.nativeElement)).toBe("10%");
 
-    const host = element[0] as HTMLElement;
-    const progress = host;
-    const progressBar = host.querySelector(".progress-bar") as HTMLElement;
+      // this might fail in IE11 if attribute binding order is not respected for the <progress> element:
+      // <progress [value]="" [max]=""> will fail with value = 1
+      // <progress [max]="" [value]=""> will work with value = 10
+      expect(getBarValue(fixture.nativeElement)).toBe(10);
 
-    expect(progress).toBeTruthy();
-    expect(progress.classList.contains("progress")).toBe(true);
-    expect(progress.getAttribute("role")).toBe("progressbar");
-    expect(progress.getAttribute("aria-valuenow")).toBe("25");
-    expect(progress.getAttribute("aria-valuemax")).toBe("100");
-    expect(progress.getAttribute("aria-label")).toBe("Download");
-    expect(progressBar.style.width).toBe("25%");
-    expect(progressBar.classList.contains("progress-bar-striped")).toBe(true);
-    expect(progressBar.classList.contains("progress-bar-animated")).toBe(true);
-    expect(progressBar.textContent?.trim()).toBe("25%");
+      fixture.componentInstance.value = 30;
+      fixture.detectChanges();
+      expect(getBarWidth(fixture.nativeElement)).toBe("30%");
+      expect(getBarValue(fixture.nativeElement)).toBe(30);
+    });
+
+    it("accepts a max value and respond to max changes", () => {
+      const html = `<ngb-progressbar value="$ctrl.value" max="$ctrl.max"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getBarWidth(fixture.nativeElement)).toBe("20%");
+
+      fixture.componentInstance.max = 200;
+      fixture.detectChanges();
+      expect(getBarWidth(fixture.nativeElement)).toBe("5%");
+    });
+
+    it("accepts a value and max value above default values", () => {
+      const html = `<ngb-progressbar value="150" max="150"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getBarWidth(fixture.nativeElement)).toBe("100%");
+    });
+
+    it("accepts a custom type", () => {
+      const html = `<ngb-progressbar value="$ctrl.value" type="$ctrl.type"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-bg-warning");
+
+      fixture.componentInstance.type = "info";
+      fixture.detectChanges();
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-bg-info");
+
+      fixture.componentInstance.type = "dark";
+      fixture.detectChanges();
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-bg-dark");
+    });
+
+    it("accepts a custom text type", () => {
+      const html = `<ngb-progressbar value="$ctrl.value" text-type="$ctrl.textType"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-light");
+
+      fixture.componentInstance.textType = "info";
+      fixture.detectChanges();
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-info");
+    });
+
+    it("accepts a custom type and text type", () => {
+      const html = `<ngb-progressbar value="$ctrl.value" type="$ctrl.type" text-type="$ctrl.textType"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-light");
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("bg-warning");
+
+      fixture.componentInstance.type = "danger";
+      fixture.componentInstance.textType = "info";
+      fixture.detectChanges();
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("bg-danger");
+      expect(getProgressbar(fixture.nativeElement)).not.toHaveCssClass("text-bg-danger");
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-info");
+    });
+
+    it("accepts animated as normal attr", () => {
+      const html = `<ngb-progressbar value="$ctrl.value" animated="$ctrl.animated"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("progress-bar-animated");
+
+      fixture.componentInstance.animated = false;
+      fixture.detectChanges();
+      expect(getProgressbar(fixture.nativeElement)).not.toHaveCssClass("progress-bar-animated");
+    });
+
+    it("accepts striped as normal attr", () => {
+      const html = `<ngb-progressbar value="$ctrl.value" striped="$ctrl.striped"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("progress-bar-striped");
+
+      fixture.componentInstance.striped = false;
+      fixture.detectChanges();
+      expect(getProgressbar(fixture.nativeElement)).not.toHaveCssClass("progress-bar-striped");
+    });
+
+    it('should not add "false" CSS class', () => {
+      const html = `<ngb-progressbar value="$ctrl.value" striped="$ctrl.striped"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("progress-bar-striped");
+      expect(getProgressbar(fixture.nativeElement)).not.toHaveCssClass("false");
+    });
+
+    it("should stay striped when the type changes", () => {
+      const html = `<ngb-progressbar value="$ctrl.value" type="$ctrl.type" striped="true"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-bg-warning");
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("progress-bar-striped");
+
+      fixture.componentInstance.type = "success";
+      fixture.detectChanges();
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-bg-success");
+      expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("progress-bar-striped");
+    });
+
+    it("sets the min and max values as aria attributes", () => {
+      const html = `<ngb-progressbar value="130" max="150"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getProgress(fixture.nativeElement).getAttribute("aria-valuemin")).toBe("0");
+      expect(getProgress(fixture.nativeElement).getAttribute("aria-valuemax")).toBe("150");
+    });
+
+    it("should display the progress-bar label", () => {
+      const html = `<ngb-progressbar value="150" max="150">label goes here</ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(fixture.nativeElement.textContent).toContain("label goes here");
+    });
+
+    it("should display the current percentage value", () => {
+      const html = `<ngb-progressbar show-value="true" value="150" max="150"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(fixture.nativeElement.textContent).toContain("100%");
+    });
+
+    it("should accepts height values", () => {
+      const html = `<ngb-progressbar value="150" height="'10px'"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getBarHeight(fixture.nativeElement)).toBe("10px");
+    });
+
+    it("should have default accessible name", () => {
+      const html = "<ngb-progressbar></ngb-progressbar>";
+      const fixture = createTestComponent(html);
+
+      expect(getAriaLabel(fixture.nativeElement)).toBe("progress bar");
+    });
+
+    it("should have custom accessible name", () => {
+      const html = `<ngb-progressbar aria-label="'flupke'"></ngb-progressbar>`;
+      const fixture = createTestComponent(html);
+
+      expect(getAriaLabel(fixture.nativeElement)).toBe("flupke");
+    });
+
+    it("should set width on progress when inside <ngb-progressbar-stacked>", () => {
+      const html = `<ngb-progressbar-stacked><ngb-progressbar value="50"></ngb-progressbar></ngb-progressbar-stacked>`;
+      const fixture = createTestComponent(html);
+
+      expect(getBarWidth(fixture.nativeElement)).toBe("");
+      expect(getProgress(fixture.nativeElement).style.width).toBe("50%");
+    });
   });
 
-  it("sets host width when inside ngb-progressbar-stacked", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { value: number };
-    scope.value = 20;
+  describe("Custom config", () => {
+    let config: NgbProgressbarConfig;
 
-    const element = $compile(`
-            <ngb-progressbar-stacked>
-                <ngb-progressbar value="value"></ngb-progressbar>
-            </ngb-progressbar-stacked>
-        `)(scope);
-    scope.$digest();
-
-    const host = element[0] as HTMLElement;
-    const stacked = host;
-    const progress = host.querySelector("ngb-progressbar") as HTMLElement;
-    const progressBar = host.querySelector(".progress-bar") as HTMLElement;
-
-    expect(stacked).toBeTruthy();
-    expect(stacked.classList.contains("progress-stacked")).toBe(true);
-    expect(progress.style.width).toBe("20%");
-    expect(progress.classList.contains("progress")).toBe(true);
-    expect(progress.getAttribute("role")).toBe("progressbar");
-    expect(progress.getAttribute("aria-valuenow")).toBe("20");
-    expect(progressBar.style.width).toBe("");
-  });
-
-  it.each([
-    [null, 100],
-    [undefined, 100],
-    [0, 100],
-    [-10, 100],
-    [Number.POSITIVE_INFINITY, 100],
-    [Number.NEGATIVE_INFINITY, 100],
-    [200, 200],
-  ])("normalizes max %s to %s", (max, expected) => {
-    const scope = $rootScope.$new() as IRootScopeService & { max: number | null | undefined };
-    scope.max = max;
-    const element = $compile(`<ngb-progressbar value="50" max="max"></ngb-progressbar>`)(scope);
-    scope.$digest();
-    expect(element.attr("aria-valuemax")).toBe(String(expected));
-  });
-
-  it.each([
-    [-1, "0", "0%"],
-    [0, "0", "0%"],
-    [25, "25", "25%"],
-    [100, "100", "100%"],
-    [150, "100", "100%"],
-  ])("clamps value %s to the valid range", (value, ariaValue, width) => {
-    const element = $compile(`<ngb-progressbar value="${value}" max="100"></ngb-progressbar>`)($rootScope.$new());
-    $rootScope.$digest();
-    expect(element.attr("aria-valuenow")).toBe(ariaValue);
-    expect((element[0].querySelector(".progress-bar") as HTMLElement).style.width).toBe(width);
-  });
-
-  it("reacts to value and max changes", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { max: number; value: number };
-    scope.max = 200;
-    scope.value = 100;
-    const element = $compile(`<ngb-progressbar value="value" max="max"></ngb-progressbar>`)(scope);
-    scope.$digest();
-    const bar = element[0].querySelector(".progress-bar") as HTMLElement;
-    expect(bar.style.width).toBe("50%");
-
-    scope.value = 150;
-    scope.max = 100;
-    scope.$digest();
-    expect(element.attr("aria-valuenow")).toBe("100");
-    expect(bar.style.width).toBe("100%");
-  });
-
-  it("applies type and text type classes without a false class", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { textType?: string; type?: string };
-    scope.type = "success";
-    const element = $compile(`<ngb-progressbar value="25" type="type" text-type="textType"></ngb-progressbar>`)(scope);
-    scope.$digest();
-    const bar = element[0].querySelector(".progress-bar") as HTMLElement;
-    expect(bar.classList.contains("text-bg-success")).toBe(true);
-    expect(bar.classList.contains("false")).toBe(false);
-
-    scope.textType = "dark";
-    scope.$digest();
-    expect(bar.classList.contains("bg-success")).toBe(true);
-    expect(bar.classList.contains("text-dark")).toBe(true);
-  });
-
-  it("renders projected labels and optional percentage values", () => {
-    const element = $compile(
-      `<ngb-progressbar value="25" max="50" show-value="true"><strong>Complete</strong></ngb-progressbar>`,
-    )($rootScope.$new());
-    $rootScope.$digest();
-    const bar = element[0].querySelector(".progress-bar") as HTMLElement;
-    expect(bar.textContent).toContain("50%");
-    expect(bar.textContent).toContain("Complete");
-  });
-
-  it("accepts height and an accessible name", () => {
-    const element = $compile(`<ngb-progressbar value="20" height="'2rem'" aria-label="'Upload'"></ngb-progressbar>`)(
-      $rootScope.$new(),
+    beforeEach(
+      inject([NgbProgressbarConfig], (c: NgbProgressbarConfig) => {
+        config = c;
+        config.max = 1000;
+        config.striped = true;
+        config.animated = true;
+        config.textType = "white";
+        config.type = "success";
+      }),
     );
-    $rootScope.$digest();
-    expect((element[0] as HTMLElement).style.height).toBe("2rem");
-    expect(element.attr("aria-label")).toBe("Upload");
-    expect(element.attr("aria-valuemin")).toBe("0");
+
+    it("should initialize inputs with provided config", () => {
+      const fixture = TestBed.createComponent(NgbProgressbar);
+      fixture.detectChanges();
+
+      let progressbar = fixture.componentInstance;
+      expect(progressbar.max).toBe(config.max);
+      expect(progressbar.striped).toBe(config.striped);
+      expect(progressbar.animated).toBe(config.animated);
+      expect(progressbar.textType).toBe(config.textType);
+      expect(progressbar.type).toBe(config.type);
+    });
+  });
+
+  describe("Custom config as provider", () => {
+    let config = new NgbProgressbarConfig();
+    config.max = 1000;
+    config.striped = true;
+    config.animated = true;
+    config.textType = "light";
+    config.type = "success";
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({
+        providers: [{ provide: NgbProgressbarConfig, useValue: config }],
+      });
+    });
+
+    it("should initialize inputs with provided config as provider", () => {
+      const fixture = TestBed.createComponent(NgbProgressbar);
+      fixture.detectChanges();
+
+      let progressbar = fixture.componentInstance;
+      expect(progressbar.max).toBe(config.max);
+      expect(progressbar.striped).toBe(config.striped);
+      expect(progressbar.animated).toBe(config.animated);
+      expect(progressbar.textType).toBe(config.textType);
+      expect(progressbar.type).toBe(config.type);
+    });
   });
 });
+
+@Component({ selector: "test-cmp", template: "" })
+class TestComponent {
+  value = 10;
+  max = 50;
+  animated = true;
+  striped = true;
+
+  textType = "light";
+  type = "warning";
+}

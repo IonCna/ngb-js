@@ -1,6 +1,6 @@
-import { Service } from "ngjs-core";
+import { Injectable } from "ngjs-core";
 
-@Service({ id: "ngb.progressbar.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbProgressbarConfig {
   max = 100;
   animated = false;

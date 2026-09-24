@@ -1,5 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "files": ["test/setup.ts", "test/test-framework-shim.ts"],
-  "include": ["**/*spec.ts", "**/*d.ts"]
+  "compilerOptions": {
+    "types": [
+      "./types/index.d.ts",
+      "ng-js-cli/testing"
+    ]
+  },
+  "files": [
+    "src/test/jasmine.config.ts"
+  ],
+  "include": [
+    "**/*spec.ts",
+    "**/*d.ts"
+  ]
 }

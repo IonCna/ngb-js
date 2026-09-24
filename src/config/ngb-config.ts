@@ -1,7 +1,8 @@
-import { Service } from "ngjs-core";
+import { environment } from "@ngb/environment";
+import { Injectable } from "ngjs-core";
 
 /** Global ng-bootstrap config. Paridad con `@ng-bootstrap` (`ngb-config.ts`). */
-@Service({ id: "ngb.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbConfig {
-  public animation: boolean = true;
+  public animation: boolean = environment.animation;
 }

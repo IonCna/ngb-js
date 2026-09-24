@@ -7,4 +7,3 @@ export {
 } from "@ngb/offcanvas/ngb-offcanvas-config.service";
 export { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-reasons";
 export { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanvas-ref";
-export { NGB_OFFCANVAS, NGB_OFFCANVAS_CONFIG } from "@ngb/offcanvas/tokens";

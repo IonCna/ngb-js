@@ -5,20 +5,15 @@ import {
   NgbDateParserFormatter,
 } from "@ngb/datepicker/ngb-date-parser-formatter.ts";
 import { NgbDatepicker } from "@ngb/datepicker/ngb-datepicker.component.ts";
-import { NgbDatepickerConfig } from "@ngb/datepicker/ngb-datepicker-config.service.ts";
 import { NgbDatepickerContent } from "@ngb/datepicker/ngb-datepicker-content.component.ts";
 import { NgbDatepickerDayView } from "@ngb/datepicker/ngb-datepicker-day-view.component.ts";
 import { NgbDatepickerI18n, NgbDatepickerI18nDefault } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
-import { NgbDatepickerKeyboardService } from "@ngb/datepicker/ngb-datepicker-keyboard.service.ts";
 import { NgbDatepickerMonth } from "@ngb/datepicker/ngb-datepicker-month.component.ts";
 import { NgbDatepickerNavigation } from "@ngb/datepicker/ngb-datepicker-navigation.component.ts";
 import { NgbDatepickerNavigationSelect } from "@ngb/datepicker/ngb-datepicker-navigation-select.component.ts";
 import { NgbInputDatepicker } from "@ngb/datepicker/ngb-input-datepicker.directive.ts";
-import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-config.service.ts";
-import { NgbRTL } from "@ngb/utils/rtl.service";
 import { NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
-import { PlatformBrowserModule } from "ngjs-core/platform-browser";
 
 export { NgbDatepicker } from "@ngb/datepicker/ngb-datepicker.component.ts";
 export { NgbDatepickerContent } from "@ngb/datepicker/ngb-datepicker-content.component.ts";
@@ -38,39 +33,19 @@ export { NgbDateParserFormatter } from "@ngb/datepicker/ngb-date-parser-formatte
 export { NgbDatepickerKeyboardService } from "@ngb/datepicker/ngb-datepicker-keyboard.service.ts";
 export type { DayTemplateContext } from "@ngb/datepicker/ngb-datepicker-day-template-context.ts";
 
-const NGB_DATEPICKER_DIRECTIVES = [
-  NgbDatepicker,
-  NgbDatepickerContent,
-  NgbInputDatepicker,
-  NgbDatepickerMonth,
-  NgbDatepickerNavigation,
-  NgbDatepickerNavigationSelect,
-  NgbDatepickerDayView,
-];
-
-/**
- * upstream:
- * ```
- * @NgModule({ exports: NGB_DATEPICKER_DIRECTIVES, imports: NGB_DATEPICKER_DIRECTIVES })
- * export class NgbDatepickerModule {}
- * ```
- * Se exporta como **clase** `@NgModule` (estilo Angular): el registro /
- * `bootstrapApplication` lo hace la app consumidora (o `configureTestBed` en specs).
- *
- * ngjs-core: `imports`/`exports` de standalone → `declarations`. Los servicios
- * `@Injectable({ providedIn: 'root' [, useFactory] })` no se auto-registran en
- * ngjs-core (informativo) → van en `providers`.
- */
 @NgModule({
-  id: "ngb.datepicker",
   controllerAs: "$",
-  imports: [CommonModule, PlatformBrowserModule],
-  declarations: NGB_DATEPICKER_DIRECTIVES,
+  imports: [CommonModule],
+  declarations: [
+    NgbDatepicker,
+    NgbDatepickerContent,
+    NgbInputDatepicker,
+    NgbDatepickerMonth,
+    NgbDatepickerNavigation,
+    NgbDatepickerNavigationSelect,
+    NgbDatepickerDayView,
+  ],
   providers: [
-    NgbRTL,
-    NgbDatepickerConfig,
-    NgbInputDatepickerConfig,
-    NgbDatepickerKeyboardService,
     { provide: NgbCalendar, useFactory: NGB_DATEPICKER_CALENDAR_FACTORY },
     { provide: NgbDateAdapter, useFactory: NGB_DATEPICKER_DATE_ADAPTER_FACTORY },
     { provide: NgbDateParserFormatter, useFactory: NGB_DATEPICKER_PARSER_FORMATTER_FACTORY },

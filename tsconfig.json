@@ -5,7 +5,7 @@
     "useDefineForClassFields": false,
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["./types/index.d.ts"],
+    "types": ["./types/index.d.ts", "ng-js-cli/testing"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -29,5 +29,5 @@
     "noUncheckedSideEffectImports": true
   },
   "include": ["src"],
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "test"]
+  "exclude": ["**/*.test.ts", "test"]
 }

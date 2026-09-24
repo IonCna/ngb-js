@@ -1,0 +1,42 @@
+{
+  "version": "1",
+  "root": ".",
+  "projectType": "library",
+  "sourceRoot": "src",
+  "prefix": "ngb",
+  "architect": {
+    "build": {
+      "options": {
+        "entryPoints": {
+          "index": "src/index.ts"
+        },
+        "outputPath": "dist",
+        "external": [
+          "angular",
+          "rxjs",
+          "rxjs/*",
+          "@popperjs/core",
+          "ngjs-core",
+          "ngjs-core/*"
+        ]
+      }
+    },
+    "test": {
+      "options": {
+        "include": [
+          "src/**/*.spec.ts"
+        ],
+        "fileReplacements": [
+          {
+            "replace": "src/environment.ts",
+            "with": "src/environment.test.ts"
+          }
+        ],
+        "setupFiles": [
+          "src/test/jasmine.config.ts",
+          "src/test/test-styles.ts"
+        ]
+      }
+    }
+  }
+}

@@ -1,4 +1,3 @@
-import template from "@ngb/progressbar/ngb-progressbar.component.html";
 import { NgbProgressbarConfig } from "@ngb/progressbar/ngb-progressbar-config.service";
 import { NgbProgressbarStacked } from "@ngb/progressbar/ngb-progressbar-stacked.component";
 import { getValueInRange, isNumber } from "@ngb/utils";
@@ -6,7 +5,7 @@ import { Component, HostBinding, inject, Input } from "ngjs-core";
 
 @Component({
   selector: "ngb-progressbar",
-  template,
+  templateUrl: "./ngb-progressbar.component.html",
 })
 export class NgbProgressbar {
   private _config = inject(NgbProgressbarConfig);

@@ -8,4 +8,3 @@ export { NgbAccordionConfig } from "@ngb/accordion/ngb-accordion-config.service"
 export { NgbAccordionHeader } from "@ngb/accordion/ngb-accordion-header.directive";
 export { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 export { NgbAccordionToggle } from "@ngb/accordion/ngb-accordion-toggle.directive";
-export { NGB_ACCORDION_CONFIG } from "@ngb/accordion/tokens";

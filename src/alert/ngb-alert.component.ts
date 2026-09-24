@@ -1,4 +1,3 @@
-import template from "@ngb/alert/ngb-alert.component.html";
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
 import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
@@ -12,7 +11,7 @@ export interface INgbAlert {
 @Component({
   selector: "ngb-alert",
   exportAs: "ngbAlert",
-  template,
+  templateUrl: "./ngb-alert.component.html",
 })
 export class NgbAlert implements INgbAlert {
   private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);

@@ -7,4 +7,3 @@ export {
 } from "@ngb/modal/ngb-modal-config.service";
 export { ModalDismissReasons } from "@ngb/modal/ngb-modal-dismiss-reasons";
 export { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
-export { NGB_MODAL, NGB_MODAL_CONFIG } from "@ngb/modal/tokens";
