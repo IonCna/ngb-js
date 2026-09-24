@@ -33,7 +33,6 @@ const PANEL_ATTRIBUTES = [
 
 @Component({
   selector: "ngb-offcanvas-panel",
-  transclude: true,
   template: "<ng-content></ng-content>",
 })
 export class NgbOffcanvasPanel implements OnInit, OnDestroy {

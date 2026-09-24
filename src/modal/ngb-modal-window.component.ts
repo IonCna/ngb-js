@@ -44,7 +44,6 @@ const WINDOW_ATTRIBUTES = [
 
 @Component({
   selector: "ngb-modal-window",
-  transclude: true,
   template,
 })
 export class NgbModalWindow implements OnInit, OnDestroy {

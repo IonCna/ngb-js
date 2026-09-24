@@ -10,7 +10,7 @@ export interface NgbToastOptions {
 @Injectable({ providedIn: "root" })
 export class NgbToastConfig implements NgbToastOptions {
   private _ngbConfig = inject(NgbConfig);
-  private _animation: boolean;
+  private _animation?: boolean;
 
   autohide = true;
   delay = 5000;

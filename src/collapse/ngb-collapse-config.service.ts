@@ -4,7 +4,7 @@ import { Injectable, inject } from "ngjs-core";
 @Injectable({ providedIn: "root" })
 export class NgbCollapseConfig {
   private _ngbConfig = inject(NgbConfig);
-  private _animation: boolean;
+  private _animation?: boolean;
 
   horizontal = false;
 

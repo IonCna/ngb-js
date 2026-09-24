@@ -9,7 +9,7 @@ import { Injectable, inject } from "ngjs-core";
 @Injectable({ providedIn: "root" })
 export class NgbCarouselConfig {
   private _ngbConfig = inject(NgbConfig);
-  private _animation: boolean;
+  private _animation?: boolean;
 
   interval = 5000;
   wrap = true;

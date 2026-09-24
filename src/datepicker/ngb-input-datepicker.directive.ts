@@ -50,7 +50,6 @@ import { Subject, type Subscription } from "rxjs";
 @Directive({
   selector: "input[ngbDatepicker]",
   exportAs: "ngbDatepicker",
-  require: { _ngModelCtrl: "?ngModel" },
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbInputDatepicker), multi: true },
     // upstream también: { provide: NG_VALIDATORS, useExisting: forwardRef(() => NgbInputDatepicker), multi: true }

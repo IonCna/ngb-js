@@ -1,11 +1,13 @@
 import template from "@ngb/rating/ngb-rating.component.html";
 import { NgbRatingConfig } from "@ngb/rating/ngb-rating-config.service";
 import { getValueInRange } from "@ngb/utils";
+import { Key } from "@ngb/utils/key";
 import {
   ChangeDetectorRef,
   Component,
   ContentChild,
   EventEmitter,
+  forwardRef,
   HostBinding,
   HostListener,
   Input,
@@ -17,6 +19,7 @@ import {
   TemplateRef,
   ViewChild,
 } from "ngjs-core";
+import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
 
 export interface StarTemplateContext {
   fill: number;
@@ -26,9 +29,9 @@ export interface StarTemplateContext {
 @Component({
   selector: "ngb-rating",
   template,
-  transclude: true,
+  providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbRating), multi: true }],
 })
-export class NgbRating implements OnInit, OnChanges {
+export class NgbRating implements ControlValueAccessor, OnInit, OnChanges {
   contexts: StarTemplateContext[] = [];
   nextRate!: number;
 
@@ -150,19 +153,19 @@ export class NgbRating implements OnInit, OnChanges {
 
   @HostListener("keydown", ["$event"])
   handleKeyDown(event: KeyboardEvent): void {
-    switch (event.key) {
-      case "ArrowDown":
-      case "ArrowLeft":
+    switch (event.which) {
+      case Key.ArrowDown:
+      case Key.ArrowLeft:
         this.update(this.rate - 1);
         break;
-      case "ArrowUp":
-      case "ArrowRight":
+      case Key.ArrowUp:
+      case Key.ArrowRight:
         this.update(this.rate + 1);
         break;
-      case "Home":
+      case Key.Home:
         this.update(0);
         break;
-      case "End":
+      case Key.End:
         this.update(this.max);
         break;
       default:

@@ -6,7 +6,7 @@ import { Injectable, inject } from "ngjs-core";
 @Injectable({ providedIn: "root" })
 export class NgbTooltipConfig {
   private _ngbConfig = inject(NgbConfig);
-  private _animation: boolean;
+  private _animation?: boolean;
 
   autoClose: boolean | "inside" | "outside" = true;
   placement: PlacementArray = "auto";

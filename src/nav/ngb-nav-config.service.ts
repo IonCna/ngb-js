@@ -15,7 +15,7 @@ export interface NgbNavContentContext {
 @Injectable({ providedIn: "root" })
 export class NgbNavConfig {
   private _ngbConfig = inject(NgbConfig);
-  private _animation: boolean;
+  private _animation?: boolean;
 
   destroyOnHide = true;
   orientation: "horizontal" | "vertical" = "horizontal";

@@ -29,10 +29,6 @@ export interface NgbPaginationPagesContext {
 @Component({
     selector: "ngb-pagination",
     template,
-    // El contenido proyectado son solo `<ng-template ngbPagination*>` (sin
-    // `<ng-content>` en el template): hace falta `transclude` explícito para que
-    // el bridge de proyección los instancie y los `@ContentChild` los vean.
-    transclude: true,
 })
 export class NgbPagination implements OnChanges, AfterContentInit {
     private _config = inject(NgbPaginationConfig);

@@ -1,6 +1,6 @@
-import { Service } from "ngjs-core";
+import { Injectable } from "ngjs-core";
 
-@Service({ id: "ngb.pagination.config.service" })
+@Injectable({ providedIn: "root" })
 export class NgbPaginationConfig {
   disabled = false;
   boundaryLinks = false;

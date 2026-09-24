@@ -5,7 +5,7 @@ import { Injectable, inject } from "ngjs-core";
 @Injectable({ providedIn: "root" })
 export class NgbAlertConfig {
   private readonly _config = inject(NgbConfig);
-  private _animation: boolean;
+  private _animation?: boolean;
 
   dismissible = true;
   type = "warning";

@@ -29,7 +29,7 @@ export type NgbOffcanvasUpdatableOptions = Pick<
 @Injectable({ providedIn: "root" })
 export class NgbOffcanvasConfig implements NgbOffcanvasOptions {
   private _ngbConfig = inject(NgbConfig);
-  private _animation: boolean;
+  private _animation?: boolean;
 
   ariaDescribedBy?: string;
   ariaLabelledBy?: string;
