@@ -126,7 +126,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "bun esbuild.config.ts",
+    "build": "ngjs build",
     "serve": "bun demo/esbuild.config.ts",
     "test": "ngjs test --no-watch",
     "test:watch": "ngjs test",
