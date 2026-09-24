@@ -5,7 +5,7 @@ import {
   ElementRef,
   type EmbeddedViewRef,
   HostBinding,
-  inject,
+  Inject,
   type OnDestroy,
   TemplateRef,
   ViewChild,
@@ -31,11 +31,11 @@ import {
   template: `<ng-container ng-ref="container"></ng-container><ng-content></ng-content>`,
 })
 export class NgbAccordionBody implements OnDestroy {
-  private _item = inject(NgbAccordionItem);
+  private _item: NgbAccordionItem;
   private _viewRef: EmbeddedViewRef<unknown> | null = null;
 
   /** El `ElementRef` del componente. @since 18.0.0 */
-  readonly elementRef = inject(ElementRef);
+  readonly elementRef: ElementRef;
 
   @HostBinding("class.accordion-body")
   readonly _hostClass = true;
@@ -45,6 +45,11 @@ export class NgbAccordionBody implements OnDestroy {
 
   @ContentChild(TemplateRef, { static: true })
   private _bodyTpl!: TemplateRef<unknown>;
+
+  constructor(@Inject(NgbAccordionItem) item: NgbAccordionItem, @Inject(ElementRef) elementRef: ElementRef) {
+    this._item = item;
+    this.elementRef = elementRef;
+  }
 
   ngAfterContentChecked(): void {
     if (this._bodyTpl) {

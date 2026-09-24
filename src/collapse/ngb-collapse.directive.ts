@@ -5,6 +5,7 @@ import {
   ElementRef,
   EventEmitter,
   HostBinding,
+  Inject,
   inject,
   Input,
   NgZone,
@@ -22,9 +23,11 @@ export interface INgbCollapse {
   exportAs: "ngbCollapse",
 })
 export class NgbCollapse implements OnInit, INgbCollapse {
+  // NgbCollapseConfig es @Service: no lo resuelve el $injector nativo de
+  // AngularJS por constructor, solo inject() (cae al RootSingletonRegistry).
   private _config = inject(NgbCollapseConfig);
-  private _element = inject<ElementRef<HTMLElement>>(ElementRef);
-  private _zone = inject(NgZone);
+  private _element: ElementRef<HTMLElement>;
+  private _zone: NgZone;
   private _afterInit = false;
   private _isCollapsed = false;
 
@@ -44,6 +47,11 @@ export class NgbCollapse implements OnInit, INgbCollapse {
   @Input() horizontal = this._config.horizontal;
   @Output() shown = new EventEmitter<void>();
   @Output() hidden = new EventEmitter<void>();
+
+  constructor(@Inject(ElementRef) element: ElementRef<HTMLElement>, @Inject(NgZone) zone: NgZone) {
+    this._element = element;
+    this._zone = zone;
+  }
 
   @HostBinding("class.collapse-horizontal")
   get _collapseHorizontal(): boolean {

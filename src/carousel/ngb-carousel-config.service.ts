@@ -1,5 +1,5 @@
 import { NgbConfig } from "@ngb/config/ngb-config";
-import { inject, Service } from "ngjs-core";
+import { Inject, Service } from "ngjs-core";
 
 /**
  * Servicio de configuración de [`NgbCarousel`](#/components/carousel/api#NgbCarousel).
@@ -8,8 +8,12 @@ import { inject, Service } from "ngjs-core";
  */
 @Service({ id: "ngb.carousel.config.service" })
 export class NgbCarouselConfig {
-  private _ngbConfig = inject(NgbConfig);
+  private _ngbConfig: NgbConfig;
   private _animation?: boolean;
+
+  constructor(@Inject(NgbConfig) ngbConfig: NgbConfig) {
+    this._ngbConfig = ngbConfig;
+  }
 
   interval = 5000;
   wrap = true;

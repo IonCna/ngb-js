@@ -9,8 +9,8 @@ import {
   EventEmitter,
   forwardRef,
   HostBinding,
+  Inject,
   Input,
-  inject,
   Output,
 } from "ngjs-core";
 import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
@@ -34,15 +34,28 @@ let nextId = 0;
   exportAs: "ngbAccordionItem",
 })
 export class NgbAccordionItem {
-  private _accordion = inject(NgbAccordionDirective);
-  private _cd = inject(ChangeDetectorRef);
-  private _destroyRef = inject(DestroyRef);
+  private _accordion: NgbAccordionDirective;
+  private _cd: ChangeDetectorRef;
+  private _destroyRef: DestroyRef;
 
   private _collapsed = true;
   private _id = `ngb-accordion-item-${nextId++}`;
   private _destroyOnHide: boolean | undefined;
 
   private _collapseAnimationRunning = false;
+
+  constructor(
+    // `forwardRef`: mismo import circular que el `@ContentChild` de más abajo
+    // (este archivo y `ngb-accordion.directive.ts` se importan mutuamente) —
+    // sin él, `NgbAccordionDirective` es `undefined` al decorar el constructor.
+    @Inject(forwardRef(() => NgbAccordionDirective)) accordion: NgbAccordionDirective,
+    @Inject(ChangeDetectorRef) cd: ChangeDetectorRef,
+    @Inject(DestroyRef) destroyRef: DestroyRef,
+  ) {
+    this._accordion = accordion;
+    this._cd = cd;
+    this._destroyRef = destroyRef;
+  }
 
   // `forwardRef`: `NgbAccordionCollapse` importa `NgbAccordionItem` de vuelta
   // (referencia circular real entre los dos módulos). Con `splitting: true` en

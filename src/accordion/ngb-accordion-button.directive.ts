@@ -1,6 +1,6 @@
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import { NgbAccordionToggle } from "@ngb/accordion/ngb-accordion-toggle.directive";
-import { Directive, HostBinding, inject } from "ngjs-core";
+import { Directive, HostBinding, Inject } from "ngjs-core";
 
 /**
  * Directiva para poner en un `<button>` dentro del header de un item del acordeón.
@@ -15,7 +15,11 @@ import { Directive, HostBinding, inject } from "ngjs-core";
   hostDirectives: [NgbAccordionToggle],
 })
 export class NgbAccordionButton {
-  item = inject(NgbAccordionItem);
+  item: NgbAccordionItem;
+
+  constructor(@Inject(NgbAccordionItem) item: NgbAccordionItem) {
+    this.item = item;
+  }
 
   @HostBinding("disabled")
   get _disabled(): boolean {
