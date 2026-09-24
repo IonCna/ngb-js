@@ -12,7 +12,6 @@ import {
   type AfterContentChecked,
   type AfterContentInit,
   type AfterViewInit,
-  afterNextRender,
   ChangeDetectorRef,
   Component,
   ContentChildren,
@@ -21,15 +20,12 @@ import {
   EventEmitter,
   HostBinding,
   HostListener,
-  Inject,
   inject,
-  Injector,
   Input,
   NgZone,
   Output,
   PLATFORM_ID,
   type QueryList,
-  TemplateRef,
 } from "ngjs-core";
 import { isPlatformBrowser } from "ngjs-core/common";
 import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
@@ -47,16 +43,10 @@ let carouselId = 0;
 @Component({
   selector: "ngb-carousel",
   exportAs: "ngbCarousel",
-  transclude: true,
   template,
 })
 export class NgbCarousel implements AfterContentChecked, AfterContentInit, AfterViewInit {
   @ContentChildren(NgbSlide) slides!: QueryList<NgbSlide>;
-
-  // WORKAROUND (Gap B, ver CORE_GAPS): `NgbSlide.templateRef` no se obtiene con
-  // `inject(TemplateRef)` en la directiva; se lee acá con `{ read: TemplateRef }`
-  // (patrón nav) y se asigna a cada slide en `_bindSlideTemplates()`.
-  @ContentChildren(NgbSlide, { read: TemplateRef }) private _slideTemplates!: QueryList<TemplateRef<unknown>>;
 
   public NgbSlideEventSource = NgbSlideEventSource;
 
@@ -65,11 +55,10 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
   // AngularJS por constructor, solo inject() (cae al RootSingletonRegistry).
   private _config = inject(NgbCarouselConfig);
   private _platformId = inject(PLATFORM_ID);
-  private _ngZone: NgZone;
-  private _cd: ChangeDetectorRef;
-  private _container: ElementRef<HTMLElement>;
-  private _destroyRef: DestroyRef;
-  private _injector: Injector;
+  private _ngZone = inject(NgZone);
+  private _cd = inject(ChangeDetectorRef);
+  private _container = inject(ElementRef<HTMLElement>);
+  private _destroyRef = inject(DestroyRef);
 
   private _interval$ = new BehaviorSubject(this._config.interval);
   private _mouseHover$ = new BehaviorSubject(false);
@@ -86,6 +75,10 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
   @HostBinding("class.slide") readonly _hostClassSlide = true;
   @HostBinding("style.display") readonly _hostDisplay = "block";
   @HostBinding("attr.tabindex") readonly _hostTabindex = 0;
+  @HostBinding("attr.aria-activedescendant")
+  get _activeDescendant(): string {
+    return `slide-${this.activeId}`;
+  }
 
   /**
    * Flag para activar/desactivar las animaciones.
@@ -172,20 +165,6 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
    */
   @Input() showNavigationIndicators = this._config.showNavigationIndicators;
 
-  constructor(
-    @Inject(NgZone) ngZone: NgZone,
-    @Inject(ChangeDetectorRef) cd: ChangeDetectorRef,
-    @Inject(ElementRef) container: ElementRef<HTMLElement>,
-    @Inject(DestroyRef) destroyRef: DestroyRef,
-    @Inject(Injector) injector: Injector,
-  ) {
-    this._ngZone = ngZone;
-    this._cd = cd;
-    this._container = container;
-    this._destroyRef = destroyRef;
-    this._injector = injector;
-  }
-
   /**
    * Evento emitido justo antes de que empiece la transición del slide.
    */
@@ -259,18 +238,7 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
     this.next(NgbSlideEventSource.ARROW_RIGHT);
   }
 
-  /** WORKAROUND (Gap B): empareja cada `NgbSlide` con su `TemplateRef` por índice. */
-  private _bindSlideTemplates() {
-    const templates = this._slideTemplates.toArray();
-    this.slides.forEach((slide, index) => {
-      slide.templateRef = templates[index];
-    });
-  }
-
   ngAfterContentInit() {
-    this._bindSlideTemplates();
-    this.slides.changes.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => this._bindSlideTemplates());
-
     // setInterval() no funciona bien con SSR/protractor: sólo en el browser y
     // fuera de Angular.
     if (isPlatformBrowser(this._platformId)) {
@@ -330,9 +298,7 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
 
       // Esto tiene que hacerse asincrónicamente, después de que el DOM se
       // estabilice, si no todos los cambios se deshacen.
-      afterNextRender(
-        {
-          mixedReadWrite: () => {
+      this._ngZone.onStable.pipe(take(1)).subscribe(() => {
             for (const { id } of this.slides) {
               const element = this._getSlideElement(id);
               if (id === this.activeId) {
@@ -341,10 +307,7 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
                 element.classList.remove("active");
               }
             }
-          },
-        },
-        { injector: this._injector },
-      );
+      });
     });
   }
 

@@ -1,4 +1,5 @@
 import { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
+import { Directive, HostBinding, inject } from "ngjs-core";
 
 /**
  * En ng-bootstrap `NgbDropdownButtonItem` es una directiva aparte
@@ -8,4 +9,12 @@ import { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
  * Se mantiene el símbolo como alias fino para compatibilidad de import; NO se
  * registra en el módulo.
  */
-export class NgbDropdownButtonItem extends NgbDropdownItem {}
+@Directive({ selector: "button[ngbDropdownItem]" })
+export class NgbDropdownButtonItem {
+  private _item = inject(NgbDropdownItem);
+
+  @HostBinding("disabled")
+  get _disabled(): boolean {
+    return this._item.disabled;
+  }
+}

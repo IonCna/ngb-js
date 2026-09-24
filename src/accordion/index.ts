@@ -1,4 +1,3 @@
-// ng-bootstrap la exporta como `NgbAccordionDirective`; alias `NgbAccordion` para compat.
 export { NgbAccordionDirective, NgbAccordionDirective as NgbAccordion } from "@ngb/accordion/ngb-accordion.directive";
 export { NgbAccordionModule } from "@ngb/accordion/ngb-accordion.module";
 export { NgbAccordionBody } from "@ngb/accordion/ngb-accordion-body.directive";

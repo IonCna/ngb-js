@@ -131,6 +131,12 @@ export function getPopperOptions({ placement, baseClass }: PositioningOptions, r
           fallbackPlacements: popperPlacements,
         },
       },
+      {
+        enabled: true,
+        name: "preventOverflow",
+        phase: "main",
+        fn: function () {},
+      },
     ],
   };
 }
@@ -166,6 +172,7 @@ interface PositioningOptions {
   hostElement: HTMLElement;
   targetElement: HTMLElement;
   placement: string | Placement | PlacementArray;
+  appendToBody?: boolean;
   baseClass?: string;
   updatePopperOptions?: (options: Partial<Options>) => Partial<Options>;
 }

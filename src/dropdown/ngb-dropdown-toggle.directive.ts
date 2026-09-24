@@ -1,11 +1,14 @@
 import { NgbDropdownAnchor } from "@ngb/dropdown/ngb-dropdown-anchor.directive";
-import { Directive, HostListener } from "ngjs-core";
+import { Directive, forwardRef, HostListener } from "ngjs-core";
 
 /**
  * Marca el elemento que abre/cierra el dropdown con el evento `click`.
  * `NgbDropdownAnchor` es la alternativa sin `click`.
  */
-@Directive({ selector: "[ngbDropdownToggle]" })
+@Directive({
+  selector: "[ngbDropdownToggle]",
+  providers: [{ provide: NgbDropdownAnchor, useExisting: forwardRef(() => NgbDropdownToggle) }],
+})
 export class NgbDropdownToggle extends NgbDropdownAnchor {
   @HostListener("click")
   _onClick(): void {

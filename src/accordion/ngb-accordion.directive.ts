@@ -12,13 +12,6 @@ import {
   type QueryList,
 } from "ngjs-core";
 
-/**
- * El acordeón es una pila de tarjetas con header y body colapsable.
- *
- * Esta directiva es el contenedor de esos items y expone una API para manejarlos.
- *
- * @since 14.1.0
- */
 @Directive({
   selector: "[ngbAccordion]",
   exportAs: "ngbAccordion",

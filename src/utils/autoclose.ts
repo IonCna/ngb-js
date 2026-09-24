@@ -1,4 +1,5 @@
 import { closest } from "@ngb/utils/util";
+import { Key } from "@ngb/utils/key";
 import type { NgZone } from "ngjs-core";
 import { fromEvent, type Observable, race } from "rxjs";
 import { delay, filter, map, takeUntil, tap, withLatestFrom } from "rxjs/operators";
@@ -54,7 +55,7 @@ export function ngbAutoClose(
 
         const escapes$ = fromEvent<KeyboardEvent>(document, "keydown").pipe(
           takeUntil(closed$),
-          filter((event) => event.key === "Escape"),
+          filter((event) => event.which === Key.Escape),
           tap((event) => event.preventDefault()),
         );
 

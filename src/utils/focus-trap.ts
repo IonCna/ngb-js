@@ -1,4 +1,5 @@
 import type { NgZone } from "ngjs-core";
+import { Key } from "@ngb/utils/key";
 import { fromEvent, type Observable } from "rxjs";
 import { filter, map, takeUntil, withLatestFrom } from "rxjs/operators";
 
@@ -34,7 +35,7 @@ export const ngbFocusTrap = (
     fromEvent<KeyboardEvent>(element, "keydown")
       .pipe(
         takeUntil(stopFocusTrap$),
-        filter((event) => event.key === "Tab"),
+        filter((event) => event.which === Key.Tab),
         withLatestFrom(lastFocusedElement$),
       )
       .subscribe(([tabEvent, focusedElement]) => {

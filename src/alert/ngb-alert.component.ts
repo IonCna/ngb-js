@@ -1,7 +1,7 @@
 import { NgbAlertConfig } from "@ngb/alert/ngb-alert-config.service";
 import { ngbAlertFadingTransition } from "@ngb/alert/ngb-alert-transition";
 import { ngbRunTransition } from "@ngb/utils/transition/ngb-transition";
-import { Component, ElementRef, EventEmitter, HostBinding, Inject, inject, Input, NgZone, Output } from "ngjs-core";
+import { Component, ElementRef, EventEmitter, HostBinding, inject, Input, NgZone, Output } from "ngjs-core";
 import type { Observable } from "rxjs";
 
 export interface INgbAlert {
@@ -14,24 +14,18 @@ export interface INgbAlert {
   templateUrl: "./ngb-alert.component.html",
 })
 export class NgbAlert implements INgbAlert {
-  private readonly _elementRef: ElementRef<HTMLElement>;
   // NgbAlertConfig es @Service: no lo resuelve el $injector nativo de
   // AngularJS por constructor, solo inject() (cae al RootSingletonRegistry).
   private readonly _config = inject(NgbAlertConfig);
-  private readonly _zone: NgZone;
+  private readonly _elementRef = inject(ElementRef<HTMLElement>);
+  private readonly _zone = inject(NgZone);
 
   @Input() animation = this._config.animation;
   @Input() dismissible = this._config.dismissible;
   @Input() type = this._config.type;
   @Output() closed = new EventEmitter<void>();
 
-  constructor(@Inject(ElementRef) elementRef: ElementRef<HTMLElement>, @Inject(NgZone) zone: NgZone) {
-    this._elementRef = elementRef;
-    this._zone = zone;
-  }
-
   @HostBinding("attr.role") readonly _role = "alert";
-  @HostBinding("class.d-block") readonly _block = true;
 
   @HostBinding("class")
   get _hostClass(): string {
@@ -50,7 +44,7 @@ export class NgbAlert implements INgbAlert {
 
   close(): Observable<void> {
     const transition = ngbRunTransition(this._zone, this._elementRef.nativeElement, ngbAlertFadingTransition, {
-      animation: this.animation ?? this._config.animation,
+      animation: this.animation,
       runningTransition: "continue",
     });
 

@@ -1,5 +1,5 @@
 import { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
-import { Directive, ElementRef, forwardRef, HostBinding, Inject } from "ngjs-core";
+import { Directive, ElementRef, HostBinding, inject } from "ngjs-core";
 
 /**
  * Marca el elemento al que se ancla el menú del dropdown.
@@ -9,18 +9,8 @@ import { Directive, ElementRef, forwardRef, HostBinding, Inject } from "ngjs-cor
  */
 @Directive({ selector: "[ngbDropdownAnchor]" })
 export class NgbDropdownAnchor {
-  dropdown: NgbDropdown;
-  nativeElement: HTMLElement;
-
-  // `forwardRef`: import circular con `ngb-dropdown.directive.ts` (esa
-  // directiva importa `NgbDropdownAnchor` de vuelta).
-  constructor(
-    @Inject(forwardRef(() => NgbDropdown)) dropdown: NgbDropdown,
-    @Inject(ElementRef) elementRef: ElementRef<HTMLElement>,
-  ) {
-    this.dropdown = dropdown;
-    this.nativeElement = elementRef.nativeElement;
-  }
+  dropdown = inject(NgbDropdown);
+  nativeElement = inject(ElementRef<HTMLElement>).nativeElement;
 
   @HostBinding("class.dropdown-toggle")
   readonly _dropdownToggleClass = true;

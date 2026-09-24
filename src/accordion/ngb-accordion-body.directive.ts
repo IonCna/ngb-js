@@ -1,14 +1,13 @@
 import { NgbAccordionItem } from "@ngb/accordion/ngb-accordion-item.directive";
 import {
-  Component,
   ContentChild,
   ElementRef,
   type EmbeddedViewRef,
+  Directive,
   HostBinding,
-  Inject,
+  inject,
   type OnDestroy,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
 } from "ngjs-core";
 
@@ -26,30 +25,20 @@ import {
  *
  * @since 14.1.0
  */
-@Component({
+@Directive({
   selector: "[ngbAccordionBody]",
-  template: `<ng-container ng-ref="container"></ng-container><ng-content></ng-content>`,
 })
 export class NgbAccordionBody implements OnDestroy {
-  private _item: NgbAccordionItem;
+  private _vcr = inject(ViewContainerRef);
+  private _element = inject(ElementRef<HTMLElement>).nativeElement;
+  private _item = inject(NgbAccordionItem);
   private _viewRef: EmbeddedViewRef<unknown> | null = null;
-
-  /** El `ElementRef` del componente. @since 18.0.0 */
-  readonly elementRef: ElementRef;
 
   @HostBinding("class.accordion-body")
   readonly _hostClass = true;
 
-  @ViewChild("container", { read: ViewContainerRef, static: true })
-  private _vcr!: ViewContainerRef;
-
   @ContentChild(TemplateRef, { static: true })
   private _bodyTpl!: TemplateRef<unknown>;
-
-  constructor(@Inject(NgbAccordionItem) item: NgbAccordionItem, @Inject(ElementRef) elementRef: ElementRef) {
-    this._item = item;
-    this.elementRef = elementRef;
-  }
 
   ngAfterContentChecked(): void {
     if (this._bodyTpl) {
@@ -74,6 +63,9 @@ export class NgbAccordionBody implements OnDestroy {
     if (!this._viewRef) {
       this._viewRef = this._vcr.createEmbeddedView(this._bodyTpl);
       this._viewRef.detectChanges();
+      for (const node of this._viewRef.rootNodes) {
+        this._element.appendChild(node);
+      }
     }
   }
 }

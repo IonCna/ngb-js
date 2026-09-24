@@ -30,6 +30,7 @@ export {
   ngbFocusTrap,
 } from "@ngb/utils/focus-trap";
 export { addPopperOffset } from "@ngb/utils/positioning.util";
+export { Key } from "@ngb/utils/key";
 export { ContentRef, PopupService } from "@ngb/utils/popup.service";
 export { ScrollBar } from "@ngb/utils/scrollbar";
 export { listenToTriggers } from "@ngb/utils/triggers";

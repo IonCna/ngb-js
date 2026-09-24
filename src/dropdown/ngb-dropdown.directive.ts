@@ -6,24 +6,19 @@ import { FOCUSABLE_ELEMENTS_SELECTOR, getActiveElement } from "@ngb/utils";
 import { ngbAutoClose, SOURCE } from "@ngb/utils/autoclose";
 import { ngbPositioning, type Placement, type PlacementArray } from "@ngb/utils/positioning";
 import { addPopperOffset } from "@ngb/utils/positioning.util";
+import { Key } from "@ngb/utils/key";
 import type { Options } from "@popperjs/core";
-import { fromEvent, Subject } from "rxjs";
-import { take } from "rxjs/operators";
 import {
-  afterEveryRender,
-  afterNextRender,
-  type AfterRenderRef,
+  type AfterContentInit,
   ChangeDetectorRef,
   ContentChild,
   Directive,
   DOCUMENT,
   ElementRef,
   EventEmitter,
-  forwardRef,
   HostBinding,
-  inject,
-  Injector,
   Input,
+  inject,
   NgZone,
   type OnChanges,
   type OnDestroy,
@@ -32,23 +27,25 @@ import {
   type SimpleChanges,
 } from "ngjs-core";
 
+import { fromEvent, Subject, type Subscription } from "rxjs";
+import { take } from "rxjs/operators";
+
 /**
  * Provee overlays contextuales para mostrar listas de enlaces y más.
  */
 @Directive({ selector: "[ngbDropdown]", exportAs: "ngbDropdown" })
-export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
+export class NgbDropdown implements OnInit, AfterContentInit, OnChanges, OnDestroy {
   static ngAcceptInputType_autoClose: boolean | string;
   static ngAcceptInputType_display: string;
 
   private _changeDetector = inject(ChangeDetectorRef);
   private _config = inject(NgbDropdownConfig);
   private _document = inject(DOCUMENT);
-  private _injector = inject(Injector);
   private _ngZone = inject(NgZone);
   private _nativeElement = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   private _destroyCloseHandlers$ = new Subject<void>();
-  private _afterRenderRef: AfterRenderRef | undefined;
+  private _zoneSubscription: Subscription | undefined;
   private _bodyContainer: HTMLElement | null = null;
 
   private _positioning: ReturnType<typeof ngbPositioning> = ngbPositioning();
@@ -57,18 +54,14 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
   // vuelta (referencia circular real). Con `splitting: true` en esbuild, el
   // decorador puede correr antes de que el import circular resuelva, capturando
   // `undefined` como locator — ver el mismo caso en `ngb-accordion-item.directive.ts`.
-  @ContentChild(forwardRef(() => NgbDropdownMenu)) private _menu!: NgbDropdownMenu;
-  @ContentChild(forwardRef(() => NgbDropdownAnchor)) private _anchor!: NgbDropdownAnchor;
+  @ContentChild(NgbDropdownMenu) private _menu!: NgbDropdownMenu;
+  @ContentChild(NgbDropdownAnchor) private _anchor!: NgbDropdownAnchor;
 
   /**
    * Los `NgbDropdownItem` proyectados. No existe en ng-bootstrap (usa
    * `_getMenuElements()` privado) — se mantiene como conveniencia de la API de
    * `ngb-js`; al migrar a Angular real se borra.
    */
-  get menuItems() {
-    return this._menu?.menuItems;
-  }
-
   /**
    * Si el dropdown se cierra al hacer click en un ítem o al presionar ESC.
    *
@@ -112,18 +105,15 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
     if (!this.display) {
       this.display = this._nativeElement.closest(".navbar") ? "static" : "dynamic";
     }
+  }
 
-    afterNextRender(
-      {
-        write: () => {
-          this._applyPlacementClasses();
-          if (this._open) {
-            this._setCloseHandlers();
-          }
-        },
-      },
-      { injector: this._injector },
-    );
+  ngAfterContentInit(): void {
+    this._ngZone.onStable.pipe(take(1)).subscribe(() => {
+      this._applyPlacementClasses();
+      if (this._open) {
+        this._setCloseHandlers();
+      }
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -136,6 +126,7 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
         hostElement: this._anchor.nativeElement,
         targetElement: this._bodyContainer || this._menu.nativeElement,
         placement: this.placement,
+        appendToBody: this.container === "body",
       });
       this._applyPlacementClasses();
     }
@@ -174,18 +165,10 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
               updatePopperOptions: (options) => this.popperOptions(addPopperOffset([0, 2])(options)),
             });
             this._applyPlacementClasses();
-            this._afterRenderRef = afterEveryRender(
-              {
-                write: () => {
-                  this._positionMenu();
-                },
-              },
-              { injector: this._injector },
-            );
+            this._zoneSubscription = this._ngZone.onStable.subscribe(() => this._positionMenu());
           });
         }
       }
-      this._changeDetector.markForCheck();
     }
   }
 
@@ -215,7 +198,8 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
       this._open = false;
       this._resetContainer();
       this._positioning.destroy();
-      this._afterRenderRef?.destroy();
+      this._zoneSubscription?.unsubscribe();
+      this._zoneSubscription = undefined;
       this._destroyCloseHandlers$.next();
       this.openChange.emit(false);
       this._changeDetector.markForCheck();
@@ -236,7 +220,7 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
   }
 
   onKeyDown(event: JQueryEventObject | KeyboardEvent): void {
-    const { key } = event;
+    const key = event.which;
     const itemElements = this._getMenuElements();
 
     let position = -1;
@@ -255,7 +239,7 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
     }
 
     // Cerrar con Enter / Space
-    if (key === " " || key === "Enter") {
+    if (key === Key.Space || key === Key.Enter) {
       if (itemElement && (this.autoClose === true || this.autoClose === "inside")) {
         // El ítem es un botón o un link → el browser dispara `click` en Enter/Space.
         // Un handler `click` de una sola vez, después de los del usuario, cierra el dropdown.
@@ -266,7 +250,7 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    if (key === "Tab") {
+    if (key === Key.Tab) {
       if (event.target && this.isOpen() && this.autoClose) {
         if (this._anchor.nativeElement === event.target) {
           if (this.container === "body" && !(event as KeyboardEvent).shiftKey) {
@@ -309,20 +293,20 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
 
       if (itemElements.length) {
         switch (key) {
-          case "ArrowDown":
+          case Key.ArrowDown:
             position = Math.min(position + 1, itemElements.length - 1);
             break;
-          case "ArrowUp":
+          case Key.ArrowUp:
             if (this._isDropup() && position === -1) {
               position = itemElements.length - 1;
               break;
             }
             position = Math.max(position - 1, 0);
             break;
-          case "Home":
+          case Key.Home:
             position = 0;
             break;
-          case "End":
+          case Key.End:
             position = itemElements.length - 1;
             break;
         }
@@ -342,7 +326,7 @@ export class NgbDropdown implements OnInit, OnChanges, OnDestroy {
 
   private _getMenuElements(): HTMLElement[] {
     return this._menu
-      ? this._menu.menuItems.filter((item: NgbDropdownItem) => !item.isDisabled()).map(({ nativeElement }) => nativeElement)
+      ? this._menu.menuItems.filter((item: NgbDropdownItem) => !item.disabled).map(({ nativeElement }) => nativeElement)
       : [];
   }
 

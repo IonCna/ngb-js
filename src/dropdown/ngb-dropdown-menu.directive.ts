@@ -1,36 +1,17 @@
 import { NgbDropdown } from "@ngb/dropdown/ngb-dropdown.directive";
 import { NgbDropdownItem } from "@ngb/dropdown/ngb-dropdown-item.directive";
-import {
-  ContentChildren,
-  Directive,
-  ElementRef,
-  forwardRef,
-  HostBinding,
-  HostListener,
-  Inject,
-  type QueryList,
-} from "ngjs-core";
+import { ContentChildren, Directive, ElementRef, HostBinding, HostListener, inject, type QueryList } from "ngjs-core";
 
 /**
  * Envuelve el contenido del menú del dropdown y sus ítems.
  */
 @Directive({ selector: "[ngbDropdownMenu]" })
 export class NgbDropdownMenu {
-  dropdown: NgbDropdown;
-  nativeElement: HTMLElement;
+  dropdown = inject(NgbDropdown);
+  nativeElement = inject(ElementRef<HTMLElement>).nativeElement;
 
   @ContentChildren(NgbDropdownItem)
   menuItems!: QueryList<NgbDropdownItem>;
-
-  // `forwardRef`: import circular con `ngb-dropdown.directive.ts` (esa
-  // directiva importa `NgbDropdownMenu` de vuelta).
-  constructor(
-    @Inject(forwardRef(() => NgbDropdown)) dropdown: NgbDropdown,
-    @Inject(ElementRef) elementRef: ElementRef<HTMLElement>,
-  ) {
-    this.dropdown = dropdown;
-    this.nativeElement = elementRef.nativeElement;
-  }
 
   @HostBinding("class.dropdown-menu")
   readonly _dropdownMenuClass = true;

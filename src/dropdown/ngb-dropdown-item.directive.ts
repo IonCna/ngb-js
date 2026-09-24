@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, Inject, Input, NgDisabled, Optional } from "ngjs-core";
+import { Directive, ElementRef, HostBinding, Input, inject } from "ngjs-core";
 
 /**
  * Poné esta directiva en un ítem del dropdown para habilitar navegación por
@@ -16,44 +16,39 @@ import { Directive, ElementRef, HostBinding, Inject, Input, NgDisabled, Optional
  */
 @Directive({ selector: "[ngbDropdownItem]" })
 export class NgbDropdownItem {
-  nativeElement: HTMLElement;
+  static ngAcceptInputType_disabled: boolean | "";
 
-  private _ngDisabled: NgDisabled | null;
+  private _isDisabled = false;
 
   @Input() tabindex: string | number = 0;
 
-  constructor(
-    @Inject(ElementRef) elementRef: ElementRef<HTMLElement>,
-    @Optional() @Inject(NgDisabled) ngDisabled: NgDisabled | null,
-  ) {
-    this.nativeElement = elementRef.nativeElement;
-    this._ngDisabled = ngDisabled;
-  }
+  nativeElement = inject(ElementRef<HTMLElement>).nativeElement;
 
   @HostBinding("class.dropdown-item")
   readonly _dropdownItemClass = true;
 
-  isDisabled(): boolean {
-    return this._ngDisabled?.disabled ?? false;
+  @Input()
+  set disabled(value: boolean) {
+    this._isDisabled = (value as unknown) === "" || value === true;
   }
 
-  onDisabledChange(callback: (disabled: boolean) => void): () => void {
-    return this._ngDisabled?.onChange(callback) ?? (() => undefined);
+  get disabled(): boolean {
+    return this._isDisabled;
   }
 
   @HostBinding("class.disabled")
   get _disabled(): boolean {
-    return this.isDisabled();
+    return this.disabled;
   }
 
   @HostBinding("tabIndex")
   get _tabIndex(): number | string {
-    return this.isDisabled() ? -1 : this.tabindex;
+    return this.disabled ? -1 : this.tabindex;
   }
 
   /** Solo para `<button ngbDropdownItem>` — el resto de los tags no llevan `disabled` nativo. */
   @HostBinding("disabled")
   get _nativeDisabled(): boolean | undefined {
-    return this.nativeElement.tagName === "BUTTON" ? this.isDisabled() : undefined;
+    return this.nativeElement.tagName === "BUTTON" ? this.disabled : undefined;
   }
 }

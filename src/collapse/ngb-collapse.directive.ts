@@ -5,14 +5,12 @@ import {
   ElementRef,
   EventEmitter,
   HostBinding,
-  Inject,
   inject,
   Input,
   NgZone,
   type OnInit,
   Output,
 } from "ngjs-core";
-import type { Observable } from "rxjs";
 
 export interface INgbCollapse {
   toggle(open?: boolean): void;
@@ -26,8 +24,8 @@ export class NgbCollapse implements OnInit, INgbCollapse {
   // NgbCollapseConfig es @Service: no lo resuelve el $injector nativo de
   // AngularJS por constructor, solo inject() (cae al RootSingletonRegistry).
   private _config = inject(NgbCollapseConfig);
-  private _element: ElementRef<HTMLElement>;
-  private _zone: NgZone;
+  private _element = inject(ElementRef<HTMLElement>);
+  private _zone = inject(NgZone);
   private _afterInit = false;
   private _isCollapsed = false;
 
@@ -48,11 +46,6 @@ export class NgbCollapse implements OnInit, INgbCollapse {
   @Output() shown = new EventEmitter<void>();
   @Output() hidden = new EventEmitter<void>();
 
-  constructor(@Inject(ElementRef) element: ElementRef<HTMLElement>, @Inject(NgZone) zone: NgZone) {
-    this._element = element;
-    this._zone = zone;
-  }
-
   @HostBinding("class.collapse-horizontal")
   get _collapseHorizontal(): boolean {
     return this.horizontal;
@@ -63,12 +56,12 @@ export class NgbCollapse implements OnInit, INgbCollapse {
     this._afterInit = true;
   }
 
-  toggle(open: boolean = this._isCollapsed): void {
+  toggle(open: boolean = this._isCollapsed) {
     this.collapsed = !open;
     this.ngbCollapseChange.next(this._isCollapsed);
   }
 
-  private _runTransition(collapsed: boolean, animation: boolean): Observable<void> {
+  private _runTransition(collapsed: boolean, animation: boolean) {
     return ngbRunTransition(this._zone, this._element.nativeElement, ngbCollapsingTransition, {
       animation,
       runningTransition: "stop",
