@@ -10,10 +10,12 @@ import {
 import { fromJSDate, NgbCalendar, type NgbPeriod, toJSDate } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import { isNumber } from "@ngb/utils";
+import { Injectable } from "ngjs-core";
 
 /**
  * @since 3.2.0
  */
+@Injectable()
 export class NgbCalendarHebrew extends NgbCalendar {
   getDaysPerWeek() {
     return 7;

@@ -1,6 +1,8 @@
 import { NgbDateNativeAdapter } from "@ngb/datepicker/adapters/ngb-date-native-adapter";
 import type { NgbDateStruct } from "@ngb/datepicker/ngb-date-struct";
+import { Injectable } from "ngjs-core";
 
+@Injectable()
 export class NgbDateNativeUTCAdapter extends NgbDateNativeAdapter {
   protected _fromNativeDate(date: Date): NgbDateStruct {
     return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate() };

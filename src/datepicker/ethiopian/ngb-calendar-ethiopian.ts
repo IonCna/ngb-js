@@ -9,10 +9,12 @@ import {
 import { NgbCalendar, type NgbPeriod } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import { isInteger } from "@ngb/utils";
+import { Injectable } from "ngjs-core";
 
 /**
  * @since 16.0.0
  */
+@Injectable()
 export class NgbCalendarEthiopian extends NgbCalendar {
   getDaysPerWeek(): number {
     return 7;

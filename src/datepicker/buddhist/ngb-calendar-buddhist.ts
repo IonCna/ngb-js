@@ -2,10 +2,12 @@ import { fromGregorian, toGregorian } from "@ngb/datepicker/buddhist/buddhist";
 import { NgbCalendarGregorian, type NgbPeriod } from "@ngb/datepicker/ngb-calendar.service.ts";
 import type { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import { isInteger } from "@ngb/utils";
+import { Injectable } from "ngjs-core";
 
 /**
  * @since 9.1.0
  */
+@Injectable()
 export class NgbCalendarBuddhist extends NgbCalendarGregorian {
   getToday(): NgbDate {
     return fromGregorian(new Date());

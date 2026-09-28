@@ -303,8 +303,8 @@ describe("NgbDatepickerModule", () => {
   });
 
   it("rejects maxDate before minDate", () => {
-    // `checkMinBeforeMax` tira; bajo `configureTestBed` el error va al ErrorHandler
-    // del bootstrap (no propaga sync), así que se verifica el efecto observable:
+    // `checkMinBeforeMax` tira dentro del digest (el error va al ErrorHandler, no
+    // propaga sync), así que se verifica el efecto observable:
     // el datepicker no llega a construir meses.
     const scope = $rootScope.$new() as IRootScopeService & { max: NgbDateStruct; min: NgbDateStruct };
     scope.min = { year: 2026, month: 12, day: 31 };

@@ -1,5 +1,6 @@
 import { NgbCalendarIslamicCivil } from "@ngb/datepicker/hijri/ngb-calendar-islamic-civil";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
+import { Injectable } from "ngjs-core";
 
 /**
  * Umalqura calendar is one type of Hijri calendars used in islamic countries.
@@ -387,6 +388,7 @@ function getDaysDiff(date1: Date, date2: Date): number {
   return Math.round(diff / ONE_DAY);
 }
 
+@Injectable()
 export class NgbCalendarIslamicUmalqura extends NgbCalendarIslamicCivil {
   /**
    * Returns the equivalent islamic(Umalqura) date value for a give input Gregorian date.

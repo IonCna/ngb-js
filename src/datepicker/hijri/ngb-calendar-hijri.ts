@@ -1,7 +1,9 @@
 import { NgbCalendar, type NgbPeriod } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import { isNumber } from "@ngb/utils";
+import { Injectable } from "ngjs-core";
 
+@Injectable()
 export abstract class NgbCalendarHijri extends NgbCalendar {
   /**
    * Returns the number of days in a specific Hijri month.

@@ -141,7 +141,7 @@ export class NgbAccordionDirective {
     }
 
     // si hay un item expandido, hay que colapsarlo primero
-    this._items.find((item) => !item.collapsed && toExpand !== item)?.collapse();
+    this._items?.find((item) => !item.collapsed && toExpand !== item)?.collapse();
 
     return true;
   }

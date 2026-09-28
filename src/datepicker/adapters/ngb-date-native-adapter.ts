@@ -1,7 +1,9 @@
 import { NgbDateAdapter } from "@ngb/datepicker/adapters/ngb-date-adapter";
 import type { NgbDateStruct } from "@ngb/datepicker/ngb-date-struct";
 import { isInteger } from "@ngb/utils";
+import { Injectable } from "ngjs-core";
 
+@Injectable()
 export class NgbDateNativeAdapter extends NgbDateAdapter<Date> {
   fromModel(date: Date | null): NgbDateStruct | null {
     return date instanceof Date && !isNaN(date.getTime()) ? this._fromNativeDate(date) : null;

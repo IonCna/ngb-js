@@ -2,7 +2,9 @@ import { fromGregorian, setJalaliDay, setJalaliMonth, setJalaliYear, toGregorian
 import { NgbCalendar, type NgbPeriod } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import { isInteger } from "@ngb/utils";
+import { Injectable } from "ngjs-core";
 
+@Injectable()
 export class NgbCalendarPersian extends NgbCalendar {
   getDaysPerWeek() {
     return 7;

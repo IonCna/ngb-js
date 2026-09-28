@@ -1,6 +1,7 @@
 import { hebrewNumerals, isHebrewLeapYear } from "@ngb/datepicker/hebrew/hebrew";
 import type { NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
 import { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
+import { Injectable } from "ngjs-core";
 
 const WEEKDAYS = ["שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת", "ראשון"];
 const MONTHS = ["תשרי", "חשון", "כסלו", "טבת", "שבט", "אדר", "ניסן", "אייר", "סיון", "תמוז", "אב", "אלול"];
@@ -25,6 +26,7 @@ const MONTHS_LEAP = [
  *
  * This is a regular class: consumers opt in with `new NgbDatepickerI18nHebrew()`.
  */
+@Injectable()
 export class NgbDatepickerI18nHebrew extends NgbDatepickerI18n {
   getMonthShortName(month: number, year?: number): string {
     return this.getMonthFullName(month, year);

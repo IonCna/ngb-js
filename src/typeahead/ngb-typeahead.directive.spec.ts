@@ -10,6 +10,8 @@ import { map, type Observable, of, Subject, switchMap } from "rxjs";
 import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
+import { createKeyEvent } from "../test/common";
+import { Key } from "../utils/key";
 
 interface TestScope extends IScope {
   model: unknown;
@@ -67,8 +69,8 @@ describe("NgbTypeahead", () => {
     });
   }
 
-  function keydown(input: HTMLInputElement, key: string) {
-    const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  function keydown(input: HTMLInputElement, key: keyof typeof Key) {
+    const event = createKeyEvent(Key[key], { type: "keydown" });
     input.dispatchEvent(event);
     return event;
   }

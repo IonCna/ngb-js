@@ -9,7 +9,6 @@ import type { ContentTemplateContext } from "@ngb/datepicker/ngb-datepicker-cont
 import type { DayTemplateContext } from "@ngb/datepicker/ngb-datepicker-day-template-context.ts";
 import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-config.service.ts";
 import { addPopperOffset, isString, ngbAutoClose, ngbFocusTrap, ngbPositioning } from "@ngb/utils";
-import type { INgModelController } from "angular";
 import {
   type AfterViewInit,
   ChangeDetectorRef,
@@ -33,7 +32,7 @@ import {
   type TemplateRef,
   ViewContainerRef,
 } from "ngjs-core";
-import { type ControlValueAccessor, NG_VALUE_ACCESSOR } from "ngjs-core/forms";
+import { type ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, type Validator } from "ngjs-core/forms";
 import { Subject, type Subscription } from "rxjs";
 
 /**
@@ -42,8 +41,6 @@ import { Subject, type Subscription } from "rxjs";
  * Manages interaction with the input field itself, does value formatting and provides forms integration.
  *
  * ngjs-core:
- * - `NG_VALIDATORS` no existe → el `validate()` se cablea a mano contra el
- *   `ngModelController` (`require: ?ngModel`). Ver CORE_GAPS.
  * - `ViewContainerRef.createComponent()` es async → `open()` es `async`.
  * - `host` → `@HostListener` / `@HostBinding`.
  */
@@ -52,12 +49,11 @@ import { Subject, type Subscription } from "rxjs";
   exportAs: "ngbDatepicker",
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbInputDatepicker), multi: true },
-    // upstream también: { provide: NG_VALIDATORS, useExisting: forwardRef(() => NgbInputDatepicker), multi: true }
-    // (no existe en ngjs-core — el validate() se engancha al ngModel en ngAfterViewInit).
+    { provide: NG_VALIDATORS, useExisting: forwardRef(() => NgbInputDatepicker), multi: true },
     { provide: NgbDatepickerConfig, useExisting: NgbInputDatepickerConfig },
   ],
 })
-export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, ControlValueAccessor {
+export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, ControlValueAccessor, Validator {
   static ngAcceptInputType_autoClose: boolean | string;
   static ngAcceptInputType_disabled: boolean | "";
   static ngAcceptInputType_navigation: string;
@@ -75,7 +71,6 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
   private _injector = inject(Injector);
   private _config = inject(NgbInputDatepickerConfig);
 
-  private _ngModelCtrl?: INgModelController;
   private _cRef: ComponentRef<NgbDatepicker> | null = null;
   private _disabled = false;
   private _elWithFocus: HTMLElement | null = null;
@@ -458,11 +453,6 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
   }
 
   ngAfterViewInit() {
-    // ngjs-core: sin `NG_VALIDATORS`, el `validate()` se engancha al `ngModel`.
-    if (this._ngModelCtrl) {
-      this._ngModelCtrl.$validators.ngbDate = (modelValue: unknown) => this.validate({ value: modelValue }) === null;
-      this.registerOnValidatorChange(() => this._ngModelCtrl?.$validate());
-    }
     // `ng-disabled="expr"` → estado disabled (el atributo `disabled` plano lo cubre el CVA bridge).
     if (this._ngDisabled) {
       this.setDisabledState(this._ngDisabled.disabled);
