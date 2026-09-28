@@ -1,4 +1,3 @@
-import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgbOffcanvasBackdrop } from "@ngb/offcanvas/ngb-offcanvas-backdrop.component";
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
 import { NgModule } from "ngjs-core";
@@ -17,6 +16,6 @@ export { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanva
 @NgModule({
   imports: [CommonModule],
   declarations: [NgbOffcanvasPanel, NgbOffcanvasBackdrop],
-  providers: [NgbScrollbar, NgbOffcanvasStack],
+  providers: [NgbOffcanvasStack],
 })
 export class NgbOffcanvasModule {}

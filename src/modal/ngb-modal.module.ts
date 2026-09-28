@@ -1,6 +1,5 @@
 import { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
 import { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
-import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
 import { NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
 
@@ -16,6 +15,5 @@ export { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
 @NgModule({
   imports: [CommonModule],
   declarations: [NgbModalWindow, NgbModalBackdrop],
-  providers: [NgbScrollbar],
 })
 export class NgbModalModule {}

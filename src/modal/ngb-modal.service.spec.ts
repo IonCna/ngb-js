@@ -5,6 +5,8 @@ import angular, { type IRootScopeService } from "angular";
 import { Component, Injector, Input, NgModule, type TemplateRef, ApplicationRef } from "ngjs-core";
 import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createKeyEvent } from "../test/common";
+import { Key } from "../utils/key";
 import { NgbModule } from "../ngb.module";
 
 @Component({
@@ -104,7 +106,7 @@ describe("NgbModal", () => {
   it("renders TemplateRef context and destroys its view after closing", async () => {
     // Timeout explícito: bajo carga (toda la suite en paralelo) `flush()` (60
     // iteraciones reales de `setTimeout(0)`) + esperar a que la ventana quede
-    // `isConnected` antes de animar (`afterAttachedRender`, ver `ngb-modal-
+    // `isConnected` antes de animar (`onStable` + `isConnected`, ver `ngb-modal-
     // window.component.ts`) puede pasar el default de 5000ms sin que haya
     // nada roto — corriendo el archivo solo, este test tarda ~1-2s.
     const scope = $rootScope.$new() as IRootScopeService & {
@@ -175,7 +177,7 @@ describe("NgbModal", () => {
 
     document.body
       .querySelector("ngb-modal-window")
-      ?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+      ?.dispatchEvent(createKeyEvent(Key.Escape, { type: "keydown" }));
     await flush();
 
     expect(dismissed).toHaveBeenCalledWith(ModalDismissReasons.ESC);
@@ -186,7 +188,7 @@ describe("NgbModal", () => {
     await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: false, keyboard: false }));
     document.body
       .querySelector("ngb-modal-window")
-      ?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+      ?.dispatchEvent(createKeyEvent(Key.Escape, { type: "keydown" }));
     await flush();
     expect(ngbModal.hasOpenModals()).toBe(true);
   });
@@ -238,7 +240,6 @@ describe("NgbModal", () => {
         backdropClass: "custom-backdrop",
         fullscreen: "md",
         modalDialogClass: "custom-dialog",
-        role: "alertdialog",
         scrollable: true,
         windowClass: "custom-window",
       }),
@@ -248,7 +249,8 @@ describe("NgbModal", () => {
     expect(window?.classList.contains("custom-window")).toBe(true);
     expect(window?.getAttribute("aria-labelledby")).toBe("title");
     expect(window?.getAttribute("aria-describedby")).toBe("description");
-    expect(window?.getAttribute("role")).toBe("alertdialog");
+    // `role` como opción recién existe después de ng-bootstrap 16: acá siempre "dialog".
+    expect(window?.getAttribute("role")).toBe("dialog");
     expect(dialog?.classList.contains("modal-fullscreen-md-down")).toBe(true);
     expect(dialog?.classList.contains("modal-dialog-scrollable")).toBe(true);
     expect(dialog?.classList.contains("custom-dialog")).toBe(true);

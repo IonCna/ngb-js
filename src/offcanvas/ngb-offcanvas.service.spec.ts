@@ -6,6 +6,8 @@ import angular from "angular";
 import { Component, Injector, Input, NgModule, type TemplateRef, ApplicationRef } from "ngjs-core";
 import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createKeyEvent } from "../test/common";
+import { Key } from "../utils/key";
 import { NgbModule } from "../ngb.module";
 
 @Component({
@@ -221,7 +223,7 @@ describe("NgbOffcanvas", () => {
     expect(document.body.querySelector("ngb-offcanvas-backdrop")?.classList.contains("custom-backdrop")).toBe(true);
   });
 
-  it("attaches panel and backdrop to selector and jqLite containers", async () => {
+  it("attaches panel and backdrop to selector and element containers", async () => {
     const selectorContainer = document.createElement("section");
     selectorContainer.id = "offcanvas-container";
     document.body.appendChild(selectorContainer);
@@ -241,7 +243,7 @@ describe("NgbOffcanvas", () => {
     await resolveOpen(
       ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, {
         animation: false,
-        container: angular.element(elementContainer),
+        container: elementContainer,
       }),
     );
     expect(elementContainer.querySelector("ngb-offcanvas-panel")).not.toBeNull();
@@ -324,14 +326,14 @@ describe("NgbOffcanvas", () => {
     enabled.dismissed.subscribe(dismissed);
     document.body
       .querySelector("ngb-offcanvas-panel")
-      ?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+      ?.dispatchEvent(createKeyEvent(Key.Escape, { type: "keydown" }));
     await flush();
     expect(dismissed).toHaveBeenCalledWith(OffcanvasDismissReasons.ESC);
 
     await resolveOpen(ngbOffcanvas.open(NgbOffcanvasSpecContent.$name, { animation: false, keyboard: false }));
     document.body
       .querySelector("ngb-offcanvas-panel")
-      ?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+      ?.dispatchEvent(createKeyEvent(Key.Escape, { type: "keydown" }));
     await flush();
     expect(ngbOffcanvas.hasOpenOffcanvas()).toBe(true);
     animationFrame.mockRestore();

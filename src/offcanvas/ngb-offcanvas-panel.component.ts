@@ -77,7 +77,9 @@ export class NgbOffcanvasPanel implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this._elWithFocus = this._document.activeElement;
-    this._zone.onStable.pipe(take(1)).subscribe(() => this._show());
+    // ngb-js: `createComponent` es async y el stack recién agrega el elemento al DOM después; el primer
+    // `onStable` puede llegar antes (y un `focus()`/transición sobre un nodo desconectado no hace nada).
+    this._zone.onStable.pipe(filter(() => this._nativeElement.isConnected), take(1)).subscribe(() => this._show());
   }
 
   ngOnDestroy(): void {

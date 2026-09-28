@@ -2,7 +2,7 @@ import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.servi
 import { isDefined, ngbRunTransition, reflow } from "@ngb/utils";
 import { ChangeDetectorRef, Component, ElementRef, HostBinding, inject, Input, NgZone, type OnInit } from "ngjs-core";
 import type { Observable } from "rxjs";
-import { take } from "rxjs/operators";
+import { filter, take } from "rxjs/operators";
 
 const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 
@@ -42,14 +42,16 @@ export class NgbModalBackdrop implements OnInit {
     // el backdrop queda en el DOM pero invisible (bug real, visto con
     // `animation` en su default `true`).
     //
-    // `afterAttachedRender` (no `afterNextRender` a secas): el elemento sigue
+    // Se espera un `onStable` con el elemento conectado (no el primero a secas): el elemento sigue
     // DESCONECTADO del documento en este punto (`createComponent` acá es
     // async — el stack service recién hace `appendChild` más tarde, en su
     // propio `.then()`). Si el próximo `tick()` global cae antes de eso, el
     // `reflow()`+`.show` de abajo corren sobre un nodo que el browser nunca
     // pintó: no hay "antes" que animar y el fade queda pegado al estado final
     // (mismo bug, pero de la ANIMACIÓN en sí, no de la clase).
-    this._zone.onStable.pipe(take(1)).subscribe(() => {
+    // ngb-js: `createComponent` es async y el stack recién agrega el elemento al DOM después; el primer
+    // `onStable` puede llegar antes (y un `focus()`/transición sobre un nodo desconectado no hace nada).
+    this._zone.onStable.pipe(filter(() => this._nativeElement.isConnected), take(1)).subscribe(() => {
       ngbRunTransition(
         this._zone,
         this._nativeElement,

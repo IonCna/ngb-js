@@ -2,7 +2,7 @@ import { NgbModalBackdrop } from "@ngb/modal/ngb-modal-backdrop.component";
 import type { NgbModalOptions, NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
 import { NgbModalWindow } from "@ngb/modal/ngb-modal-window.component";
-import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
+import { ScrollBar } from "@ngb/utils/scrollbar";
 import { ngbFocusTrap } from "@ngb/utils/focus-trap";
 import { ContentRef } from "@ngb/utils/popup.service";
 import angular from "angular";
@@ -30,7 +30,7 @@ import { Subject, take } from "rxjs";
 @Injectable({ providedIn: "root" })
 export class NgbModalStack {
   private _applicationRef = inject(ApplicationRef);
-  private _scrollBar = inject(NgbScrollbar);
+  private _scrollBar = inject(ScrollBar);
   private _ngZone = inject(NgZone);
 
   private _activeWindowCmptHasChanged = new Subject<void>();

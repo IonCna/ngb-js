@@ -15,7 +15,7 @@ import {
   type OnInit,
   Output,
 } from "ngjs-core";
-import { defaultIfEmpty, fromEvent, type Observable, Subject, take, takeUntil } from "rxjs";
+import { defaultIfEmpty, filter, fromEvent, type Observable, Subject, take, takeUntil } from "rxjs";
 
 const BACKDROP_ATTRIBUTES = ["animation", "backdropClass"] as const;
 
@@ -50,7 +50,9 @@ export class NgbOffcanvasBackdrop implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const animation = this.animation ?? true;
-    this._zone.onStable.pipe(take(1)).subscribe(() =>
+    // ngb-js: `createComponent` es async y el stack recién agrega el elemento al DOM después; el primer
+    // `onStable` puede llegar antes (y un `focus()`/transición sobre un nodo desconectado no hace nada).
+    this._zone.onStable.pipe(filter(() => this._nativeElement.isConnected), take(1)).subscribe(() =>
       ngbRunTransition(this._zone, this._nativeElement, ngbOffcanvasFadeInTransition, {
         animation,
         runningTransition: "continue",

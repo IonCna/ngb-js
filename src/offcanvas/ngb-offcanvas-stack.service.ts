@@ -1,4 +1,4 @@
-import { NgbScrollbar } from "@ngb/ngb-scrollbar.service";
+import { ScrollBar } from "@ngb/utils/scrollbar";
 import { NgbOffcanvasBackdrop } from "@ngb/offcanvas/ngb-offcanvas-backdrop.component";
 import type { NgbOffcanvasOptions } from "@ngb/offcanvas/ngb-offcanvas-config.service";
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
@@ -27,7 +27,7 @@ import { finalize, Subject } from "rxjs";
 @Injectable()
 export class NgbOffcanvasStack {
   private _applicationRef = inject(ApplicationRef);
-  private _scrollBar = inject(NgbScrollbar);
+  private _scrollBar = inject(ScrollBar);
   private _ngZone = inject(NgZone);
 
   private _scrollBarRestoreFn: null | (() => void) = null;
