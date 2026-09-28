@@ -1,6 +1,6 @@
 import { Injector } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import { NgbScrollSpyService } from "./scrollspy.service";
 
@@ -24,7 +24,6 @@ class IntersectionObserverMock {
 }
 
 describe("NgbScrollSpyService", () => {
-  let tb: NgbTestBed;
   let service: NgbScrollSpyService;
   let originalObserver: typeof IntersectionObserver | undefined;
 
@@ -32,13 +31,12 @@ describe("NgbScrollSpyService", () => {
     originalObserver = globalThis.IntersectionObserver;
     IntersectionObserverMock.instances = [];
     globalThis.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
-    tb = await configureTestBed(NgbModule);
-    service = tb.get<Injector>(Injector.$name).get(NgbScrollSpyService);
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    service = TestBed.inject(NgbScrollSpyService);
   });
 
   afterEach(() => {
     service.ngOnDestroy();
-    tb.destroy();
     globalThis.IntersectionObserver = originalObserver as typeof IntersectionObserver;
   });
 

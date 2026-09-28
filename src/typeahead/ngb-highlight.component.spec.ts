@@ -1,23 +1,21 @@
 import angular, { type IAugmentedJQuery, type ICompileService, type IRootScopeService, type IScope } from "angular";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 describe("NgbHighlight", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let element: IAugmentedJQuery | undefined;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
     element?.remove();
-    tb.destroy();
   });
 
   function setup(result: unknown, term: unknown, highlightClass?: string, accentSensitive?: boolean) {

@@ -2,9 +2,9 @@ import { NgbModal } from "@ngb/modal/ngb-modal.service";
 import { ModalDismissReasons } from "@ngb/modal/ngb-modal-dismiss-reasons";
 import type { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
 import angular, { type IRootScopeService } from "angular";
-import { Component, Injector, Input, NgModule, type TemplateRef } from "ngjs-core";
+import { Component, Injector, Input, NgModule, type TemplateRef, ApplicationRef } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 @Component({
@@ -24,20 +24,18 @@ class NgbModalSpecContent {
 class NgbModalSpecModule {}
 
 describe("NgbModal", () => {
-  let tb: NgbTestBed;
   let $rootScope: IRootScopeService;
   let ngbModal: NgbModal;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModalSpecModule);
-    $rootScope = tb.$rootScope;
-    ngbModal = tb.get<Injector>(Injector.$name).get(NgbModal);
+    TestBed.configureTestingModule({ imports: [NgbModalSpecModule] });
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
+    ngbModal = TestBed.inject(NgbModal);
   });
 
   afterEach(async () => {
     ngbModal?.dismissAll("test cleanup");
     await flush();
-    tb.destroy();
     document.body.innerHTML = "";
     document.body.classList.remove("modal-open");
     document.body.style.overflow = "";
@@ -45,7 +43,7 @@ describe("NgbModal", () => {
 
   async function flush(): Promise<void> {
     for (let index = 0; index < 60; index++) {
-      tb.detectChanges();
+      TestBed.inject(ApplicationRef).tick();
       $rootScope.$digest();
       // microtask + macrotask: `createComponent` de `ngjs-core` es async y
       // resuelve por `$timeout` polling (`waitForComponentController`).
@@ -114,7 +112,7 @@ describe("NgbModal", () => {
       modalTemplate?: TemplateRef<unknown>;
     };
     scope.message = "Template modal value";
-    const host = tb.$compile(`
+    const host = TestBed.inject<angular.ICompileService>("$compile")(`
       <div>
         <ng-template ng-ref="modalTemplate" let-close="close" let-dismiss="dismiss">
           <div class="template-modal">{{ message }}</div>

@@ -7,8 +7,8 @@ import angular, {
   type IScope,
 } from "angular";
 import { Injector } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbTimepicker } from "./ngb-timepicker.component";
 import { NgbTimepickerModule } from "./ngb-timepicker.module";
 import { NgbTimepickerConfig } from "./ngb-timepicker-config.service";
@@ -34,17 +34,16 @@ interface TestScope extends IScope {
 }
 
 describe("NgbTimepicker", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let config: NgbTimepickerConfig;
   const mounted: IAugmentedJQuery[] = [];
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbTimepickerModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
-    config = tb.$injector.get<Injector>(Injector.$name).get(NgbTimepickerConfig);
+    TestBed.configureTestingModule({ imports: [NgbTimepickerModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
+    config = TestBed.inject(NgbTimepickerConfig);
   });
 
   afterEach(() => {
@@ -52,7 +51,6 @@ describe("NgbTimepicker", () => {
       element.remove();
     });
     mounted.length = 0;
-    tb.destroy();
   });
 
   function setup(

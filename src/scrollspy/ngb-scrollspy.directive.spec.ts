@@ -1,7 +1,8 @@
 import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
+import { TestBed } from "ngjs-core/testing";
+import { ApplicationRef } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbScrollSpy } from "./ngb-scrollspy.directive";
 
@@ -25,7 +26,6 @@ class IntersectionObserverMock {
 }
 
 describe("ngbScrollSpy directives", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let originalObserver: typeof IntersectionObserver | undefined;
@@ -34,13 +34,12 @@ describe("ngbScrollSpy directives", () => {
     originalObserver = globalThis.IntersectionObserver;
     IntersectionObserverMock.instances = [];
     globalThis.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
-    tb.destroy();
     globalThis.IntersectionObserver = originalObserver as typeof IntersectionObserver;
     document.body.innerHTML = "";
   });
@@ -63,7 +62,7 @@ describe("ngbScrollSpy directives", () => {
       </div>
     `)(scope);
     angular.element(document.body).append(element);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     return { element, scope, spy: scope.spy as NgbScrollSpy };
   }
 
@@ -86,7 +85,7 @@ describe("ngbScrollSpy directives", () => {
       [{ isIntersecting: true, target: fragments[1] } as IntersectionObserverEntry],
       observer as unknown as IntersectionObserver,
     );
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(spy.active).toBe("two");
     expect(scope.active).toBe("two");
     expect(element[0].querySelector(".two-link")?.classList.contains("active")).toBe(true);
@@ -115,10 +114,10 @@ describe("ngbScrollSpy directives", () => {
       <div ngb-scroll-spy ng-ref="spy" ng-ref-read="ngbScrollSpy" process-changes="custom"
         active-change="active = $event"><section ngb-scroll-spy-fragment="one">One</section></div>
     `)(scope);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     const observer = IntersectionObserverMock.instances[0];
     observer.callback([], observer as unknown as IntersectionObserver);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(scope.custom).toHaveBeenCalledOnce();
     expect(scope.active).toBe("custom");
     expect(scope.spy?.active).toBe("custom");
@@ -131,10 +130,10 @@ describe("ngbScrollSpy directives", () => {
     const element = $compile(`
       <div ngb-scroll-spy><section ng-if="visible" ngb-scroll-spy-fragment="one">One</section></div>
     `)(scope);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     const observer = IntersectionObserverMock.instances[0];
     scope.visible = false;
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(observer.disconnect).toHaveBeenCalled();
     expect(observer.observe).toHaveBeenCalledTimes(1);
     element.remove();

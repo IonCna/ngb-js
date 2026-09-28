@@ -2,8 +2,8 @@ import { NgbDate } from "@ngb/datepicker/ngb-date";
 import { NgbDatepickerModule } from "@ngb/datepicker/ngb-datepicker.module";
 import type { IAugmentedJQuery, ICompileService, IRootScopeService, IScope } from "angular";
 import angular from "angular";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed.ts";
 
 interface TestScope extends IScope {
   currentMonth: number;
@@ -14,20 +14,18 @@ interface TestScope extends IScope {
 }
 
 describe("NgbDatepickerDayView", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let element: IAugmentedJQuery | undefined;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbDatepickerModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbDatepickerModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
     element?.remove();
-    tb.destroy();
   });
 
   function setup(values: Partial<TestScope> = {}) {

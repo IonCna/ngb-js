@@ -1,28 +1,27 @@
 import angular from "angular";
+import { TestBed } from "ngjs-core/testing";
+import { ApplicationRef } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbCarousel } from "./ngb-carousel.component";
 
 describe("ngbCarousel", () => {
-  let tb: NgbTestBed;
-  let $compile: NgbTestBed["$compile"];
-  let $rootScope: NgbTestBed["$rootScope"];
+  let $compile: angular.ICompileService;
+  let $rootScope: angular.IRootScopeService;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
-    tb.destroy();
     document.body.innerHTML = "";
   });
 
   const tick = async (scope: angular.IRootScopeService) => {
     await new Promise((resolve) => setTimeout(resolve, 0));
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     scope.$digest();
   };
 
@@ -44,9 +43,9 @@ describe("ngbCarousel", () => {
     // Varios digests: los `@Input({ binding: "@" })` de `NgbSlide` (`id="one"`, …)
     // resuelven la interpolación `@?` en el digest siguiente (Gap E), y el
     // `ng-repeat`/`ngAfterViewInit` necesitan otro ciclo.
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     $rootScope.$digest();
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     $rootScope.$digest();
     return { carousel: element.controller<NgbCarousel>("ngbCarousel"), element, scope };
   }
@@ -207,7 +206,7 @@ describe("ngbCarousel", () => {
     expect(element[0].querySelector(".carousel-item.active")?.id).toBe("slide-one");
 
     const empty = $compile(`<ngb-carousel animation="false" interval="0"></ngb-carousel>`)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(empty.controller<NgbCarousel>("ngbCarousel").activeId).toBe("");
     expect(empty[0].querySelectorAll(".carousel-item")).toHaveLength(0);
   });

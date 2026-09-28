@@ -7,8 +7,8 @@ import angular, {
   type IScope,
 } from "angular";
 import { map, type Observable, of, Subject, switchMap } from "rxjs";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 interface TestScope extends IScope {
@@ -27,15 +27,14 @@ interface TypeaheadInternals extends NgbTypeahead {
 }
 
 describe("NgbTypeahead", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   const mounted: IAugmentedJQuery[] = [];
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
@@ -43,7 +42,6 @@ describe("NgbTypeahead", () => {
       element.remove();
     });
     mounted.length = 0;
-    tb.destroy();
   });
 
   function setup(template = '<input ng-model="model" ngb-typeahead="search">', values: Partial<TestScope> = {}) {

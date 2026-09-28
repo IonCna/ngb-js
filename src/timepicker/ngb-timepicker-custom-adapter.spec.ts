@@ -4,13 +4,14 @@ import angular, {
   type IRootScopeService,
   type IScope,
 } from "angular";
-import { NgModule } from "ngjs-core";
+import { Injectable } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbTimeAdapter } from "./ngb-timepicker-adapter.service";
 import { NgbTimepickerModule } from "./ngb-timepicker.module";
 import type { NgbTimeStruct } from "./ngb-timepicker-struct";
 
+@Injectable()
 class StringTimeAdapter extends NgbTimeAdapter<string> {
   fromModel(value: string | null): NgbTimeStruct | null {
     if (!value) {
@@ -25,28 +26,23 @@ class StringTimeAdapter extends NgbTimeAdapter<string> {
   }
 }
 
-// upstream: el adapter se reemplaza por DI (`{ provide: NgbTimeAdapter, useClass: ... }`).
-@NgModule({
-  imports: [NgbTimepickerModule],
-  providers: [{ provide: NgbTimeAdapter, useClass: StringTimeAdapter }],
-})
-class CustomAdapterModule {}
-
 describe("NgbTimepicker with a custom NgbTimeAdapter", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let element: IAugmentedJQuery | undefined;
 
-  beforeEach(async () => {
-    tb = await configureTestBed(CustomAdapterModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+  beforeEach(() => {
+    // upstream: el adapter se reemplaza por DI (`{ provide: NgbTimeAdapter, useClass: ... }`).
+    TestBed.configureTestingModule({
+      imports: [NgbTimepickerModule],
+      providers: [{ provide: NgbTimeAdapter, useClass: StringTimeAdapter }],
+    });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
     element?.remove();
-    tb.destroy();
   });
 
   function setup() {

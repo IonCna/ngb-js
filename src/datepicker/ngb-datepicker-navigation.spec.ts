@@ -1,22 +1,21 @@
 import type { ICompileService, IRootScopeService } from "angular";
+import { TestBed } from "ngjs-core/testing";
+import type angular from "angular";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed.ts";
 import { NgbDate } from "./ngb-date";
 import { NgbDatepickerModule } from "./ngb-datepicker.module";
 
 describe("datepicker navigation", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbDatepickerModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbDatepickerModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
-  afterEach(() => tb.destroy());
-
+  
   it("renders button semantics and emits previous and next navigation", () => {
     const scope = $rootScope.$new() as IRootScopeService & {
       date: NgbDate;

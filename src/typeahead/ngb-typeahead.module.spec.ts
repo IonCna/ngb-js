@@ -1,22 +1,21 @@
 import { NgbTypeahead } from "@ngb/typeahead/ngb-typeahead.directive";
 import type { ICompileService, IRootScopeService } from "angular";
+import { TestBed } from "ngjs-core/testing";
+import type angular from "angular";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 describe("NgbTypeaheadModule", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
-  afterEach(() => tb.destroy());
-
+  
   it("registers the typeahead directive with all of its providers", () => {
     const scope = $rootScope.$new();
     const element = $compile('<input type="text" ng-model="model" ngb-typeahead>')(scope);

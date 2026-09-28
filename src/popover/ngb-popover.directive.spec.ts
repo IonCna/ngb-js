@@ -1,23 +1,22 @@
 import type { NgbPopover } from "@ngb/popover/ngb-popover.directive";
 import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
+import { TestBed } from "ngjs-core/testing";
+import { ApplicationRef } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 describe("ngbPopover", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
-    tb.destroy();
     document.body.innerHTML = "";
   });
 
@@ -33,10 +32,10 @@ describe("ngbPopover", () => {
       },
     );
     for (let index = 0; index < 20; index++) {
-      // `tb.detectChanges()` (appRef.tick) además del digest: vacía los
+      // `TestBed.inject(ApplicationRef).tick()` (appRef.tick) además del digest: vacía los
       // `afterNextRender` de los que depende `transition$` (y por ende los
       // callbacks `shown`/`hidden`).
-      tb.detectChanges();
+      TestBed.inject(ApplicationRef).tick();
       $rootScope.$digest();
       await Promise.resolve();
     }

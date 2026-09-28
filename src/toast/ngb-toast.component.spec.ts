@@ -1,29 +1,28 @@
 import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
+import { TestBed } from "ngjs-core/testing";
+import { ApplicationRef } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 describe("ngbToast", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    tb.destroy();
   });
 
   it("sets bootstrap toast semantics on host element", () => {
     const scope = $rootScope.$new();
     const element = $compile(`<ngb-toast>Toast message</ngb-toast>`)(scope);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
 
     expect(element.attr("role")).toBe("alert");
     expect(element.attr("aria-atomic")).toBe("true");
@@ -51,7 +50,7 @@ describe("ngbToast", () => {
 
   it("uses default classes and ARIA live semantics", () => {
     const element = $compile(`<ngb-toast animation="false">Toast</ngb-toast>`)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element.hasClass("toast")).toBe(true);
     expect(element.hasClass("show")).toBe(true);
     expect(element.attr("aria-live")).toBe("polite");
@@ -60,14 +59,14 @@ describe("ngbToast", () => {
 
   it("does not create a header without header content", () => {
     const element = $compile(`<ngb-toast>Toast</ngb-toast>`)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element[0].querySelector(".toast-header")).toBeNull();
     expect(element[0].querySelector(".btn-close")).toBeNull();
   });
 
   it("renders a string header and close button", () => {
     const element = $compile(`<ngb-toast header="'Notice'">Toast</ngb-toast>`)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element[0].querySelector(".toast-header")?.textContent).toContain("Notice");
     expect(element[0].querySelector(".btn-close")?.getAttribute("aria-label")).toBe("Close");
   });
@@ -78,9 +77,9 @@ describe("ngbToast", () => {
     const element = $compile(
       `<ngb-toast header="'Notice'" animation="false" autohide="false" hidden="onHidden()">Toast</ngb-toast>`,
     )(scope);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     angular.element(element[0].querySelector(".btn-close") as HTMLElement).triggerHandler("click");
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element.hasClass("show")).toBe(false);
     expect(scope.onHidden).toHaveBeenCalledOnce();
   });
@@ -90,11 +89,11 @@ describe("ngbToast", () => {
     const scope = $rootScope.$new() as IRootScopeService & { onHidden: () => void };
     scope.onHidden = vi.fn();
     const element = $compile(`<ngb-toast animation="false" delay="250" hidden="onHidden()">Toast</ngb-toast>`)(scope);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     vi.advanceTimersByTime(249);
     expect(scope.onHidden).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(scope.onHidden).toHaveBeenCalledOnce();
     expect(element.hasClass("show")).toBe(false);
     vi.useRealTimers();
@@ -108,9 +107,9 @@ describe("ngbToast", () => {
     $compile(`<ngb-toast animation="false" delay="100" autohide="autohide" hidden="onHidden()">Toast</ngb-toast>`)(
       scope,
     );
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     scope.autohide = false;
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     vi.advanceTimersByTime(100);
     expect(scope.onHidden).not.toHaveBeenCalled();
     vi.useRealTimers();

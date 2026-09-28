@@ -9,22 +9,21 @@ import { NgbInputDatepicker } from "@ngb/datepicker/ngb-input-datepicker.directi
 import { NgbModule } from "@ngb/ngb.module.ts";
 import type { ICompileService, IPromise, IRootScopeService } from "angular";
 import { NgModule } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
+import type angular from "angular";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed.ts";
 
 describe("NgbDatepickerModule", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbDatepickerModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbDatepickerModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
-  afterEach(() => tb.destroy());
-
+  
   async function settle(promise: IPromise<void>): Promise<void> {
     let settled = false;
     let rejected: unknown;
@@ -195,19 +194,15 @@ describe("NgbDatepickerModule", () => {
   it("accepts a calendar provided by the consumer", async () => {
     // upstream: el calendario se elige por DI (`{ provide: NgbCalendar, useClass: ... }`),
     // no por un `@Input()`.
-    @NgModule({ imports: [NgbDatepickerModule], providers: [{ provide: NgbCalendar, useClass: NgbCalendarBuddhist }] })
-    class CustomCalendarModule {}
-
-    const local = await configureTestBed(CustomCalendarModule);
-    try {
-      const scope = local.$rootScope.$new();
-      const element = local.$compile("<ngb-datepicker></ngb-datepicker>")(scope);
-      scope.$digest();
-      const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
-      expect(datepicker.calendar).toBeInstanceOf(NgbCalendarBuddhist);
-    } finally {
-      local.destroy();
-    }
+    TestBed.resetTestingModule().configureTestingModule({
+      imports: [NgbDatepickerModule],
+      providers: [{ provide: NgbCalendar, useClass: NgbCalendarBuddhist }],
+    });
+    const scope = TestBed.inject<angular.IRootScopeService>("$rootScope").$new();
+    const element = TestBed.inject<angular.ICompileService>("$compile")("<ngb-datepicker></ngb-datepicker>")(scope);
+    scope.$digest();
+    const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
+    expect(datepicker.calendar).toBeInstanceOf(NgbCalendarBuddhist);
   });
 
   it("clears dynamic limits when their bindings become undefined", () => {
@@ -450,20 +445,13 @@ describe("NgbDatepickerModule", () => {
 });
 
 describe("NgbDatepicker through NgbModule", () => {
-  it("renders from the root module", async () => {
-    const tb = await configureTestBed(NgbModule);
-    try {
-      const scope = tb.$rootScope.$new();
-      const element = tb.$compile("<ngb-datepicker></ngb-datepicker>")(scope);
-      scope.$digest();
+  it("renders from the root module", () => {
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    const scope = TestBed.inject<angular.IRootScopeService>("$rootScope").$new();
+    const element = TestBed.inject<angular.ICompileService>("$compile")("<ngb-datepicker></ngb-datepicker>")(scope);
+    scope.$digest();
 
-      expect(element.controller("ngbDatepicker")).toBeInstanceOf(NgbDatepicker);
-      expect(element[0].querySelectorAll(".ngb-dp-day").length).toBeGreaterThan(0);
-
-      element.remove();
-      scope.$destroy();
-    } finally {
-      tb.destroy();
-    }
+    expect(element.controller("ngbDatepicker")).toBeInstanceOf(NgbDatepicker);
+    expect(element[0].querySelectorAll(".ngb-dp-day").length).toBeGreaterThan(0);
   });
 });

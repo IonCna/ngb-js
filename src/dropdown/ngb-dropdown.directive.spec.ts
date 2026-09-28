@@ -3,24 +3,23 @@ import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
 import type { NgZone } from "ngjs-core";
 import { Subject } from "rxjs";
+import { TestBed } from "ngjs-core/testing";
+import { ApplicationRef } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import type { NgbDropdown } from "./ngb-dropdown.directive";
 
 describe("ngbDropdown", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
-  afterEach(() => tb.destroy());
-
+  
   it("collects menu items and their disabled state from projected content", () => {
     const scope = $rootScope.$new() as IRootScopeService & { opened: boolean; itemDisabled: boolean };
     scope.opened = true;
@@ -36,7 +35,7 @@ describe("ngbDropdown", () => {
             </div>
         `)(scope);
     angular.element(document.body).append(element);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
 
     const root = element[0] as HTMLElement;
     const menu = angular.element(root.querySelector(".dropdown-menu") as Element);
@@ -47,12 +46,12 @@ describe("ngbDropdown", () => {
     expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, true]);
 
     scope.itemDisabled = false;
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, false]);
     expect(angular.element(root.querySelector(".disabled-item") as Element).hasClass("disabled")).toBe(false);
 
     dropdown.close();
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(menu.hasClass("show")).toBe(false);
 
     element.remove();
@@ -72,7 +71,7 @@ describe("ngbDropdown", () => {
             </div>
         `)(scope);
     angular.element(document.body).append(element);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
 
     const root = element[0] as HTMLElement;
     const menu = angular.element(root.querySelector(".dropdown-menu") as Element);
@@ -80,11 +79,11 @@ describe("ngbDropdown", () => {
     const firstItem = root.querySelector(".first-item") as HTMLElement;
 
     toggle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(document.activeElement).toBe(firstItem);
 
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(menu.hasClass("show")).toBe(false);
 
     element.remove();
@@ -108,7 +107,7 @@ describe("ngbDropdown", () => {
     const element = $compile(`
       <div ngb-dropdown><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div></div>
     `)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element.hasClass("dropdown")).toBe(true);
     expect(element.hasClass("show")).toBe(false);
     expect(element[0].querySelector(".dropdown-menu")?.classList.contains("show")).toBe(false);
@@ -123,13 +122,13 @@ describe("ngbDropdown", () => {
         <button ngb-dropdown-toggle><span class="child">Toggle</span></button><div ngb-dropdown-menu>Menu</div>
       </div>
     `)(scope);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     (element[0].querySelector(".child") as HTMLElement).click();
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element.hasClass("show")).toBe(true);
     expect(scope.onOpen).toHaveBeenLastCalledWith(true);
     (element[0].querySelector("[ngb-dropdown-toggle]") as HTMLElement).click();
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element.hasClass("show")).toBe(false);
     expect(scope.onOpen).toHaveBeenLastCalledWith(false);
   });
@@ -140,10 +139,10 @@ describe("ngbDropdown", () => {
     const element = $compile(`
       <div ngb-dropdown open="opened"><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div></div>
     `)(scope);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     const dropdown = element.controller<NgbDropdown>("ngbDropdown");
     scope.opened = true;
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(dropdown.isOpen()).toBe(true);
     dropdown.close();
     expect(dropdown.isOpen()).toBe(false);
@@ -163,7 +162,7 @@ describe("ngbDropdown", () => {
         <a ngb-dropdown-item tabindex="7">Custom</a>
       </div></div>
     `)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     const items = element[0].querySelectorAll<HTMLElement>("[ngb-dropdown-item]");
     expect(items[0].classList.contains("disabled")).toBe(true);
     expect((items[0] as HTMLButtonElement).disabled).toBe(true);
@@ -177,7 +176,7 @@ describe("ngbDropdown", () => {
         <button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div>
       </div>
     `)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(element.hasClass("dropup")).toBe(true);
     expect(element.hasClass("custom")).toBe(true);
   });
@@ -194,7 +193,7 @@ describe("ngbDropdown", () => {
       </div>
     `)($rootScope.$new());
     angular.element(document.body).append(element);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     const toggle = element[0].querySelector<HTMLElement>(".toggle") as HTMLElement;
     const first = element[0].querySelector<HTMLElement>(".first");
     const last = element[0].querySelector<HTMLElement>(".last");
@@ -213,15 +212,15 @@ describe("ngbDropdown", () => {
       </div>
     `)($rootScope.$new());
     angular.element(document.body).append(element);
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     const dropdown = element.controller<NgbDropdown>("ngbDropdown");
     const menu = element[0].querySelector<HTMLElement>("[ngb-dropdown-menu]") as HTMLElement;
     dropdown.open();
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(menu.parentElement?.parentElement).toBe(document.body);
     expect(menu.parentElement?.style.zIndex).toBe("1055");
     dropdown.close();
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     expect(menu.parentElement).toBe(element[0]);
   });
 
@@ -229,7 +228,7 @@ describe("ngbDropdown", () => {
     const element = $compile(`
       <nav class="navbar"><div ngb-dropdown><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>Menu</div></div></nav>
     `)($rootScope.$new());
-    tb.detectChanges();
+    TestBed.inject(ApplicationRef).tick();
     const dropdownHost = element[0].querySelector<HTMLElement>("[ngb-dropdown]") as HTMLElement;
     expect(dropdownHost.querySelector("[ngb-dropdown-menu]")?.getAttribute("data-bs-popper")).toBe("static");
   });

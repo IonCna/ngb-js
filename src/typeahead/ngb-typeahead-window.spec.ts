@@ -1,7 +1,7 @@
 import angular, { type IAugmentedJQuery, type ICompileService, type IRootScopeService, type IScope } from "angular";
 import { NgModule } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 import { NgbTypeaheadWindow } from "./ngb-typeahead-window";
 
@@ -12,20 +12,18 @@ import { NgbTypeaheadWindow } from "./ngb-typeahead-window";
 class TypeaheadWindowTestModule {}
 
 describe("NgbTypeaheadWindow", () => {
-  let tb: NgbTestBed;
   let $compile: ICompileService;
   let $rootScope: IRootScopeService;
   let element: IAugmentedJQuery | undefined;
 
   beforeEach(async () => {
-    tb = await configureTestBed(TypeaheadWindowTestModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
+    TestBed.configureTestingModule({ imports: [TypeaheadWindowTestModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {
     element?.remove();
-    tb.destroy();
   });
 
   function setup(focusFirst = true, formatter?: (result: string) => string, popupClass?: string) {

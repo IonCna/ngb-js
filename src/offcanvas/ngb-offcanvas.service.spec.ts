@@ -3,9 +3,9 @@ import { OffcanvasDismissReasons } from "@ngb/offcanvas/ngb-offcanvas-dismiss-re
 import type { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanvas-ref";
 import type { IRootScopeService } from "angular";
 import angular from "angular";
-import { Component, Injector, Input, NgModule, type TemplateRef } from "ngjs-core";
+import { Component, Injector, Input, NgModule, type TemplateRef, ApplicationRef } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { configureTestBed, type NgbTestBed } from "../../test/testbed";
 import { NgbModule } from "../ngb.module";
 
 @Component({
@@ -29,29 +29,27 @@ class NgbOffcanvasSpecContent {
 class NgbOffcanvasSpecModule {}
 
 describe("NgbOffcanvas", () => {
-  let tb: NgbTestBed;
-  let $compile: NgbTestBed["$compile"];
+  let $compile: angular.ICompileService;
   let $rootScope: IRootScopeService;
   let ngbOffcanvas: NgbOffcanvas;
 
   beforeEach(async () => {
-    tb = await configureTestBed(NgbOffcanvasSpecModule);
-    $compile = tb.$compile;
-    $rootScope = tb.$rootScope;
-    ngbOffcanvas = tb.get<Injector>(Injector.$name).get(NgbOffcanvas);
+    TestBed.configureTestingModule({ imports: [NgbOffcanvasSpecModule] });
+    $compile = TestBed.inject<angular.ICompileService>("$compile");
+    $rootScope = TestBed.inject<angular.IRootScopeService>("$rootScope");
+    ngbOffcanvas = TestBed.inject(NgbOffcanvas);
   });
 
   afterEach(async () => {
     ngbOffcanvas?.dismiss("test cleanup");
     await flush();
-    tb.destroy();
     document.body.innerHTML = "";
     document.body.style.overflow = "";
   });
 
   async function flush(): Promise<void> {
     for (let index = 0; index < 60; index++) {
-      tb.detectChanges();
+      TestBed.inject(ApplicationRef).tick();
       $rootScope.$digest();
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
     }
