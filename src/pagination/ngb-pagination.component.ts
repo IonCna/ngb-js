@@ -176,7 +176,6 @@ export class NgbPagination implements OnChanges {
     @ContentChild(NgbPaginationPages, { static: false })
     tplPages?: NgbPaginationPages
 
-    @Input() disabled = this._config.disabled;
     @Input() boundaryLinks = this._config.boundaryLinks;
     @Input() directionLinks = this._config.directionLinks;
     @Input() ellipses = this._config.ellipses;
@@ -190,8 +189,17 @@ export class NgbPagination implements OnChanges {
 
     @HostBinding("attr.role") readonly _role = "navigation";
 
+    /**
+     * Si la paginación está deshabilitada. ngb-js: solo por `ng-disabled="expr"` (no hay `@Input() disabled` como
+     * upstream: `disabled` es un atributo booleano nativo y choca con el de AngularJS); sin `ng-disabled`, el default
+     * de `NgbPaginationConfig`.
+     */
+    get disabled(): boolean {
+        return this._ngDisabled ? this._ngDisabled.disabled : this._config.disabled;
+    }
+
     isDisabled(): boolean {
-        return this.disabled || !!this._ngDisabled?.disabled;
+        return this.disabled;
     }
     
     hasPrevious() {

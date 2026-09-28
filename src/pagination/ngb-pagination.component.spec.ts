@@ -53,7 +53,7 @@ describe("ngbPagination", () => {
         rotate="rotate"
         ellipses="ellipses"
         boundary-links="boundaryLinks"
-        disabled="disabled"
+        ng-disabled="disabled"
         size="size"
         page-change="onPageChange($event)">
       </ngb-pagination>`;
@@ -235,7 +235,7 @@ describe("ngbPagination", () => {
 
   it("renders a custom pages template with page, pages and disabled context", () => {
     const tester = createPagination(`
-      <ngb-pagination collection-size="30" page="2" disabled="true">
+      <ngb-pagination collection-size="30" page="2" ng-disabled="true">
         <ng-template ngb-pagination-pages let-page let-pages="pages" let-disabled="disabled">
           <li class="custom-pages">{{ page }} / {{ pages.length }} / {{ disabled }}</li>
         </ng-template>
