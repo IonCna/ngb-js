@@ -3,6 +3,8 @@ import angular from "angular";
 import { TestBed } from "ngjs-core/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
+import { createKeyEvent } from "../test/common";
+import { Key } from "../utils/key";
 import type { NgbRating } from "./ngb-rating.component";
 
 describe("ngbRating", () => {
@@ -159,9 +161,9 @@ describe("ngbRating", () => {
     expect(element.attr("aria-valuenow")).toBe("4");
     expect(scope.onHover).toHaveBeenCalledWith(4);
 
-    // `@HostListener("mouseleave")` se registra con `addEventListener` nativo:
-    // `triggerHandler` de jqLite no lo alcanza, hay que despachar un evento real.
-    element[0].dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    // `@HostListener("mouseleave")` se registra con `$element.on()`: jqLite emula `mouseleave` sobre `mouseout`,
+    // así que un `mouseleave` nativo sintético no lo dispara (en el navegador llega por `mouseout`).
+    element.triggerHandler("mouseleave");
     scope.$digest();
     expect(scope.onLeave).toHaveBeenCalledWith(4);
     expect(element.attr("aria-valuenow")).toBe("2");
@@ -188,16 +190,16 @@ describe("ngbRating", () => {
   });
 
   it.each([
-    ["ArrowLeft", 2],
-    ["ArrowDown", 2],
-    ["ArrowRight", 4],
-    ["ArrowUp", 4],
-    ["Home", 0],
-    ["End", 5],
-  ])("handles %s keyboard navigation", (key, expectedRate) => {
+    ["ArrowLeft", Key.ArrowLeft, 2],
+    ["ArrowDown", Key.ArrowDown, 2],
+    ["ArrowRight", Key.ArrowRight, 4],
+    ["ArrowUp", Key.ArrowUp, 4],
+    ["Home", Key.Home, 0],
+    ["End", Key.End, 5],
+  ])("handles %s keyboard navigation", (_name, key, expectedRate) => {
     const element = $compile(`<ngb-rating rate="3" max="5"></ngb-rating>`)($rootScope.$new());
     $rootScope.$digest();
-    const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key });
+    const event = createKeyEvent(key, { type: "keydown" });
     element[0].dispatchEvent(event);
     $rootScope.$digest();
     expect(element.attr("aria-valuenow")).toBe(String(expectedRate));

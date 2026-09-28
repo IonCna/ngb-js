@@ -1,4 +1,4 @@
-import { type AfterContentInit, Component, ContentChild, EventEmitter, HostBinding, inject, Input, NgDisabled, type OnChanges, Output, type SimpleChanges, TemplateRef } from "ngjs-core";
+import { Component, ContentChild, EventEmitter, HostBinding, inject, Input, NgDisabled, type OnChanges, Output, type SimpleChanges } from "ngjs-core";
 import {NgbPaginationEllipsis} from "@ngb/pagination/ngb-pagination-ellipsis.directive";
 import {NgbPaginationFirst} from "@ngb/pagination/ngb-pagination-first.directive";
 import {NgbPaginationLast} from "@ngb/pagination/ngb-pagination-last.directive";
@@ -148,7 +148,7 @@ export interface NgbPaginationPagesContext {
     </li>
 </ul>`,
 })
-export class NgbPagination implements OnChanges, AfterContentInit {
+export class NgbPagination implements OnChanges {
     private _config = inject(NgbPaginationConfig);
     private _ngDisabled = inject(NgDisabled, { optional: true });
 
@@ -175,24 +175,6 @@ export class NgbPagination implements OnChanges, AfterContentInit {
 
     @ContentChild(NgbPaginationPages, { static: false })
     tplPages?: NgbPaginationPages
-
-    // WORKAROUND (Gap B, ver CORE_GAPS): las directivas `ngbPagination*` no pueden
-    // hacer `inject(TemplateRef)` (viven sobre `<ng-template>`); el `TemplateRef`
-    // se lee acá con `{ read: TemplateRef }` y se empareja en `ngAfterContentInit`.
-    @ContentChild(NgbPaginationEllipsis, { read: TemplateRef, static: false })
-    private _refEllipsis?: TemplateRef<NgbPaginationLinkContext>
-    @ContentChild(NgbPaginationFirst, { read: TemplateRef, static: false })
-    private _refFirst?: TemplateRef<NgbPaginationLinkContext>
-    @ContentChild(NgbPaginationLast, { read: TemplateRef, static: false })
-    private _refLast?: TemplateRef<NgbPaginationLinkContext>
-    @ContentChild(NgbPaginationNext, { read: TemplateRef, static: false })
-    private _refNext?: TemplateRef<NgbPaginationLinkContext>
-    @ContentChild(NgbPaginationNumber, { read: TemplateRef, static: false })
-    private _refNumber?: TemplateRef<NgbPaginationNumberContext>
-    @ContentChild(NgbPaginationPrevious, { read: TemplateRef, static: false })
-    private _refPrevious?: TemplateRef<NgbPaginationLinkContext>
-    @ContentChild(NgbPaginationPages, { read: TemplateRef, static: false })
-    private _refPages?: TemplateRef<NgbPaginationPagesContext>
 
     @Input() disabled = this._config.disabled;
     @Input() boundaryLinks = this._config.boundaryLinks;
@@ -231,16 +213,6 @@ export class NgbPagination implements OnChanges, AfterContentInit {
     selectPage(pageNumber: number): void {
         if (this.isDisabled()) return;
         this._updatePages(pageNumber);
-    }
-
-    ngAfterContentInit(): void {
-        if (this.tplEllipsis) this.tplEllipsis.templateRef = this._refEllipsis;
-        if (this.tplFirst) this.tplFirst.templateRef = this._refFirst;
-        if (this.tplLast) this.tplLast.templateRef = this._refLast;
-        if (this.tplNext) this.tplNext.templateRef = this._refNext;
-        if (this.tplNumber) this.tplNumber.templateRef = this._refNumber;
-        if (this.tplPrevious) this.tplPrevious.templateRef = this._refPrevious;
-        if (this.tplPages) this.tplPages.templateRef = this._refPages;
     }
 
     ngOnChanges(_changes: SimpleChanges): void {
