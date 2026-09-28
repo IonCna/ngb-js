@@ -3,6 +3,7 @@ import { NgbOffcanvasBackdrop } from "@ngb/offcanvas/ngb-offcanvas-backdrop.comp
 import { NgbOffcanvasPanel } from "@ngb/offcanvas/ngb-offcanvas-panel.component";
 import { NgModule } from "ngjs-core";
 import { CommonModule } from "ngjs-core/common";
+import { NgbOffcanvasStack } from "@ngb/offcanvas/ngb-offcanvas-stack.service"
 
 export { NgbOffcanvas } from "@ngb/offcanvas/ngb-offcanvas.service";
 export {
@@ -16,6 +17,6 @@ export { NgbActiveOffcanvas, NgbOffcanvasRef } from "@ngb/offcanvas/ngb-offcanva
 @NgModule({
   imports: [CommonModule],
   declarations: [NgbOffcanvasPanel, NgbOffcanvasBackdrop],
-  providers: [NgbScrollbar],
+  providers: [NgbScrollbar, NgbOffcanvasStack],
 })
 export class NgbOffcanvasModule {}
