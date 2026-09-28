@@ -360,12 +360,18 @@ export class NgbCarousel implements AfterContentChecked, AfterContentInit, After
 
   ngAfterViewInit() {
     // Inicializa la clase 'active' (no la maneja el template)
-    if (this.activeId) {
-      const element = this._getSlideElement(this.activeId);
-      if (element) {
-        element.classList.add("active");
+    const markActive = () => {
+      if (this.activeId) {
+        const element = this._getSlideElement(this.activeId);
+        if (element) {
+          element.classList.add("active");
+        }
       }
-    }
+    };
+    markActive();
+    // ngb-js: en AngularJS el `ng-repeat` de los slides (y el `activeId` que corrige `ngAfterContentChecked`)
+    // recién están después del primer digest, no en `$postLink`: se repite al estabilizarse.
+    this._ngZone.onStable.pipe(take(1)).subscribe(markActive);
   }
 
   /**

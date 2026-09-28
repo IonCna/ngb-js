@@ -145,22 +145,21 @@ describe("ngbCarousel", () => {
   });
 
   it("updates projected slides when the content collection changes", () => {
-    const scope = $rootScope.$new() as IRootScopeService & { showSecond: boolean };
-    scope.showSecond = false;
+    const scope = $rootScope.$new() as IRootScopeService & { slides: string[] };
+    scope.slides = ["slide-1"];
 
+    // Como upstream (`@for` directo adentro del carousel): `@ContentChildren(NgbSlide)` es `descendants: false`,
+    // un slide envuelto en otro elemento no cuenta.
     const element = $compile(`
       <ngb-carousel animation="false" interval="0">
-        <ng-template ngb-slide id="slide-1">Slide 1</ng-template>
-        <div ng-if="showSecond">
-          <ng-template ngb-slide id="slide-2">Slide 2</ng-template>
-        </div>
+        <ng-template ng-repeat="id in slides" ngb-slide id="{{ id }}">Slide {{ id }}</ng-template>
       </ngb-carousel>
     `)(scope);
     scope.$digest();
 
     expect(element[0].querySelectorAll(".carousel-item")).toHaveLength(1);
 
-    scope.showSecond = true;
+    scope.slides.push("slide-2");
     scope.$digest();
 
     expect(element[0].querySelectorAll(".carousel-item")).toHaveLength(2);
@@ -286,9 +285,10 @@ describe("ngbCarousel", () => {
     const { carousel, element } = createCarousel();
     expect(element.attr("tabindex")).toBe("0");
     expect((element[0] as HTMLElement).style.display).toBe("block");
-    element[0].dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    // `@HostListener("mouseenter"/"mouseleave")` va por `$element.on()`: jqLite los emula sobre mouseover/mouseout.
+    element.triggerHandler("mouseenter");
     expect(carousel.mouseHover).toBe(true);
-    element[0].dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    element.triggerHandler("mouseleave");
     expect(carousel.mouseHover).toBe(false);
     element[0].dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
     expect(carousel.focused).toBe(true);
