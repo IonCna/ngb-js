@@ -52,6 +52,7 @@
           }
         ],
         "setupFiles": [
+          "test/setup.ts",
           "src/test/jasmine.config.ts",
           "src/test/test-styles.ts"
         ]

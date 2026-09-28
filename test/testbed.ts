@@ -1,6 +1,6 @@
 import type angular from "angular";
 import { type ApplicationRef, bootstrapApplication, Injector, NgModule } from "ngjs-core";
-import { resetTestingModule } from "ngjs-core/testing";
+import { TestBed } from "ngjs-core/testing";
 
 /**
  * Arranque de specs equivalente a `TestBed.configureTestingModule` +
@@ -34,7 +34,7 @@ export async function configureTestBed(feature: Function | angular.IModule | str
 	// el `RootSingletonRegistry` es global al proceso y un `@Service` que capturó
 	// `inject(ApplicationRef)` (ej. `NgbModalStack`) quedaría apuntando a una app
 	// ya destruida.
-	resetTestingModule();
+	TestBed.resetTestingModule();
 
 	@NgModule({ imports: [feature as Function] })
 	class TestRootModule {}
