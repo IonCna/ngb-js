@@ -1,10 +1,11 @@
-import template from "@ngb/typeahead/ngb-highlight.component.html";
 import { regExpEscape, removeAccents, toString } from "@ngb/utils";
 import { Component, Input, type OnChanges, type SimpleChanges } from "ngjs-core";
 
 @Component({
   selector: "ngb-highlight",
-  template,
+  template: `<span
+    ng-repeat="part in $.parts track by $index"
+    ng-class="[$odd ? $.highlightClass : '', $odd && $.highlightClass === 'ngb-highlight' ? 'fw-bold' : '']">{{ part }}</span>`,
 })
 export class NgbHighlight implements OnChanges {
   parts!: string[];

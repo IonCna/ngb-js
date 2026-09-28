@@ -5,7 +5,17 @@ import { Component, HostBinding, inject, Input } from "ngjs-core";
 
 @Component({
   selector: "ngb-progressbar",
-  templateUrl: "./ngb-progressbar.component.html",
+  template: `<div
+    class="progress-bar"
+    ng-class="[
+        $.type ? ($.textType ? 'bg-' + $.type : ' text-bg-' + $.type) : '',
+        $.textType ? ' text-' + $.textType : '',
+        { 'progress-bar-animated': $.animated, 'progress-bar-striped': $.striped },
+    ]"
+    ng-style="{ width: !$.stacked ? $.getPercentValue() + '%' : null }">
+    <span ng-if="$.showValue">{{ $.getValue() / $.max | percent }}</span>
+    <ng-content></ng-content>
+</div>`,
 })
 export class NgbProgressbar {
   private _config = inject(NgbProgressbarConfig);

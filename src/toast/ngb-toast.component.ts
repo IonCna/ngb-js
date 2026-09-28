@@ -1,4 +1,3 @@
-import template from "@ngb/toast/ngb-toast.component.html";
 import { NgbToastConfig } from "@ngb/toast/ngb-toast-config.service";
 import { NgbToastHeader } from "@ngb/toast/ngb-toast-header.directive";
 import { ngbToastFadeInTransition, ngbToastFadeOutTransition } from "@ngb/toast/ngb-toast-transition";
@@ -30,7 +29,18 @@ export interface INgbToast {
 @Component({
   selector: "ngb-toast",
   exportAs: "ngbToast",
-  template,
+  template: `<ng-template ng-ref="headerTpl">
+    <strong class="me-auto">{{ $.header }}</strong>
+</ng-template>
+
+<div ng-if="$.contentHeaderTpl || $.header" class="toast-header">
+    <ng-container ng-template-outlet="$.contentHeaderTpl || $.headerTpl"></ng-container>
+    <button type="button" class="btn-close" aria-label="Close" ng-click="$.hide()"></button>
+</div>
+
+<div class="toast-body">
+    <ng-content></ng-content>
+</div>`,
 })
 export class NgbToast implements AfterContentInit, OnChanges, INgbToast {
   private _config = inject(NgbToastConfig);

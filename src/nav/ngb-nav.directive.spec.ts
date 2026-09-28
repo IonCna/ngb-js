@@ -1,6 +1,6 @@
 import type { ICompileService, IRootScopeService } from "angular";
 import angular from "angular";
-import { getNgModuleName } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
 
@@ -9,11 +9,9 @@ describe("ngbNav", () => {
   let $rootScope: IRootScopeService;
 
   beforeEach(() => {
-    angular.mock.module(getNgModuleName(NgbModule));
-    angular.mock.inject((_$compile_: ICompileService, _$rootScope_: IRootScopeService) => {
-      $compile = _$compile_;
-      $rootScope = _$rootScope_;
-    });
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<ICompileService>("$compile");
+    $rootScope = TestBed.inject<IRootScopeService>("$rootScope");
   });
 
   afterEach(() => {

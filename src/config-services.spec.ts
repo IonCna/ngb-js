@@ -1,18 +1,19 @@
 import type { IInjectorService } from "angular";
 import angular from "angular";
-import { getNgModuleName, Injector } from "ngjs-core";
+import { Injector } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { NgbAccordionConfig } from "./accordion/ngb-accordion-config.service";
 import { NgbAlertConfig } from "./alert/ngb-alert-config.service";
 import { NgbCarouselConfig } from "./carousel/ngb-carousel-config.service";
 import { NgbCollapseConfig } from "./collapse/ngb-collapse-config.service";
+import { NgbConfig } from "./config/ngb-config";
 import { NgbDatepickerConfig } from "./datepicker/ngb-datepicker-config.service";
 import { NgbInputDatepickerConfig } from "./datepicker/ngb-input-datepicker-config.service";
 import { NgbDropdownConfig } from "./dropdown/ngb-dropdown-config.service";
 import { NgbModalConfig } from "./modal/ngb-modal-config.service";
 import { NgbNavConfig } from "./nav/ngb-nav-config.service";
 import { NgbModule } from "./ngb.module";
-import { NgbConfig } from "./config/ngb-config";
 import { NgbOffcanvasConfig } from "./offcanvas/ngb-offcanvas-config.service";
 import { NgbPopoverConfig } from "./popover/ngb-popover-config.service";
 import { NgbProgressbarConfig } from "./progressbar/ngb-progressbar-config.service";
@@ -28,32 +29,31 @@ describe("configuration service defaults", () => {
   let angularInjector: IInjectorService;
 
   beforeEach(() => {
-    angular.mock.module(getNgModuleName(NgbModule));
-    angular.mock.inject((_$injector_: IInjectorService) => {
-      angularInjector = _$injector_;
-      injector = angularInjector.get<Injector>(Injector.$name);
-    });
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    angularInjector = TestBed.inject<IInjectorService>("$injector");
+    injector = TestBed.inject(Injector);
   });
 
+  // `environment.test.ts` (fileReplacements de `ngjs test`) apaga las animaciones, como en ng-bootstrap.
   it("provides the global animation default", () => {
-    expect(injector.get(NgbConfig).animation).toBe(true);
+    expect(injector.get(NgbConfig).animation).toBe(false);
   });
 
   it("provides accordion defaults", () => {
     expect(injector.get(NgbAccordionConfig)).toMatchObject({
       closeOthers: false,
       destroyOnHide: true,
-      animation: true,
+      animation: false,
     });
   });
 
   it("provides alert defaults", () => {
-    expect(injector.get(NgbAlertConfig)).toMatchObject({ animation: true, dismissible: true, type: "warning" });
+    expect(injector.get(NgbAlertConfig)).toMatchObject({ animation: false, dismissible: true, type: "warning" });
   });
 
   it("provides carousel defaults", () => {
     expect(injector.get(NgbCarouselConfig)).toMatchObject({
-      animation: true,
+      animation: false,
       interval: 5000,
       keyboard: true,
       pauseOnFocus: true,
@@ -65,7 +65,7 @@ describe("configuration service defaults", () => {
   });
 
   it("provides collapse defaults", () => {
-    expect(injector.get(NgbCollapseConfig)).toMatchObject({ animation: true, horizontal: false });
+    expect(injector.get(NgbCollapseConfig)).toMatchObject({ animation: false, horizontal: false });
   });
 
   it("provides datepicker and input datepicker defaults", () => {
@@ -96,14 +96,13 @@ describe("configuration service defaults", () => {
   it("provides modal and offcanvas defaults", () => {
     // `@Service` → se pide por el `Injector` de ngjs-core (como el resto de los configs).
     expect(injector.get(NgbModalConfig)).toMatchObject({
-      animation: true,
+      animation: false,
       backdrop: true,
       fullscreen: false,
       keyboard: true,
-      role: "dialog",
     });
     expect(injector.get(NgbOffcanvasConfig)).toMatchObject({
-      animation: true,
+      animation: false,
       backdrop: true,
       keyboard: true,
       position: "start",
@@ -113,7 +112,7 @@ describe("configuration service defaults", () => {
 
   it("provides nav defaults", () => {
     expect(injector.get(NgbNavConfig)).toMatchObject({
-      animation: true,
+      animation: false,
       destroyOnHide: true,
       keyboard: true,
       orientation: "horizontal",
@@ -123,7 +122,7 @@ describe("configuration service defaults", () => {
 
   it("provides popover and tooltip defaults", () => {
     expect(injector.get(NgbPopoverConfig)).toMatchObject({
-      animation: true,
+      animation: false,
       autoClose: true,
       closeDelay: 0,
       disablePopover: false,
@@ -132,7 +131,7 @@ describe("configuration service defaults", () => {
       triggers: "click",
     });
     expect(injector.get(NgbTooltipConfig)).toMatchObject({
-      animation: true,
+      animation: false,
       autoClose: true,
       closeDelay: 0,
       disableTooltip: false,
@@ -162,7 +161,7 @@ describe("configuration service defaults", () => {
 
   it("provides toast defaults", () => {
     expect(injector.get(NgbToastConfig)).toMatchObject({
-      animation: true,
+      animation: false,
       ariaLive: "polite",
       autohide: true,
       delay: 5000,

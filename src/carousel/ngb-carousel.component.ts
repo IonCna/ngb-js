@@ -1,4 +1,3 @@
-import template from "@ngb/carousel/ngb-carousel.component.html";
 import { NgbCarouselConfig } from "@ngb/carousel/ngb-carousel-config.service";
 import {
   type NgbCarouselCtx,
@@ -43,7 +42,50 @@ let carouselId = 0;
 @Component({
   selector: "ngb-carousel",
   exportAs: "ngbCarousel",
-  template,
+  template: `<div class="carousel-indicators" ng-class="{ 'visually-hidden': !$.showNavigationIndicators }" role="tablist">
+  <button
+    ng-repeat="$slide in $.slides.toArray() track by $slide.id"
+    type="button"
+    data-bs-target
+    ng-class="{ active: $slide.id === $.activeId }"
+    role="tab"
+    ng-attr-aria-labelledby="slide-{{ $slide.id }}"
+    ng-attr-aria-controls="slide-{{ $slide.id }}"
+    ng-attr-aria-selected="{{ $slide.id === $.activeId }}"
+    ng-click="$.focus(); $.select($slide.id, $.NgbSlideEventSource.INDICATOR)"
+  ></button>
+</div>
+<div class="carousel-inner">
+  <div
+    ng-repeat="$slide in $.slides.toArray() track by $slide.id"
+    class="carousel-item"
+    ng-attr-id="slide-{{ $slide.id }}"
+    role="tabpanel"
+  >
+    <span class="visually-hidden">Slide {{ $index + 1 }} of {{ $.slides.length }}</span>
+    <ng-container ng-template-outlet="$slide.templateRef"></ng-container>
+  </div>
+</div>
+<button
+  ng-if="$.showNavigationArrows"
+  class="carousel-control-prev"
+  type="button"
+  ng-click="$.arrowLeft()"
+  ng-attr-aria-labelledby="{{ $.id }}-previous"
+>
+  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+  <span class="visually-hidden" ng-attr-id="{{ $.id }}-previous">Previous</span>
+</button>
+<button
+  ng-if="$.showNavigationArrows"
+  class="carousel-control-next"
+  type="button"
+  ng-click="$.arrowRight()"
+  ng-attr-aria-labelledby="{{ $.id }}-next"
+>
+  <span class="carousel-control-next-icon" aria-hidden="true"></span>
+  <span class="visually-hidden" ng-attr-id="{{ $.id }}-next">Next</span>
+</button>`,
 })
 export class NgbCarousel implements AfterContentChecked, AfterContentInit, AfterViewInit {
   @ContentChildren(NgbSlide) slides!: QueryList<NgbSlide>;

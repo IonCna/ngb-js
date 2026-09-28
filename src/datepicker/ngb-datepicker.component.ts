@@ -2,7 +2,6 @@ import { NgbDateAdapter } from "@ngb/datepicker/adapters/ngb-date-adapter.ts";
 import { NgbCalendar } from "@ngb/datepicker/ngb-calendar.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
 import type { NgbDatepickerNavigateEvent, NgbDatepickerState, NgbDateStruct } from "@ngb/datepicker/ngb-date-struct.ts";
-import template from "@ngb/datepicker/ngb-datepicker.component.html";
 import { type DatepickerServiceInputs, NgbDatepickerService } from "@ngb/datepicker/ngb-datepicker.service.ts";
 import { NgbDatepickerConfig } from "@ngb/datepicker/ngb-datepicker-config.service.ts";
 import { NgbDatepickerContent } from "@ngb/datepicker/ngb-datepicker-content.component.ts";
@@ -60,7 +59,273 @@ const SERVICE_INPUT_NAMES: (keyof DatepickerServiceInputs)[] = [
   exportAs: "ngbDatepicker",
   selector: "ngb-datepicker",
   controllerAs: "$",
-  template,
+  template: `<style>
+  /* Compiled from ng-bootstrap datepicker*.scss (ViewEncapsulation.None) — inline porque
+     ngjs-core no soporta \`styleUrl\` (no auto-inyecta CSS de componente). */
+  ngb-datepicker {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    display: inline-block;
+  }
+
+  ngb-datepicker-month {
+    pointer-events: auto;
+  }
+
+  ngb-datepicker.dropdown-menu {
+    padding: 0;
+  }
+
+  ngb-datepicker.disabled .ngb-dp-weekday,
+  ngb-datepicker.disabled .ngb-dp-week-number,
+  ngb-datepicker.disabled .ngb-dp-month-name {
+    color: var(--bs-text-muted);
+  }
+
+  .ngb-dp-body {
+    z-index: 1055;
+  }
+
+  .ngb-dp-header {
+    border-bottom: 0;
+    border-radius: 0.25rem 0.25rem 0 0;
+    padding-top: 0.25rem;
+    background-color: var(--bs-tertiary-bg);
+  }
+
+  .ngb-dp-months {
+    display: flex;
+  }
+
+  .ngb-dp-month {
+    pointer-events: none;
+  }
+
+  .ngb-dp-month-name {
+    font-size: larger;
+    height: 2rem;
+    line-height: 2rem;
+    text-align: center;
+    background-color: var(--bs-tertiary-bg);
+  }
+
+  .ngb-dp-month + .ngb-dp-month .ngb-dp-month-name,
+  .ngb-dp-month + .ngb-dp-month .ngb-dp-week {
+    padding-left: 1rem;
+  }
+
+  .ngb-dp-month:last-child .ngb-dp-week {
+    padding-right: 0.25rem;
+  }
+
+  .ngb-dp-month:first-child .ngb-dp-week {
+    padding-left: 0.25rem;
+  }
+
+  .ngb-dp-month .ngb-dp-week:last-child {
+    padding-bottom: 0.25rem;
+  }
+
+  [ngbDatepickerDayView] {
+    text-align: center;
+    width: 2rem;
+    height: 2rem;
+    line-height: 2rem;
+    border-radius: 0.25rem;
+    background: transparent;
+  }
+
+  [ngbDatepickerDayView]:hover:not(.bg-primary),
+  [ngbDatepickerDayView].active:not(.bg-primary) {
+    background-color: var(--bs-tertiary-bg);
+    outline: 1px solid var(--bs-border-color);
+  }
+
+  [ngbDatepickerDayView].outside {
+    opacity: 0.5;
+  }
+
+  ngb-datepicker-month {
+    display: block;
+  }
+
+  .ngb-dp-weekday,
+  .ngb-dp-week-number {
+    line-height: 2rem;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .ngb-dp-weekday {
+    color: var(--bs-info);
+  }
+
+  .ngb-dp-week {
+    border-radius: 0.25rem;
+    display: flex;
+  }
+
+  .ngb-dp-weekdays {
+    border-bottom: 1px solid var(--bs-border-color);
+    border-radius: 0;
+    background-color: var(--bs-tertiary-bg);
+  }
+
+  .ngb-dp-day,
+  .ngb-dp-weekday,
+  .ngb-dp-week-number {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .ngb-dp-day {
+    cursor: pointer;
+  }
+
+  .ngb-dp-day.disabled,
+  .ngb-dp-day.hidden {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .ngb-dp-day[tabindex="0"] {
+    z-index: 1;
+  }
+
+  ngb-datepicker-navigation {
+    display: flex;
+    align-items: center;
+  }
+
+  .ngb-dp-navigation-chevron {
+    border-style: solid;
+    border-width: 0.2em 0.2em 0 0;
+    display: inline-block;
+    width: 0.75em;
+    height: 0.75em;
+    margin-left: 0.25em;
+    margin-right: 0.15em;
+    transform: rotate(-135deg);
+  }
+
+  .ngb-dp-arrow {
+    display: flex;
+    flex: 1 1 auto;
+    padding-right: 0;
+    padding-left: 0;
+    margin: 0;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .ngb-dp-arrow-next {
+    justify-content: flex-end;
+  }
+
+  .ngb-dp-arrow-next .ngb-dp-navigation-chevron {
+    transform: rotate(45deg);
+    margin-left: 0.15em;
+    margin-right: 0.25em;
+  }
+
+  .ngb-dp-arrow-btn {
+    padding: 0 0.25rem;
+    margin: 0 0.5rem;
+    border: none;
+    background-color: transparent;
+    z-index: 1;
+  }
+
+  .ngb-dp-arrow-btn:focus {
+    outline-width: 1px;
+    outline-style: auto;
+  }
+
+  .ngb-dp-navigation-select {
+    display: flex;
+    flex: 1 1 9rem;
+  }
+
+  ngb-datepicker-navigation-select > .form-select {
+    flex: 1 1 auto;
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+    height: 1.85rem;
+  }
+
+  ngb-datepicker-navigation-select > .form-select:focus {
+    z-index: 1;
+  }
+
+  ngb-datepicker-navigation-select > .form-select::-ms-value {
+    background-color: transparent !important;
+  }
+</style>
+
+<ng-template
+  ng-ref="defaultDayTemplate"
+  let-date="date"
+  let-current-month="currentMonth"
+  let-selected="selected"
+  let-disabled="disabled"
+  let-focused="focused">
+  <div
+    ngb-datepicker-day-view
+    date="date"
+    current-month="currentMonth"
+    selected="selected"
+    disabled="disabled"
+    focused="focused"
+    class="btn btn-light border-0 p-0 text-center rounded-1"
+    style="width: 2rem; height: 2rem; line-height: 2rem; background: transparent">
+  </div>
+</ng-template>
+
+<ng-template ng-ref="defaultContentTemplate">
+  <div
+    ng-repeat="month in $.model.months track by $index"
+    class="ngb-dp-month pe-none"
+    ng-class="{ 'ps-3': !$first, 'ps-1': $first, 'pe-1': $last }">
+    <div
+      ng-if="$.navigation === 'none' || ($.displayMonths > 1 && $.navigation === 'select')"
+      class="ngb-dp-month-name fs-5 text-center bg-body-tertiary"
+      ng-class="{ 'text-muted': $.model.disabled }"
+      style="height: 2rem; line-height: 2rem">
+      {{ $.i18n.getMonthLabel(month.firstDate) }}
+    </div>
+    <ngb-datepicker-month class="d-block pe-auto" month="month.firstDate"></ngb-datepicker-month>
+  </div>
+</ng-template>
+
+<div class="ngb-dp-header pt-1 border-bottom-0 rounded-top bg-body-tertiary">
+  <ngb-datepicker-navigation
+    ng-if="$.navigation !== 'none' && $.model"
+    date="$.model.firstDate"
+    months="$.model.months"
+    disabled="$.model.disabled"
+    show-select="$.model.navigation === 'select'"
+    prev-disabled="$.model.prevDisabled"
+    next-disabled="$.model.nextDisabled"
+    select-boxes="$.model.selectBoxes"
+    navigate="$.onNavigateEvent($event)"
+    select="$.onNavigateDateSelect($event)"
+    class="d-flex align-items-center">
+  </ngb-datepicker-navigation>
+</div>
+
+<div
+  class="ngb-dp-content"
+  ng-class="{ 'ngb-dp-months': !$.contentTemplate, 'd-flex': !$.contentTemplate }"
+  ng-ref="content">
+  <ng-template
+    ng-if="$.model"
+    ng-template-outlet="$.contentTemplate || $.contentTemplateFromContent || defaultContentTemplate"
+    ng-template-outlet-context="{ $implicit: $ }">
+  </ng-template>
+</div>
+
+<ng-template ng-if="$.footerTemplate" ng-template-outlet="$.footerTemplate"></ng-template>
+<ng-content></ng-content>`,
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbDatepicker), multi: true },
     NgbDatepickerService,

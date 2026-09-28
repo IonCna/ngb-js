@@ -1,5 +1,4 @@
 import { ModalDismissReasons } from "@ngb/modal/ngb-modal-dismiss-reasons";
-import template from "@ngb/modal/ngb-modal-window.component.html";
 import type { NgbModalUpdatableOptions } from "@ngb/modal/ngb-modal-config.service";
 import {
   getFocusableBoundaryElements,
@@ -44,7 +43,20 @@ const WINDOW_ATTRIBUTES = [
 
 @Component({
   selector: "ngb-modal-window",
-  template,
+  template: `<div
+  ng-ref="dialog"
+  ng-class="
+    'modal-dialog' +
+    ($.size ? ' modal-' + $.size : '') +
+    ($.centered ? ' modal-dialog-centered' : '') +
+    $.fullscreenClass +
+    ($.scrollable ? ' modal-dialog-scrollable' : '') +
+    ($.modalDialogClass ? ' ' + $.modalDialogClass : '')
+  "
+  role="document"
+>
+  <div class="modal-content"><ng-content></ng-content></div>
+</div>`,
 })
 export class NgbModalWindow implements OnInit, OnDestroy {
   private _document = inject(DOCUMENT);

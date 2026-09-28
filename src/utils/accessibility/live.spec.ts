@@ -1,6 +1,7 @@
 import type { IInjectorService } from "angular";
 import angular from "angular";
-import { getNgModuleName, Injector } from "ngjs-core";
+import { Injector } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../../ngb.module";
 import { Live } from "./live";
@@ -10,10 +11,8 @@ describe("Live announcer", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    angular.mock.module(getNgModuleName(NgbModule));
-    angular.mock.inject((_$injector_: IInjectorService) => {
-      live = _$injector_.get<Injector>(Injector.$name).get(Live);
-    });
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    live = TestBed.inject(Live);
   });
 
   afterEach(() => {

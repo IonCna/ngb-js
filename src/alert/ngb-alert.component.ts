@@ -11,7 +11,10 @@ export interface INgbAlert {
 @Component({
   selector: "ngb-alert",
   exportAs: "ngbAlert",
-  templateUrl: "./ngb-alert.component.html",
+  template: `<ng-content></ng-content>
+
+<button ng-if="$.dismissible" ng-click="$.close()" type="button" class="btn-close" aria-label="Close">
+</button>`,
 })
 export class NgbAlert implements INgbAlert {
   // NgbAlertConfig es @Service: no lo resuelve el $injector nativo de

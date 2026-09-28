@@ -1,9 +1,18 @@
-import template from "@ngb/popover/ngb-popover-window.component.html";
 import { Component, HostBinding, HostListener, Input, TemplateRef } from "ngjs-core";
 
 @Component({
   selector: "ngb-popover-window",
-  template,
+  template: `<div class="popover-arrow" data-popper-arrow></div>
+
+<h3 ng-if="$.title" class="popover-header">
+    <ng-template ng-ref="simpleTitle">{{ $.title }}</ng-template>
+    <ng-container
+        ng-template-outlet="$.isTitleTemplate() ? $.title : simpleTitle"
+        ng-template-outlet-context="$.context"
+    ></ng-container>
+</h3>
+
+<div class="popover-body"><ng-content></ng-content></div>`,
 })
 export class NgbPopoverWindow {
   @Input() animation?: boolean;

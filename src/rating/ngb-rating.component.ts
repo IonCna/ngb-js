@@ -1,4 +1,3 @@
-import template from "@ngb/rating/ngb-rating.component.html";
 import { NgbRatingConfig } from "@ngb/rating/ngb-rating-config.service";
 import { getValueInRange } from "@ngb/utils";
 import { Key } from "@ngb/utils/key";
@@ -28,7 +27,22 @@ export interface StarTemplateContext {
 
 @Component({
   selector: "ngb-rating",
-  template,
+  template: `<ng-template ng-ref="defaultStar" let-fill="fill">{{ fill === 100 ? '&#9733;' : '&#9734;' }}</ng-template>
+
+<span ng-repeat="star in $.contexts track by $index">
+    <span class="visually-hidden">({{ $index < $.nextRate ? '*' : ' ' }})</span>
+    <span
+        ng-mouseenter="$.enter($index + 1)"
+        ng-click="$.handleClick($index + 1)"
+        ng-style="{ cursor: $.isInteractive() ? 'pointer' : 'default' }">
+        <ng-container
+            ng-template-outlet="$.starTemplate || $.starTemplateFromContent || $.defaultStarTemplate"
+            ng-template-outlet-context="star">
+        </ng-container>
+    </span>
+</span>
+
+<ng-content></ng-content>`,
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => NgbRating), multi: true }],
 })
 export class NgbRating implements ControlValueAccessor, OnInit, OnChanges {

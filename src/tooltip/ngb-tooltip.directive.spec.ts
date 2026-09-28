@@ -1,6 +1,7 @@
 import type { ICompileService, IPromise, IRootScopeService, ITimeoutService } from "angular";
 import angular from "angular";
-import { getNgModuleName } from "ngjs-core";
+import { ApplicationRef } from "ngjs-core";
+import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
 
@@ -16,20 +17,11 @@ describe("ngbTooltip", () => {
   let appRef: { tick: () => void };
 
   beforeEach(() => {
-    angular.mock.module(getNgModuleName(NgbModule));
-    angular.mock.inject(
-      (
-        _$compile_: ICompileService,
-        _$rootScope_: IRootScopeService,
-        _$timeout_: ITimeoutService,
-        _$injector_: angular.auto.IInjectorService,
-      ) => {
-        $compile = _$compile_;
-        $rootScope = _$rootScope_;
-        $timeout = _$timeout_ as MockTimeoutService;
-        appRef = _$injector_.get("ApplicationRef");
-      },
-    );
+    TestBed.configureTestingModule({ imports: [NgbModule] });
+    $compile = TestBed.inject<ICompileService>("$compile");
+    $rootScope = TestBed.inject<IRootScopeService>("$rootScope");
+    $timeout = TestBed.inject<MockTimeoutService>("$timeout");
+    appRef = TestBed.inject(ApplicationRef);
   });
 
   /** `$timeout.flush()` tira si no hay tareas pendientes; acá eso no es error. */

@@ -1,4 +1,3 @@
-import template from "@ngb/typeahead/ngb-typeahead-window.html";
 import { toString } from "@ngb/utils";
 import { Component, EventEmitter, HostBinding, HostListener, Input, type OnInit, Output, type TemplateRef } from "ngjs-core";
 // `id` como binding `@` (string literal): en el DOM `id="x"` es atributo nativo y
@@ -17,7 +16,24 @@ export interface ResultTemplateContext {
   // Se crea de forma dinámica (`createComponent`), fuera de las `declarations` de
   // un módulo: necesita su propio `controllerAs` — el template usa `$.`.
   controllerAs: "$",
-  template,
+  template: `<ng-template ng-ref="rt" let-result="result" let-term="term" let-formatter="formatter">
+    <ngb-highlight result="formatter(result)" term="term"></ngb-highlight>
+</ng-template>
+
+<button
+        type="button"
+        class="dropdown-item"
+        role="option"
+        ng-attr-id="{{ $.id + '-' + $index }}"
+        ng-class="{ active: $index === $.activeIdx }"
+        ng-mouseenter="$.markActive($index)"
+        ng-click="$.select(result)"
+        ng-repeat="result in $.results track by $index">
+    <ng-container
+            ng-template-outlet="$.resultTemplate || rt"
+            ng-template-outlet-context="{ result: result, term: $.term, formatter: $.formatter }"
+    ></ng-container>
+</button>`,
 })
 export class NgbTypeaheadWindow implements OnInit {
   activeIdx = 0;

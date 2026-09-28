@@ -8,7 +8,6 @@ import {NgbPaginationPrevious} from "@ngb/pagination/ngb-pagination-previous.dir
 import {NgbPaginationPages} from "@ngb/pagination/ngb-pagination-pages.directive";
 import {getValueInRange, isNumber} from "@ngb/utils";
 
-import template from "@ngb/pagination/ngb-pagination.component.html"
 import {NgbPaginationConfig} from "@ngb/pagination/ngb-pagination-config.service";
 
 export interface NgbPaginationLinkContext {
@@ -28,7 +27,126 @@ export interface NgbPaginationPagesContext {
 
 @Component({
     selector: "ngb-pagination",
-    template,
+    template: `<ng-template ng-ref="first">
+    <span aria-hidden="true" i18n="@@ngb.pagination.first">&laquo;&laquo;</span>
+</ng-template>
+
+<ng-template ng-ref="previous">
+    <span aria-hidden="true" i18n="@@ngb.pagination.previous">&laquo;</span>
+</ng-template>
+
+<ng-template ng-ref="next">
+    <span aria-hidden="true" i18n="@@ngb.pagination.next">&raquo;</span>
+</ng-template>
+
+<ng-template ng-ref="last">
+    <span aria-hidden="true" i18n="@@ngb.pagination.last">&raquo;&raquo;</span>
+</ng-template>
+
+<ng-template ng-ref="ellipsis">...</ng-template>
+
+<ng-template ng-ref="defaultNumber" let-page let-currentPage="currentPage">
+    {{ page }}
+</ng-template>
+
+<ul class="pagination" ng-class="$.size ? 'pagination-' + $.size : null">
+    <li ng-if="$.boundaryLinks" class="page-item" ng-class="{ 'disabled': $.previousDisabled() }">
+        <a
+                aria-label="First"
+                i18n-aria-label="@@ngb.pagination.first-aria"
+                class="page-link"
+                href
+                ng-click="$.selectPage(1); $event.preventDefault()"
+                ng-attr-tabindex="{{ $.previousDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.previousDisabled() ? 'true' : undefined }}">
+            <ng-template
+                    ng-template-outlet="($.tplFirst && $.tplFirst.templateRef) || first"
+                    ng-template-outlet-context="{ disabled: $.previousDisabled(), currentPage: $.page }">
+            </ng-template>
+        </a>
+    </li>
+
+    <li ng-if="$.directionLinks" class="page-item" ng-class="{ 'disabled': $.previousDisabled() }">
+        <a
+                aria-label="Previous"
+                i18n-aria-label="@@ngb.pagination.previous-aria"
+                class="page-link"
+                href
+                ng-click="$.selectPage($.page - 1); $event.preventDefault()"
+                ng-attr-tabindex="{{ $.previousDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.previousDisabled() ? 'true' : undefined }}">
+            <ng-template
+                    ng-template-outlet="($.tplPrevious && $.tplPrevious.templateRef) || previous"
+                    ng-template-outlet-context="{ disabled: $.previousDisabled() }">
+            </ng-template>
+        </a>
+    </li>
+
+    <li
+            ng-repeat="pageNumber in ($.tplPages ? [] : $.pages) track by $index"
+            class="page-item"
+            ng-class="{ 'active': pageNumber === $.page, 'disabled': $.isEllipsis(pageNumber) || $.isDisabled() }">
+        <a ng-if="$.isEllipsis(pageNumber)" class="page-link" tabindex="-1" aria-disabled="true">
+            <ng-template
+                    ng-template-outlet="($.tplEllipsis && $.tplEllipsis.templateRef) || ellipsis"
+                    ng-template-outlet-context="{ disabled: true, currentPage: $.page }">
+            </ng-template>
+        </a>
+
+        <a
+                ng-if="!$.isEllipsis(pageNumber)"
+                class="page-link"
+                href
+                ng-click="$.selectPage(pageNumber); $event.preventDefault()"
+                ng-attr-tabindex="{{ $.isDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.isDisabled() ? 'true' : undefined }}"
+                ng-attr-aria-current="{{ pageNumber === $.page ? 'page' : undefined }}">
+            <ng-template
+                    ng-template-outlet="($.tplNumber && $.tplNumber.templateRef) || defaultNumber"
+                    ng-template-outlet-context="{ disabled: $.isDisabled(), $implicit: pageNumber, currentPage: $.page }">
+            </ng-template>
+        </a>
+    </li>
+
+    <ng-template
+            ng-if="$.tplPages"
+            ng-template-outlet="$.tplPages.templateRef"
+            ng-template-outlet-context="{ $implicit: $.page, pages: $.pages, disabled: $.isDisabled() }">
+    </ng-template>
+
+    <li ng-if="$.directionLinks" class="page-item" ng-class="{ 'disabled': $.nextDisabled() }">
+        <a
+                aria-label="Next"
+                i18n-aria-label="@@ngb.pagination.next-aria"
+                class="page-link"
+                href
+                ng-click="$.selectPage($.page + 1); $event.preventDefault()"
+                ng-attr-tabindex="{{ $.nextDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.nextDisabled() ? 'true' : undefined }}">
+            <ng-template
+                    ng-template-outlet="($.tplNext && $.tplNext.templateRef) || next"
+                    ng-template-outlet-context="{ disabled: $.nextDisabled(), currentPage: $.page }">
+            </ng-template>
+        </a>
+    </li>
+
+    <li ng-if="$.boundaryLinks" class="page-item" ng-class="{ 'disabled': $.nextDisabled() }">
+        <a
+                aria-label="Last"
+                i18n-aria-label="@@ngb.pagination.last-aria"
+                class="page-link"
+                href
+                ng-click="$.selectPage($.pageCount); $event.preventDefault()"
+                ng-attr-tabindex="{{ $.nextDisabled() ? '-1' : undefined }}"
+                ng-attr-aria-disabled="{{ $.nextDisabled() ? 'true' : undefined }}"
+        >
+            <ng-template
+                    ng-template-outlet="($.tplLast && $.tplLast.templateRef) || last"
+                    ng-template-outlet-context="{ disabled: $.nextDisabled(), currentPage: $.page }">
+            </ng-template>
+        </a>
+    </li>
+</ul>`,
 })
 export class NgbPagination implements OnChanges, AfterContentInit {
     private _config = inject(NgbPaginationConfig);

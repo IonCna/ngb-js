@@ -1,64 +1,48 @@
 import type angular from "angular";
-import { type ApplicationRef, bootstrapApplication, Injector, NgModule } from "ngjs-core";
+import { ApplicationRef, Injector } from "ngjs-core";
 import { TestBed } from "ngjs-core/testing";
 
 /**
- * Arranque de specs equivalente a `TestBed.configureTestingModule` +
- * `ComponentFixture` de ng-bootstrap.
+ * Arranque de specs sobre el `TestBed` de `ngjs-core/testing`, para los specs que compilan
+ * templates a mano con `$compile` (en vez de `TestBed.createComponent`).
  *
- * `angular.mock.module(NgbModule.name)` a secas no alcanza: por esa vía `ngjs-core`
- * no cablea el `ApplicationRef`, así que `afterNextRender(...)` (que usan `NgbToast`,
- * `NgbCarousel`, …) nunca se vacía, y `inject()` en field initializers de
- * `@Injectable` no resuelve. Un `bootstrapApplication` real sobre un host detached
- * sí deja todo eso andando. Ver `MIGRATION.md`.
+ * El injector del módulo de test ya trae el `ApplicationRef` (así `afterNextRender(...)`
+ * de `NgbToast`, `NgbCarousel`, … se vacía con `detectChanges()`) y deja `inject()` andando
+ * en los field initializers de los `@Injectable`.
  */
 export interface NgbTestBed {
-	readonly $injector: angular.auto.IInjectorService;
-	readonly $compile: angular.ICompileService;
-	readonly $rootScope: angular.IRootScopeService;
-	/** Atajo tipado de `$injector.get`. */
-	get<T>(token: string): T;
-	/** Digest + flush de `afterNextRender` (como `fixture.detectChanges()`). */
-	detectChanges(): void;
-	/** Destruye la app y saca el host del DOM. Llamar en `afterEach`. */
-	destroy(): void;
+  readonly $injector: angular.auto.IInjectorService;
+  readonly $compile: angular.ICompileService;
+  readonly $rootScope: angular.IRootScopeService;
+  /** Atajo tipado de `$injector.get`. */
+  get<T>(token: string): T;
+  /** Digest + flush de `afterNextRender` (como `fixture.detectChanges()`). */
+  detectChanges(): void;
+  /** Destruye el módulo de test. Llamar en `afterEach`. */
+  destroy(): void;
 }
 
 /**
- * Bootstrapea `feature` (una clase `@NgModule`, un `angular.IModule` como
- * `NgbModule`, o un nombre de módulo) dentro de un `@NgModule` raíz de test y
- * devuelve su injector ya cableado.
+ * Configura `TestBed` con `feature` (una clase `@NgModule`, un `angular.IModule` como
+ * `NgbModule`, o un nombre de módulo) y devuelve su injector ya instanciado.
  */
 export async function configureTestBed(feature: Function | angular.IModule | string): Promise<NgbTestBed> {
-	// Descarta los `@Service` / `providedIn: 'root'` cacheados del test anterior:
-	// el `RootSingletonRegistry` es global al proceso y un `@Service` que capturó
-	// `inject(ApplicationRef)` (ej. `NgbModalStack`) quedaría apuntando a una app
-	// ya destruida.
-	TestBed.resetTestingModule();
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({ imports: [feature] });
 
-	@NgModule({ imports: [feature as Function] })
-	class TestRootModule {}
+  const $injector = TestBed.inject<angular.auto.IInjectorService>("$injector");
+  const appRef = TestBed.inject(ApplicationRef);
+  // Envuelto, no el `$injector` crudo: `Injector` resuelve también los tokens de clase.
+  const injector = TestBed.inject(Injector);
 
-	const host = document.createElement("div");
-	host.setAttribute("data-ngb-testbed", "");
-	document.body.appendChild(host);
-
-	const appRef = (await bootstrapApplication(TestRootModule, { hostElement: host })) as ApplicationRef;
-	const $injector = appRef.injector;
-	// Envuelto, no el `$injector` crudo: los `@Service` (ej. `NgbConfig`) viven en el
-	// `RootSingletonRegistry`, no en el `$injector` real de AngularJS — solo `Injector`
-	// sabe caer ahí (ver `getFromAppInjector`).
-	const injector = $injector.get<Injector>(Injector.$name);
-
-	return {
-		$injector,
-		$compile: $injector.get<angular.ICompileService>("$compile"),
-		$rootScope: $injector.get<angular.IRootScopeService>("$rootScope"),
-		get: <T>(token: string) => injector.get<T>(token),
-		detectChanges: () => appRef.tick(),
-		destroy: () => {
-			appRef.destroy();
-			host.remove();
-		},
-	};
+  return {
+    $injector,
+    $compile: $injector.get<angular.ICompileService>("$compile"),
+    $rootScope: $injector.get<angular.IRootScopeService>("$rootScope"),
+    get: <T>(token: string) => injector.get<T>(token),
+    detectChanges: () => appRef.tick(),
+    destroy: () => {
+      TestBed.resetTestingModule();
+    },
+  };
 }

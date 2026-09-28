@@ -1,6 +1,5 @@
 import { NgbDatepickerI18n } from "@ngb/datepicker/ngb-datepicker-i18n.service.ts";
 import { NgbDate } from "@ngb/datepicker/ngb-date.ts";
-import template from "@ngb/datepicker/ngb-datepicker-navigation-select.component.html";
 import { toInteger } from "@ngb/utils";
 import { Component, EventEmitter, inject, Input, type OnChanges, type OnInit, Output } from "ngjs-core";
 
@@ -12,7 +11,37 @@ import { Component, EventEmitter, inject, Input, type OnChanges, type OnInit, Ou
 @Component({
   selector: "ngb-datepicker-navigation-select",
   controllerAs: "$",
-  template,
+  template: `<select
+  ng-disabled="$.disabled"
+  ng-model="$.selectedMonth"
+  ng-change="$.changeMonth($.selectedMonth)"
+  class="form-select flex-grow-1 py-0 px-2 small"
+  style="height: 1.85rem"
+  i18n-aria-label="@@ngb.datepicker.select-month"
+  aria-label="Select month"
+  i18n-title="@@ngb.datepicker.select-month"
+  title="Select month">
+  <option
+    ng-repeat="month in $.months track by month"
+    ng-value="month"
+    ng-attr-aria-label="{{ $.i18n.getMonthFullName(month, $.date.year) }}">
+    {{ $.i18n.getMonthShortName(month, $.date.year) }}
+  </option>
+</select>
+<select
+  ng-disabled="$.disabled"
+  ng-model="$.selectedYear"
+  ng-change="$.changeYear($.selectedYear)"
+  class="form-select flex-grow-1 py-0 px-2 small"
+  style="height: 1.85rem"
+  i18n-aria-label="@@ngb.datepicker.select-year"
+  aria-label="Select year"
+  i18n-title="@@ngb.datepicker.select-year"
+  title="Select year">
+  <option ng-repeat="year in $.years track by year" ng-value="year">
+    {{ $.i18n.getYearNumerals(year) }}
+  </option>
+</select>`,
 })
 export class NgbDatepickerNavigationSelect implements OnInit, OnChanges {
   i18n = inject(NgbDatepickerI18n);

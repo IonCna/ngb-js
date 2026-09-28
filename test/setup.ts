@@ -1,6 +1,4 @@
-import "./test-framework-shim";
 import angular from "angular";
-import "angular-mocks";
 
 globalThis.angular = angular;
 
