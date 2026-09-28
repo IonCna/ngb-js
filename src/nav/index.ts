@@ -4,7 +4,6 @@ export type { NgbNavChangeEvent, NgbNavContentContext } from "@ngb/nav/ngb-nav-c
 export { NgbNavConfig } from "@ngb/nav/ngb-nav-config.service";
 export { NgbNavContent } from "@ngb/nav/ngb-nav-content.directive";
 export { NgbNavItem } from "@ngb/nav/ngb-nav-item.directive";
-export { NgbNavItemRole } from "@ngb/nav/ngb-nav-item-role.directive";
 export { NgbNavLink } from "@ngb/nav/ngb-nav-link.directive";
 export { NgbNavLinkBase } from "@ngb/nav/ngb-nav-link-base.directive";
 export { NgbNavLinkButton } from "@ngb/nav/ngb-nav-link-button.directive";

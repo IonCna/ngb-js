@@ -8,9 +8,28 @@
     "build": {
       "options": {
         "entryPoints": {
-          "index": "src/index.ts"
+          "index": "src/index.ts",
+          "accordion/index": "src/accordion/index.ts",
+          "alert/index": "src/alert/index.ts",
+          "carousel/index": "src/carousel/index.ts",
+          "collapse/index": "src/collapse/index.ts",
+          "datepicker/index": "src/datepicker/index.ts",
+          "dropdown/index": "src/dropdown/index.ts",
+          "modal/index": "src/modal/index.ts",
+          "nav/index": "src/nav/index.ts",
+          "offcanvas/index": "src/offcanvas/index.ts",
+          "pagination/index": "src/pagination/index.ts",
+          "popover/index": "src/popover/index.ts",
+          "progressbar/index": "src/progressbar/index.ts",
+          "rating/index": "src/rating/index.ts",
+          "scrollspy/index": "src/scrollspy/index.ts",
+          "timepicker/index": "src/timepicker/index.ts",
+          "toast/index": "src/toast/index.ts",
+          "tooltip/index": "src/tooltip/index.ts",
+          "typeahead/index": "src/typeahead/index.ts"
         },
         "outputPath": "dist",
+        "declarations": true,
         "external": [
           "angular",
           "rxjs",
