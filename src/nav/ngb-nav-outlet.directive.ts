@@ -15,7 +15,7 @@ import {
   ViewChildren,
 } from "ngjs-core";
 import { takeUntilDestroyed } from "ngjs-core/rxjs-interop";
-import { distinctUntilChanged, skip, startWith } from "rxjs";
+import { distinctUntilChanged, filter, skip, startWith, take } from "rxjs";
 
 @Component({
   selector: "[ngbNavOutlet]",
@@ -54,6 +54,17 @@ export class NgbNavOutlet implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this._updateActivePane();
+    // ngb-js: los panes (`ng-repeat` + `ng-if` del template) recién existen después del primer digest, no en
+    // `$postLink`: sin esto el pane activo se quedaba sin `show active` (invisible con el CSS de Bootstrap).
+    if (!this._activePane) {
+      this._ngZone.onStable
+        .pipe(
+          filter(() => !this._activePane && !!this._getActivePane()),
+          take(1),
+          takeUntilDestroyed(this.nav.destroyRef),
+        )
+        .subscribe(() => this._updateActivePane());
+    }
 
     this.nav.navItemChange$
       .pipe(

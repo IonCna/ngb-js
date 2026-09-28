@@ -56,6 +56,10 @@ describe("ngbNav", () => {
     expect(nav.getAttribute("role")).toBe("tablist");
     expect(buttons[0].classList.contains("active")).toBe(true);
     expect(outlet.textContent).toContain("Home content");
+    await tick(scope);
+    // Sin `show active` el pane queda oculto por el CSS de Bootstrap (`.tab-pane:not(.active)`).
+    expect(outlet.querySelector(".tab-pane")?.classList.contains("active")).toBe(true);
+    expect(outlet.querySelector(".tab-pane")?.classList.contains("show")).toBe(true);
 
     buttons[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
     scope.$digest();
@@ -65,6 +69,30 @@ describe("ngbNav", () => {
     expect(scope.activeId).toBe(1);
     expect(buttons[1].classList.contains("active")).toBe(true);
     expect(outlet.textContent).toContain("Profile content");
+    element.remove();
+  });
+
+  it("shows the initially active pane (show + active) with animations on and the outlet outside the nav", async () => {
+    const scope = $rootScope.$new() as IRootScopeService & { example: { activeId: string } };
+    scope.example = { activeId: "b" };
+    const element = $compile(`
+      <div>
+        <nav ngb-nav ng-ref="example.nav" ng-ref-read="ngbNav" active-id="example.activeId" animation="true">
+          <div ngb-nav-item="'a'"><button type="button" ngb-nav-link>A</button><ng-template ngb-nav-content>Content A</ng-template></div>
+          <div ngb-nav-item="'b'"><button type="button" ngb-nav-link>B</button><ng-template ngb-nav-content>Content B</ng-template></div>
+        </nav>
+        <div ngb-nav-outlet="example.nav"></div>
+      </div>
+    `)(scope);
+    angular.element(document.body).append(element);
+    scope.$digest();
+    await tick(scope);
+
+    const pane = element[0].querySelector(".tab-pane") as HTMLElement;
+    expect(pane.textContent).toContain("Content B");
+    expect(pane.classList.contains("fade")).toBe(true);
+    expect(pane.classList.contains("show")).toBe(true);
+    expect(pane.classList.contains("active")).toBe(true);
     element.remove();
   });
 
