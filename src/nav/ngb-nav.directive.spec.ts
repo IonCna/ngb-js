@@ -3,6 +3,8 @@ import angular from "angular";
 import { TestBed } from "ngjs-core/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
+import { createKeyEvent } from "../test/common";
+import { Key } from "../utils/key";
 
 describe("ngbNav", () => {
   let $compile: ICompileService;
@@ -151,7 +153,7 @@ describe("ngbNav", () => {
 
     const buttons = (element[0] as HTMLElement).querySelectorAll("button");
     (buttons[0] as HTMLElement).focus();
-    (element[0] as HTMLElement).dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight" }));
+    (element[0] as HTMLElement).dispatchEvent(createKeyEvent(Key.ArrowRight, { type: "keydown" }));
 
     expect(document.activeElement).toBe(buttons[1]);
     element.remove();
@@ -222,11 +224,11 @@ describe("ngbNav", () => {
   });
 
   it.each([
-    ["ArrowRight", 1],
-    ["ArrowLeft", 2],
-    ["Home", 0],
-    ["End", 2],
-  ])("moves focus with %s while skipping disabled tabs", (key, expectedIndex) => {
+    ["ArrowRight", Key.ArrowRight, 1],
+    ["ArrowLeft", Key.ArrowLeft, 2],
+    ["Home", Key.Home, 0],
+    ["End", Key.End, 2],
+  ])("moves focus with %s while skipping disabled tabs", (_name, key, expectedIndex) => {
     const element = $compile(`
       <ul ngb-nav animation="false">
         <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
@@ -238,7 +240,7 @@ describe("ngbNav", () => {
     $rootScope.$digest();
     const buttons = element[0].querySelectorAll<HTMLElement>("button");
     buttons[0].focus();
-    element[0].dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key }));
+    element[0].dispatchEvent(createKeyEvent(key, { type: "keydown" }));
     const expected = expectedIndex === 2 ? buttons[1] : buttons[expectedIndex];
     expect(document.activeElement).toBe(expected);
   });

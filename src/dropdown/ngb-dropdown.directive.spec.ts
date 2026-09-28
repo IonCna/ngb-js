@@ -7,7 +7,10 @@ import { TestBed } from "ngjs-core/testing";
 import { ApplicationRef } from "ngjs-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NgbModule } from "../ngb.module";
+import { createKeyEvent } from "../test/common";
+import { Key } from "../utils/key";
 import type { NgbDropdown } from "./ngb-dropdown.directive";
+import type { NgbDropdownMenu } from "./ngb-dropdown-menu.directive";
 
 describe("ngbDropdown", () => {
   let $compile: ICompileService;
@@ -42,12 +45,14 @@ describe("ngbDropdown", () => {
     const dropdown = element.controller("ngbDropdown") as NgbDropdown;
 
     expect(menu.hasClass("show")).toBe(true);
-    expect(dropdown.menuItems).toHaveLength(2);
-    expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, true]);
+    // `_menu` es privado (como en upstream): los ítems los junta la content query de `NgbDropdownMenu`.
+    const menuItems = () => (dropdown as unknown as { _menu: NgbDropdownMenu })._menu.menuItems;
+    expect(menuItems()).toHaveLength(2);
+    expect(menuItems().map((item) => item.disabled)).toEqual([false, true]);
 
     scope.itemDisabled = false;
     TestBed.inject(ApplicationRef).tick();
-    expect(dropdown.menuItems.map((item) => item.isDisabled())).toEqual([false, false]);
+    expect(menuItems().map((item) => item.disabled)).toEqual([false, false]);
     expect(angular.element(root.querySelector(".disabled-item") as Element).hasClass("disabled")).toBe(false);
 
     dropdown.close();
@@ -78,11 +83,11 @@ describe("ngbDropdown", () => {
     const toggle = root.querySelector(".toggle") as HTMLElement;
     const firstItem = root.querySelector(".first-item") as HTMLElement;
 
-    toggle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    toggle.dispatchEvent(createKeyEvent(Key.ArrowDown, { type: "keydown" }));
     TestBed.inject(ApplicationRef).tick();
     expect(document.activeElement).toBe(firstItem);
 
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    document.dispatchEvent(createKeyEvent(Key.Escape, { type: "keydown" }));
     TestBed.inject(ApplicationRef).tick();
     expect(menu.hasClass("show")).toBe(false);
 
@@ -153,9 +158,8 @@ describe("ngbDropdown", () => {
   });
 
   it("sets disabled semantics and custom tabindex on items", () => {
-    // El port toma el estado disabled de `ng-disabled` (no de un `@Input() disabled`):
-    // `disabled` es atributo booleano nativo y AngularJS/navegador se pelean por él.
-    // Ver `CORE_GAPS.md`.
+    // El port toma el estado disabled solo de `ng-disabled` (no de un `@Input() disabled`):
+    // `disabled` es atributo booleano nativo y AngularJS/navegador se pelean por él. Ver `CORE_GAPS.md`.
     const element = $compile(`
       <div ngb-dropdown open="true"><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>
         <button ngb-dropdown-item ng-disabled="true">Disabled</button>
@@ -187,7 +191,7 @@ describe("ngbDropdown", () => {
         <button class="toggle" ngb-dropdown-toggle>Toggle</button>
         <div ngb-dropdown-menu>
           <button class="first" ngb-dropdown-item>First</button>
-          <button ngb-dropdown-item disabled="true">Disabled</button>
+          <button ngb-dropdown-item ng-disabled="true">Disabled</button>
           <button class="last" ngb-dropdown-item>Last</button>
         </div>
       </div>
@@ -197,11 +201,11 @@ describe("ngbDropdown", () => {
     const toggle = element[0].querySelector<HTMLElement>(".toggle") as HTMLElement;
     const first = element[0].querySelector<HTMLElement>(".first");
     const last = element[0].querySelector<HTMLElement>(".last");
-    toggle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+    toggle.dispatchEvent(createKeyEvent(Key.ArrowUp, { type: "keydown" }));
     expect(document.activeElement).toBe(last);
-    last?.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true, cancelable: true }));
+    last?.dispatchEvent(createKeyEvent(Key.Home, { type: "keydown" }));
     expect(document.activeElement).toBe(first);
-    first?.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true, cancelable: true }));
+    first?.dispatchEvent(createKeyEvent(Key.End, { type: "keydown" }));
     expect(document.activeElement).toBe(last);
   });
 

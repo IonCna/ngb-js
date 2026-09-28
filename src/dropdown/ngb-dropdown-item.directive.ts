@@ -1,13 +1,12 @@
-import { Directive, ElementRef, HostBinding, Input, inject } from "ngjs-core";
+import { Directive, ElementRef, HostBinding, Input, inject, NgDisabled } from "ngjs-core";
 
 /**
  * Poné esta directiva en un ítem del dropdown para habilitar navegación por
  * teclado: las flechas mueven el foco entre los ítems marcados con ella.
  *
- * El estado `disabled` se toma de `ngDisabled` (no de un `@Input() disabled`):
- * `disabled` es un atributo booleano nativo y el navegador + AngularJS se pelean
- * por él, así que `ng-disabled="expr"` es la vía compatible con la API vanilla
- * sin ese choque. Ver `CORE_GAPS.md`.
+ * El estado `disabled` se toma solo de `ng-disabled="expr"` (no de un
+ * `@Input() disabled` como upstream): `disabled` es un atributo booleano nativo
+ * y el navegador + AngularJS se pelean por él. Ver `CORE_GAPS.md`.
  *
  * ng-bootstrap separa el caso `<button>` en `NgbDropdownButtonItem`
  * (`selector: "button[ngbDropdownItem]"`). AngularJS no deja dos directivas con
@@ -16,9 +15,7 @@ import { Directive, ElementRef, HostBinding, Input, inject } from "ngjs-core";
  */
 @Directive({ selector: "[ngbDropdownItem]" })
 export class NgbDropdownItem {
-  static ngAcceptInputType_disabled: boolean | "";
-
-  private _isDisabled = false;
+  private _ngDisabled = inject(NgDisabled, { optional: true });
 
   @Input() tabindex: string | number = 0;
 
@@ -27,13 +24,8 @@ export class NgbDropdownItem {
   @HostBinding("class.dropdown-item")
   readonly _dropdownItemClass = true;
 
-  @Input()
-  set disabled(value: boolean) {
-    this._isDisabled = (value as unknown) === "" || value === true;
-  }
-
   get disabled(): boolean {
-    return this._isDisabled;
+    return !!this._ngDisabled?.disabled;
   }
 
   @HostBinding("class.disabled")

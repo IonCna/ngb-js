@@ -58,11 +58,6 @@ export class NgbDropdown implements OnInit, AfterContentInit, OnChanges, OnDestr
   @ContentChild(NgbDropdownAnchor) private _anchor!: NgbDropdownAnchor;
 
   /**
-   * Los `NgbDropdownItem` proyectados. No existe en ng-bootstrap (usa
-   * `_getMenuElements()` privado) — se mantiene como conveniencia de la API de
-   * `ngb-js`; al migrar a Angular real se borra.
-   */
-  /**
    * Si el dropdown se cierra al hacer click en un ítem o al presionar ESC.
    *
    * * `true` — cierra con clicks de adentro (menú) y de afuera.

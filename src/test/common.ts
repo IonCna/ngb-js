@@ -1,4 +1,4 @@
-import type { Key } from "@ngb/utils/key";
+import { Key } from "@ngb/utils/key";
 import { type ComponentFixture, TestBed } from "ngjs-core/testing";
 
 /** Port de `test/common.ts` de ng-bootstrap (lo que usan los specs de alert). */
@@ -23,12 +23,21 @@ export function isBrowserVisible(suiteName: string) {
   return true;
 }
 
-/** `KeyboardEvent` real con `which`/`keyCode` (jsdom no los toma del init), como el `createKeyEvent` de ng-bootstrap. */
+/**
+ * `KeyboardEvent` real con `which`/`keyCode` (jsdom no los toma del init), como el `createKeyEvent` de ng-bootstrap.
+ * También lleva `key` (`"ArrowDown"`, `" "`, …): los `@HostListener("keydown.arrowdown")` filtran por él.
+ */
 export function createKeyEvent(
   key: Key,
-  options: { type: "keyup" | "keydown"; bubbles?: boolean } = { type: "keyup" },
+  options: { type: "keyup" | "keydown"; bubbles?: boolean; shiftKey?: boolean } = { type: "keyup" },
 ): KeyboardEvent {
-  const event = new KeyboardEvent(options.type, { bubbles: options.bubbles ?? true, cancelable: true });
+  const name = Key[key] === "Space" ? " " : Key[key];
+  const event = new KeyboardEvent(options.type, {
+    key: name,
+    bubbles: options.bubbles ?? true,
+    cancelable: true,
+    shiftKey: options.shiftKey ?? false,
+  });
   Object.defineProperties(event, { which: { get: () => key }, keyCode: { get: () => key } });
   return event;
 }
