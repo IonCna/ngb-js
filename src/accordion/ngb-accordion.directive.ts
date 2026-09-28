@@ -22,7 +22,7 @@ export class NgbAccordionDirective {
   // conoce el RootSingletonRegistry donde vive — solo inject() (que sí cae a
   // ese registry) puede resolverlo acá. Excepción documentada, ver AGENTS.md.
   private _config = inject(NgbAccordionConfig);
-  private _anItemWasAlreadyExpandedDuringInitialisation = false;
+  private _itemExpandedDuringInitialisation?: NgbAccordionItem;
 
   // `forwardRef`: import circular con `ngb-accordion-item.directive.ts`
   // (item importa este archivo para `inject(NgbAccordionDirective)`). Sin él,
@@ -123,14 +123,21 @@ export class NgbAccordionDirective {
     }
 
     // caso especial durante la inicialización de los inputs [collapsed]="false":
-    // el QueryList `this._items` todavía no está inicializado, pero necesitamos
-    // asegurar que solo un item pueda expandirse a la vez
-    if (!this._items) {
-      if (!this._anItemWasAlreadyExpandedDuringInitialisation) {
-        this._anItemWasAlreadyExpandedDuringInitialisation = true;
-        return true;
+    // el item todavía no está en `this._items`, pero necesitamos asegurar que
+    // solo un item pueda expandirse a la vez (gana el primero).
+    // ngb-js: upstream mira solo `!this._items`; en AngularJS los items de un
+    // `ng-repeat` reciben sus inputs después de que la query ya se resolvió
+    // (vacía), así que "no registrado todavía" es lo que marca la inicialización.
+    const registered = this._items?.toArray() ?? [];
+    if (!registered.includes(toExpand)) {
+      const initial = this._itemExpandedDuringInitialisation;
+      const alreadyExpanded =
+        registered.some((item) => !item.collapsed) || (!!initial && initial !== toExpand && !initial.collapsed);
+      if (alreadyExpanded) {
+        return false;
       }
-      return false;
+      this._itemExpandedDuringInitialisation = toExpand;
+      return true;
     }
 
     // si hay un item expandido, hay que colapsarlo primero

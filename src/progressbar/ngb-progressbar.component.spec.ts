@@ -10,7 +10,8 @@ import { NgbProgressbarConfig } from "./ngb-progressbar-config.service";
 /**
  * Port de `progressbar.spec.ts` de ng-bootstrap 16. Diferencias forzadas por AngularJS:
  * - templates en sintaxis de AngularJS (`[value]="value"` → `value="$ctrl.value"`, un literal va entre comillas:
- *   `height="'10px'"`, `aria-label="'flupke'"`);
+ *   `height="'10px'"`, `aria-label="'flupke'"`); `type`/`textType` son `@` (literal como upstream,
+ *   `type="success"`), así que un valor dinámico va interpolado: `type="{{ $ctrl.type }}"`;
  * - sin componentes standalone: `NgbProgressbarModule` se importa en el módulo de test.
  */
 const createTestComponent = (html: string) =>
@@ -187,7 +188,7 @@ describe("ngb-progressbar", () => {
     });
 
     it("accepts a custom type", () => {
-      const html = `<ngb-progressbar value="$ctrl.value" type="$ctrl.type"></ngb-progressbar>`;
+      const html = `<ngb-progressbar value="$ctrl.value" type="{{ $ctrl.type }}"></ngb-progressbar>`;
       const fixture = createTestComponent(html);
 
       expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-bg-warning");
@@ -202,7 +203,7 @@ describe("ngb-progressbar", () => {
     });
 
     it("accepts a custom text type", () => {
-      const html = `<ngb-progressbar value="$ctrl.value" text-type="$ctrl.textType"></ngb-progressbar>`;
+      const html = `<ngb-progressbar value="$ctrl.value" text-type="{{ $ctrl.textType }}"></ngb-progressbar>`;
       const fixture = createTestComponent(html);
 
       expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-light");
@@ -213,7 +214,7 @@ describe("ngb-progressbar", () => {
     });
 
     it("accepts a custom type and text type", () => {
-      const html = `<ngb-progressbar value="$ctrl.value" type="$ctrl.type" text-type="$ctrl.textType"></ngb-progressbar>`;
+      const html = `<ngb-progressbar value="$ctrl.value" type="{{ $ctrl.type }}" text-type="{{ $ctrl.textType }}"></ngb-progressbar>`;
       const fixture = createTestComponent(html);
 
       expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-light");
@@ -258,7 +259,7 @@ describe("ngb-progressbar", () => {
     });
 
     it("should stay striped when the type changes", () => {
-      const html = `<ngb-progressbar value="$ctrl.value" type="$ctrl.type" striped="true"></ngb-progressbar>`;
+      const html = `<ngb-progressbar value="$ctrl.value" type="{{ $ctrl.type }}" striped="true"></ngb-progressbar>`;
       const fixture = createTestComponent(html);
 
       expect(getProgressbar(fixture.nativeElement)).toHaveCssClass("text-bg-warning");
