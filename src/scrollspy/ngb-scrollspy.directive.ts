@@ -11,6 +11,7 @@ import type { NgbScrollSpyRef } from "./ngb-scrollspy-item.directive";
 @Directive({
   selector: "[ngbScrollSpy]",
   exportAs: "ngbScrollSpy",
+  providers: [NgbScrollSpyService],
 })
 export class NgbScrollSpy implements NgbScrollSpyRef, AfterViewInit {
   static ngAcceptInputType_scrollBehavior: string;

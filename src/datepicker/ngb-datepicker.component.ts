@@ -73,9 +73,7 @@ const SERVICE_INPUT_NAMES: (keyof DatepickerServiceInputs)[] = [
     current-month="currentMonth"
     selected="selected"
     disabled="disabled"
-    focused="focused"
-    class="btn btn-light border-0 p-0 text-center rounded-1"
-    style="width: 2rem; height: 2rem; line-height: 2rem; background: transparent">
+    focused="focused">
   </div>
 </ng-template>
 

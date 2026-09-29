@@ -33,7 +33,7 @@ describe("ngbDropdown", () => {
                 <button type="button" ngb-dropdown-toggle>toggle</button>
                 <div ngb-dropdown-menu>
                     <button type="button" class="enabled" ngb-dropdown-item>enabled</button>
-                    <button type="button" class="disabled-item" ngb-dropdown-item ng-disabled="itemDisabled">disabled</button>
+                    <button type="button" class="disabled-item" ngb-dropdown-item disabled="itemDisabled">disabled</button>
                 </div>
             </div>
         `)(scope);
@@ -158,11 +158,9 @@ describe("ngbDropdown", () => {
   });
 
   it("sets disabled semantics and custom tabindex on items", () => {
-    // El port toma el estado disabled solo de `ng-disabled` (no de un `@Input() disabled`):
-    // `disabled` es atributo booleano nativo y AngularJS/navegador se pelean por él. Ver `CORE_GAPS.md`.
     const element = $compile(`
       <div ngb-dropdown open="true"><button ngb-dropdown-toggle>Toggle</button><div ngb-dropdown-menu>
-        <button ngb-dropdown-item ng-disabled="true">Disabled</button>
+        <button ngb-dropdown-item disabled="true">Disabled</button>
         <a ngb-dropdown-item tabindex="7">Custom</a>
       </div></div>
     `)($rootScope.$new());
@@ -191,7 +189,7 @@ describe("ngbDropdown", () => {
         <button class="toggle" ngb-dropdown-toggle>Toggle</button>
         <div ngb-dropdown-menu>
           <button class="first" ngb-dropdown-item>First</button>
-          <button ngb-dropdown-item ng-disabled="true">Disabled</button>
+          <button ngb-dropdown-item disabled="true">Disabled</button>
           <button class="last" ngb-dropdown-item>Last</button>
         </div>
       </div>

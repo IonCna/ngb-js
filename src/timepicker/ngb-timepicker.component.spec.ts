@@ -233,7 +233,7 @@ describe("NgbTimepicker", () => {
   });
 
   it("disables inputs and spinner buttons", () => {
-    const { scope, root } = setup('<ngb-timepicker ng-model="time" ng-disabled="disabled"></ngb-timepicker>', {
+    const { scope, root } = setup('<ngb-timepicker ng-model="time" disabled="disabled"></ngb-timepicker>', {
       time: { hour: 10, minute: 20, second: 0 },
       disabled: true,
     });

@@ -10,7 +10,6 @@ import type { DayTemplateContext } from "@ngb/datepicker/ngb-datepicker-day-temp
 import { NgbInputDatepickerConfig } from "@ngb/datepicker/ngb-input-datepicker-config.service.ts";
 import { addPopperOffset, isString, ngbAutoClose, ngbFocusTrap, ngbPositioning } from "@ngb/utils";
 import {
-  type AfterViewInit,
   ChangeDetectorRef,
   type ComponentRef,
   Directive,
@@ -23,7 +22,6 @@ import {
   Injector,
   Input,
   inject,
-  NgDisabled,
   NgZone,
   type OnChanges,
   type OnDestroy,
@@ -53,7 +51,7 @@ import { Subject, type Subscription } from "rxjs";
     { provide: NgbDatepickerConfig, useExisting: NgbInputDatepickerConfig },
   ],
 })
-export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, ControlValueAccessor, Validator {
+export class NgbInputDatepicker implements OnChanges, OnDestroy, ControlValueAccessor, Validator {
   static ngAcceptInputType_autoClose: boolean | string;
   static ngAcceptInputType_disabled: boolean | "";
   static ngAcceptInputType_navigation: string;
@@ -223,17 +221,11 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
    */
   @Output() closed = new EventEmitter<void>();
 
-  // upstream: `@Input() get disabled()` + `host: { '[disabled]': 'disabled' }`.
-  // ngjs-core: un `@Input()` sobre un accessor lo pisa `bindToController`. El
-  // estado `disabled` entra por (a) el `control-value-accessor-bridge` que observa
-  // el atributo `disabled` y llama `setDisabledState` (forms + `disabled="…"`),
-  // y (b) la directiva `ngDisabled` (`ng-disabled="expr"`) vía `inject(NgDisabled)`.
-  private _ngDisabled = inject(NgDisabled, { optional: true });
-
   @HostBinding("disabled") get _hostDisabled() {
     return this._disabled;
   }
 
+  @Input()
   get disabled() {
     return this._disabled;
   }
@@ -450,14 +442,6 @@ export class NgbInputDatepicker implements OnChanges, OnDestroy, AfterViewInit, 
 
   onFocus() {
     this._elWithFocus = this._elRef.nativeElement;
-  }
-
-  ngAfterViewInit() {
-    // `ng-disabled="expr"` → estado disabled (el atributo `disabled` plano lo cubre el CVA bridge).
-    if (this._ngDisabled) {
-      this.setDisabledState(this._ngDisabled.disabled);
-      this._ngDisabled.onChange((d) => this.setDisabledState(d));
-    }
   }
 
   ngOnChanges(changes: SimpleChanges) {

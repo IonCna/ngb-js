@@ -28,6 +28,7 @@ export interface INgbToast {
 
 @Component({
   selector: "ngb-toast",
+  styleUrl: "./ngb-toast.css",
   exportAs: "ngbToast",
   template: `<ng-template ng-ref="headerTpl">
     <strong class="me-auto">{{ $.header }}</strong>
@@ -51,7 +52,7 @@ export class NgbToast implements AfterContentInit, OnChanges, INgbToast {
   @Input() animation = this._config.animation;
   @Input() delay = this._config.delay;
   @Input() autohide = this._config.autohide;
-  @Input() header?: string;
+  @Input({ binding: "@" }) header?: string;
 
   @ContentChild(NgbToastHeader, { read: TemplateRef, static: true })
   contentHeaderTpl?: TemplateRef<unknown> | null = null;

@@ -250,9 +250,7 @@ describe("NgbDatepickerModule", () => {
 
   it("can open a disabled popup like the original directive", async () => {
     const scope = $rootScope.$new();
-    // `ng-disabled` (integración por `NgDisabled`); un `disabled` plano sin ngModel
-    // no tiene accessor que lo observe (ver CORE_GAPS gap H).
-    const element = $compile('<input ngb-datepicker ng-disabled="true">')(scope);
+    const element = $compile('<input ngb-datepicker disabled="true">')(scope);
     document.body.appendChild(element[0]);
     scope.$digest();
 
@@ -417,7 +415,7 @@ describe("NgbDatepickerModule", () => {
     const scope = $rootScope.$new() as IRootScopeService & { date: NgbDateStruct; disabled: boolean };
     scope.date = { year: 2026, month: 8, day: 13 };
     scope.disabled = true;
-    const element = $compile('<ngb-datepicker ng-model="date" ng-disabled="disabled"></ngb-datepicker>')(scope);
+    const element = $compile('<ngb-datepicker ng-model="date" disabled="disabled"></ngb-datepicker>')(scope);
     scope.$digest();
     const datepicker = element.controller("ngbDatepicker") as NgbDatepicker;
     datepicker.onDateSelect(new NgbDate(2026, 8, 20));

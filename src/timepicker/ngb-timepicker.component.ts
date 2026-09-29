@@ -30,13 +30,13 @@ const FILTER_REGEX = /[^0-9]/g;
   exportAs: "ngbTimepicker",
   selector: "ngb-timepicker",
   controllerAs: "$",
-  template: `<fieldset ng-disabled="$.disabled" ng-class="{ disabled: $.disabled }">
+  template: `<fieldset disabled="$.disabled" ng-class="{ disabled: $.disabled }">
     <div class="d-flex align-items-center">
         <div class="d-flex flex-column align-items-center">
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeHour($.hourStep)"
-                ng-disabled="$.disabled"
+                disabled="$.disabled"
                 ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
@@ -55,8 +55,8 @@ const FILTER_REGEX = /[^0-9]/g;
                 ng-change="$.updateHour($.hourInput)"
                 ng-blur="$.handleBlur()"
                 ng-keydown="$event.key === 'ArrowUp' && $.changeHour($.hourStep); $event.key === 'ArrowDown' && $.changeHour(-$.hourStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
-                ng-readonly="$.readonlyInputs"
-                ng-disabled="$.disabled"
+                readonly="$.readonlyInputs"
+                disabled="$.disabled"
                 ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
                 class="form-control text-center w-auto px-1"
                 type="text"
@@ -69,7 +69,7 @@ const FILTER_REGEX = /[^0-9]/g;
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeHour(-$.hourStep)"
-                ng-disabled="$.disabled"
+                disabled="$.disabled"
                 ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
@@ -89,7 +89,7 @@ const FILTER_REGEX = /[^0-9]/g;
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeMinute($.minuteStep)"
-                ng-disabled="$.disabled"
+                disabled="$.disabled"
                 ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
@@ -108,8 +108,8 @@ const FILTER_REGEX = /[^0-9]/g;
                 ng-change="$.updateMinute($.minuteInput)"
                 ng-blur="$.handleBlur()"
                 ng-keydown="$event.key === 'ArrowUp' && $.changeMinute($.minuteStep); $event.key === 'ArrowDown' && $.changeMinute(-$.minuteStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
-                ng-readonly="$.readonlyInputs"
-                ng-disabled="$.disabled"
+                readonly="$.readonlyInputs"
+                disabled="$.disabled"
                 ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
                 class="form-control text-center w-auto px-1"
                 type="text"
@@ -122,7 +122,7 @@ const FILTER_REGEX = /[^0-9]/g;
             <button
                 ng-if="$.spinners"
                 ng-click="$.changeMinute(-$.minuteStep)"
-                ng-disabled="$.disabled"
+                disabled="$.disabled"
                 ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-link px-2 py-0 lh-1"
                 tabindex="-1"
@@ -143,7 +143,7 @@ const FILTER_REGEX = /[^0-9]/g;
                 <button
                     ng-if="$.spinners"
                     ng-click="$.changeSecond($.secondStep)"
-                    ng-disabled="$.disabled"
+                    disabled="$.disabled"
                     ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                     class="btn btn-link px-2 py-0 lh-1"
                     tabindex="-1"
@@ -162,8 +162,8 @@ const FILTER_REGEX = /[^0-9]/g;
                     ng-change="$.updateSecond($.secondInput)"
                     ng-blur="$.handleBlur()"
                     ng-keydown="$event.key === 'ArrowUp' && $.changeSecond($.secondStep); $event.key === 'ArrowDown' && $.changeSecond(-$.secondStep); ($event.key === 'ArrowUp' || $event.key === 'ArrowDown') && $event.preventDefault()"
-                    ng-readonly="$.readonlyInputs"
-                    ng-disabled="$.disabled"
+                    readonly="$.readonlyInputs"
+                    disabled="$.disabled"
                     ng-class="{ 'form-control-sm': $.isSmallSize, 'form-control-lg': $.isLargeSize }"
                     class="form-control text-center w-auto px-1"
                     type="text"
@@ -176,7 +176,7 @@ const FILTER_REGEX = /[^0-9]/g;
                 <button
                     ng-if="$.spinners"
                     ng-click="$.changeSecond(-$.secondStep)"
-                    ng-disabled="$.disabled"
+                    disabled="$.disabled"
                     ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                     class="btn btn-link px-2 py-0 lh-1"
                     tabindex="-1"
@@ -194,7 +194,7 @@ const FILTER_REGEX = /[^0-9]/g;
         <div ng-if="$.meridian" class="ms-2">
             <button
                 ng-click="$.toggleMeridian()"
-                ng-disabled="$.disabled"
+                disabled="$.disabled"
                 ng-class="{ 'btn-sm': $.isSmallSize, 'btn-lg': $.isLargeSize, disabled: $.disabled }"
                 class="btn btn-outline-primary"
                 type="button">

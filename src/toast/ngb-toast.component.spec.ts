@@ -65,7 +65,7 @@ describe("ngbToast", () => {
   });
 
   it("renders a string header and close button", () => {
-    const element = $compile(`<ngb-toast header="'Notice'">Toast</ngb-toast>`)($rootScope.$new());
+    const element = $compile(`<ngb-toast header="Notice">Toast</ngb-toast>`)($rootScope.$new());
     TestBed.inject(ApplicationRef).tick();
     expect(element[0].querySelector(".toast-header")?.textContent).toContain("Notice");
     expect(element[0].querySelector(".btn-close")?.getAttribute("aria-label")).toBe("Close");
@@ -75,7 +75,7 @@ describe("ngbToast", () => {
     const scope = $rootScope.$new() as IRootScopeService & { onHidden: () => void };
     scope.onHidden = vi.fn();
     const element = $compile(
-      `<ngb-toast header="'Notice'" animation="false" autohide="false" hidden="onHidden()">Toast</ngb-toast>`,
+      `<ngb-toast header="Notice" animation="false" autohide="false" hidden="onHidden()">Toast</ngb-toast>`,
     )(scope);
     TestBed.inject(ApplicationRef).tick();
     angular.element(element[0].querySelector(".btn-close") as HTMLElement).triggerHandler("click");

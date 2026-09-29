@@ -13,7 +13,7 @@ import { Component, EventEmitter, inject, Input, type OnChanges, type OnInit, Ou
   controllerAs: "$",
   styleUrl: "./datepicker-navigation-select.css",
   template: `<select
-  ng-disabled="$.disabled"
+  disabled="$.disabled"
   ng-model="$.selectedMonth"
   ng-change="$.changeMonth($.selectedMonth)"
   class="form-select flex-grow-1 py-0 px-2 small"
@@ -30,7 +30,7 @@ import { Component, EventEmitter, inject, Input, type OnChanges, type OnInit, Ou
   </option>
 </select>
 <select
-  ng-disabled="$.disabled"
+  disabled="$.disabled"
   ng-model="$.selectedYear"
   ng-change="$.changeYear($.selectedYear)"
   class="form-select flex-grow-1 py-0 px-2 small"

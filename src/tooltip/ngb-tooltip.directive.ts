@@ -35,10 +35,10 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
 
   @Input() animation = this._config.animation;
   @Input() autoClose = this._config.autoClose;
-  @Input() placement = this._config.placement;
+  @Input({ binding: "@" }) placement = this._config.placement;
   @Input() popperOptions = this._config.popperOptions;
   @Input({ binding: "@" }) triggers = this._config.triggers;
-  @Input() positionTarget?: string | HTMLElement;
+  @Input({ binding: "@" }) positionTarget?: string | HTMLElement;
   @Input({ binding: "@" }) container = this._config.container;
   @Input() disableTooltip = this._config.disableTooltip;
   @Input({ binding: "@" }) tooltipClass = this._config.tooltipClass;
@@ -61,6 +61,10 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
   private _unregisterListenersFn?: () => void;
   private _positioning = ngbPositioning();
   private _zoneSubscription?: Subscription;
+  // Desvío del original: `createComponent` es async en ngjs, así que un `open()` queda en vuelo
+  // mientras se crea la ventana. Un segundo `open()` reusa esa creación y `close()` la cancela.
+  private _opening: ReturnType<PopupService<NgbTooltipWindow>["open"]> | null = null;
+  private _openCancelled = false;
 
   private _mouseEnterTooltip = new Subject<void>();
   private _mouseLeaveTooltip = new Subject<void>();
@@ -78,12 +82,19 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
   }
 
   async open(context?: any): Promise<void> {
+    if (this._opening) {
+      this._openCancelled = false;
+      return;
+    }
     if (!this._windowRef && this._ngbTooltip && !this.disableTooltip) {
-      const { windowRef, transition$ } = await this._popupService.open(
-        this._ngbTooltip,
-        context ?? this.tooltipContext,
-        this.animation,
-      );
+      this._openCancelled = false;
+      this._opening = this._popupService.open(this._ngbTooltip, context ?? this.tooltipContext, this.animation);
+      const { windowRef, transition$ } = await this._opening;
+      this._opening = null;
+      if (this._openCancelled) {
+        this._popupService.close(false).subscribe();
+        return;
+      }
       this._windowRef = windowRef;
       this._windowRef.setInput("animation", this.animation);
       this._windowRef.setInput("tooltipClass", this.tooltipClass);
@@ -133,6 +144,7 @@ export class NgbTooltip implements OnInit, OnDestroy, OnChanges {
   }
 
   close(animation = this.animation): void {
+    if (this._opening) this._openCancelled = true;
     if (this._windowRef != null) {
       this._getPositionTargetElement().removeAttribute("aria-describedby");
       this._popupService.close(animation).subscribe(() => {
