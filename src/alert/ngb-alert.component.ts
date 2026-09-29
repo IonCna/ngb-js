@@ -11,6 +11,7 @@ export interface INgbAlert {
 @Component({
   selector: "ngb-alert",
   exportAs: "ngbAlert",
+  styleUrl: "./ngb-alert.css",
   template: `<ng-content></ng-content>
 
 <button ng-if="$.dismissible" ng-click="$.close()" type="button" class="btn-close" aria-label="Close">
