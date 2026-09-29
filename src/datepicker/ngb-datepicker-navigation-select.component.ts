@@ -11,6 +11,7 @@ import { Component, EventEmitter, inject, Input, type OnChanges, type OnInit, Ou
 @Component({
   selector: "ngb-datepicker-navigation-select",
   controllerAs: "$",
+  styleUrl: "./datepicker-navigation-select.css",
   template: `<select
   ng-disabled="$.disabled"
   ng-model="$.selectedMonth"

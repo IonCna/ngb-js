@@ -1,5 +1,5 @@
-/* Compiled from ng-bootstrap `datepicker-navigation.scss` (ViewEncapsulation.None). */
-ngb-datepicker-navigation {
+/* Compiled from ng-bootstrap `datepicker-navigation.scss` encapsulado (`:host` = `ngb-datepicker-navigation`). */
+:host {
   display: flex;
   align-items: center;
 }
@@ -46,6 +46,12 @@ ngb-datepicker-navigation {
 .ngb-dp-arrow-btn:focus {
   outline-width: 1px;
   outline-style: auto;
+}
+
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  .ngb-dp-arrow-btn:focus {
+    outline-style: solid;
+  }
 }
 
 .ngb-dp-month-name {

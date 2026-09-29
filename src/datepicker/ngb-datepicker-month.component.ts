@@ -17,6 +17,7 @@ import { Component, forwardRef, HostBinding, HostListener, inject, Input } from 
 @Component({
   selector: "ngb-datepicker-month",
   controllerAs: "$",
+  styleUrl: "./datepicker-month.css",
   template: `<div
   ng-if="$.viewModel.weekdays.length"
   class="ngb-dp-week ngb-dp-weekdays d-flex rounded-0 border-bottom bg-body-tertiary"

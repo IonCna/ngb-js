@@ -6,6 +6,7 @@ import { Component, EventEmitter, inject, Input, Output } from "ngjs-core";
 @Component({
   selector: "ngb-datepicker-navigation",
   controllerAs: "$",
+  styleUrl: "./datepicker-navigation.css",
   template: `<div class="ngb-dp-arrow ngb-dp-arrow-prev d-flex flex-grow-1 p-0 m-0" style="width: 2rem; height: 2rem">
   <button
     type="button"

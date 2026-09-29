@@ -12,14 +12,11 @@ import { Component, HostBinding, inject, Input } from "ngjs-core";
  *   '[class.active]': 'focused',
  * }
  * ```
- * `styleUrl: './datepicker-day-view.scss'` de upstream → CSS inline en el
- * `<style>` de `ngb-datepicker.component.html` (global, sin `ViewEncapsulation`
- * — ngjs-core no soporta `styleUrl`, así que va como texto plano en el template
- * del componente raíz en vez de requerir que el consumidor importe un `.css`).
  */
 @Component({
   selector: "[ngbDatepickerDayView]",
   controllerAs: "$",
+  styleUrl: "./datepicker-day-view.css",
   template: "{{ $.i18n.getDayNumerals($.date) }}",
 })
 export class NgbDatepickerDayView {

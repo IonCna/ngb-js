@@ -1,24 +1,25 @@
-ngb-tooltip-window {
+/* Compilado de ng-bootstrap `tooltip.scss`, encapsulado (`:host` = `ngb-tooltip-window`). */
+:host {
   pointer-events: none;
   position: absolute;
 }
 
-ngb-tooltip-window .tooltip-inner {
+:host .tooltip-inner {
   pointer-events: none;
 }
 
-ngb-tooltip-window.show .tooltip-inner {
+:host(.show) .tooltip-inner {
   pointer-events: auto;
 }
 
-ngb-tooltip-window.bs-tooltip-top,
-ngb-tooltip-window.bs-tooltip-bottom {
+:host(.bs-tooltip-top),
+:host(.bs-tooltip-bottom) {
   padding-left: 0;
   padding-right: 0;
 }
 
-ngb-tooltip-window.bs-tooltip-start,
-ngb-tooltip-window.bs-tooltip-end {
+:host(.bs-tooltip-start),
+:host(.bs-tooltip-end) {
   padding-top: 0;
   padding-bottom: 0;
 }

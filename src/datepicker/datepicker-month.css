@@ -1,5 +1,6 @@
-/* Compiled from ng-bootstrap `datepicker-month.scss` (ViewEncapsulation.None). */
-ngb-datepicker-month {
+/* Compilado de ng-bootstrap `datepicker-month.scss` (+ las reglas de `datepicker.scss` sobre este template),
+   encapsulado (`:host` = `ngb-datepicker-month`). */
+:host {
   display: block;
 }
 
@@ -44,4 +45,26 @@ ngb-datepicker-month {
 
 .ngb-dp-day[tabindex="0"] {
   z-index: 1;
+}
+
+/* datepicker.scss */
+:host-context(ngb-datepicker.disabled) .ngb-dp-weekday,
+:host-context(ngb-datepicker.disabled) .ngb-dp-week-number {
+  color: var(--bs-text-muted);
+}
+
+:host-context(.ngb-dp-month + .ngb-dp-month) .ngb-dp-week {
+  padding-left: 1rem;
+}
+
+:host-context(.ngb-dp-month:last-child) .ngb-dp-week {
+  padding-right: 0.25rem;
+}
+
+:host-context(.ngb-dp-month:first-child) .ngb-dp-week {
+  padding-left: 0.25rem;
+}
+
+:host-context(.ngb-dp-month) .ngb-dp-week:last-child {
+  padding-bottom: 0.25rem;
 }
