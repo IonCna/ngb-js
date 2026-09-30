@@ -2,7 +2,7 @@ import { type ComponentFixture, inject, TestBed } from "ngjs-core/testing";
 import { createGenericTestComponent, isBrowserVisible } from "../test/common";
 
 import angular from "angular";
-import { Component, type ElementRef, HostBinding, Inject, type QueryList, ViewChild, ViewChildren } from "ngjs-core";
+import { Component, type ElementRef, Inject, type QueryList, ViewChild, ViewChildren } from "ngjs-core";
 
 import { NgbAccordionDirective } from "./ngb-accordion.directive";
 import { NgbAccordionModule } from "./ngb-accordion.module";
@@ -1192,6 +1192,7 @@ class QueryTestComponent {
 
 @Component({
   selector: "test-animation-cmp",
+  host: { "[class.ngb-reduce-motion]": "reduceMotion" },
   template: `
     <div ngb-accordion shown="$ctrl.onShown($event)" hidden="$ctrl.onHidden($event)">
       <div ngb-accordion-item collapsed="false" shown="$ctrl.onCollapseShown()" hidden="$ctrl.onCollapseHidden()">
@@ -1206,8 +1207,7 @@ class QueryTestComponent {
   `,
 })
 class TestAnimationComponent {
-  // `host: { "[class.ngb-reduce-motion]": "reduceMotion" }` en ng-bootstrap: `host` no está soportado todavía.
-  @HostBinding("class.ngb-reduce-motion") reduceMotion = true;
+  reduceMotion = true;
   onShown = (panelId: any) => panelId;
   onHidden = (panelId: any) => panelId;
   onCollapseShown = () => {};

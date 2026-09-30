@@ -2,7 +2,7 @@ import { type ComponentFixture, TestBed } from "ngjs-core/testing";
 import { createGenericTestComponent, isBrowserVisible } from "../test/common";
 
 import angular from "angular";
-import { Component, HostBinding } from "ngjs-core";
+import { Component } from "ngjs-core";
 
 import { NgbCollapse } from "./ngb-collapse.directive";
 import { NgbCollapseModule } from "./ngb-collapse.module";
@@ -264,6 +264,7 @@ if (isBrowserVisible("ngb-collapse animations")) {
 /** En ng-bootstrap está dentro del `describe`: el compilador solo lee clases de nivel de módulo. */
 @Component({
   selector: "test-animation-cmp",
+  host: { "[class.ngb-reduce-motion]": "reduceMotion" },
   template: `
     <button ng-click="$ctrl.c.toggle()">Collapse!</button>
     <div
@@ -278,8 +279,7 @@ if (isBrowserVisible("ngb-collapse animations")) {
 })
 class TestAnimationComponent {
   collapsed = false;
-  // `host: { "[class.ngb-reduce-motion]": "reduceMotion" }` en ng-bootstrap: `host` no está soportado todavía.
-  @HostBinding("class.ngb-reduce-motion") reduceMotion = true;
+  reduceMotion = true;
   onCollapse = () => {};
   onShown = () => {};
   onHidden = () => {};

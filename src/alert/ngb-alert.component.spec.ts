@@ -3,7 +3,7 @@ import { type ComponentFixture, inject, TestBed } from "ngjs-core/testing";
 import { createGenericTestComponent, isBrowserVisible } from "../test/common";
 
 import angular from "angular";
-import { Component, HostBinding } from "ngjs-core";
+import { Component } from "ngjs-core";
 
 import { NgbAlert } from "./ngb-alert.component";
 import { NgbAlertModule } from "./ngb-alert.module";
@@ -228,11 +228,11 @@ if (isBrowserVisible("ngb-alert animations")) {
 /** En ng-bootstrap está dentro del `describe`: el compilador solo lee clases de nivel de módulo. */
 @Component({
   selector: "test-animation-cmp",
+  host: { "[class.ngb-reduce-motion]": "reduceMotion" },
   template: `<ngb-alert type="'success'" close="$ctrl.onClose()">Cool!</ngb-alert>`,
 })
 class TestAnimationComponent {
-  // `host: { "[class.ngb-reduce-motion]": "reduceMotion" }` en ng-bootstrap: `host` no está soportado todavía.
-  @HostBinding("class.ngb-reduce-motion") reduceMotion = true;
+  reduceMotion = true;
   onClose = () => {};
 }
 
