@@ -33,7 +33,9 @@ export class NgbScrollSpyItem implements OnInit {
   private _destroyRef = inject(DestroyRef);
   private _isActive = false;
 
-  @Input({ alias: "ngbScrollSpyItem" })
+  // String literal (`ngb-scroll-spy-item="overview"`, como el atributo estático de Angular): binding `@`. Las formas
+  // `NgbScrollSpy`/array de upstream no entran por un `@` — el spy explícito va por `scroll-spy`.
+  @Input({ alias: "ngbScrollSpyItem", binding: "@" })
   set data(data: NgbScrollSpyItemData) {
     if (Array.isArray(data)) {
       this._scrollSpyAPI = data[0];
@@ -46,8 +48,14 @@ export class NgbScrollSpyItem implements OnInit {
     }
   }
 
-  @Input() fragment!: string;
-  @Input() parent?: string;
+  @Input({ binding: "@" }) fragment!: string;
+  @Input({ binding: "@" }) parent?: string;
+
+  /** El `NgbScrollSpy` al que se engancha el item cuando no está dentro de un `ngbScrollSpyMenu`. */
+  @Input()
+  set scrollSpy(scrollSpy: NgbScrollSpy) {
+    if (scrollSpy) this._scrollSpyAPI = scrollSpy;
+  }
 
   isActive(): boolean {
     return this._isActive;

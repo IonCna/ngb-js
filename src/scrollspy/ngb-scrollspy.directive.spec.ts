@@ -57,8 +57,8 @@ describe("ngbScrollSpy directives", () => {
           <section ngb-scroll-spy-fragment="one">One</section>
           <section ngb-scroll-spy-fragment="two">Two</section>
         </div>
-        <button class="one-link" ngb-scroll-spy-item="[spy, 'one']">One link</button>
-        <button class="two-link" ngb-scroll-spy-item="[spy, 'two']">Two link</button>
+        <button class="one-link" ngb-scroll-spy-item="one" scroll-spy="spy">One link</button>
+        <button class="two-link" ngb-scroll-spy-item="two" scroll-spy="spy">Two link</button>
       </div>
     `)(scope);
     angular.element(document.body).append(element);
