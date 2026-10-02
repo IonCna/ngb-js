@@ -14,7 +14,7 @@ import { NgbConfigAnimation } from "../test/ngb-config-animation";
 
 /**
  * Port de `alert.spec.ts` de ng-bootstrap 16. Diferencias forzadas por AngularJS:
- * - los templates van en sintaxis de AngularJS (`type="'success'"`, `ng-class`, `(closed)` → `closed="$ctrl.…"`);
+ * - los templates van en sintaxis de AngularJS (`type="success"`, `ng-class`, `(closed)` → `closed="$ctrl.…"`);
  * - sin componentes standalone: `NgbAlertModule` se importa en el módulo de test;
  * - sin `DebugElement`: la instancia se toma con `angular.element(…).controller()`.
  */
@@ -54,7 +54,7 @@ describe("ngb-alert", () => {
 
   it("should allow specifying alert type", () => {
     const fixture = createTestComponent(
-      `<ngb-alert type="'success'" ng-class="['class1', {class3: true}]" class="class2">Cool!</ngb-alert>`,
+      `<ngb-alert type="success" ng-class="['class1', {class3: true}]" class="class2">Cool!</ngb-alert>`,
     );
     const alertEl = getAlertElement(fixture.nativeElement);
 
@@ -68,7 +68,7 @@ describe("ngb-alert", () => {
 
   it("should allow changing alert type", () => {
     const fixture = createTestComponent(
-      `<ngb-alert type="$ctrl.type" ng-class="['class1', {class3: true}]" class="class2">Cool!</ngb-alert>`,
+      `<ngb-alert type="{{ $ctrl.type }}" ng-class="['class1', {class3: true}]" class="class2">Cool!</ngb-alert>`,
     );
     const alertEl = getAlertElement(fixture.nativeElement);
 
@@ -86,7 +86,7 @@ describe("ngb-alert", () => {
   });
 
   it("should allow adding custom CSS classes", () => {
-    const fixture = createTestComponent(`<ngb-alert type="'success'" class="myClass">Cool!</ngb-alert>`);
+    const fixture = createTestComponent(`<ngb-alert type="success" class="myClass">Cool!</ngb-alert>`);
     const alertEl = getAlertElement(fixture.nativeElement);
 
     expect(alertEl).toHaveCssClass("alert");
@@ -229,7 +229,7 @@ if (isBrowserVisible("ngb-alert animations")) {
 @Component({
   selector: "test-animation-cmp",
   host: { "[class.ngb-reduce-motion]": "reduceMotion" },
-  template: `<ngb-alert type="'success'" close="$ctrl.onClose()">Cool!</ngb-alert>`,
+  template: `<ngb-alert type="success" close="$ctrl.onClose()">Cool!</ngb-alert>`,
 })
 class TestAnimationComponent {
   reduceMotion = true;

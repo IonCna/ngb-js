@@ -153,7 +153,7 @@ export class NgbOffcanvasStack {
         dismiss: (reason?: unknown) => activeOffcanvas.dismiss(reason),
       });
       this._applicationRef.attachView(viewRef);
-      return Promise.resolve(new ContentRef([viewRef.rootNodes], viewRef));
+      return Promise.resolve(new ContentRef(() => [viewRef.rootNodes], viewRef));
     }
     return this._createRootComponent(content as string, {
       environmentInjector: options.injector || contentInjector,

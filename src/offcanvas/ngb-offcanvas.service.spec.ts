@@ -27,7 +27,16 @@ class NgbOffcanvasSpecContent {
   }
 }
 
-@NgModule({ id: "ngb.offcanvas.spec", imports: [NgbModule], declarations: [NgbOffcanvasSpecContent] })
+/** Componente `templateUrl`: AngularJS lo linkea async (aunque el template ya esté en `$templateCache`). */
+const NgbOffcanvasSpecAsync = angular
+  .module("ngb.offcanvas.spec.async", [])
+  .component("ngbSpecAsyncChild", { templateUrl: "./ngb-spec-async-child.html" });
+
+@NgModule({
+  id: "ngb.offcanvas.spec",
+  imports: [NgbModule, NgbOffcanvasSpecAsync],
+  declarations: [NgbOffcanvasSpecContent],
+})
 class NgbOffcanvasSpecModule {}
 
 describe("NgbOffcanvas", () => {
@@ -134,6 +143,23 @@ describe("NgbOffcanvas", () => {
 
     expect(dismissed).toHaveBeenCalledWith("template reason");
     expect(document.body.querySelector(".template-offcanvas")).toBeNull();
+    host.remove();
+  });
+
+  it("projects a TemplateRef whose content compiles async (templateUrl) on the first open", async () => {
+    const scope = $rootScope.$new() as IRootScopeService & { offcanvasTemplate?: TemplateRef<unknown> };
+    const host = $compile(`
+      <div>
+        <ng-template ng-ref="offcanvasTemplate"><ngb-spec-async-child></ngb-spec-async-child></ng-template>
+      </div>
+    `)(scope);
+    angular.element(document.body).append(host);
+    scope.$digest();
+
+    await resolveOpen(ngbOffcanvas.open(scope.offcanvasTemplate, { animation: false }));
+    await flush();
+
+    expect(document.body.querySelector(".offcanvas ngb-spec-async-child .async-child-ok")?.textContent).toBe("ok");
     host.remove();
   });
 

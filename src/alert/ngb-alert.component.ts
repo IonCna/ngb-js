@@ -26,7 +26,8 @@ export class NgbAlert implements INgbAlert {
 
   @Input() animation = this._config.animation;
   @Input() dismissible = this._config.dismissible;
-  @Input() type = this._config.type;
+  /** String literal como en Angular (`type="success"`); dinámico con interpolación (`type="{{ $.tipo }}"`). */
+  @Input({ binding: "@" }) type = this._config.type;
   @Output() closed = new EventEmitter<void>();
 
   @HostBinding("attr.role") readonly _role = "alert";

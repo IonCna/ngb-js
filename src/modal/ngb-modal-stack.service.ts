@@ -149,7 +149,7 @@ export class NgbModalStack {
         dismiss: (reason?: unknown) => activeModal.dismiss(reason),
       });
       this._applicationRef.attachView(viewRef);
-      return Promise.resolve(new ContentRef([viewRef.rootNodes], viewRef));
+      return Promise.resolve(new ContentRef(() => [viewRef.rootNodes], viewRef));
     }
     // NOTA (adaptación): en ngb-js el contenido de tipo componente se pasa como
     // el NOMBRE registrado (string), no como clase — no hay caso de "string

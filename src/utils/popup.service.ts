@@ -16,10 +16,19 @@ import { mergeMap, take, tap } from "rxjs/operators";
 
 export class ContentRef {
   constructor(
-    public nodes: Node[][],
+    private readonly _nodes: Node[][] | (() => Node[][]),
     public viewRef?: ViewRef,
     public componentRef?: ComponentRef<any>,
   ) {}
+
+  /**
+   * ADAPTACIÓN: para un `TemplateRef` los nodos se leen al proyectar (`() => [viewRef.rootNodes]`), no al crear la
+   * vista. En AngularJS un componente `templateUrl` del template se linkea async la primera vez y su nodo se
+   * reemplaza: una copia tomada antes proyectaba el nodo viejo, sin compilar (upstream los copia: Angular es síncrono).
+   */
+  get nodes(): Node[][] {
+    return typeof this._nodes === "function" ? this._nodes() : this._nodes;
+  }
 }
 
 export class PopupService<T> {
@@ -98,7 +107,7 @@ export class PopupService<T> {
     } else if (content instanceof TemplateRef) {
       const viewRef = content.createEmbeddedView(templateContext);
       this._applicationRef.attachView(viewRef);
-      return new ContentRef([viewRef.rootNodes], viewRef);
+      return new ContentRef(() => [viewRef.rootNodes], viewRef);
     } else {
       return new ContentRef([[this._document.createTextNode(`${content}`)]]);
     }
