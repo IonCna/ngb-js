@@ -26,8 +26,8 @@ describe("ngbNav", () => {
   };
 
   it("renders first tab as active and updates outlet on click", async () => {
-    const scope = $rootScope.$new() as IRootScopeService & { activeId: number };
-    scope.activeId = 0;
+    const scope = $rootScope.$new() as IRootScopeService & { activeId: string };
+    scope.activeId = "0";
 
     const element = $compile(`
             <div>
@@ -66,7 +66,7 @@ describe("ngbNav", () => {
     await tick(scope);
     await tick(scope);
 
-    expect(scope.activeId).toBe(1);
+    expect(scope.activeId).toBe("1");
     expect(buttons[1].classList.contains("active")).toBe(true);
     expect(outlet.textContent).toContain("Profile content");
     element.remove();
@@ -78,8 +78,8 @@ describe("ngbNav", () => {
     const element = $compile(`
       <div>
         <nav ngb-nav ng-ref="example.nav" ng-ref-read="ngbNav" active-id="example.activeId" animation="true">
-          <div ngb-nav-item="'a'"><button type="button" ngb-nav-link>A</button><ng-template ngb-nav-content>Content A</ng-template></div>
-          <div ngb-nav-item="'b'"><button type="button" ngb-nav-link>B</button><ng-template ngb-nav-content>Content B</ng-template></div>
+          <div ngb-nav-item="a"><button type="button" ngb-nav-link>A</button><ng-template ngb-nav-content>Content A</ng-template></div>
+          <div ngb-nav-item="b"><button type="button" ngb-nav-link>B</button><ng-template ngb-nav-content>Content B</ng-template></div>
         </nav>
         <div ngb-nav-outlet="example.nav"></div>
       </div>
@@ -98,10 +98,10 @@ describe("ngbNav", () => {
 
   it("emits activeIdChange callback when selecting another tab", () => {
     const scope = $rootScope.$new() as IRootScopeService & {
-      activeId: number;
-      onActiveChange: (id: number) => void;
+      activeId: string;
+      onActiveChange: (id: string) => void;
     };
-    scope.activeId = 0;
+    scope.activeId = "0";
     const onActiveChange = vi.fn();
     scope.onActiveChange = onActiveChange;
 
@@ -128,7 +128,7 @@ describe("ngbNav", () => {
     scope.$digest();
 
     expect(onActiveChange).toHaveBeenCalledTimes(1);
-    expect(onActiveChange).toHaveBeenCalledWith(1);
+    expect(onActiveChange).toHaveBeenCalledWith("1");
     element.remove();
   });
 
@@ -143,11 +143,11 @@ describe("ngbNav", () => {
     const element = $compile(`
       <div>
         <ul ngb-nav ng-ref="refs.nav" ng-ref-read="ngbNav" active-id="activeId" active-id-change="activeId = $event" animation="false">
-          <li ngb-nav-item="'first'">
+          <li ngb-nav-item="first">
             <button ngb-nav-link>First</button>
             <ng-template ngb-nav-content>First content</ng-template>
           </li>
-          <li ngb-nav-item="'second'">
+          <li ngb-nav-item="second">
             <button ngb-nav-link>Second</button>
             <ng-template ngb-nav-content>Second content</ng-template>
           </li>
@@ -172,8 +172,8 @@ describe("ngbNav", () => {
 
     const element = $compile(`
       <ul ngb-nav active-id="activeId" animation="false">
-        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
-        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
+        <li ngb-nav-item="first"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="second"><button ngb-nav-link>Second</button></li>
       </ul>
     `)(scope);
     angular.element(document.body).append(element);
@@ -191,8 +191,8 @@ describe("ngbNav", () => {
     const scope = $rootScope.$new() as IRootScopeService & { selected?: string };
     const element = $compile(`
       <ul ngb-nav active-id-change="selected = $event" animation="false">
-        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
-        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
+        <li ngb-nav-item="first"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="second"><button ngb-nav-link>Second</button></li>
       </ul>
     `)(scope);
     scope.$digest();
@@ -203,7 +203,7 @@ describe("ngbNav", () => {
   it("applies vertical orientation and can disable tab roles", () => {
     const element = $compile(`
       <ul ngb-nav orientation="'vertical'" roles="false" animation="false">
-        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="first"><button ngb-nav-link>First</button></li>
       </ul>
     `)($rootScope.$new());
     $rootScope.$digest();
@@ -218,8 +218,8 @@ describe("ngbNav", () => {
     scope.activeId = "first";
     const element = $compile(`
       <ul ngb-nav active-id="activeId" active-id-change="activeId = $event" animation="false">
-        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
-        <li ngb-nav-item="'second'" disabled="true"><button ngb-nav-link>Second</button></li>
+        <li ngb-nav-item="first"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="second" disabled="true"><button ngb-nav-link>Second</button></li>
       </ul>
     `)(scope);
     scope.$digest();
@@ -240,8 +240,8 @@ describe("ngbNav", () => {
     scope.cancel = vi.fn((event) => event.preventDefault());
     const element = $compile(`
       <ul ngb-nav active-id="activeId" active-id-change="activeId = $event" nav-change="cancel($event)" animation="false">
-        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
-        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
+        <li ngb-nav-item="first"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="second"><button ngb-nav-link>Second</button></li>
       </ul>
     `)(scope);
     scope.$digest();
@@ -259,9 +259,9 @@ describe("ngbNav", () => {
   ])("moves focus with %s while skipping disabled tabs", (_name, key, expectedIndex) => {
     const element = $compile(`
       <ul ngb-nav animation="false">
-        <li ngb-nav-item="'first'"><button ngb-nav-link>First</button></li>
-        <li ngb-nav-item="'second'"><button ngb-nav-link>Second</button></li>
-        <li ngb-nav-item="'disabled'" disabled="true"><button ngb-nav-link>Disabled</button></li>
+        <li ngb-nav-item="first"><button ngb-nav-link>First</button></li>
+        <li ngb-nav-item="second"><button ngb-nav-link>Second</button></li>
+        <li ngb-nav-item="disabled" disabled="true"><button ngb-nav-link>Disabled</button></li>
       </ul>
     `)($rootScope.$new());
     angular.element(document.body).append(element);

@@ -29,8 +29,9 @@ export class NgbNavItem implements OnInit {
   @Input() destroyOnHide?: boolean;
   @Input() disabled = false;
   @Input() domId!: string;
+  /** String literal como en Angular (`ngb-nav-item="home"`); dinámico con interpolación (`ngb-nav-item="{{ tab.id }}"`). */
   // biome-ignore lint/suspicious/noExplicitAny: API pública compatible con ng-bootstrap
-  @Input({ alias: "ngbNavItem" }) _id: any;
+  @Input({ alias: "ngbNavItem", binding: "@" }) _id: any;
 
   @Output() shown = new EventEmitter<void>();
   @Output() hidden = new EventEmitter<void>();
