@@ -4,7 +4,7 @@ import type { NgbActiveModal, NgbModalRef } from "@ngb/modal/ngb-modal-ref";
 import angular, { type IRootScopeService } from "angular";
 import { Component, Injector, Input, NgModule, type TemplateRef, ApplicationRef } from "ngjs-core";
 import { TestBed } from "ngjs-core/testing";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { createKeyEvent } from "../test/common";
 import { Key } from "../utils/key";
 import { NgbModule } from "../ngb.module";
@@ -203,6 +203,53 @@ describe("NgbModal", () => {
     modalRef.close();
     await flush();
     expect(document.activeElement).toBe(opener);
+  });
+
+  // Una transición real (como la de Bootstrap): sin ella jsdom resuelve el fade en el mismo tick que el foco.
+  function addFadeTransition(): void {
+    const style = document.createElement("style");
+    style.textContent = ".modal, .modal-backdrop { transition: opacity 0.15s linear; }";
+    document.head.appendChild(style);
+    onTestFinished(() => style.remove());
+  }
+
+  it("removes aria-hidden from the opener's ancestors before restoring focus to it", async () => {
+    addFadeTransition();
+    const page = document.createElement("main");
+    const opener = document.createElement("button");
+    page.appendChild(opener);
+    document.body.appendChild(page);
+    opener.focus();
+    const modalRef = await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: true }));
+    expect(page.getAttribute("aria-hidden")).toBe("true");
+
+    const ariaHiddenOnFocus: (string | null)[] = [];
+    opener.addEventListener("focus", () => ariaHiddenOnFocus.push(page.getAttribute("aria-hidden")));
+    modalRef.close();
+    await flush();
+    expect(document.activeElement).toBe(opener);
+    expect(ariaHiddenOnFocus).toEqual([null]);
+  });
+
+  it("hides siblings relative to the remaining modal as soon as the top one starts closing", async () => {
+    addFadeTransition();
+    const page = document.createElement("main");
+    document.body.appendChild(page);
+    await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: true }));
+    const lowerWindow = document.body.querySelector("ngb-modal-window") as HTMLElement;
+    const lowerButton = lowerWindow.querySelector("button") as HTMLButtonElement;
+    lowerButton.focus();
+    const upper = await resolveOpen(ngbModal.open("ngbModalSpecContent", { animation: true }));
+    expect(lowerWindow.getAttribute("aria-hidden")).toBe("true");
+
+    const ariaHiddenOnFocus: (string | null)[] = [];
+    lowerButton.addEventListener("focus", () => ariaHiddenOnFocus.push(lowerWindow.getAttribute("aria-hidden")));
+    upper.close();
+    await flush();
+    expect(document.activeElement).toBe(lowerButton);
+    expect(ariaHiddenOnFocus).toEqual([null]);
+    expect(lowerWindow.hasAttribute("aria-hidden")).toBe(false);
+    expect(page.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("renders default window, backdrop and accessibility semantics", async () => {

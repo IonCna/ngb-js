@@ -42,10 +42,10 @@ export class NgbModalStack {
 
   constructor() {
     this._activeWindowCmptHasChanged.subscribe(() => {
+      this._revertAriaHidden();
       if (this._windowCmpts.length) {
         const activeWindowCmpt = this._windowCmpts[this._windowCmpts.length - 1];
         ngbFocusTrap(this._ngZone, activeWindowCmpt.location.nativeElement, this._activeWindowCmptHasChanged);
-        this._revertAriaHidden();
         this._setAriaHidden(activeWindowCmpt.location.nativeElement);
       }
     });
@@ -68,7 +68,7 @@ export class NgbModalStack {
         const ngbModalRef = new NgbModalRef<T>(windowCmptRef, contentRef, backdropCmptRef, options.beforeDismiss);
 
         this._registerModalRef(ngbModalRef);
-        this._registerWindowCmpt(windowCmptRef);
+        this._registerWindowCmpt(windowCmptRef, ngbModalRef);
 
         ngbModalRef.hidden.pipe(take(1)).subscribe(() =>
           Promise.resolve(true).then(() => {
@@ -242,17 +242,24 @@ export class NgbModalStack {
     ngbModalRef.result?.then(unregisterModalRef, unregisterModalRef);
   }
 
-  private _registerWindowCmpt(ngbWindowCmpt: ComponentRef<NgbModalWindow>) {
-    this._windowCmpts.push(ngbWindowCmpt);
-    this._activeWindowCmptHasChanged.next();
-
-    ngbWindowCmpt.onDestroy(() => {
+  private _registerWindowCmpt(ngbWindowCmpt: ComponentRef<NgbModalWindow>, ngbModalRef: NgbModalRef) {
+    const unregisterWindowCmpt = () => {
       const index = this._windowCmpts.indexOf(ngbWindowCmpt);
       if (index > -1) {
         this._windowCmpts.splice(index, 1);
         this._activeWindowCmptHasChanged.next();
       }
-    });
+    };
+    this._windowCmpts.push(ngbWindowCmpt);
+    this._activeWindowCmptHasChanged.next();
+
+    // La ventana deja de ser la activa en cuanto el modal empieza a cerrarse, no al terminar el fade:
+    // `hide()` devuelve el foco al elemento de origen en un `setTimeout`, y si sus ancestros siguen con
+    // `aria-hidden` hasta el final de la transición el navegador bloquea ese `aria-hidden` (foco dentro
+    // de un nodo oculto). `result` se resuelve en `close()`/`dismiss()` antes de `hide()`, así que este
+    // microtask corre antes que el foco. `onDestroy` queda para una ventana destruida sin cerrarse.
+    ngbModalRef.result.then(unregisterWindowCmpt, unregisterWindowCmpt);
+    ngbWindowCmpt.onDestroy(unregisterWindowCmpt);
   }
 
   private _restoreScrollBar() {
